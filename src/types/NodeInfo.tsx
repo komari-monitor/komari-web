@@ -39,20 +39,17 @@ export interface NodeBasicInfo {
   updated_at: string;
 }
 
-export type LiveData = {
-  online: string[];
-  data: { [key: string]: Record };
-};
-
-export type Record = {
+export interface Record {
   cpu: {
     usage: number;
   };
   ram: {
     used: number;
+    total: number;
   };
   swap: {
     used: number;
+    total: number;
   };
   load: {
     load1: number;
@@ -61,6 +58,7 @@ export type Record = {
   };
   disk: {
     used: number;
+    total: number;
   };
   network: {
     up: number;
@@ -76,6 +74,11 @@ export type Record = {
   process: number;
   message: string;
   updated_at: string;
+}
+
+export type LiveData = {
+  online: string[];
+  data: { [key: string]: Record };
 };
 
 export type LiveDataResponse = {

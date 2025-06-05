@@ -2,6 +2,7 @@ import { LiveDataProvider, useLiveData } from "@/contexts/LiveNodeDataContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { useTranslation } from "react-i18next";
 import { NodeGrid } from "@/components/NodeCard";
+import { Outlet } from "react-router";
 
 const formatBytes = (bytes: number, decimals = 2) => {
   if (bytes === 0) return "0 Bytes";
@@ -12,8 +13,7 @@ const formatBytes = (bytes: number, decimals = 2) => {
   return parseFloat((bytes / Math.pow(k, i)).toFixed(dm)) + " " + sizes[i];
 };
 
-// 新建一个内部组件来消费 Context 和渲染 UI
-const DashboardContent = () => {
+export const DashboardContent = () => {
   const [t] = useTranslation();
   const { live_data, node_data } = useLiveData();
   document.title = t("home_title");
@@ -95,12 +95,11 @@ const DashboardContent = () => {
   );
 };
 
-const Dashboard = () => {
+export const Dashboard = () => {
   return (
     <LiveDataProvider>
-      <DashboardContent />
+      <Outlet />
     </LiveDataProvider>
   );
 };
 
-export default Dashboard;

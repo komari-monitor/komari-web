@@ -5,7 +5,9 @@ import "./global.css";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import NavBar from "./layout/NavBar";
 import "./i18n/config";
-import Dashboard from "./pages/Server";
+import { Dashboard, DashboardContent } from "./pages/Server";
+import { ServerDetail } from "./pages/ServerDetail";
+
 const root = createRoot(document.getElementById("root")!);
 
 root.render(
@@ -19,7 +21,10 @@ root.render(
       <StrictMode>
         <NavBar />
         <Routes>
-          <Route path="/" element={<Dashboard />} />
+          <Route path="/" element={<Dashboard />}>
+            <Route index element={<DashboardContent />} />
+            <Route path="/server/:uuid" element={<ServerDetail />} />
+          </Route>
           <Route path="*" element={<NotFound />} />
         </Routes>
       </StrictMode>
