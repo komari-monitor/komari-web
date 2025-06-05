@@ -1,17 +1,25 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { BrowserRouter, Routes, Route } from "react-router";
-import "./index.css";
-import { Button } from "@/components/ui/button";
-import { ThemeProvider } from "@/contexts/ThemeContext";
-import { ModeToggle } from "./components/modeToggle";
+import { BrowserRouter, Routes, Route } from "react-router"; // Corrected import
+import "./global.css";
+import { Button } from "@/components/ui/button"; //
+import { ThemeProvider } from "@/contexts/ThemeContext"; //
+import { ModeToggle } from "./components/modeToggle"; //
+import { ColorThemeToggle } from "./components/ColorThemeToggle";
+import NavBar from "./layout/NavBar";
 
 const root = createRoot(document.getElementById("root")!);
 
 root.render(
   <BrowserRouter>
-    <ThemeProvider defaultTheme="system" storageKey="theme">
+    <ThemeProvider
+      defaultThemeMode="system"
+      storageKeyMode="theme-mode"
+      defaultColorTheme="default" /* Or your preferred default color */
+      storageKeyColor="theme-color"
+    >
       <StrictMode>
+        <NavBar />
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/about" element={<About />} />
@@ -23,11 +31,22 @@ root.render(
 );
 
 function Home() {
-  return <Button onClick={() => alert("Hello, World!")}>Click Me</Button>;
+  return (
+    <div>
+      <Button onClick={() => alert("Hello, World!")}>Click Me</Button>
+     
+    </div>
+  );
 }
 
 function About() {
-  return <ModeToggle />;
+  return (
+    <div>
+      <h1>About Page</h1>
+      <ModeToggle />
+      <ColorThemeToggle />
+    </div>
+  );
 }
 
 function NotFound() {
