@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
+import { AreaChart, Area, CartesianGrid, XAxis, YAxis } from "recharts";
 
 import {
   Card,
@@ -16,72 +16,74 @@ import {
   ChartTooltip,
   ChartTooltipContent,
 } from "@/components/ui/chart";
+import type {
+  NameType,
+  ValueType,
+} from "recharts/types/component/DefaultTooltipContent";
+import { formatTime } from "@/utils/formatTime";
+import { MAX_DATA_POINTS } from ".";
 
 interface RawSystemDataPoint {
-  cpu: {
-    usage: number;
-  };
+  process: number;
   updated_at: string;
+  cpu?: { usage: number };
+  ram?: { total: number; used: number };
+  swap?: { total: number; used: number };
+  network?: { up: number; down: number };
 }
 
-interface ChartFormattedDataPoint {
+interface ChartFormattedProcessPoint {
   time: string;
-  cpuUsage: number;
+  processCount: number;
 }
 
-const MAX_DATA_POINTS = 50;
 
-const formatTime = (dateString: string): string => {
-  const date = new Date(dateString);
-  const hours = date.getHours().toString().padStart(2, "0");
-  const minutes = date.getMinutes().toString().padStart(2, "0");
-  const seconds = date.getSeconds().toString().padStart(2, "0");
-  return `${hours}:${minutes}:${seconds}`;
-};
 
-const transformRawDataPoint = (
+const transformProcessDataPoint = (
   rawData: RawSystemDataPoint
-): ChartFormattedDataPoint => {
+): ChartFormattedProcessPoint => {
   return {
     time: formatTime(rawData.updated_at),
-    cpuUsage: parseFloat(rawData.cpu.usage.toFixed(2)),
+    processCount: Math.floor(rawData.process),
   };
 };
 
-const chartConfig = {
-  cpuUsage: {
-    label: "CPU Usage",
-    color: "var(--chart-1)",
+const processChartConfig = {
+  processCount: {
+    label: "Processes",
+    color: "var(--chart-3)",
   },
 } satisfies ChartConfig;
 
-export interface RealTimeCpuUsageChartProps {
+export interface RealTimeProcessCountChartProps {
   initialRawData?: RawSystemDataPoint[];
   newRawDataPoint?: RawSystemDataPoint;
 }
 
-export function RealTimeCpuUsageChart({
+export function RealTimeProcessCountChart({
   initialRawData,
   newRawDataPoint,
-}: RealTimeCpuUsageChartProps) {
-  const [chartData, setChartData] = useState<ChartFormattedDataPoint[]>(() => {
-    if (initialRawData && initialRawData.length > 0) {
-      const transformed = initialRawData.map(transformRawDataPoint);
-      return transformed.slice(-MAX_DATA_POINTS);
+}: RealTimeProcessCountChartProps) {
+  const [chartData, setChartData] = useState<ChartFormattedProcessPoint[]>(
+    () => {
+      if (initialRawData && initialRawData.length > 0) {
+        const transformed = initialRawData.map(transformProcessDataPoint);
+        return transformed.slice(-MAX_DATA_POINTS);
+      }
+      return [];
     }
-    return [];
-  });
+  );
 
   useEffect(() => {
     if (initialRawData && initialRawData.length > 0 && chartData.length === 0) {
-      const transformed = initialRawData.map(transformRawDataPoint);
+      const transformed = initialRawData.map(transformProcessDataPoint);
       setChartData(transformed.slice(-MAX_DATA_POINTS));
     }
   }, [initialRawData, chartData.length]);
 
   useEffect(() => {
     if (newRawDataPoint) {
-      const formattedNewPoint = transformRawDataPoint(newRawDataPoint);
+      const formattedNewPoint = transformProcessDataPoint(newRawDataPoint);
       setChartData((prevData) => {
         const updatedData = [...prevData, formattedNewPoint];
         if (updatedData.length > MAX_DATA_POINTS) {
@@ -95,16 +97,17 @@ export function RealTimeCpuUsageChart({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>CPU</CardTitle>
+        <CardTitle>Real-time Process Count ⚙️</CardTitle>
         <CardDescription>
-          Updated_at:
-          {newRawDataPoint?.updated_at
-            ? formatTime(newRawDataPoint.updated_at)
-            : "N/A"}
+          Displaying the number of active processes for the last{" "}
+          {MAX_DATA_POINTS} readings.
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <ChartContainer config={chartConfig} className="h-[300px] w-full">
+        <ChartContainer
+          config={processChartConfig}
+          className="h-[300px] w-full"
+        >
           <AreaChart
             accessibilityLayer
             data={chartData}
@@ -123,24 +126,31 @@ export function RealTimeCpuUsageChart({
               tickMargin={8}
             />
             <YAxis
-              dataKey="cpuUsage"
-              domain={[0, 100]}
+              dataKey="processCount"
+              allowDecimals={false}
               tickLine={false}
               axisLine={false}
               tickMargin={8}
-              tickFormatter={(value) => `${value}%`}
-              width={35}
+              width={30}
             />
             <ChartTooltip
               cursor={true}
+              formatter={(value: ValueType, name: NameType) => {
+                let label = name;
+                if (name === "processCount") label = "进程数: ";
+                if (typeof value === "number") {
+                  return [label, Math.floor(value).toString()];
+                }
+                return [label, String(value)];
+              }}
               content={<ChartTooltipContent indicator="line" />}
             />
             <Area
-              dataKey="cpuUsage"
-              type="natural"
-              fill={`var(--color-cpuUsage)`}
+              dataKey="processCount"
+              type="stepAfter"
+              fill={`var(--color-processCount)`}
               fillOpacity={0.4}
-              stroke={`var(--color-cpuUsage)`}
+              stroke={`var(--color-processCount)`}
               strokeWidth={2}
               isAnimationActive={false}
               dot={false}
