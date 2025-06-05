@@ -1,10 +1,10 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { BrowserRouter, Routes, Route } from "react-router"; // Corrected import
+import { BrowserRouter, Routes, Route } from "react-router";
 import "./global.css";
-import { Button } from "@/components/ui/button"; //
-import { ThemeProvider } from "@/contexts/ThemeContext"; //
-import { ModeToggle } from "./components/modeToggle"; //
+import { Button } from "@/components/ui/button";
+import { ThemeProvider } from "@/contexts/ThemeContext";
+import { ModeToggle } from "./components/modeToggle";
 import { ColorThemeToggle } from "./components/ColorThemeToggle";
 import NavBar from "./layout/NavBar";
 
@@ -15,7 +15,7 @@ root.render(
     <ThemeProvider
       defaultThemeMode="system"
       storageKeyMode="theme-mode"
-      defaultColorTheme="default" /* Or your preferred default color */
+      defaultColorTheme="default"
       storageKeyColor="theme-color"
     >
       <StrictMode>

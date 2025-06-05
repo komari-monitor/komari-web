@@ -1,9 +1,9 @@
-
 import { Link } from "react-router";
 import { Button } from "@/components/ui/button";
 import { Github } from "lucide-react";
 import { ModeToggle } from "@/components/modeToggle";
 import { ColorThemeToggle } from "@/components/ColorThemeToggle";
+import LanguageSwitch from "@/components/LanguageSwitch";
 const NavBar = () => {
   return (
     <nav className="flex rounded-b-lg items-center gap-3 max-h-16 justify-end min-w-full p-2">
@@ -25,8 +25,9 @@ const NavBar = () => {
         </div>
       </div>
 
-      <Button 
+      <Button
         variant="outline"
+        size="icon"
         onClick={() => {
           window.open("https://github.com/komari-monitor", "_blank");
         }}
@@ -36,8 +37,8 @@ const NavBar = () => {
 
       <ModeToggle />
       <ColorThemeToggle />
-      {/* <LanguageSwitch />
-      <LoginDialog /> */}
+      <LanguageSwitch />
+      {/* <LoginDialog /> */}
     </nav>
   );
 };
