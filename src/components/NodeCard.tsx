@@ -76,7 +76,7 @@ const Node = ({ basic, live, online }: NodeProps) => {
   const totalDownload = formatBytes(liveData.network.totalDown);
   //const totalTraffic = formatBytes(liveData.network.totalUp + liveData.network.totalDown);
   return (
-    <Link to={`/instance/${basic.uuid}`}>
+    <Link to={`/server/${basic.uuid}`}>
       <Card className="w-full mx-auto transition-all duration-200 ease-in-out hover:shadow-2xl hover:scale-102 hover:cursor-pointer p-3 md:p-4">
         <div className={`flex flex-col ${isMobile ? "gap-2" : "gap-3"}`}>
           <div

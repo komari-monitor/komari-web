@@ -4,8 +4,8 @@ import { BrowserRouter, Routes, Route } from "react-router";
 import "./global.css";
 import { ThemeProvider } from "@/contexts/ThemeContext";
 import NavBar from "./layout/NavBar";
-import Index from "./pages/dashboard";
 import "./i18n/config";
+import Dashboard from "./pages/Server";
 const root = createRoot(document.getElementById("root")!);
 
 root.render(
@@ -19,7 +19,7 @@ root.render(
       <StrictMode>
         <NavBar />
         <Routes>
-          <Route path="/" element={<Index />} />
+          <Route path="/" element={<Dashboard />} />
           <Route path="*" element={<NotFound />} />
         </Routes>
       </StrictMode>
