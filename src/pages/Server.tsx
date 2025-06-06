@@ -1,8 +1,9 @@
-import { LiveDataProvider, useLiveData } from "@/contexts/LiveNodeDataContext";
+import { LiveDataProvider } from "@/contexts/LiveNodeDataContext";
 import { Card, CardContent } from "@/components/ui/card";
 import { useTranslation } from "react-i18next";
 import { NodeGrid } from "@/components/NodeCard";
 import { Outlet } from "react-router";
+import useLiveData from "@/hooks/useLiveData";
 
 const formatBytes = (bytes: number, decimals = 2) => {
   if (bytes === 0) return "0 Bytes";
@@ -102,4 +103,3 @@ export const Dashboard = () => {
     </LiveDataProvider>
   );
 };
-

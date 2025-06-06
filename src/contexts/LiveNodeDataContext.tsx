@@ -1,5 +1,5 @@
 import type { LiveDataResponse, NodeResponse } from "@/types/NodeInfo";
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useEffect, useState } from "react";
 
 interface LiveDataContextType {
   live_data: LiveDataResponse | null;
@@ -87,7 +87,5 @@ export const LiveDataProvider: React.FC<{ children: React.ReactNode }> = ({ chil
     </LiveDataContext.Provider>
   );
 };
-
-export const useLiveData = () => useContext(LiveDataContext);
 
 export default LiveDataContext;

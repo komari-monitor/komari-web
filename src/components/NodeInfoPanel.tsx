@@ -7,7 +7,7 @@ type InfoBlockProps = {
 };
 
 type NodeInfoPanelProps = {
-  nodeBasicInfo: NodeBasicInfo;
+  nodeBasicInfo: NodeBasicInfo | undefined;
   record: Record;
 };
 
@@ -34,23 +34,23 @@ export const NodeInfoPanel = ({
     return uptimeString.trim() || "0分钟";
   };
 
-  const memoryDisplay = formatBytes(nodeBasicInfo.mem_total);
-  const diskDisplay = formatBytes(nodeBasicInfo.disk_total);
+  const memoryDisplay = formatBytes(nodeBasicInfo!.mem_total);
+  const diskDisplay = formatBytes(nodeBasicInfo!.disk_total);
   const totalTraffic = record.network
     ? formatBytes(record.network.totalUp + record.network.totalDown)
     : "N/A";
-  const cpuDisplay = nodeBasicInfo.cpu_name;
+  const cpuDisplay = nodeBasicInfo!.cpu_name;
 
   return (
     <div className="flex flex-col gap-[6px]">
       <div className="flex flex-wrap gap-[6px]">
-        <InfoBlock name="操作系统" value={nodeBasicInfo.os} />
-        <InfoBlock name="架构" value={nodeBasicInfo.arch} />
-        <InfoBlock name="虚拟化" value={nodeBasicInfo.virtualization} />
+        <InfoBlock name="操作系统" value={nodeBasicInfo!.os} />
+        <InfoBlock name="架构" value={nodeBasicInfo!.arch} />
+        <InfoBlock name="虚拟化" value={nodeBasicInfo!.virtualization} />
       </div>
       <div className="flex flex-wrap gap-[6px]">
         <InfoBlock name="CPU" value={cpuDisplay} />
-        <InfoBlock name="GPU" value={nodeBasicInfo.gpu_name || "N/A"} />
+        <InfoBlock name="GPU" value={nodeBasicInfo!.gpu_name || "N/A"} />
       </div>
       <div className="flex flex-wrap gap-[6px]">
         <InfoBlock name="内存" value={memoryDisplay} />

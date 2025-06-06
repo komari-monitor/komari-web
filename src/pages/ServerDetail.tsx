@@ -1,7 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useParams } from "react-router";
-import { useLiveData } from "@/contexts/LiveNodeDataContext";
 import type { Record } from "@/types/NodeInfo";
 import {
   RealTimeCpuUsageChart,
@@ -14,6 +13,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { NodeInfoPanel } from "@/components/NodeInfoPanel";
 import Flag from "@/components/Flag";
+import useLiveData from "@/hooks/useLiveData";
 
 export const ServerDetail: React.FC = () => {
   const { uuid } = useParams<{ uuid: string }>();
@@ -80,7 +80,7 @@ export const ServerDetail: React.FC = () => {
             <div className="flex flex-col">
               <p
                 className={`font-bold text-base
-                  truncate max-w-[180px] sm:max-w-[200px]`}
+               `}
               >
                 {node_data?.data.find((node) => node.uuid === uuid)?.name ||
                   uuid}
@@ -89,10 +89,14 @@ export const ServerDetail: React.FC = () => {
           </div>
         </CardHeader>
         <CardContent className="md:text-base text-sm">
-          <NodeInfoPanel
-            nodeBasicInfo={node_data?.data.find((node) => node.uuid === uuid)!}
-            record={live_data?.data.data[uuid!]}
-          />
+          {(!node_data || !live_data) ? (
+            <Skeleton className="h-[200px] w-full mb-2" />
+          ) : (
+            <NodeInfoPanel
+              nodeBasicInfo={node_data?.data.find((node) => node.uuid === uuid)}
+              record={live_data?.data.data[uuid!]}
+            />
+          )}
         </CardContent>
       </Card>
       <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
