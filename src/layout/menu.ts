@@ -10,49 +10,49 @@ export interface MenuConfig {
 export const menuConfig: MenuConfig = {
   menu: [
     {
-      labelKey: "server",
+      labelKey: "admin.menu.server",
       path: "/manage",
       icon: "server",
     },
     {
-      labelKey: "settings.title",
-      path: "/admin/settings",
+      labelKey: "admin.menu.settings.title",
+      path: "/manage/settings",
       icon: "settings",
       children: [
         {
-          labelKey: "settings.site.title",
-          path: "/admin/settings/site",
+          labelKey: "admin.menu.settings.site",
+          path: "/manage/settings/site",
           icon: "house",
         },
         {
-          labelKey: "settings.custom.title",
-          path: "/admin/settings/custom",
+          labelKey: "admin.menu.settings.custom",
+          path: "/manage/settings/custom",
           icon: "code",
         },
         {
-          labelKey: "settings.sso.title",
-          path: "/admin/settings/sso",
+          labelKey: "admin.menu.settings.sso",
+          path: "/manage/settings/sso",
           icon: "key-round",
         },
         {
-          labelKey: "settings.general.title",
-          path: "/admin/settings/general",
+          labelKey: "admin.menu.settings.general",
+          path: "/manage/settings/general",
           icon: "ellipsis",
         },
       ],
     },
     {
-      labelKey: "sessions.title",
-      path: "/admin/sessions",
+      labelKey: "admin.menu.sessions",
+      path: "/manage/sessions",
       icon: "users",
     },
     {
-      labelKey: "account",
-      path: "/admin/account",
+      labelKey: "admin.menu.account",
+      path: "/manage/account",
       icon: "user-round-cog",
     },
     {
-      labelKey: "documentation",
+      labelKey: "admin.menu.documentation",
       path: "https://komari-monitor.github.io/komari-document",
       icon: "book",
     },

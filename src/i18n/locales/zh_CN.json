@@ -32,6 +32,19 @@
     "login_button": "登录"
   },
   "admin": {
+    "menu": {
+      "server": "服务器",
+      "settings": {
+        "title": "设置",
+        "site": "站点",
+        "custom": "自定义",
+        "sso": "单点登录",
+        "general": "通用"
+      },
+      "sessions": "会话",
+      "account": "账户",
+      "documentation": "文档"
+    },
     "nodeTable": {
       "nodeList": "节点列表",
       "addNode": "添加节点",
