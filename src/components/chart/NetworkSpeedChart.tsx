@@ -3,13 +3,7 @@
 import { useState, useEffect } from "react";
 import { LineChart, Line, CartesianGrid, XAxis, YAxis } from "recharts";
 
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import {
   type ChartConfig,
   ChartContainer,
@@ -38,8 +32,6 @@ interface ChartFormattedNetworkPoint {
   downloadSpeed: number;
   uploadSpeed: number;
 }
-
-
 
 const formatSpeed = (bytesPerSecond: number, decimals: number = 2): string => {
   if (
@@ -135,22 +127,14 @@ export function RealTimeNetworkSpeedChart({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Real-time Network Speed 📈</CardTitle>
-        <CardDescription>
-          Displaying real-time download and upload speeds for the last{" "}
-          {MAX_DATA_POINTS} readings.
-        </CardDescription>
+        <CardTitle>Network</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-0 pr-5">
         <ChartContainer
           config={networkChartConfig}
-          className="h-[350px] w-full"
+          className="h-[300px] w-full"
         >
-          <LineChart
-            accessibilityLayer
-            data={chartData}
-            margin={{ left: 20, right: 12, top: 5, bottom: 5 }}
-          >
+          <LineChart accessibilityLayer data={chartData}>
             <CartesianGrid vertical={false} strokeDasharray="3 3" />
             <XAxis
               dataKey="time"

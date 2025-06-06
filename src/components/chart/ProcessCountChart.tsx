@@ -6,7 +6,6 @@ import { AreaChart, Area, CartesianGrid, XAxis, YAxis } from "recharts";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -97,11 +96,7 @@ export function RealTimeProcessCountChart({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Real-time Process Count ⚙️</CardTitle>
-        <CardDescription>
-          Displaying the number of active processes for the last{" "}
-          {MAX_DATA_POINTS} readings.
-        </CardDescription>
+        <CardTitle>Process Count</CardTitle>
       </CardHeader>
       <CardContent>
         <ChartContainer
@@ -111,12 +106,6 @@ export function RealTimeProcessCountChart({
           <AreaChart
             accessibilityLayer
             data={chartData}
-            margin={{
-              left: 0,
-              right: 12,
-              top: 5,
-              bottom: 5,
-            }}
           >
             <CartesianGrid vertical={false} strokeDasharray="3 3" />
             <XAxis

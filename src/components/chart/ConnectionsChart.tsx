@@ -6,7 +6,6 @@ import { LineChart, Line, CartesianGrid, XAxis, YAxis } from "recharts";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -103,11 +102,7 @@ export function RealTimeConnectionsChart({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Real-time Connection Counts 🔗</CardTitle>
-        <CardDescription>
-          Displaying TCP and UDP connection counts for the last{" "}
-          {MAX_DATA_POINTS} readings.
-        </CardDescription>
+        <CardTitle>Connection Counts</CardTitle>
       </CardHeader>
       <CardContent>
         <ChartContainer
@@ -117,7 +112,6 @@ export function RealTimeConnectionsChart({
           <LineChart
             accessibilityLayer
             data={chartData}
-            margin={{ left: 10, right: 12, top: 5, bottom: 5 }}
           >
             <CartesianGrid vertical={false} strokeDasharray="3 3" />
             <XAxis

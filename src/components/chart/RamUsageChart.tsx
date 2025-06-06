@@ -5,7 +5,6 @@ import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -39,8 +38,6 @@ interface ChartFormattedMemoryPoint {
   ramUsed: number;
   swapUsed: number;
 }
-
-
 
 const formatBytes = (bytes: number, decimals: number = 2): string => {
   if (bytes === null || bytes === undefined || isNaN(bytes)) return "N/A";
@@ -132,37 +129,16 @@ export function RealTimeMemoryUsageChart({
         )?.ram.total
       : undefined) ??
     0;
-  const latestSwapTotal =
-    newRawDataPoint?.swap.total ??
-    (chartData.length > 0
-      ? initialRawData?.find(
-          (d) =>
-            formatTime(d.updated_at) === chartData[chartData.length - 1].time
-        )?.swap.total
-      : undefined) ??
-    0;
-
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Real-time Memory Usage 💾</CardTitle>
-        <CardDescription>
-          RAM Total: {formatBytes(latestRamTotal, 1)}, Swap Total:{" "}
-          {formatBytes(latestSwapTotal, 1)}. Displaying last {MAX_DATA_POINTS}{" "}
-          readings.
-        </CardDescription>
+        <CardTitle>Memory</CardTitle>
       </CardHeader>
-      <CardContent>
-        <ChartContainer config={memoryChartConfig} className="h-[350px] w-full">
+      <CardContent className="p-0 pr-5">
+        <ChartContainer config={memoryChartConfig} className="h-[300px] w-full">
           <AreaChart
             accessibilityLayer
             data={chartData}
-            margin={{
-              left: 20,
-              right: 12,
-              top: 10,
-              bottom: 5,
-            }}
           >
             <CartesianGrid vertical={false} strokeDasharray="3 3" />
             <XAxis
@@ -177,6 +153,7 @@ export function RealTimeMemoryUsageChart({
               axisLine={false}
               tickMargin={8}
               width={80}
+              domain={[0, latestRamTotal]}
             />
             <ChartTooltip
               cursor={true}

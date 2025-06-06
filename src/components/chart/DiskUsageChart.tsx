@@ -5,7 +5,6 @@ import { AreaChart, Area, CartesianGrid, XAxis, YAxis } from "recharts";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -148,23 +147,13 @@ export function RealTimeDiskUsageChart({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Real-time Disk Usage 💽</CardTitle>
-        <CardDescription>
-          Total Disk Capacity: {formatBytes(currentDiskTotal, 1)}. Showing last{" "}
-          {MAX_DATA_POINTS} readings.
-        </CardDescription>
+        <CardTitle>Disk</CardTitle>
       </CardHeader>
-      <CardContent>
+      <CardContent className="p-0 pr-5">
         <ChartContainer config={diskChartConfig} className="h-[300px] w-full">
           <AreaChart
             accessibilityLayer
             data={chartData}
-            margin={{
-              left: 20,
-              right: 12,
-              top: 5,
-              bottom: 5,
-            }}
           >
             <CartesianGrid vertical={false} strokeDasharray="3 3" />
             <XAxis

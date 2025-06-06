@@ -6,7 +6,6 @@ import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
 import {
   Card,
   CardContent,
-  CardDescription,
   CardHeader,
   CardTitle,
 } from "@/components/ui/card";
@@ -93,22 +92,14 @@ export function RealTimeCpuUsageChart({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Real-time CPU Usage 📊</CardTitle>
-        <CardDescription>
-          Displaying the last {MAX_DATA_POINTS} CPU usage readings.
-        </CardDescription>
+        <CardTitle>CPU Usage</CardTitle>
       </CardHeader>
       <CardContent>
         <ChartContainer config={chartConfig} className="h-[300px] w-full">
           <AreaChart
             accessibilityLayer
             data={chartData}
-            margin={{
-              left: 0,
-              right: 12,
-              top: 5,
-              bottom: 5,
-            }}
+
           >
             <CartesianGrid vertical={false} strokeDasharray="3 3" />
             <XAxis
@@ -124,7 +115,7 @@ export function RealTimeCpuUsageChart({
               axisLine={false}
               tickMargin={8}
               tickFormatter={(value) => `${value}%`}
-              width={30}
+              width={50}
             />
             <ChartTooltip
               cursor={true}
