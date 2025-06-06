@@ -1,10 +1,9 @@
-import { LiveDataProvider } from "@/contexts/LiveNodeDataContext";
-import { Card, CardContent } from "@/components/ui/card";
-import { useTranslation } from "react-i18next";
-import { NodeGrid } from "@/components/NodeCard";
 import { Outlet } from "react-router";
 import useLiveData from "@/hooks/useLiveData";
-
+import { useTranslation } from "react-i18next";
+import { NodeGrid } from "@/components/NodeCard";
+import { Card, CardContent } from "@/components/ui/card";
+import { LiveDataProvider } from "@/contexts/LiveNodeDataContext";
 const formatBytes = (bytes: number, decimals = 2) => {
   if (bytes === 0) return "0 Bytes";
   const k = 1024;
@@ -21,7 +20,7 @@ export const DashboardContent = () => {
 
   return (
     <>
-      <Card className="mx-4">
+      <Card className="mx-4 mt-4">
         <CardContent className="p-4 md:text-base text-sm">
           <div className="flex md:flex-row flex-col md:gap-4 gap-1 justify-between md:items-center">
             <div className="flex w-full flex-row items-center justify-between md:basis-1/5">

@@ -1,39 +1,26 @@
-import { AppSidebar } from "@/components/app-sidebar";
+import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
+import { ManageProvider } from "@/contexts/ManageContext";
+import AdminSidebar from "@/layout/Sidebar";
 
-import { Separator } from "@/components/ui/separator";
-import {
-  SidebarInset,
-  SidebarProvider,
-  SidebarTrigger,
-} from "@/components/ui/sidebar";
 import { Outlet } from "react-router";
 
 export function ManageContent() {
   return (
-    <SidebarProvider>
-      <AppSidebar />
-      <SidebarInset>
-        <header className="flex h-16 shrink-0 items-center gap-2 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12">
-          <div className="flex items-center gap-2 px-4">
-            <SidebarTrigger className="-ml-1" />
-            <Separator
-              orientation="vertical"
-              className="mr-2 data-[orientation=vertical]:h-4"
-            />
-          </div>
-        </header>
-      </SidebarInset>
-    </SidebarProvider>
+    <div className="h-full p-4 w-full">
+      <h1 className="text-2xl font-bold mb-4">管理面板</h1>
+    </div>
   );
 }
 
 export const Manage = () => {
   return (
-    <>
-      {/* <LiveDataProvider> */}
-      <AppSidebar />
-      <Outlet />
-      {/* </LiveDataProvider> */}
-    </>
+    <ManageProvider>
+      <SidebarProvider>
+        <AdminSidebar />
+        <SidebarInset>
+          <Outlet />
+        </SidebarInset>
+      </SidebarProvider>
+    </ManageProvider>
   );
 };

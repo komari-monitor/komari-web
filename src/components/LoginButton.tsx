@@ -54,7 +54,7 @@ const LoginDialog = () => {
       const data = await res.json();
       if (res.status === 200) {
         setIsLogin(true);
-        window.open("/admin", "_self");
+        window.open("/manage", "_self");
       } else {
         setErrorMsg(data.error || "Login failed");
       }

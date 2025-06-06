@@ -1,21 +1,17 @@
 import { StrictMode } from "react";
 import { Routes, Route } from "react-router";
-import { usePublicInfo } from "@/contexts/PublicInfoContext";
 import NavBar from "@/layout/NavBar";
+import { usePublicInfo } from "@/contexts/PublicInfoContext";
 import { Dashboard, DashboardContent } from "./Server";
 import { ServerDetail } from "./ServerDetail";
-import { ManageContent } from "./admin/Manage";
+import { Manage, ManageContent } from "./admin/Manage";
 import { NotFound } from "./404";
 
 export function AppContent() {
-  const { publicInfo, loading, error } = usePublicInfo();
+  const { publicInfo, loading } = usePublicInfo();
 
   if (loading) {
     return <div>loading...</div>;
-  }
-
-  if (error) {
-    return <div>加载站点配置失败: {error.message}</div>;
   }
 
   if (!publicInfo) {
@@ -30,7 +26,9 @@ export function AppContent() {
           <Route index element={<DashboardContent />} />
           <Route path="/server/:uuid" element={<ServerDetail />} />
         </Route>
-        <Route path="/manage" element={<ManageContent />} />
+        <Route path="/manage" element={<Manage />}>
+          <Route index element={<ManageContent />} />
+        </Route>
         <Route path="*" element={<NotFound />} />
       </Routes>
     </StrictMode>

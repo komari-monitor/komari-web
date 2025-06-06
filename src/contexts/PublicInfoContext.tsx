@@ -34,6 +34,8 @@ interface PublicInfoContextType {
   loading: boolean;
   error: Error | null;
   isLogin: boolean;
+  sidebarOpen: boolean;
+  setSidebarOpen: (open: boolean) => void;
   setIsLogin: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
@@ -47,7 +49,8 @@ export const PublicInfoProvider: React.FC<{ children: ReactNode }> = ({
   const [publicInfo, setPublicInfo] = useState<PublicInfo | null>(null);
   const [loading, setLoading] = useState<boolean>(true);
   const [error, setError] = useState<Error | null>(null);
-  const [isLogin, setIsLogin] = useState<boolean>(false); // 新增 isLogin 状态
+  const [isLogin, setIsLogin] = useState<boolean>(false);
+  const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
 
   useEffect(() => {
     const fetchPublicInfo = async () => {
@@ -102,8 +105,6 @@ export const PublicInfoProvider: React.FC<{ children: ReactNode }> = ({
         }
       } catch (e) {
         setError(e as Error);
-      } finally {
-        setLoading(false);
       }
     };
 
@@ -125,16 +126,24 @@ export const PublicInfoProvider: React.FC<{ children: ReactNode }> = ({
         console.error("Failed to fetch login status:", e);
         setIsLogin(false);
       } finally {
-        console.log("Login status fetched:", isLogin);
+        setLoading(false);
       }
     };
-    fetchLoginStatus();
     fetchPublicInfo();
+    fetchLoginStatus();
   }, [isLogin]);
 
   return (
     <PublicInfoContext.Provider
-      value={{ publicInfo, loading, error, isLogin, setIsLogin }}
+      value={{
+        publicInfo,
+        loading,
+        error,
+        isLogin,
+        setIsLogin,
+        sidebarOpen,
+        setSidebarOpen,
+      }}
     >
       {children}
     </PublicInfoContext.Provider>
