@@ -140,7 +140,7 @@ export function RealTimeConnectionsChart({
               }}
               content={<ChartTooltipContent indicator="line" />}
             />
-            <ChartLegend content={<ChartLegendContent nameKey="name" />} />
+            <ChartLegend content={<ChartLegendContent/>} />
             <Line
               dataKey="tcpConnections"
               type="linear"

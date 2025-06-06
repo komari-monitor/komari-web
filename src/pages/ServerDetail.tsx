@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from "react";
-import { Card, CardContent } from "@/components/ui/card";
+import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import { useParams } from "react-router";
 import { useLiveData } from "@/contexts/LiveNodeDataContext";
 import type { Record } from "@/types/NodeInfo";
@@ -12,10 +12,12 @@ import {
   RealTimeProcessCountChart,
 } from "@/components/chart";
 import { Skeleton } from "@/components/ui/skeleton";
+import { NodeInfoPanel } from "@/components/NodeInfoPanel";
+import Flag from "@/components/Flag";
 
 export const ServerDetail: React.FC = () => {
   const { uuid } = useParams<{ uuid: string }>();
-  const { live_data } = useLiveData();
+  const { live_data, node_data } = useLiveData();
   const [recentData, setRecentData] = useState<Record[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -52,24 +54,45 @@ export const ServerDetail: React.FC = () => {
     return (
       <div className="p-4 space-y-4">
         <Card>
-          <CardContent className="p-4 md:text-base text-sm">
+          <CardContent className="md:text-base text-sm">
             <h2 className="text-lg font-semibold mb-4">
               Server Detail for {uuid}
             </h2>
           </CardContent>
         </Card>
-        <div className="p-8 text-center text-red-500">加载图表失败：{error}</div>
+        <div className="p-8 text-center text-red-500">
+          加载图表失败：{error}
+        </div>
       </div>
     );
   }
 
   return (
     <div className="p-4 space-y-4">
-      <Card>
-        <CardContent className="p-4 md:text-base text-sm">
-          <h2 className="text-lg font-semibold mb-4">
-            Server Detail for {uuid}
-          </h2>
+      <Card className="gap-0">
+        <CardHeader >
+          <div className="flex justify-start items-center space-x-2">
+            <Flag
+              flag={
+                node_data?.data.find((node) => node.uuid === uuid)?.region || ""
+              }
+            />
+            <div className="flex flex-col">
+              <p
+                className={`font-bold text-base
+                  truncate max-w-[180px] sm:max-w-[200px]`}
+              >
+                {node_data?.data.find((node) => node.uuid === uuid)?.name ||
+                  uuid}
+              </p>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="md:text-base text-sm">
+          <NodeInfoPanel
+            nodeBasicInfo={node_data?.data.find((node) => node.uuid === uuid)!}
+            record={live_data?.data.data[uuid!]}
+          />
         </CardContent>
       </Card>
       <div className="grid gap-4 grid-cols-1 md:grid-cols-2 lg:grid-cols-3">
