@@ -1,6 +1,7 @@
 import * as React from "react";
 import { useTranslation } from "react-i18next";
-import { Link } from "react-router";
+import { Link, useLocation, useNavigate } from "react-router";
+import { LogOut, Settings } from "lucide-react";
 
 import { usePublicInfo } from "@/contexts/PublicInfoContext";
 
@@ -15,10 +16,11 @@ import {
 } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Settings } from "lucide-react";
 
 const LoginDialog = () => {
   const { isLogin, setIsLogin, publicInfo } = usePublicInfo();
+  const location = useLocation();
+  const navigate = useNavigate();
 
   const [t] = useTranslation();
   const [username, setUsername] = React.useState("");
@@ -81,11 +83,27 @@ const LoginDialog = () => {
     }
   };
 
+  const isInManage = location.pathname.startsWith("/manage");
+
+  const handleLogout = () => {
+    // 明天写逻辑
+    setIsLogin(false);
+    navigate("/");
+  };
+
   return isLogin ? (
-    <Button asChild variant="outline" size="icon">
-      <Link to="/manage">
-        <Settings />
-      </Link>
+    <Button variant="outline" size="icon" asChild className="relative">
+      {isInManage ? (
+        <span onClick={handleLogout}>
+          <LogOut className="h-[1.2rem] w-[1.2rem] transition-all absolute scale-100 rotate-0 opacity-100" />
+          <Settings className="h-[1.2rem] w-[1.2rem] transition-all absolute scale-0 rotate-90 opacity-0" />
+        </span>
+      ) : (
+        <Link to="/manage">
+          <Settings className="h-[1.2rem] w-[1.2rem] transition-all absolute scale-100 rotate-0 opacity-100" />
+          <LogOut className="h-[1.2rem] w-[1.2rem] transition-all absolute scale-0 -rotate-90 opacity-0" />
+        </Link>
+      )}
     </Button>
   ) : (
     (!publicInfo?.disable_password_login || publicInfo?.oauth_enable) && (

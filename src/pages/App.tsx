@@ -4,8 +4,9 @@ import NavBar from "@/layout/NavBar";
 import { usePublicInfo } from "@/contexts/PublicInfoContext";
 import { Dashboard, DashboardContent } from "./Server";
 import { ServerDetail } from "./ServerDetail";
-import { Manage, ManageContent } from "./admin/Manage";
+import { Manage } from "./admin/Manage";
 import { NotFound } from "./404";
+import { DataTableComponent } from "./admin/ServerTable";
 
 export function AppContent() {
   const { publicInfo, loading } = usePublicInfo();
@@ -27,7 +28,7 @@ export function AppContent() {
           <Route path="/server/:uuid" element={<ServerDetail />} />
         </Route>
         <Route path="/manage" element={<Manage />}>
-          <Route index element={<ManageContent />} />
+          <Route index element={<DataTableComponent />} />
           {/* <Route path="account" element={<Component />} /> */}
         </Route>
         <Route path="/terminal" element={<NotFound />} />

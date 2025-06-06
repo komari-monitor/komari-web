@@ -8,7 +8,7 @@ import { usePublicInfo } from "@/contexts/PublicInfoContext";
 import LoginDialog from "@/components/LoginButton";
 
 const NavBar = () => {
-  const { publicInfo, sidebarOpen,setSidebarOpen } = usePublicInfo();
+  const { publicInfo, sidebarOpen, setSidebarOpen } = usePublicInfo();
   const location = useLocation();
   const title = publicInfo?.sitename || "Komari";
   const description = publicInfo?.description || "Komari Monitor";
@@ -18,7 +18,12 @@ const NavBar = () => {
     <div className="flex items-center gap-3 max-h-16 justify-end min-w-full p-2 border-b border-solid border-gray-200">
       <div className="mr-auto flex">
         {isManagePath && (
-          <Button className="ml-1 mr-2" variant="outline" size="icon" onClick={() => setSidebarOpen(!sidebarOpen)}>
+          <Button
+            className="ml-1 mr-2"
+            variant="outline"
+            size="icon"
+            onClick={() => setSidebarOpen(!sidebarOpen)}
+          >
             <AlignJustify />
           </Button>
         )}
@@ -38,16 +43,17 @@ const NavBar = () => {
           </label>
         </div>
       </div>
-
-      <Button
-        variant="outline"
-        size="icon"
-        onClick={() => {
-          window.open("https://github.com/komari-monitor", "_blank");
-        }}
-      >
-        <Github />
-      </Button>
+      {process.env.NODE_ENV === "development" && (
+        <Button
+          variant="outline"
+          size="icon"
+          onClick={() => {
+            window.open("https://github.com/komari-monitor", "_blank");
+          }}
+        >
+          <Github />
+        </Button>
+      )}
 
       <ModeToggle />
       <ColorThemeToggle />
