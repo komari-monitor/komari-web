@@ -23,8 +23,8 @@ const i18n = i18next
       escapeValue: false,
     },
     detection: {
-      order: ["querystring", "cookie", "localStorage", "navigator", "htmlTag"],
-      caches: ["localStorage", "cookie"],
+      order: ["querystring", "localStorage", "navigator", "htmlTag"],
+      caches: ["localStorage"],
     },
   });
 

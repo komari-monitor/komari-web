@@ -4,12 +4,16 @@ import { Github } from "lucide-react";
 import { ModeToggle } from "@/components/modeToggle";
 import { ColorThemeToggle } from "@/components/ColorThemeToggle";
 import LanguageSwitch from "@/components/LanguageSwitch";
+import { usePublicInfo } from "@/contexts/PublicInfoContext";
 const NavBar = () => {
+  const { publicInfo } = usePublicInfo();
+  const title = publicInfo?.sitename || "Komari";
+  const description = publicInfo?.description || "Komari Monitor";
   return (
     <nav className="flex rounded-b-lg items-center gap-3 max-h-16 justify-end min-w-full p-2">
       <div className="mr-auto flex">
         <Link to="/">
-          <label className="text-3xl font-bold ">Komari</label>
+          <label className="text-3xl font-bold ">{title}</label>
         </Link>
         <div className="hidden flex-row items-end md:flex">
           <div
@@ -20,7 +24,7 @@ const NavBar = () => {
             className="text-base font-bold"
             style={{ color: "var(--accent-4)" }}
           >
-            Komari Monitor
+            {description}
           </label>
         </div>
       </div>

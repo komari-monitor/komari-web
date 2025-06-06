@@ -35,10 +35,10 @@ export const ServerDetail: React.FC = () => {
         return res.json();
       })
       .then((resJson) => {
-        if (Array.isArray(resJson)) {
-          setRecentData(resJson);
+        if (Array.isArray(resJson?.data)) {
+          setRecentData(resJson.data);
         } else {
-          throw new Error("数据格式错误");
+          // throw new Error("数据格式错误");
         }
       })
       .catch((err) => {
@@ -70,7 +70,7 @@ export const ServerDetail: React.FC = () => {
   return (
     <div className="p-4 space-y-4">
       <Card className="gap-0">
-        <CardHeader >
+        <CardHeader>
           <div className="flex justify-start items-center space-x-2">
             <Flag
               flag={
@@ -89,7 +89,7 @@ export const ServerDetail: React.FC = () => {
           </div>
         </CardHeader>
         <CardContent className="md:text-base text-sm">
-          {(!node_data || !live_data) ? (
+          {!node_data || !live_data ? (
             <Skeleton className="h-[200px] w-full mb-2" />
           ) : (
             <NodeInfoPanel
@@ -109,7 +109,7 @@ export const ServerDetail: React.FC = () => {
             <Skeleton className="h-[400px] w-full" />
             <Skeleton className="h-[400px] w-full" />
           </>
-        ) : (
+        ) : recentData === null ? null : (
           <>
             <RealTimeCpuUsageChart
               initialRawData={recentData}
