@@ -29,6 +29,7 @@ export function AppContent() {
         <Route path="/manage" element={<Manage />}>
           <Route index element={<ManageContent />} />
         </Route>
+        <Route path="/terminal" element={<NotFound />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </StrictMode>
