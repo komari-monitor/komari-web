@@ -34,6 +34,7 @@ interface PublicInfoContextType {
   loading: boolean;
   error: Error | null;
   isLogin: boolean;
+  setIsLogin: React.Dispatch<React.SetStateAction<boolean>>;
 }
 
 const PublicInfoContext = createContext<PublicInfoContextType | undefined>(
@@ -107,11 +108,12 @@ export const PublicInfoProvider: React.FC<{ children: ReactNode }> = ({
     };
 
     const fetchLoginStatus = async () => {
-      const cookie = document.cookie;
-      if (!cookie) {
-        setIsLogin(false);
-        return;
-      }
+      // const cookie = document.cookie;
+      // console.log("Cookie:", cookie);
+      // if (!cookie) {
+      //   setIsLogin(false);
+      //   return;
+      // }
       try {
         const response = await fetch("/api/me");
         if (!response.ok) {
@@ -122,17 +124,18 @@ export const PublicInfoProvider: React.FC<{ children: ReactNode }> = ({
       } catch (e) {
         console.error("Failed to fetch login status:", e);
         setIsLogin(false);
-      }finally{
+      } finally {
         console.log("Login status fetched:", isLogin);
       }
     };
-
-    fetchPublicInfo();
     fetchLoginStatus();
-  }, []);
+    fetchPublicInfo();
+  }, [isLogin]);
 
   return (
-    <PublicInfoContext.Provider value={{ publicInfo, loading, error, isLogin }}>
+    <PublicInfoContext.Provider
+      value={{ publicInfo, loading, error, isLogin, setIsLogin }}
+    >
       {children}
     </PublicInfoContext.Provider>
   );

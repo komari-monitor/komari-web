@@ -20,5 +20,16 @@
     "time_minute": "分",
     "time_second": "秒"
   },
+  "loginCard": {
+    "title": "登录",
+    "desc": "登录到 Komari 控制面板。",
+    "username": "用户名",
+    "password": "密码",
+    "two_factor": "双因素认证",
+    "password_placeholder": "请输入您的密码",
+    "login_with_github": "使用 GitHub 登录",
+    "error_required_fields": "用户名和密码是必填项",
+    "login_button": "登录"
+  },
   "chart": {}
 }

@@ -19,5 +19,16 @@
     "time_hour": "h",
     "time_minute": "min",
     "time_second": "s"
+  },
+  "loginCard": {
+    "title": "Login",
+    "desc": "Log in to the Komari control panel.",
+    "username": "Username",
+    "password": "Password",
+    "two_factor": "Two-Factor Authentication",
+    "password_placeholder": "Enter your password",
+    "login_with_github": "Login with GitHub",
+    "error_required_fields": "Username and password are required",
+    "login_button": "Login"
   }
 }

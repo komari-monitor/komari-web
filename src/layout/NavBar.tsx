@@ -5,6 +5,7 @@ import { ModeToggle } from "@/components/modeToggle";
 import { ColorThemeToggle } from "@/components/ColorThemeToggle";
 import LanguageSwitch from "@/components/LanguageSwitch";
 import { usePublicInfo } from "@/contexts/PublicInfoContext";
+import LoginDialog from "@/components/LoginButton";
 const NavBar = () => {
   const { publicInfo } = usePublicInfo();
   const title = publicInfo?.sitename || "Komari";
@@ -42,7 +43,7 @@ const NavBar = () => {
       <ModeToggle />
       <ColorThemeToggle />
       <LanguageSwitch />
-      {/* <LoginDialog /> */}
+      <LoginDialog />
     </nav>
   );
 };

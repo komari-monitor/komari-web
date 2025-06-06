@@ -1,0 +1,38 @@
+import { StrictMode } from "react";
+import { Routes, Route } from "react-router";
+import { usePublicInfo } from "@/contexts/PublicInfoContext";
+import NavBar from "@/layout/NavBar";
+import { Dashboard, DashboardContent } from "./Server";
+import { ServerDetail } from "./ServerDetail";
+import { ManageContent } from "./admin/Manage";
+import { NotFound } from "./404";
+
+export function AppContent() {
+  const { publicInfo, loading, error } = usePublicInfo();
+
+  if (loading) {
+    return <div>loading...</div>;
+  }
+
+  if (error) {
+    return <div>加载站点配置失败: {error.message}</div>;
+  }
+
+  if (!publicInfo) {
+    return <div>无法获取站点配置。</div>;
+  }
+
+  return (
+    <StrictMode>
+      <NavBar />
+      <Routes>
+        <Route path="/" element={<Dashboard />}>
+          <Route index element={<DashboardContent />} />
+          <Route path="/server/:uuid" element={<ServerDetail />} />
+        </Route>
+        <Route path="/manage" element={<ManageContent />} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </StrictMode>
+  );
+}
