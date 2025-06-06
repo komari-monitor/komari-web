@@ -1,4 +1,4 @@
-import { type ReactNode, Fragment } from "react";
+import { type ReactNode, Fragment, useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation } from "react-router";
 import { Button } from "@/components/ui/button";
@@ -47,20 +47,27 @@ const menuItems = menuConfig.menu;
 
 const AdminSidebar = () => {
   const { sidebarOpen, setSidebarOpen } = usePublicInfo();
-  const isDesktop = !useIsMobile();
+  const initialSetRef = useRef(false);
+  const isMobile = useIsMobile();
+
+  useEffect(() => {
+    if (!isMobile && !initialSetRef.current) {
+      if (!sidebarOpen) {
+        setSidebarOpen(true);
+      }
+      initialSetRef.current = true;
+    }
+  }, [isMobile, sidebarOpen, setSidebarOpen]);
 
   const handleItemClick = () => {
-    if (!isDesktop) {
-      setSidebarOpen(false);
+    if (isMobile) {
+      setSidebarOpen(true);
     }
   };
 
   const sidebarContent = (
     <div className="flex flex-col h-full">
-      {!isDesktop && (
-        <div className="min-h-10">
-        </div>
-      )}
+      {isMobile && <div className="min-h-10"></div>}
       <div className="flex-1 flex flex-col gap-1 p-2">
         {menuItems.map((item) => (
           <SidebarMenu
@@ -75,7 +82,7 @@ const AdminSidebar = () => {
 
   return (
     <Fragment>
-      {!isDesktop && (
+      {isMobile && (
         <Sheet open={sidebarOpen} onOpenChange={setSidebarOpen}>
           <SheetContent
             side="left"
@@ -86,7 +93,7 @@ const AdminSidebar = () => {
         </Sheet>
       )}
       {/* Desktop Sidebar */}
-      {isDesktop && (
+      {!isMobile && (
         <aside
           className={`h-full transition-all duration-300 ease-in-out overflow-y-auto overflow-x-hidden border-r bg-background ${
             sidebarOpen ? "w-60" : "w-0"
@@ -162,7 +169,7 @@ const SidebarItem = ({
 }) => {
   const location = useLocation();
   const isExternal = to.startsWith("http");
-  const isActive = !isExternal && location.pathname.startsWith(to);
+  const isActive = !isExternal && location.pathname === to;
 
   const content = (
     <Button

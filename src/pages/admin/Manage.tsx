@@ -1,23 +1,23 @@
 import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
-import { ManageProvider } from "@/contexts/ManageContext";
 import AdminSidebar from "@/layout/Sidebar";
 
 import { Outlet } from "react-router";
-import { DataTable } from "./Table";
+import { DataTableProvider } from "@/contexts/ManageContext";
+import { DataTableComponent } from "./Table";
 
 export function ManageContent() {
-  return <DataTable />;
+  return <DataTableComponent />;
 }
 
 export const Manage = () => {
   return (
-    <ManageProvider>
+    <DataTableProvider>
       <SidebarProvider>
         <AdminSidebar />
         <SidebarInset>
           <Outlet />
         </SidebarInset>
       </SidebarProvider>
-    </ManageProvider>
+    </DataTableProvider>
   );
 };

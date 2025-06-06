@@ -28,6 +28,7 @@ export function AppContent() {
         </Route>
         <Route path="/manage" element={<Manage />}>
           <Route index element={<ManageContent />} />
+          {/* <Route path="account" element={<Component />} /> */}
         </Route>
         <Route path="/terminal" element={<NotFound />} />
         <Route path="*" element={<NotFound />} />
