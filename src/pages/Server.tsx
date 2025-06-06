@@ -17,7 +17,7 @@ const formatBytes = (bytes: number, decimals = 2) => {
 export const DashboardContent = () => {
   const [t] = useTranslation();
   const { live_data, node_data } = useLiveData();
-  document.title = t("home_title");
+  document.title = t("dashboard.home_title");
 
   return (
     <>
@@ -25,12 +25,12 @@ export const DashboardContent = () => {
         <CardContent className="p-4 md:text-base text-sm">
           <div className="flex md:flex-row flex-col md:gap-4 gap-1 justify-between md:items-center">
             <div className="flex w-full flex-row items-center justify-between md:basis-1/5">
-              <p>{t("current_time")}</p>
+              <p>{t("dashboard.current_time")}</p>
               <p>{new Date().toLocaleString()}</p>
             </div>
             <div className="h-px w-full bg-border md:h-6 md:w-0.5 md:block hidden" />
             <div className="flex w-full flex-row items-center justify-between md:basis-1/5">
-              <p>{t("current_online")}</p>
+              <p>{t("dashboard.current_online")}</p>
               <p>
                 {live_data?.data?.online.length ?? 0} /{" "}
                 {node_data?.data?.length ?? 0}
@@ -38,7 +38,7 @@ export const DashboardContent = () => {
             </div>
             <div className="h-px w-full bg-border md:h-6 md:w-0.5 md:block hidden" />
             <div className="flex w-full flex-row items-center justify-between md:basis-1/5">
-              <p>{t("region_overview")}</p>
+              <p>{t("dashboard.region_overview")}</p>
               <p>
                 {node_data?.data
                   ? Object.entries(
@@ -52,7 +52,7 @@ export const DashboardContent = () => {
             </div>
             <div className="h-px w-full bg-border md:h-6 md:w-0.5 md:block hidden" />
             <div className="flex w-full flex-row items-center justify-between md:basis-1/5">
-              <p>{t("traffic_overview")}</p>
+              <p>{t("dashboard.traffic_overview")}</p>
               <p>
                 {"↑ " +
                   formatBytes(
