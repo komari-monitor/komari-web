@@ -1,3 +1,4 @@
+// src/pages/App.tsx
 import { StrictMode } from "react";
 import { Routes, Route } from "react-router";
 import NavBar from "@/layout/NavBar";
@@ -12,12 +13,13 @@ import SsoSettings from "./admin/settings/Sso";
 import GeneralSettings from "./admin/settings/General";
 import SessionPage from "./admin/Session";
 import Account from "./admin/Account";
-import About from "./admin/about";
+import About from "./admin/About";
+import { ProtectedRoute } from "@/contexts/ProtectedRoute";
 
 export function AppContent() {
   const { publicInfo, loading } = usePublicInfo();
 
-  if (loading) {
+  if (loading && !publicInfo) {
     return <div>loading...</div>;
   }
 
@@ -33,17 +35,20 @@ export function AppContent() {
           <Route index element={<DashboardContent />} />
           <Route path="/server/:uuid" element={<ServerDetail />} />
         </Route>
-        <Route path="/manage" element={<Manage />}>
-          <Route index element={<DataTableComponent />} />
-          <Route path="settings/site" element={<SiteSettings />} />
-          <Route path="settings/sso" element={<SsoSettings />} />
-          <Route path="settings/general" element={<GeneralSettings />} />
-          <Route path="sessions" element={<SessionPage />} />
-          <Route path="account" element={<Account />} />
-          <Route path="about" element={<About />} />
 
-          <Route path="*" element={<NotFound />} />
+        <Route element={<ProtectedRoute />}>
+          <Route path="/manage" element={<Manage />}>
+            <Route index element={<DataTableComponent />} />
+            <Route path="settings/site" element={<SiteSettings />} />
+            <Route path="settings/sso" element={<SsoSettings />} />
+            <Route path="settings/general" element={<GeneralSettings />} />
+            <Route path="sessions" element={<SessionPage />} />
+            <Route path="account" element={<Account />} />
+            <Route path="about" element={<About />} />
+            <Route path="*" element={<NotFound />} />
+          </Route>
         </Route>
+
         <Route path="/terminal" element={<NotFound />} />
         <Route path="*" element={<NotFound />} />
       </Routes>

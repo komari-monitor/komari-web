@@ -15,7 +15,7 @@ const NavBar = () => {
   const isManagePath = location.pathname.startsWith("/manage");
 
   return (
-    <div className="flex items-center gap-3 max-h-16 justify-end min-w-full p-2 border-b border-solid border-gray-200">
+    <div className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 flex items-center gap-3 max-h-16 justify-end p-2">
       <div className="mr-auto flex">
         {isManagePath && (
           <Button

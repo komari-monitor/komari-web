@@ -1,4 +1,3 @@
-import { SidebarInset, SidebarProvider } from "@/components/ui/sidebar";
 import AdminSidebar from "@/layout/Sidebar";
 
 import { Outlet } from "react-router";
@@ -9,16 +8,16 @@ import { SessionProvider } from "@/contexts/SessionContext";
 export const Manage = () => {
   return (
     <SettingsProvider>
-      <SessionProvider>
-        <DataTableProvider>
-          <SidebarProvider>
+      <DataTableProvider>
+        <SessionProvider>
+          <div className="flex h-[calc(100vh-4rem)]">
             <AdminSidebar />
-            <SidebarInset>
+            <main className="flex-1 overflow-y-auto">
               <Outlet />
-            </SidebarInset>
-          </SidebarProvider>
-        </DataTableProvider>
-      </SessionProvider>
+            </main>
+          </div>
+        </SessionProvider>
+      </DataTableProvider>
     </SettingsProvider>
   );
 };

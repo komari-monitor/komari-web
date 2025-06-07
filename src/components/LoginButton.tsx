@@ -85,25 +85,33 @@ const LoginDialog = () => {
 
   const isInManage = location.pathname.startsWith("/manage");
 
-  const handleLogout = () => {
+  const handleLogout = async () => {
+    await fetch("/api/logout", { method: "get" });
     setIsLogin(false);
     navigate("/");
   };
-  //明天增加一个home /按钮，在原来的setting按钮上面，退出按钮是滑动出现在home按钮的左边
   return isLogin ? (
-    <Button variant="outline" size="icon" asChild className="relative">
-      {isInManage ? (
-        <Link to="/">
-          <Home className="h-[1.2rem] w-[1.2rem] transition-all absolute scale-100 rotate-0 opacity-100" />
-          <Settings className="h-[1.2rem] w-[1.2rem] transition-all absolute scale-0 rotate-90 opacity-0" />
-        </Link>
-      ) : (
-        <Link to="/manage">
-          <Settings className="h-[1.2rem] w-[1.2rem] transition-all absolute scale-100 rotate-0 opacity-100" />
-          <Home className="h-[1.2rem] w-[1.2rem] transition-all absolute scale-0 -rotate-90 opacity-0" />
-        </Link>
+    <div className="flex gap-2">
+      {isInManage && (
+        <>
+          <Button variant="outline" size="icon" onClick={handleLogout}>
+            <LogOut className="h-[1.2rem] w-[1.2rem]" />
+          </Button>{" "}
+          <Button variant="outline" size="icon" asChild>
+            <Link to="/">
+              <Home className="h-[1.2rem] w-[1.2rem]" />
+            </Link>
+          </Button>
+        </>
       )}
-    </Button>
+      {!isInManage && (
+        <Button variant="outline" size="icon" asChild>
+          <Link to="/manage">
+            <Settings className="h-[1.2rem] w-[1.2rem]" />
+          </Link>
+        </Button>
+      )}
+    </div>
   ) : (
     (!publicInfo?.disable_password_login || publicInfo?.oauth_enable) && (
       <Dialog>
