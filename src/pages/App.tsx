@@ -8,6 +8,8 @@ import { Manage } from "./admin/Manage";
 import { NotFound } from "./404";
 import { DataTableComponent } from "./admin/ServerTable";
 import SiteSettings from "./admin/settings/Site";
+import SsoSettings from "./admin/settings/SSO";
+import GeneralSettings from "./admin/settings/General";
 
 export function AppContent() {
   const { publicInfo, loading } = usePublicInfo();
@@ -31,6 +33,8 @@ export function AppContent() {
         <Route path="/manage" element={<Manage />}>
           <Route index element={<DataTableComponent />} />
           <Route path="settings/site" element={<SiteSettings />} />
+          <Route path="settings/sso" element={<SsoSettings />} />
+          <Route path="settings/general" element={<GeneralSettings />} />
         </Route>
         <Route path="/terminal" element={<NotFound />} />
         <Route path="*" element={<NotFound />} />

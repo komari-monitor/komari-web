@@ -22,37 +22,91 @@ export type SettingsData = {
   CreatedAt: string;
   UpdatedAt: string;
 };
-const SettingsContext = React.createContext<SettingsData | null>(null);
+
+type SettingsContextType = {
+  settings: SettingsData | null;
+  isUpdating: boolean;
+  isFetching: boolean;
+  updateSettings: (data: Partial<SettingsData>) => Promise<void>;
+  refetchSettings: () => Promise<void>;
+};
+
+const SettingsContext = React.createContext<SettingsContextType | null>(null);
 
 export function SettingsProvider({ children }: { children: React.ReactNode }) {
   const [settings, setSettings] = React.useState<SettingsData | null>(null);
+  const [isUpdating, setIsUpdating] = React.useState<boolean>(false);
+  const [isFetching, setIsFetching] = React.useState<boolean>(true);
+
+  const fetchSettingsData = async () => {
+    setIsFetching(true);
+    try {
+      const res = await fetch("/api/admin/settings");
+      if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+      const result = await res.json();
+      setSettings(result.data);
+    } catch (e) {
+      console.error("Failed to fetch settings:", e);
+      toast.error(t("settings.fetch_failed") || "获取设置失败");
+    } finally {
+      setIsFetching(false);
+    }
+  };
 
   React.useEffect(() => {
-    fetch("/api/admin/settings")
-      .then((res) => {
-        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
-        return res.json();
-      })
-      .then((result) => {
-        setSettings(result.data);
-      })
-      .catch((e) => {
-        console.error("Failed to fetch settings:", e);
-      });
+    fetchSettingsData();
   }, []);
 
+  const refetchSettings = async () => {
+    await fetchSettingsData();
+    toast.success(t("settings.refresh_success") || "设置已刷新");
+  };
+
+  const updateSettings = async (data: Partial<SettingsData>) => {
+    setIsUpdating(true);
+    try {
+      const response = await fetch("/api/admin/settings", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(data),
+      });
+
+      const result = await response.json();
+      if (result.status !== "success") {
+        throw new Error(result.message || "An unknown error occurred");
+      }
+
+      await fetchSettingsData();
+      toast.success(
+        result.message || t("settings.save_success") || "设置已保存"
+      );
+    } catch (e: any) {
+      console.error("Failed to update settings:", e);
+      toast.error(e.message || t("settings.save_failed") || "保存设置失败");
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
+  const contextValue = {
+    settings,
+    isUpdating,
+    isFetching,
+    updateSettings,
+    refetchSettings,
+  };
+
   return (
-    <SettingsContext.Provider value={settings}>
+    <SettingsContext.Provider value={contextValue}>
       {children}
     </SettingsContext.Provider>
   );
 }
 
 export function useSettings() {
-  const settings = React.useContext(SettingsContext);
-  if (settings === null) {
-    toast.error(t("settings.not_found"));
-    return null;
+  const context = React.useContext(SettingsContext);
+  if (!context) {
+    throw new Error("useSettings must be used within a SettingsProvider");
   }
-  return settings;
+  return context;
 }
