@@ -37,6 +37,7 @@ interface PublicInfoContextType {
   sidebarOpen: boolean;
   setSidebarOpen: (open: boolean) => void;
   setIsLogin: React.Dispatch<React.SetStateAction<boolean>>;
+  meInfo: MeResponse | null;
 }
 
 const PublicInfoContext = createContext<PublicInfoContextType | undefined>(
@@ -51,6 +52,7 @@ export const PublicInfoProvider: React.FC<{ children: ReactNode }> = ({
   const [error, setError] = useState<Error | null>(null);
   const [isLogin, setIsLogin] = useState<boolean>(false);
   const [sidebarOpen, setSidebarOpen] = useState<boolean>(false);
+  const [meInfo, setMeInfo] = useState<MeResponse | null>(null);
 
   useEffect(() => {
     const fetchPublicInfo = async () => {
@@ -122,9 +124,11 @@ export const PublicInfoProvider: React.FC<{ children: ReactNode }> = ({
         }
         const result: MeResponse = await response.json();
         setIsLogin(result.logged_in);
+        setMeInfo(result); // 新增
       } catch (e) {
         console.error("Failed to fetch login status:", e);
         setIsLogin(false);
+        setMeInfo(null); // 新增
       } finally {
         setLoading(false);
       }
@@ -143,6 +147,7 @@ export const PublicInfoProvider: React.FC<{ children: ReactNode }> = ({
         setIsLogin,
         sidebarOpen,
         setSidebarOpen,
+        meInfo,
       }}
     >
       {children}

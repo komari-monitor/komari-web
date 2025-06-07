@@ -15,7 +15,7 @@ import { toast } from "sonner";
 import { getColumns } from "@/components/session/columns";
 import { DataTable } from "@/components/session/data-table";
 
-export function SessionPage() {
+ export default function SessionPage() {
   const {
     sessions,
     currentSessionId,

@@ -4,13 +4,15 @@ import NavBar from "@/layout/NavBar";
 import { usePublicInfo } from "@/contexts/PublicInfoContext";
 import { Dashboard, DashboardContent } from "./Server";
 import { ServerDetail } from "./ServerDetail";
-import { Manage } from "./admin/Manage";
 import { NotFound } from "./404";
-import { DataTableComponent } from "./admin/ServerTable";
+import { Manage } from "./admin/Manage";
+import DataTableComponent from "./admin/ServerTable";
 import SiteSettings from "./admin/settings/Site";
 import SsoSettings from "./admin/settings/Sso";
 import GeneralSettings from "./admin/settings/General";
-import { SessionPage } from "./admin/Session";
+import SessionPage from "./admin/Session";
+import Account from "./admin/Account";
+import About from "./admin/about";
 
 export function AppContent() {
   const { publicInfo, loading } = usePublicInfo();
@@ -37,7 +39,8 @@ export function AppContent() {
           <Route path="settings/sso" element={<SsoSettings />} />
           <Route path="settings/general" element={<GeneralSettings />} />
           <Route path="sessions" element={<SessionPage />} />
-          <Route path="account" element={<SessionPage />} />
+          <Route path="account" element={<Account />} />
+          <Route path="about" element={<About />} />
 
           <Route path="*" element={<NotFound />} />
         </Route>

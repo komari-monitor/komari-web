@@ -22,6 +22,7 @@ import {
   Book,
   ChevronDown,
   type LucideIcon,
+  AtSign,
 } from "lucide-react";
 import { useIsMobile } from "@/hooks/use-mobile";
 
@@ -32,6 +33,7 @@ const iconMap: { [key: string]: LucideIcon } = {
   "key-round": KeyRound,
   ellipsis: Ellipsis,
   users: Users,
+  "at-sign": AtSign,
   "user-round-cog": UserRoundCog,
   book: Book,
 };

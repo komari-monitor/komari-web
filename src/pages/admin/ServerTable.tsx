@@ -152,7 +152,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
   },
 ];
 
-export function DataTableComponent() {
+export default function DataTableComponent() {
   const { state, actions } = useDataTable();
   const { data, isLoading, error, newNodeName, isAddingNode } = state;
   const { setNewNodeName, handleAddNode, handleDragEnd, refreshTable } =

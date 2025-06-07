@@ -41,10 +41,16 @@ export const menuConfig: MenuConfig = {
       path: "/manage/sessions",
       icon: "users",
     },
+
     {
       labelKey: "admin.menu.account",
       path: "/manage/account",
       icon: "user-round-cog",
+    },
+    {
+      labelKey: "admin.menu.about",
+      path: "/manage/about",
+      icon: "at-sign",
     },
     {
       labelKey: "admin.menu.documentation",
@@ -53,4 +59,3 @@ export const menuConfig: MenuConfig = {
     },
   ],
 };
-
