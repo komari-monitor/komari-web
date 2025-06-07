@@ -11,8 +11,10 @@ import {
 import { useSettings } from "@/contexts/SettingsContext";
 import type { SettingsData } from "@/contexts/SettingsContext";
 import { Loader2 } from "lucide-react"; 
+import { useTranslation } from "react-i18next";
 
 export default function GeneralSettings() {
+  const { t } = useTranslation();
   const { settings, updateSettings, refetchSettings, isUpdating, isFetching } =
     useSettings();
 
@@ -51,15 +53,15 @@ export default function GeneralSettings() {
   }
 
   if (!formData) {
-    return <div>无法加载通用设置。</div>;
+    return <div>{t('admin.general.load_failed')}</div>;
   }
 
   return (
     <div className="max-w-lg p-6">
       <div className="mb-6">
-        <div className="font-semibold">启用地理位置信息</div>
+        <div className="font-semibold">{t('admin.general.geo_ip_enabled')}</div>
         <div className="text-gray-500 text-sm mb-2">
-          根据 IP 地址获取和丰富用户地理位置数据
+          {t('admin.general.geo_ip_enabled_desc')}
         </div>
         <Switch
           checked={formData.geo_ip_enabled || false}
@@ -69,22 +71,22 @@ export default function GeneralSettings() {
 
       {formData.geo_ip_enabled && (
         <div className="mb-6">
-          <div className="font-semibold">地理位置数据提供商</div>
-          <div className="text-gray-500 text-sm mb-2">选择一个数据源</div>
+          <div className="font-semibold">{t('admin.general.geo_ip_provider')}</div>
+          <div className="text-gray-500 text-sm mb-2">{t('admin.general.geo_ip_provider_desc')}</div>
           <Select
             value={formData.geo_ip_provider || "mmdb"}
             onValueChange={handleProviderChange}
           >
             <SelectTrigger className="w-full">
-              <SelectValue placeholder="选择一个提供商..." />
+              <SelectValue placeholder={t('admin.general.provider_placeholder')} />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="mmdb">mmdb</SelectItem>
+              <SelectItem value="mmdb">{t('admin.general.provider_mmdb')}</SelectItem>
               <SelectItem value="ip-api.com" disabled>
-                ip-api.com (未实现)
+                {t('admin.general.provider_ipapi')}
               </SelectItem>
               <SelectItem value="ipinfo.io" disabled>
-                ipinfo.io (未实现)
+                {t('admin.general.provider_ipinfo')}
               </SelectItem>
             </SelectContent>
           </Select>
@@ -94,7 +96,7 @@ export default function GeneralSettings() {
       <div className="mt-8 flex items-center gap-4">
         <Button onClick={handleSave} disabled={isUpdating || isFetching}>
           {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          保存更改
+          {t('admin.general.save')}
         </Button>
         <Button
           onClick={refetchSettings}
@@ -102,7 +104,7 @@ export default function GeneralSettings() {
           disabled={isFetching || isUpdating}
         >
           {isFetching && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          刷新
+          {t('admin.general.refresh')}
         </Button>
       </div>
     </div>

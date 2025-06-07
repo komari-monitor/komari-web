@@ -4,32 +4,13 @@ type ThemeMode = "dark" | "light" | "system";
 
 type ColorTheme =
   | "default"
-  | "gray"
-  | "gold"
-  | "bronze"
-  | "brown"
-  | "yellow"
-  | "amber"
-  | "orange"
-  | "tomato"
   | "red"
-  | "ruby"
-  | "crimson"
-  | "pink"
-  | "plum"
-  | "purple"
-  | "violet"
-  | "iris"
-  | "indigo"
-  | "blue"
-  | "cyan"
-  | "teal"
-  | "jade"
+  | "rose"
+  | "orange"
   | "green"
-  | "grass"
-  | "lime"
-  | "mint"
-  | "sky";
+  | "blue"
+  | "yellow"
+  | "violet";
 
 type ThemeProviderProps = {
   children: React.ReactNode;

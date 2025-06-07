@@ -6,6 +6,17 @@
     "region_overview": "点亮地区",
     "traffic_overview": "流量概览"
   },
+  "color": {
+    "toggle": "切换主题色",
+    "default": "默认",
+    "red": "红色",
+    "rose": "玫瑰",
+    "orange": "橙色",
+    "green": "绿色",
+    "blue": "蓝色",
+    "yellow": "黄色",
+    "violet": "紫罗兰"
+  },
   "nodeCard": {
     "online": "在线",
     "offline": "离线",
@@ -45,6 +56,57 @@
       "account": "账户",
       "about": "关于",
       "documentation": "文档"
+    },
+    "account": {
+      "loading": "加载中...",
+      "username": {
+        "label": "用户名",
+        "placeholder": "请输入用户名"
+      }
+    },
+    "general": {
+      "load_failed": "无法加载通用设置。",
+      "geo_ip_enabled": "启用地理位置信息",
+      "geo_ip_enabled_desc": "根据 IP 地址获取和丰富用户地理位置数据",
+      "geo_ip_provider": "地理位置数据提供商",
+      "geo_ip_provider_desc": "选择一个数据源",
+      "provider_placeholder": "选择一个提供商...",
+      "provider_mmdb": "mmdb",
+      "provider_ipapi": "ip-api.com (未实现)",
+      "provider_ipinfo": "ipinfo.io (未实现)",
+      "save": "保存更改",
+      "refresh": "刷新"
+    },
+    "site": {
+      "sitename": "站点名称",
+      "sitename_desc": "用于显示在页面标题和导航栏",
+      "description": "站点描述",
+      "description_desc": "用于 SEO 和页面副标题",
+      "allow_cors": "允许跨域请求",
+      "allow_cors_desc": "是否允许其他域名访问 API",
+      "custom_head": "自定义头部",
+      "custom_head_desc": "插入到每个页面的 <head> 标签内",
+      "save": "保存更改",
+      "refresh": "刷新",
+      "load_failed": "无法加载设置。"
+    },
+    "sso": {
+      "load_failed": "无法加载 SSO 设置。",
+      "enable_sso": "启用单点登录 (SSO)",
+      "enable_sso_desc": "允许用户通过第三方服务进行身份验证",
+      "provider": "单点登录提供商",
+      "provider_desc": "选择一个 OAuth 提供商",
+      "provider_placeholder": "选择一个提供商...",
+      "provider_github": "GitHub",
+      "provider_google": "Google (未实现)",
+      "client_id": "客户端 ID",
+      "client_id_desc": "从您的 OAuth 提供商获取的客户端 ID",
+      "client_secret": "客户端密钥",
+      "client_secret_desc": "从您的 OAuth 提供商获取的客户端密钥",
+      "disable_password_login": "禁用密码登录",
+      "disable_password_login_desc": "如果启用，用户将只能通过 SSO 登录。请确保 SSO 正确配置后启用。",
+      "save": "保存更改",
+      "refresh": "刷新"
     },
     "nodeTable": {
       "nodeList": "节点列表",
@@ -115,6 +177,35 @@
       "save": "保存",
       "saveSuccess": "保存成功",
       "saveError": "保存失败"
+    },
+    "session": {
+      "success": "成功",
+      "loading": "正在加载会话信息...",
+      "error": "错误: {{error}}",
+      "title": "会话管理",
+      "deleteAll": "删除所有会话",
+      "confirmDeleteAllTitle": "确定要删除所有其他会话吗？",
+      "confirmDeleteAllDesc": "此操作将使包括当前设备的所有设备下线，且无法撤销。",
+      "cancel": "取消",
+      "confirm": "确定",
+      "table": {
+        "uuid": "UUID",
+        "session_id": "会话 ID",
+        "first_ip": "首次 IP",
+        "login_method": "登录方式",
+        "created_at": "创建时间",
+        "expires": "过期时间",
+        "latest_online": "最近在线",
+        "user_agent": "User Agent",
+        "device": "设备",
+        "current": "当前",
+        "session_detail": "会话详情",
+        "delete": "删除",
+        "delete_confirm_title": "确定要删除此会话吗？",
+        "delete_confirm_desc": "此操作将使对应设备下线，且无法撤销。",
+        "cancel": "取消",
+        "confirm": "确定"
+      }
     }
   },
   "chart": {}

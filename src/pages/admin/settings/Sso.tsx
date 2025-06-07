@@ -12,8 +12,10 @@ import {
 import { useSettings } from "@/contexts/SettingsContext";
 import type { SettingsData } from "@/contexts/SettingsContext";
 import { Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function SsoSettings() {
+  const { t } = useTranslation();
   const { settings, updateSettings, refetchSettings, isUpdating, isFetching } =
     useSettings();
 
@@ -64,15 +66,15 @@ export default function SsoSettings() {
   }
 
   if (!formData) {
-    return <div>无法加载 SSO 设置。</div>;
+    return <div>{t("admin.sso.load_failed")}</div>;
   }
 
   return (
     <div className="max-w-lg p-6">
       <div className="mb-6">
-        <div className="font-semibold">启用单点登录 (SSO)</div>
+        <div className="font-semibold">{t("admin.sso.enable_sso")}</div>
         <div className="text-gray-500 text-sm mb-2">
-          允许用户通过第三方服务进行身份验证
+          {t("admin.sso.enable_sso_desc")}
         </div>
         <Switch
           checked={formData.o_auth_enabled || false}
@@ -83,30 +85,30 @@ export default function SsoSettings() {
       {formData.o_auth_enabled && (
         <>
           <div className="mb-6">
-            <div className="font-semibold">单点登录提供商</div>
+            <div className="font-semibold">{t("admin.sso.provider")}</div>
             <div className="text-gray-500 text-sm mb-2">
-              选择一个 OAuth 提供商
+              {t("admin.sso.provider_desc")}
             </div>
             <Select
               value={formData.geo_ip_provider || "github"}
               onValueChange={handleProviderChange}
             >
               <SelectTrigger className="w-full">
-                <SelectValue placeholder="选择一个提供商..." />
+                <SelectValue placeholder={t("admin.sso.provider_placeholder")} />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="github">GitHub</SelectItem>
+                <SelectItem value="github">{t("admin.sso.provider_github")}</SelectItem>
                 <SelectItem value="google" disabled>
-                  Google (未实现)
+                  {t("admin.sso.provider_google")}
                 </SelectItem>
               </SelectContent>
             </Select>
           </div>
 
           <div className="mb-6">
-            <div className="font-semibold">客户端 ID</div>
+            <div className="font-semibold">{t("admin.sso.client_id")}</div>
             <div className="text-gray-500 text-sm mb-2">
-              从您的 OAuth 提供商获取的客户端 ID
+              {t("admin.sso.client_id_desc")}
             </div>
             <Input
               name="o_auth_client_id"
@@ -117,9 +119,9 @@ export default function SsoSettings() {
           </div>
 
           <div className="mb-6">
-            <div className="font-semibold">客户端密钥</div>
+            <div className="font-semibold">{t("admin.sso.client_secret")}</div>
             <div className="text-gray-500 text-sm mb-2">
-              从您的 OAuth 提供商获取的客户端密钥
+              {t("admin.sso.client_secret_desc")}
             </div>
             <Input
               name="o_auth_client_secret"
@@ -130,9 +132,9 @@ export default function SsoSettings() {
             />
           </div>
           <div className="mb-6">
-            <div className="font-semibold">禁用密码登录</div>
+            <div className="font-semibold">{t("admin.sso.disable_password_login")}</div>
             <div className="text-gray-500 text-sm mb-2">
-              如果启用，用户将只能通过 SSO 登录。请确保 SSO 正确配置后启用。
+              {t("admin.sso.disable_password_login_desc")}
             </div>
             <Switch
               checked={formData.disable_password_login || false}
@@ -146,7 +148,7 @@ export default function SsoSettings() {
       <div className="mt-8 flex items-center gap-4">
         <Button onClick={handleSave} disabled={isUpdating || isFetching}>
           {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          保存更改
+          {t("admin.sso.save")}
         </Button>
         <Button
           onClick={refetchSettings}
@@ -154,7 +156,7 @@ export default function SsoSettings() {
           disabled={isFetching || isUpdating}
         >
           {isFetching && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          刷新
+          {t("admin.sso.refresh")}
         </Button>
       </div>
     </div>

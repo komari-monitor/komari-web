@@ -21,7 +21,7 @@ export const DashboardContent = () => {
   return (
     <>
       <Card className="mx-4 mt-4">
-        <CardContent className="p-4 md:text-base text-sm">
+        <CardContent className="pxx-4 md:text-base text-sm">
           <div className="flex md:flex-row flex-col md:gap-4 gap-1 justify-between md:items-center">
             <div className="flex w-full flex-row items-center justify-between md:basis-1/5">
               <p>{t("dashboard.current_time")}</p>

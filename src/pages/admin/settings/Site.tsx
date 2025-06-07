@@ -5,8 +5,10 @@ import { Button } from "@/components/ui/button";
 import { useSettings } from "@/contexts/SettingsContext";
 import type { SettingsData } from "@/contexts/SettingsContext";
 import { Loader2 } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export default function SiteSettings() {
+  const { t } = useTranslation();
   const { settings, updateSettings, refetchSettings, isUpdating, isFetching } =
     useSettings();
 
@@ -46,15 +48,15 @@ export default function SiteSettings() {
   }
 
   if (!formData) {
-    return <div>无法加载设置。</div>;
+    return <div>{t('admin.site.load_failed')}</div>;
   }
 
   return (
     <div className="max-w-lg p-6">
       <div className="mb-6">
-        <div className="font-semibold">站点名称</div>
+        <div className="font-semibold">{t('admin.site.sitename')}</div>
         <div className="text-gray-500 text-sm mb-2">
-          用于显示在页面标题和导航栏
+          {t('admin.site.sitename_desc')}
         </div>
         <Input
           name="sitename"
@@ -65,8 +67,10 @@ export default function SiteSettings() {
       </div>
 
       <div className="mb-6">
-        <div className="font-semibold">站点描述</div>
-        <div className="text-gray-500 text-sm mb-2">用于 SEO 和页面副标题</div>
+        <div className="font-semibold">{t('admin.site.description')}</div>
+        <div className="text-gray-500 text-sm mb-2">
+          {t('admin.site.description_desc')}
+        </div>
         <Input
           name="description"
           value={formData.description || ""}
@@ -76,9 +80,9 @@ export default function SiteSettings() {
       </div>
 
       <div className="mb-6">
-        <div className="font-semibold">允许跨域请求</div>
+        <div className="font-semibold">{t('admin.site.allow_cors')}</div>
         <div className="text-gray-500 text-sm mb-2">
-          是否允许其他域名访问 API
+          {t('admin.site.allow_cors_desc')}
         </div>
         <Switch
           checked={formData.allow_cors || false}
@@ -87,9 +91,9 @@ export default function SiteSettings() {
       </div>
 
       <div className="mb-6">
-        <div className="font-semibold">自定义头部</div>
+        <div className="font-semibold">{t('admin.site.custom_head')}</div>
         <div className="text-gray-500 text-sm mb-2">
-          插入到每个页面的 &lt;head&gt; 标签内
+          {t('admin.site.custom_head_desc')}
         </div>
         <Input
           name="custom_head"
@@ -102,7 +106,7 @@ export default function SiteSettings() {
       <div className="mt-8 flex items-center gap-4">
         <Button onClick={handleSave} disabled={isUpdating || isFetching}>
           {isUpdating && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          保存更改
+          {t('admin.site.save')}
         </Button>
         <Button
           onClick={refetchSettings}
@@ -110,7 +114,7 @@ export default function SiteSettings() {
           disabled={isFetching || isUpdating}
         >
           {isFetching && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-          刷新
+          {t('admin.site.refresh')}
         </Button>
       </div>
     </div>

@@ -6,6 +6,17 @@
     "region_overview": "Region",
     "traffic_overview": "Traffic Overview"
   },
+  "color": {
+    "toggle": "Toggle color theme",
+    "default": "Default",
+    "red": "Red",
+    "rose": "Rose",
+    "orange": "Orange",
+    "green": "Green",
+    "blue": "Blue",
+    "yellow": "Yellow",
+    "violet": "Violet"
+  },
   "nodeCard": {
     "online": "Online",
     "offline": "Offline",
@@ -43,7 +54,59 @@
         "site": "Site",
         "sso": "SSO",
         "title": "Settings"
+      },
+      "about": "about"
+    },
+    "account": {
+      "loading": "Loading...",
+      "username": {
+        "label": "Username",
+        "placeholder": "Please enter username"
       }
+    },
+    "general": {
+      "load_failed": "Unable to load general settings.",
+      "geo_ip_enabled": "Enable Geolocation",
+      "geo_ip_enabled_desc": "Enrich user geolocation data based on IP address",
+      "geo_ip_provider": "Geolocation Data Provider",
+      "geo_ip_provider_desc": "Select a data source",
+      "provider_placeholder": "Select a provider...",
+      "provider_mmdb": "mmdb",
+      "provider_ipapi": "ip-api.com (not implemented)",
+      "provider_ipinfo": "ipinfo.io (not implemented)",
+      "save": "Save Changes",
+      "refresh": "Refresh"
+    },
+    "site": {
+      "sitename": "Site Name",
+      "sitename_desc": "Displayed in page title and navigation bar",
+      "description": "Site Description",
+      "description_desc": "For SEO and page subtitle",
+      "allow_cors": "Allow CORS",
+      "allow_cors_desc": "Allow other domains to access the API",
+      "custom_head": "Custom Head",
+      "custom_head_desc": "Inserted into the <head> tag of every page",
+      "save": "Save Changes",
+      "refresh": "Refresh",
+      "load_failed": "Failed to load settings."
+    },
+    "sso": {
+      "load_failed": "Unable to load SSO settings.",
+      "enable_sso": "Enable Single Sign-On (SSO)",
+      "enable_sso_desc": "Allow users to authenticate via third-party services",
+      "provider": "SSO Provider",
+      "provider_desc": "Select an OAuth provider",
+      "provider_placeholder": "Select a provider...",
+      "provider_github": "GitHub",
+      "provider_google": "Google (Not implemented)",
+      "client_id": "Client ID",
+      "client_id_desc": "Client ID obtained from your OAuth provider",
+      "client_secret": "Client Secret",
+      "client_secret_desc": "Client secret obtained from your OAuth provider",
+      "disable_password_login": "Disable password login",
+      "disable_password_login_desc": "If enabled, users can only log in via SSO. Please ensure SSO is configured correctly before enabling.",
+      "save": "Save changes",
+      "refresh": "Refresh"
     },
     "nodeDetail": {
       "arch": "Architecture",
@@ -111,7 +174,38 @@
       "serviceName_placeholder": "If the service name is empty, use the default name (komari-agent)",
       "submit": "submit",
       "submitting": "wait",
-      "terminal": "terminal"
+      "terminal": "terminal",
+      "errorAddNode": "Failed to add server",
+      "errorReorderNodes": "Sorting node failed"
+    },
+    "session": {
+      "success": "Success",
+      "loading": "Loading session information...",
+      "error": "Error: {{error}}",
+      "title": "Session Management",
+      "deleteAll": "Delete All Sessions",
+      "confirmDeleteAllTitle": "Are you sure you want to delete all other sessions?",
+      "confirmDeleteAllDesc": "This action will log out all devices including the current one and cannot be undone.",
+      "cancel": "Cancel",
+      "confirm": "Confirm",
+      "table": {
+        "uuid": "UUID",
+        "session_id": "Session ID",
+        "first_ip": "First IP",
+        "login_method": "Login Method",
+        "created_at": "Created At",
+        "expires": "Expires At",
+        "latest_online": "Latest Online",
+        "user_agent": "User Agent",
+        "device": "Device",
+        "current": "Current",
+        "session_detail": "Session Details",
+        "delete": "Delete",
+        "delete_confirm_title": "Are you sure you want to delete this session?",
+        "delete_confirm_desc": "This will log out the corresponding device and cannot be undone.",
+        "cancel": "Cancel",
+        "confirm": "Confirm"
+      }
     }
   }
 }

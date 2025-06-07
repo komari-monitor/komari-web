@@ -14,8 +14,10 @@ import {
 import { toast } from "sonner";
 import { getColumns } from "@/components/session/columns";
 import { DataTable } from "@/components/session/data-table";
+import { useTranslation } from "react-i18next";
 
- export default function SessionPage() {
+export default function SessionPage() {
+  const { t } = useTranslation();
   const {
     sessions,
     currentSessionId,
@@ -27,46 +29,46 @@ import { DataTable } from "@/components/session/data-table";
 
   const handleDelete = async (sessionId: string) => {
     await removeSession(sessionId);
-    toast("成功");
+    toast(t("admin.session.success"));
   };
 
   const handleDeleteAll = async () => {
     await removeAllSessions();
-    toast("成功");
+    toast(t("admin.session.success"));
   };
 
   const columns = getColumns(currentSessionId, handleDelete);
 
   if (loading) {
-    return <div className="p-4">正在加载会话信息...</div>;
+    return <div className="p-4">{t("admin.session.loading")}</div>;
   }
 
   if (error) {
-    return <div className="p-4 text-red-500">错误: {error}</div>;
+    return <div className="p-4 text-red-500">{t("admin.session.error", { error })}</div>;
   }
 
   return (
     <div className="p-4">
       <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">会话管理</h1>
+        <h1 className="text-2xl font-bold">{t("admin.session.title")}</h1>
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button variant="destructive">删除所有会话</Button>
+            <Button variant="destructive">{t("admin.session.deleteAll")}</Button>
           </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>确定要删除所有其他会话吗？</AlertDialogTitle>
+              <AlertDialogTitle>{t("admin.session.confirmDeleteAllTitle")}</AlertDialogTitle>
               <AlertDialogDescription>
-                此操作将使包括当前设备的所有设备下线，且无法撤销。
+                {t("admin.session.confirmDeleteAllDesc")}
               </AlertDialogDescription>
             </AlertDialogHeader>
             <AlertDialogFooter>
-              <AlertDialogCancel>取消</AlertDialogCancel>
+              <AlertDialogCancel>{t("admin.session.cancel")}</AlertDialogCancel>
               <AlertDialogAction
                 onClick={handleDeleteAll}
                 className="bg-red-600 hover:bg-red-700"
               >
-                确定
+                {t("admin.session.confirm")}
               </AlertDialogAction>
             </AlertDialogFooter>
           </AlertDialogContent>

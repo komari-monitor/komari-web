@@ -15,7 +15,7 @@ export default function AboutPage() {
       {markdown ? (
         <ReactMarkdown remarkPlugins={[remarkGfm]} children={markdown} />
       ) : (
-        <p>加载中...</p>
+        <p>Loading...</p>
       )}
     </div>
   );

@@ -124,11 +124,11 @@ export const PublicInfoProvider: React.FC<{ children: ReactNode }> = ({
         }
         const result: MeResponse = await response.json();
         setIsLogin(result.logged_in);
-        setMeInfo(result); // 新增
+        setMeInfo(result);
       } catch (e) {
         console.error("Failed to fetch login status:", e);
         setIsLogin(false);
-        setMeInfo(null); // 新增
+        setMeInfo(null);
       } finally {
         setLoading(false);
       }
