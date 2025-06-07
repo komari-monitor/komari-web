@@ -14,6 +14,18 @@ export default defineConfig(({ mode }) => {
         "@": path.resolve(__dirname, "./src"),
       },
     },
+     build: {
+      assetsDir: "assets",
+
+      outDir: "dist",
+      rollupOptions: {
+        output: {
+          // go embed ignore files start with '_'
+          chunkFileNames: "assets/chunk-[name]-[hash].js",
+          entryFileNames: "assets/entry-[name]-[hash].js",
+        },
+      },
+    },
   };
 
   if (mode === "development") {
