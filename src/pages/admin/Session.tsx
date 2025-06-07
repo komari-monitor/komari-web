@@ -37,14 +37,18 @@ export default function SessionPage() {
     toast(t("admin.session.success"));
   };
 
-  const columns = getColumns(currentSessionId, handleDelete);
+  const columns = getColumns(t, currentSessionId, handleDelete);
 
   if (loading) {
     return <div className="p-4">{t("admin.session.loading")}</div>;
   }
 
   if (error) {
-    return <div className="p-4 text-red-500">{t("admin.session.error", { error })}</div>;
+    return (
+      <div className="p-4 text-red-500">
+        {t("admin.session.error", { error })}
+      </div>
+    );
   }
 
   return (
@@ -53,11 +57,15 @@ export default function SessionPage() {
         <h1 className="text-2xl font-bold">{t("admin.session.title")}</h1>
         <AlertDialog>
           <AlertDialogTrigger asChild>
-            <Button variant="destructive">{t("admin.session.deleteAll")}</Button>
+            <Button variant="destructive">
+              {t("admin.session.deleteAll")}
+            </Button>
           </AlertDialogTrigger>
           <AlertDialogContent>
             <AlertDialogHeader>
-              <AlertDialogTitle>{t("admin.session.confirmDeleteAllTitle")}</AlertDialogTitle>
+              <AlertDialogTitle>
+                {t("admin.session.confirmDeleteAllTitle")}
+              </AlertDialogTitle>
               <AlertDialogDescription>
                 {t("admin.session.confirmDeleteAllDesc")}
               </AlertDialogDescription>
