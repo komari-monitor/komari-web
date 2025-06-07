@@ -1,7 +1,7 @@
 import * as React from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation, useNavigate } from "react-router";
-import { LogOut, Settings } from "lucide-react";
+import { Home, LogOut, Settings } from "lucide-react";
 
 import { usePublicInfo } from "@/contexts/PublicInfoContext";
 
@@ -86,22 +86,21 @@ const LoginDialog = () => {
   const isInManage = location.pathname.startsWith("/manage");
 
   const handleLogout = () => {
-    // 明天写逻辑
     setIsLogin(false);
     navigate("/");
   };
-
+  //明天增加一个home /按钮，在原来的setting按钮上面，退出按钮是滑动出现在home按钮的左边
   return isLogin ? (
     <Button variant="outline" size="icon" asChild className="relative">
       {isInManage ? (
-        <span onClick={handleLogout}>
-          <LogOut className="h-[1.2rem] w-[1.2rem] transition-all absolute scale-100 rotate-0 opacity-100" />
+        <Link to="/">
+          <Home className="h-[1.2rem] w-[1.2rem] transition-all absolute scale-100 rotate-0 opacity-100" />
           <Settings className="h-[1.2rem] w-[1.2rem] transition-all absolute scale-0 rotate-90 opacity-0" />
-        </span>
+        </Link>
       ) : (
         <Link to="/manage">
           <Settings className="h-[1.2rem] w-[1.2rem] transition-all absolute scale-100 rotate-0 opacity-100" />
-          <LogOut className="h-[1.2rem] w-[1.2rem] transition-all absolute scale-0 -rotate-90 opacity-0" />
+          <Home className="h-[1.2rem] w-[1.2rem] transition-all absolute scale-0 -rotate-90 opacity-0" />
         </Link>
       )}
     </Button>

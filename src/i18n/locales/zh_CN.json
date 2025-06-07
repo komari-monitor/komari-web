@@ -80,7 +80,9 @@
       "install_dir_placeholder": "安装目录，为空则使用默认目录(/opt/komari-agent)",
       "serviceName": "服务名称",
       "serviceName_placeholder": "服务名称，为空则使用默认名称(komari-agent)",
-      "generatedCommand": "指令"
+      "generatedCommand": "指令",
+      "errorReorderNodes": "排序节点失败",
+      "errorAddNode": "添加服务器失败"
     },
     "nodeDetail": {
       "machineDetail": "机器详细信息",

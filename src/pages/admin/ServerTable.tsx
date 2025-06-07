@@ -65,7 +65,7 @@ import { ActionsCell } from "@/components/table/NodeFunction";
 import type { schema } from "@/types/node";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { DataTableRefreshContext } from "@/components/table/DataTableRefreshContext";
-import { useDataTable } from "@/contexts/ManageContext";
+import { useDataTable } from "@/contexts/DataTableContext";
 
 const columns: ColumnDef<z.infer<typeof schema>>[] = [
   {

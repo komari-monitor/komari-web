@@ -7,6 +7,7 @@ import { ServerDetail } from "./ServerDetail";
 import { Manage } from "./admin/Manage";
 import { NotFound } from "./404";
 import { DataTableComponent } from "./admin/ServerTable";
+import SiteSettings from "./admin/settings/Site";
 
 export function AppContent() {
   const { publicInfo, loading } = usePublicInfo();
@@ -29,7 +30,7 @@ export function AppContent() {
         </Route>
         <Route path="/manage" element={<Manage />}>
           <Route index element={<DataTableComponent />} />
-          {/* <Route path="account" element={<Component />} /> */}
+          <Route path="settings/site" element={<SiteSettings />} />
         </Route>
         <Route path="/terminal" element={<NotFound />} />
         <Route path="*" element={<NotFound />} />

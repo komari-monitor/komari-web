@@ -25,11 +25,6 @@ export const menuConfig: MenuConfig = {
           icon: "house",
         },
         {
-          labelKey: "admin.menu.settings.custom",
-          path: "/manage/settings/custom",
-          icon: "code",
-        },
-        {
           labelKey: "admin.menu.settings.sso",
           path: "/manage/settings/sso",
           icon: "key-round",
