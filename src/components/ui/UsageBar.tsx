@@ -28,7 +28,8 @@ const UsageBar = ({ value, label }: UsageBarProps) => {
       </div>
       <Progress
         value={clampedValue}
-        className={`w-full h-[8px] rounded-[4px] [&>div]:${indicatorColorClass}`}
+        className="w-full h-[8px] rounded-[4px]"
+        indicatorClassName={indicatorColorClass}
       />
     </div>
   );
