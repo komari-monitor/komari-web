@@ -77,12 +77,27 @@ const Node = ({ basic, live, online }: NodeProps) => {
         margin: "0 auto",
         transition: "all 0.2s ease-in-out",
       }}
-      className="node-card hover:cursor-pointer hover:shadow-lg hover:bg-accent-2"
+      className="node-card hover:cursor-pointer hover:bg-accent-2 overflow-hidden"
     >
-      <Flex direction="column" gap="2">
+      <Flex direction="column" gap="3">
+        {/* Status indicator strip at the top */}
+        <div 
+          className={`h-1 w-full -mt-3 -mx-3 mb-1`} 
+          style={{ 
+            backgroundColor: online ? 'var(--chart-3)' : 'var(--destructive)',
+            opacity: online ? 0.8 : 0.6,
+            transition: 'background-color 0.3s ease'
+          }}
+        />
+        
         <Flex justify="between" align="center" my={isMobile ? "-1" : "0"}>
-          <Flex justify="start" align="center" style={{ flex: 1, minWidth: 0 }}>
-            <Flag flag={basic.region} />
+          <Flex justify="start" align="center" style={{ flex: 1, minWidth: 0 }} gap="2">
+            <div className="relative">
+              <Flag flag={basic.region} className="rounded-full" />
+              <div 
+                className={`absolute -bottom-1 -right-1 w-2.5 h-2.5 rounded-full border-2 border-card ${online ? 'bg-green-500' : 'bg-red-500'}`}
+              />
+            </div>
             <Link to={`/instance/${basic.uuid}`} style={{ flex: 1, minWidth: 0 }}>
               <Flex direction="column" style={{ minWidth: 0 }}>
                 <Text
@@ -90,6 +105,7 @@ const Node = ({ basic, live, online }: NodeProps) => {
                   size={isMobile ? "2" : "4"}
                   truncate
                   style={{ maxWidth: "100%" }}
+                  className="group-hover:text-primary transition-colors"
                 >
                   {basic.name}
                 </Text>
@@ -121,12 +137,17 @@ const Node = ({ basic, live, online }: NodeProps) => {
               uuid={basic.uuid}
               hours={24}
               trigger={
-                <IconButton variant="ghost" size="1">
+                <IconButton variant="ghost" size="1" className="rounded-full hover:bg-accent-3 transition-colors">
                   <TrendingUp size="14" />
                 </IconButton>
               }
             />
-            <Badge color={online ? "green" : "red"} variant="soft">
+            <Badge 
+              color={online ? "green" : "red"} 
+              variant="soft"
+              radius="full"
+              className="px-2 py-0.5"
+            >
               {online ? t("nodeCard.online") : t("nodeCard.offline")}
             </Badge>
           </Flex>
@@ -249,46 +270,60 @@ import { TrendingUp } from "lucide-react";
 import MiniPingChartFloat from "./MiniPingChartFloat";
 import { getOSImage, getOSName } from "@/utils";
 export const NodeGrid = ({ nodes, liveData }: NodeGridProps) => {
-  // 确保liveData是有效的
+  // Ensure liveData is valid
   const onlineNodes = liveData && liveData.online ? liveData.online : [];
+  const isMobile = useIsMobile();
 
-  // 排序节点：先按在线/离线状态排序，再按权重排序（权重大的靠前）
+  // Sort nodes: first by online/offline status, then by weight
   const sortedNodes = [...nodes].sort((a, b) => {
     const aOnline = onlineNodes.includes(a.uuid);
     const bOnline = onlineNodes.includes(b.uuid);
 
-    // 如果一个在线一个离线，在线的排前面
+    // If one is online and one is offline, online comes first
     if (aOnline !== bOnline) {
       return aOnline ? -1 : 1;
     }
 
-    // 都是在线或都是离线的情况下，按权重升序排序（权重大的在后面）
+    // If both are online or both are offline, sort by weight (lower weight first)
     return a.weight - b.weight;
   });
 
   return (
     <Box
-      className="gap-2 md:gap-4"
+      className="animate-fadeIn"
       style={{
         display: "grid",
-        gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",
-        padding: "1rem",
+        gridTemplateColumns: isMobile 
+          ? "1fr" 
+          : "repeat(auto-fill, minmax(min(100%, 350px), 1fr))",
+        gap: isMobile ? "1rem" : "1.25rem",
+        padding: isMobile ? "0.75rem" : "1.25rem",
         width: "100%",
         boxSizing: "border-box",
+        transition: "padding 0.3s ease, gap 0.3s ease",
       }}
     >
-      {sortedNodes.map((node) => {
+      {sortedNodes.map((node, index) => {
         const isOnline = onlineNodes.includes(node.uuid);
         const nodeData =
           liveData && liveData.data ? liveData.data[node.uuid] : undefined;
 
         return (
-          <Node
-            key={node.uuid}
-            basic={node}
-            live={nodeData}
-            online={isOnline}
-          />
+          <div 
+            key={node.uuid} 
+            className="animate-slideUp"
+            style={{ 
+              animationDelay: `${index * 0.05}s`,
+              opacity: 0,
+              animationFillMode: 'forwards'
+            }}
+          >
+            <Node
+              basic={node}
+              live={nodeData}
+              online={isOnline}
+            />
+          </div>
         );
       })}
     </Box>
