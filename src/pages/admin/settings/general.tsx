@@ -72,7 +72,6 @@ export default function GeneralSettings() {
           { value: "ip-api", label: "ip-api.com" },
           { value: "geojs", label: "geojs.io" },
           { value: "ipinfo", label: "ipinfo.io" },
-          { value: "nsmao", label: "Nsmao" },
         ]}
         OnSave={async (value) => {
           await updateSettingsWithToast({ geo_ip_provider: value }, t);
