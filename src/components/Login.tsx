@@ -209,7 +209,9 @@ const LoginDialog = ({ trigger, autoOpen = false, showSettings = true, info, onL
                       publicInfo?.oauth_provider === "generic"
                         ? "OAuth"
                         : publicInfo?.oauth_provider
-                          ? publicInfo.oauth_provider.charAt(0).toUpperCase() + publicInfo.oauth_provider.slice(1)
+                          ? publicInfo.oauth_provider === "qq" 
+                            ? "QQ" 
+                            : publicInfo.oauth_provider.charAt(0).toUpperCase() + publicInfo.oauth_provider.slice(1)
                           : ""
                   }
                 )}

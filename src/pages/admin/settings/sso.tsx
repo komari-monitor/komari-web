@@ -39,6 +39,7 @@ export default function SsoSettings() {
         options={[
           { value: "github", label: "GitHub"},
           { value: "google", label: "Google"},
+          { value: "qq", label: "QQ"},
         ]}
       />
       <SettingCardShortTextInput

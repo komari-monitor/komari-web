@@ -85,11 +85,14 @@ export default function SignOnSettings() {
       const data = await res.json();
       if (data.status !== "success") {
         setProviderError(data.message || "保存失败");
+        toast.error(data.message || "保存失败");
       } else {
         setProviderValues(values);
+        toast.success(t("settings.settings_saved")); // 添加成功提示
       }
     } catch {
       setProviderError("保存失败");
+      toast.error("保存失败");
     }
     setProviderLoading(false);
   };
@@ -128,7 +131,10 @@ export default function SignOnSettings() {
       <SettingCardSelect
         title={String(t("settings.sso.provider"))}
         description={String(t("settings.sso.provider_description"))}
-        options={providerList.map((p) => ({ value: p, label: p }))}
+        options={providerList.map((p) => ({ 
+          value: p, 
+          label: p === "qq" ? "聚合登录" : p 
+        }))}
         value={currentProvider}
         OnSave={async (val: string) => {
           if (val === currentProvider) return;

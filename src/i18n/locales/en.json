@@ -72,6 +72,11 @@
         "client_id": "GitHub 客户端 ID",
         "client_secret": "GitHub 客户端密钥"
       },
+      "qq": {
+        "app_id": "QQ App ID",
+        "app_key": "QQ App Key",
+        "login_type": "Login Type"
+      },
       "provider_fields_description": "设置您选择登录方式的详细信息"
     },
     "general": {

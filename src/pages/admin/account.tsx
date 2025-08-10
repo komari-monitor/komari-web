@@ -11,7 +11,7 @@ import {
   Skeleton,
   TextField,
 } from "@radix-ui/themes";
-import { Github, Globe, User } from "lucide-react";
+import { Github, Globe, User, MessageCircle } from "lucide-react";
 import Loading from "@/components/loading";
 
 const Account = () => {
@@ -134,6 +134,8 @@ const InnerLayout = () => {
         return <Github className="size-5" />;
       case 'google':
         return <Globe className="size-5" />;
+      case 'qq':
+        return <MessageCircle className="size-5" />;
       default:
         return <User className="size-5" />;
     }
@@ -149,6 +151,8 @@ const InnerLayout = () => {
         return 'GitLab';
       case 'discord':
         return 'Discord';
+      case 'qq':
+        return 'QQ';
       default:
         return platform.charAt(0).toUpperCase() + platform.slice(1);
     }
