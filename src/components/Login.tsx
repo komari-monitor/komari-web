@@ -239,7 +239,7 @@ const LoginDialog = ({ trigger, autoOpen = false, showSettings = true, info, onL
                   {t("login.login_with", {
                     provider:
                       publicInfo?.oauth_provider === "generic"
-                        ? "OAuth"
+                        ? "Oidc.Im"
                         : publicInfo?.oauth_provider
                         ? publicInfo.oauth_provider.charAt(0).toUpperCase() +
                           publicInfo.oauth_provider.slice(1)

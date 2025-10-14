@@ -299,7 +299,7 @@ const AdminPanelBar = ({ content }: AdminPanelBarProps) => {
                 <TablerMenu2 />
               </IconButton>
               <a href="/" target="_blank" rel="noopener noreferrer">
-                <label className="text-xl font-bold">Komari</label>
+                <label className="text-xl font-bold">ServerStatus</label>
               </a>
               {updateAvailable && releasesSince.length > 0 && (
                 <Tips
@@ -357,10 +357,12 @@ const AdminPanelBar = ({ content }: AdminPanelBarProps) => {
                   </div>
                 </Tips>
               )}
-              <label className="text-sm text-muted-foreground self-end overflow-hidden" hidden={isMobile}>
-                {(publicInfo as any)?.version ||
-                  (versionInfo && `${versionInfo.version} (${versionInfo.hash})`)}
-              </label>
+              {account && account.logged_in && (
+                  <label className="text-sm text-muted-foreground self-end overflow-hidden" hidden={isMobile}>
+                    {(publicInfo as any)?.version ||
+                        (versionInfo && `${versionInfo.version} (${versionInfo.hash})`)}
+                  </label>
+              )}
             </Flex>
             <Flex gap="3" align="center" overflowX="auto">
               {account && !account.logged_in && (
