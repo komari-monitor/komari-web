@@ -8,6 +8,7 @@ interface NodeSelectorProps {
   hiddenDescription?: boolean;
   value: string[]; // uuid 列表
   onChange: (uuids: string[]) => void;
+  hiddenUuidOnlyClient?: boolean;
 }
 
 const NodeSelector: React.FC<NodeSelectorProps> = ({
@@ -15,10 +16,16 @@ const NodeSelector: React.FC<NodeSelectorProps> = ({
   hiddenDescription = false,
   value,
   onChange,
+  hiddenUuidOnlyClient = false,
 }) => {
   const { nodeDetail, isLoading, error } = useNodeDetails();
   const { t } = useTranslation();
-
+  let nodesFiltered = value;
+  if (hiddenUuidOnlyClient) {
+    nodesFiltered = nodesFiltered.filter((node) =>
+      nodeDetail.find((n) => n.uuid === node && !n.is_only_client)
+    );
+  }
   if (isLoading) return <div>Loading...</div>;
   if (error) return <div>{error}</div>;
 
@@ -26,7 +33,7 @@ const NodeSelector: React.FC<NodeSelectorProps> = ({
     <Selector
       className={className}
       hiddenDescription={hiddenDescription}
-      value={value}
+      value={nodesFiltered}
       onChange={onChange}
       items={[...nodeDetail]}
       sortItems={(a, b) => (a.weight ?? 0) - (b.weight ?? 0)}

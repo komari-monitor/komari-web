@@ -12,7 +12,8 @@ import {
 import { useLocalStorage } from "./hooks/useLocalStorage";
 import { useSystemTheme } from "./hooks/useSystemTheme";
 import { BrowserRouter } from "react-router-dom";
-import "./i18n/config"; // Import i18next config
+// Ensure i18n is initialized before any component renders
+import "./i18n/config";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { Suspense } from "react";
 import { useRoutes } from "react-router-dom";

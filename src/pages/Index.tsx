@@ -1,6 +1,15 @@
-import { Callout, Card, Flex, Text, Popover, IconButton, Switch } from "@radix-ui/themes";
+import {
+  Callout,
+  Card,
+  Flex,
+  Text,
+  Popover,
+  IconButton,
+  Switch,
+} from "@radix-ui/themes";
 import { useTranslation } from "react-i18next";
-import NodeDisplay from "../components/NodeDisplay";
+import React, { useEffect, Suspense } from "react";
+const NodeDisplay = React.lazy(() => import("../components/NodeDisplay"));
 import { formatBytes } from "@/utils/unitHelper";
 import { useLiveData } from "../contexts/LiveDataContext";
 import { useNodeList } from "@/contexts/NodeListContext";
@@ -30,83 +39,106 @@ const Index = () => {
     const { live_data } = useLiveData();
     //document.title = t("home_title");
     //#region 节点数据
-    const { nodeList, isLoading, error } = useNodeList();
+    const { nodeList, isLoading, error, refresh } = useNodeList();
 
     // Status cards visibility state
-    const [statusCardsVisibility, setStatusCardsVisibility] = useLocalStorage('statusCardsVisibility', {
-      currentTime: true,
-      currentOnline: true,
-      regionOverview: true,
-      trafficOverview: true,
-      networkSpeed: true
-    });
+    const [statusCardsVisibility, setStatusCardsVisibility] = useLocalStorage(
+      "statusCardsVisibility",
+      {
+        currentTime: true,
+        currentOnline: true,
+        regionOverview: true,
+        trafficOverview: true,
+        networkSpeed: true,
+      }
+    );
 
     // Status cards configuration
     const statusCards = [
       {
-        key: 'currentTime',
+        key: "currentTime",
         title: t("current_time"),
         getValue: () => new Date().toLocaleTimeString(),
-        visible: statusCardsVisibility.currentTime
+        visible: statusCardsVisibility.currentTime,
       },
       {
-        key: 'currentOnline',
+        key: "currentOnline",
         title: t("current_online"),
-        getValue: () => `${live_data?.data?.online.length ?? 0} / ${nodeList?.length ?? 0}`,
-        visible: statusCardsVisibility.currentOnline
+        getValue: () =>
+          `${live_data?.data?.online.length ?? 0} / ${nodeList?.length ?? 0}`,
+        visible: statusCardsVisibility.currentOnline,
       },
       {
-        key: 'regionOverview',
+        key: "regionOverview",
         title: t("region_overview"),
-        getValue: () => nodeList
-          ? Object.entries(
-            nodeList.reduce((acc, item) => {
-              acc[item.region] = (acc[item.region] || 0) + 1;
-              return acc;
-            }, {} as Record<string, number>)
-          ).length
-          : 0,
-        visible: statusCardsVisibility.regionOverview
+        getValue: () =>
+          nodeList
+            ? Object.entries(
+                nodeList.reduce((acc, item) => {
+                  if (live_data?.data.online.includes(item.uuid)) {
+                    acc[item.region] = (acc[item.region] || 0) + 1;
+                  }
+                  return acc;
+                }, {} as Record<string, number>)
+              ).length
+            : 0,
+        visible: statusCardsVisibility.regionOverview,
       },
       {
-        key: 'trafficOverview',
+        key: "trafficOverview",
         title: t("traffic_overview"),
-        getValue: () => live_data?.data?.data
-          ? `↑ ${formatBytes(Object.values(live_data.data.data).reduce(
-            (acc, node) => {
-              return acc + (node.network.totalUp || 0);
-            },
+        getValue: () => {
+          const data = live_data?.data?.data;
+          const online = live_data?.data?.online;
+          if (!data || !online) return "↑ 0B / ↓ 0B";
+          const onlineSet = new Set(online);
+          const values = Object.entries(data)
+            .filter(([uuid]) => onlineSet.has(uuid))
+            .map(([, node]) => node);
+          const up = values.reduce(
+            (acc, node) => acc + (node.network.totalUp || 0),
             0
-          ))}` + " / " +
-          `↓ ${formatBytes(
-            Object.values(live_data.data.data).reduce(
-              (acc, node) => {
-                return acc + (node.network.totalDown || 0);
-              },
-              0
-            ))}`
-          : "↑ 0B / ↓ 0B",
-        visible: statusCardsVisibility.trafficOverview
+          );
+          const down = values.reduce(
+            (acc, node) => acc + (node.network.totalDown || 0),
+            0
+          );
+          return `↑ ${formatBytes(up)} / ↓ ${formatBytes(down)}`;
+        },
+        visible: statusCardsVisibility.trafficOverview,
       },
       {
-        key: 'networkSpeed',
+        key: "networkSpeed",
         title: t("network_speed"),
-        getValue: () => live_data?.data?.data
-          ? `↑ ${formatSpeed(
-            Object.values(live_data.data.data).reduce(
-              (acc, node) => acc + (node.network.up || 0),
-              0
-            )
-          )} / ↓ ${formatSpeed(
-            Object.values(live_data.data.data).reduce(
-              (acc, node) => acc + (node.network.down || 0),
-              0
-            )
-          )}`
-          : "↑ 0 B/s / ↓ 0 B/s",
-        visible: statusCardsVisibility.networkSpeed
-      }
+        getValue: () => {
+          const data = live_data?.data?.data;
+          const online = live_data?.data?.online;
+          if (!data || !online) return "↑ 0 B/s / ↓ 0 B/s";
+          const onlineSet = new Set(online);
+          const values = Object.entries(data)
+            .filter(([uuid]) => onlineSet.has(uuid))
+            .map(([, node]) => node);
+          const up = values.reduce(
+            (acc, node) => acc + (node.network.up || 0),
+            0
+          );
+          const down = values.reduce(
+            (acc, node) => acc + (node.network.down || 0),
+            0
+          );
+          return `↑ ${formatSpeed(up)} / ↓ ${formatSpeed(down)}`;
+        },
+        visible: statusCardsVisibility.networkSpeed,
+      },
     ];
+
+    useEffect(() => {
+      const interval = setInterval(() => {
+        refresh();
+      }, 5000);
+      return () => clearInterval(interval);
+    }, [nodeList]);
+
     if (isLoading) {
       return <Loading />;
     }
@@ -128,7 +160,9 @@ const Index = () => {
               </Popover.Trigger>
               <Popover.Content width="300px">
                 <Flex direction="column" gap="3">
-                  <Text size="2" weight="bold">{t("status_settings")}</Text>
+                  <Text size="2" weight="bold">
+                    {t("status_settings")}
+                  </Text>
                   <Flex direction="column" gap="2">
                     {statusCards.map((card) => (
                       <StatusSettingSwitch
@@ -155,11 +189,11 @@ const Index = () => {
                 className="grid gap-2"
                 style={{
                   gridTemplateColumns: `repeat(auto-fit, minmax(230px, 1fr))`,
-                  gridAutoRows: 'min-content'
+                  gridAutoRows: "min-content",
                 }}
               >
                 {statusCards
-                  .filter(card => card.visible)
+                  .filter((card) => card.visible)
                   .map((card) => (
                     <TopCard
                       key={card.key}
@@ -171,10 +205,12 @@ const Index = () => {
             );
           })()}
         </Card>
-        <NodeDisplay
-          nodes={nodeList ?? []}
-          liveData={live_data?.data ?? { online: [], data: {} }}
-        />
+        <Suspense fallback={<div style={{ padding: 16 }}>Loading…</div>}>
+          <NodeDisplay
+            nodes={nodeList ?? []}
+            liveData={live_data?.data ?? { online: [], data: {} }}
+          />
+        </Suspense>
       </>
     );
   };
@@ -233,12 +269,11 @@ const Callouts = () => {
 // #endregion Callouts
 export default Index;
 
-
 type TopCardProps = {
   title: string;
   value: string | number;
   description?: string;
-}
+};
 
 const TopCard: React.FC<TopCardProps> = ({ title, value, description }) => {
   return (
@@ -246,11 +281,15 @@ const TopCard: React.FC<TopCardProps> = ({ title, value, description }) => {
       <Flex direction="column" gap="1">
         <label className="text-muted-foreground text-sm">{title}</label>
         <label className="font-medium -mt-2 text-md">{value}</label>
-        {description && <Text size="2" color="gray">{description}</Text>}
+        {description && (
+          <Text size="2" color="gray">
+            {description}
+          </Text>
+        )}
       </Flex>
     </div>
   );
-}
+};
 
 type StatusSettingSwitchProps = {
   label: string;

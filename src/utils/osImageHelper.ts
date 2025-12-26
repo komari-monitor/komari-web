@@ -143,7 +143,7 @@ const osConfigs: OSConfig[] = [
   },
   {
     name: "Orange Pi",
-    image: "/assets/logo/orange-pi.ico",
+    image: "/assets/logo/os-orange-pi.svg",
     keywords: ["orange pi", "orangepi"],
   },
   {
@@ -160,6 +160,11 @@ const osConfigs: OSConfig[] = [
     name: "OpenCloudOS",
     image: "/assets/logo/os-OpenCloudOS.png",
     keywords: ["opencloud"],
+  },
+  {
+    name: "Unraid",
+    image: "/assets/logo/os-unraid.svg",
+    keywords: ["unraid"],
   },
 ];
 

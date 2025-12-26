@@ -1,4 +1,11 @@
 {
+  "about": {
+    "ai": "Komari プロジェクトの開発プロセスは、人工知能ツールの支援を受けています。これらのツールは、コード生成、リファクタリング、デバッグなどのタスクを実行するために使用され、開発効率とコード品質を向上させます。AI によって生成されたすべてのコードと提案は、人間の開発者によってレビューおよび検証されています。",
+    "open_source": "Komari は MIT ライセンスに基づいてオープンソースであり、以下のオープンソースソフトウェアを使用して構築されています：",
+    "open_source_title": "オープンソースソフトウェアライセンス",
+    "readme_open_in_new_tab": "新しいタブで開く",
+    "title": "について"
+  },
   "account": {
     "2fa_disabled": "二要素認証は無効になっています",
     "2fa_enabled": "二要素認証が有効になりました",
@@ -529,6 +536,10 @@
       },
       "enable": "通知を有効にする",
       "enable_description": "好みの方法でタイムリーな通知を受け取ります。",
+      "Javascript": {
+        "script": "JavaScript コード",
+        "script_help": "sendMessage(message, title) およびオプションの sendEvent(event) 関数を実装する JavaScript コード（ES6 の一部をサポート）。両方とも Promise またはブール値を返す必要があります。使用可能な API：fetch()、xhr()、console.log()。ガイド: https://komari-document.pages.dev/faq/notification-template.html"
+      },
       "method": "通知チャネル",
       "method_description": "通知プラットフォームを選択してください",
       "moved": "期限切れの通知を探していますか？通知-一般に移行されました",
@@ -686,6 +697,7 @@
     "upload_success": "テーマのアップロードに成功しました",
     "upload_theme": "テーマをアップロード",
     "uploading": "テーマをアップロード中...",
+    "uploda_413_content_too_large": "ファイルのアップロードに失敗しました (413)。Nginx/CDNなどのリバースプロキシサーバーの設定でファイルサイズ制限（client_max_body_size）を確認し、ターゲットファイルサイズよりも大きい値に増やしてください。",
     "version": "バージョン",
     "zip_files_only": ".zip形式のみサポート"
   },

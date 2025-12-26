@@ -188,6 +188,7 @@ const Row = ({ alert }: { alert: LoadAlert }) => {
             : t("common.none")}
           <NodeSelectorDialog
             value={form.clients ?? []}
+            hiddenUuidOnlyClient
             onChange={(uuids) => {
               setForm((f) => ({ ...f, clients: uuids }));
               submitEdit({ ...form, clients: uuids });
@@ -263,6 +264,7 @@ const Row = ({ alert }: { alert: LoadAlert }) => {
               <Flex>
                 <NodeSelectorDialog
                   value={form.clients}
+                  hiddenUuidOnlyClient
                   onChange={(v) => setForm((f) => ({ ...f, clients: v }))}
                 />
               </Flex>

@@ -17,7 +17,7 @@ export default function InstancePage() {
   const { uuid } = useParams<{ uuid: string }>();
   const [recent, setRecent] = useState<Record[]>([]);
   const { nodeList } = useNodeList();
-  const length = 60 * 5;
+  const length = 30 * 5;
   const [chartView, setChartView] = useState<"load" | "ping">("load");
   // #region 初始数据加载
   const node = nodeList?.find((n) => n.uuid === uuid);
@@ -165,5 +165,3 @@ export default function InstancePage() {
 //   });
 //   return filled;
 // }
-
-

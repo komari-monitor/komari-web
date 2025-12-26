@@ -165,6 +165,13 @@ const ThemePage = () => {
 
       // 监听请求完成
       xhr.addEventListener("load", async () => {
+        if (xhr.status === 413) {
+          toast.error(t("theme.uploda_413_content_too_large"));
+          setUploading(false);
+          setUploadProgress(0);
+          setUploadXhr(null);
+          return;
+        }
         if (xhr.status >= 200 && xhr.status < 300) {
           try {
             // 检查响应是否成功

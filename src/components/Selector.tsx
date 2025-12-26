@@ -73,8 +73,10 @@ function SelectorInner<T>(props: SelectorProps<T>) {
   const allIds = processed.map(getId);
 
   // 半选逻辑
-  const allChecked = allIds.length > 0 && allIds.every((id) => value.includes(id));
-  const isIndeterminate = value.length > 0 && value.some((id) => allIds.includes(id)) && !allChecked;
+  const allChecked =
+    allIds.length > 0 && allIds.every((id) => value.includes(id));
+  const isIndeterminate =
+    value.length > 0 && value.some((id) => allIds.includes(id)) && !allChecked;
 
   // 孤立（value 中但 items 不再存在）
   const orphanIds = value.filter((id) => !items.some((it) => getId(it) === id));
@@ -134,7 +136,12 @@ function SelectorInner<T>(props: SelectorProps<T>) {
             {processed.map((it) => {
               const id = getId(it);
               return (
-                <TableRow key={id}>
+                <TableRow
+                  key={id}
+                  onClick={() => {
+                    handleCheck(id, !value.includes(id));
+                  }}
+                >
                   <TableCell>
                     <Checkbox
                       checked={value.includes(id)}
@@ -147,7 +154,12 @@ function SelectorInner<T>(props: SelectorProps<T>) {
               );
             })}
             {orphanIds.map((id) => (
-              <TableRow key={id}>
+              <TableRow
+                key={id}
+                onClick={() => {
+                  handleCheck(id, !value.includes(id));
+                }}
+              >
                 <TableCell>
                   <Checkbox
                     checked={value.includes(id)}

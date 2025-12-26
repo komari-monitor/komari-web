@@ -11,6 +11,7 @@ interface NodeSelectorDialogProps {
   title?: React.ReactNode;
   className?: string;
   hiddenDescription?: boolean;
+  hiddenUuidOnlyClient?: boolean;
   children?: React.ReactNode; // 新增 children 属性
 }
 
@@ -22,6 +23,7 @@ const NodeSelectorDialog: React.FC<NodeSelectorDialogProps> = ({
   title,
   className,
   hiddenDescription,
+  hiddenUuidOnlyClient,
   children, // 解构 children
 }) => {
   const { t } = useTranslation();
@@ -52,6 +54,7 @@ const NodeSelectorDialog: React.FC<NodeSelectorDialogProps> = ({
             value={temp}
             onChange={setTemp}
             className={className}
+            hiddenUuidOnlyClient={hiddenUuidOnlyClient}
             hiddenDescription={hiddenDescription}
           />
           <Flex justify="end" gap="2">

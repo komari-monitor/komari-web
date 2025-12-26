@@ -70,12 +70,12 @@ export const NodeListProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [nodeList, setNodeList] = React.useState<NodeBasicInfo[] | null>(null);
-  const [isLoading, setIsLoading] = React.useState<boolean>(false);
+  const [isLoading, setIsLoading] = React.useState<boolean>(true);
   const [error, setError] = React.useState<string | null>(null);
   const { call } = useRPC2Call();
 
   const refresh = () => {
-    setIsLoading(true);
+    // setIsLoading(true);
     setError(null);
     // 通过 RPC2 获取节点基本信息
     call<{ uuid?: string }, Record<string, any>>("common:getNodes")

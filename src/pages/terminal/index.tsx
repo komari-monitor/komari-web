@@ -192,7 +192,10 @@ const TerminalPage = () => {
     term.open(terminalRef.current);
     terminalInstance.current = term;
 
-    const ws = new WebSocket(`./api/admin/client/${uuid}/terminal`);
+    const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
+    const host = window.location.host;
+    const baseUrl = `${protocol}//${host}`;
+    const ws = new WebSocket(`${baseUrl}/api/admin/client/${uuid}/terminal`);
     ws.binaryType = "arraybuffer";
     wsRef.current = ws;
 

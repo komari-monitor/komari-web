@@ -1,4 +1,11 @@
 {
+  "about": {
+    "ai": "Komari 專案的開發過程得到了人工智慧工具的輔助。這些工具被用於執行程式碼生成、重構和除錯等任務，以提高開發效率和程式碼品質。所有由 AI 生成的程式碼和建議都經過了人類開發者的審查與驗證。",
+    "open_source": "Komari 基於 MIT 協議開源，並使用了以下開源軟體構建：",
+    "open_source_title": "開源軟體許可協議",
+    "readme_open_in_new_tab": "在新標籤頁中打開",
+    "title": "關於"
+  },
   "account": {
     "2fa_disabled": "雙重身份驗證已禁用",
     "2fa_enabled": "雙重身份驗證已啟用",
@@ -529,6 +536,10 @@
       },
       "enable": "開啟通知",
       "enable_description": "通過首選方式獲取及時通知。",
+      "Javascript": {
+        "script": "JavaScript 代碼",
+        "script_help": "實現 sendMessage(message, title) 及可選的 sendEvent(event) 函數的 JavaScript 代碼（部分支持 ES6）。兩者均應返回 Promise 或布爾值。可用 API：fetch()、xhr()、console.log()。指南: https://komari-document.pages.dev/faq/notification-template.html"
+      },
       "method": "通知渠道",
       "method_description": "選擇您偏好的通知平台",
       "moved": "正在尋找過期通知？已經遷移到通知-通用",
@@ -686,6 +697,7 @@
     "upload_success": "主題上傳成功",
     "upload_theme": "上傳主題",
     "uploading": "正在上傳主題...",
+    "uploda_413_content_too_large": "文件上傳失敗 (413)。請檢查並增大您的反向代理伺服器（如 Nginx/CDN）配置中的檔案大小限制（client_max_body_size），確保該值大於您的目標檔案大小。",
     "version": "版本",
     "zip_files_only": "僅支持 .zip 格式"
   },

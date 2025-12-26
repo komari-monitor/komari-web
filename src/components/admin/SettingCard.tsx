@@ -402,9 +402,11 @@ export function SettingCardLongTextInput({
   label = useTranslation().t("save"),
   defaultValue = "",
   OnSave = () => { },
+  onChange,
   autoDisabled = true,
   isSaving,
   bordless = false,
+  showSaveButton = true,
 }: {
   title?: string;
   description?: string;
@@ -415,9 +417,11 @@ export function SettingCardLongTextInput({
     textAreaElement: HTMLTextAreaElement,
     buttonElement: HTMLButtonElement
   ) => void;
+  onChange?: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   autoDisabled?: boolean;
   isSaving?: boolean;
   bordless?: boolean;
+  showSaveButton?: boolean;
 }) {
   const [disabled, setDisabled] = React.useState(false);
   const savingState = isSaving !== undefined ? isSaving : disabled;
@@ -443,6 +447,8 @@ export function SettingCardLongTextInput({
 
   const handleTextAreaChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
     setValue(e.target.value);
+    // 调用外部传入的 onChange 回调
+    onChange?.(e);
   };
 
   return (
@@ -456,14 +462,16 @@ export function SettingCardLongTextInput({
           onChange={handleTextAreaChange}
           ref={textAreaRef}
         />
-        <Button
-          ref={buttonRef}
-          onClick={handleSave}
-          variant="solid"
-          disabled={savingState}
-        >
-          {label}
-        </Button>
+        {showSaveButton && (
+          <Button
+            ref={buttonRef}
+            onClick={handleSave}
+            variant="solid"
+            disabled={savingState}
+          >
+            {label}
+          </Button>
+        )}
       </Flex>
     </SettingCard>
   );

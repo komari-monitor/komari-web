@@ -75,16 +75,28 @@ const PingChart = ({ uuid }: { uuid: string }) => {
     }
     const maxPreset = presetViews[presetViews.length - 1];
     if (max_record_preserve_time > maxPreset.hours) {
+      const dynamicLabel =
+        max_record_preserve_time % 24 === 0
+          ? `${t("chart.days", {
+              count: Math.floor(max_record_preserve_time / 24),
+            })}`
+          : `${t("chart.hours", { count: max_record_preserve_time })}`;
       avaliableView.push({
-        label: `${t("chart.hours", { count: max_record_preserve_time })}`,
+        label: dynamicLabel,
         hours: max_record_preserve_time,
       });
     } else if (
       max_record_preserve_time > 1 &&
       !presetViews.some((v) => v.hours === max_record_preserve_time)
     ) {
+      const dynamicLabel =
+        max_record_preserve_time % 24 === 0
+          ? `${t("chart.days", {
+              count: Math.floor(max_record_preserve_time / 24),
+            })}`
+          : `${t("chart.hours", { count: max_record_preserve_time })}`;
       avaliableView.push({
-        label: `${t("chart.hours", { count: max_record_preserve_time })}`,
+        label: dynamicLabel,
         hours: max_record_preserve_time,
       });
     }
@@ -104,7 +116,7 @@ const PingChart = ({ uuid }: { uuid: string }) => {
   const [tasks, setTasks] = useState<TaskInfo[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [cutPeak, setCutPeak] = useState(false); 
+  const [cutPeak, setCutPeak] = useState(false);
 
   // Update hours state when view changes
   useEffect(() => {
@@ -136,12 +148,15 @@ const PingChart = ({ uuid }: { uuid: string }) => {
           from?: string;
           to?: string;
         };
-        const result = await call<
-          any,
-          RpcResp
-        >("common:getRecords", { uuid, type: "ping", hours });
+        const result = await call<any, RpcResp>("common:getRecords", {
+          uuid,
+          type: "ping",
+          hours,
+        });
         const records = result?.records || [];
-        records.sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime());
+        records.sort(
+          (a, b) => new Date(a.time).getTime() - new Date(b.time).getTime()
+        );
         setRemoteData(records);
         setTasks(result?.tasks || []);
         setLoading(false);
@@ -161,18 +176,26 @@ const PingChart = ({ uuid }: { uuid: string }) => {
     // 参考间隔（若缺失则 60s），仅用于抖动合并容差
     const taskIntervals = tasks
       .map((t) => t.interval)
-      .filter((v): v is number => typeof v === 'number' && v > 0);
-    const fallbackIntervalSec = taskIntervals.length ? Math.min(...taskIntervals) : 60;
+      .filter((v): v is number => typeof v === "number" && v > 0);
+    const fallbackIntervalSec = taskIntervals.length
+      ? Math.min(...taskIntervals)
+      : 60;
 
     // 合并抖动：0.25 * 参考间隔（0.8s ~ 6s）
-    const toleranceMs = Math.min(6000, Math.max(800, Math.floor(fallbackIntervalSec * 1000 * 0.25)));
+    const toleranceMs = Math.min(
+      6000,
+      Math.max(800, Math.floor(fallbackIntervalSec * 1000 * 0.25))
+    );
     const grouped: Record<number, any> = {};
     const anchors: number[] = [];
     for (const rec of data) {
       const ts = new Date(rec.time).getTime();
       let anchor: number | null = null;
       for (const a of anchors) {
-        if (Math.abs(a - ts) <= toleranceMs) { anchor = a; break; }
+        if (Math.abs(a - ts) <= toleranceMs) {
+          anchor = a;
+          break;
+        }
       }
       const use = anchor ?? ts;
       if (!grouped[use]) {
@@ -181,15 +204,23 @@ const PingChart = ({ uuid }: { uuid: string }) => {
       }
       grouped[use][rec.task_id] = rec.value < 0 ? null : rec.value;
     }
-    const merged = Object.values(grouped).sort((a: any, b: any) => new Date(a.time).getTime() - new Date(b.time).getTime());
+    const merged = Object.values(grouped).sort(
+      (a: any, b: any) =>
+        new Date(a.time).getTime() - new Date(b.time).getTime()
+    );
 
     // 截取最后 hours 窗口，并多保留一个窗口外的前置点，便于边界插值
-    const lastTs = new Date((merged as any[])[(merged as any[]).length - 1].time).getTime();
+    const lastTs = new Date(
+      (merged as any[])[(merged as any[]).length - 1].time
+    ).getTime();
     const fromTs = lastTs - hours * 3600_000;
     let startIdx = 0;
     for (let i = 0; i < (merged as any[]).length; i++) {
       const ts = new Date((merged as any[])[i].time).getTime();
-      if (ts >= fromTs) { startIdx = Math.max(0, i - 1); break; }
+      if (ts >= fromTs) {
+        startIdx = Math.max(0, i - 1);
+        break;
+      }
     }
     const clipped = (merged as any[]).slice(startIdx);
     return clipped;
@@ -207,8 +238,12 @@ const PingChart = ({ uuid }: { uuid: string }) => {
     // 仅在相邻有效点之间用线性插值填补中间 null，避免大量零散段。
     // 数据驱动：每条线使用“中位采样间隔 * 倍数（默认6）”作为最大插值跨度，并钳制在 [2min, 30min]。
     if (tasks.length > 0 && full.length > 0) {
-      const keys = tasks.map(t => String(t.id));
-      full = interpolateNullsLinear(full, keys, { maxGapMultiplier: 6, minCapMs: 2 * 60_000, maxCapMs: 30 * 60_000 });
+      const keys = tasks.map((t) => String(t.id));
+      full = interpolateNullsLinear(full, keys, {
+        maxGapMultiplier: 6,
+        minCapMs: 2 * 60_000,
+        maxCapMs: 30 * 60_000,
+      });
     }
     return full;
   }, [remoteData, cutPeak, tasks, hours]);
@@ -254,7 +289,11 @@ const PingChart = ({ uuid }: { uuid: string }) => {
     const config: Record<string, any> = {};
     tasks.forEach((task, idx) => {
       config[task.id] = {
-        label: `${task.name}${typeof task.p99_p50_ratio === 'number' ? ` (${t('chart.volatility')}: ${task.p99_p50_ratio.toFixed(2)})` : ''}`,
+        label: `${task.name}${
+          typeof task.p99_p50_ratio === "number"
+            ? ` (${t("chart.volatility")}: ${task.p99_p50_ratio.toFixed(2)})`
+            : ""
+        }`,
         color: colors[idx % colors.length],
       };
     });
@@ -300,28 +339,35 @@ const PingChart = ({ uuid }: { uuid: string }) => {
   }, [tasks, hiddenLines]);
 
   return (
-    <Flex direction="column" align="center" gap="4" className="w-full max-w-screen">
-      <div className="overflow-x-auto w-full flex items-center justify-center">
-        <SegmentedControl.Root
-          value={view}
-          onValueChange={(newView) => {
-            setView(newView);
-            const selected = avaliableView.find((v) => v.label === newView);
-            if (selected && selected.hours !== undefined) {
-              setHours(selected.hours);
-            }
-          }}
-        >
-          {avaliableView.map((v) => (
-            <SegmentedControl.Item
-              key={v.label}
-              value={v.label}
-              className="capitalize"
-            >
-              {v.label}
-            </SegmentedControl.Item>
-          ))}
-        </SegmentedControl.Root>
+    <Flex
+      direction="column"
+      align="center"
+      gap="4"
+      className="w-full max-w-screen"
+    >
+      <div className="w-full overflow-x-auto px-2">
+        <div className="w-max mx-auto">
+          <SegmentedControl.Root
+            value={view}
+            onValueChange={(newView) => {
+              setView(newView);
+              const selected = avaliableView.find((v) => v.label === newView);
+              if (selected && selected.hours !== undefined) {
+                setHours(selected.hours);
+              }
+            }}
+          >
+            {avaliableView.map((v) => (
+              <SegmentedControl.Item
+                key={v.label}
+                value={v.label}
+                className="capitalize"
+              >
+                {v.label}
+              </SegmentedControl.Item>
+            ))}
+          </SegmentedControl.Root>
+        </div>
       </div>
 
       {loading && (
@@ -337,9 +383,7 @@ const PingChart = ({ uuid }: { uuid: string }) => {
       {latestValues.length > 0 ? (
         <Card className="w-full max-w-[900px] mb-2">
           <Tips className="absolute top-0 right-0 m-2">
-            <label>
-              {t("chart.loss_tips")}
-            </label>
+            <label>{t("chart.loss_tips")}</label>
           </Tips>
           <div
             className="grid gap-2 mb-2 w-full"
@@ -356,71 +400,115 @@ const PingChart = ({ uuid }: { uuid: string }) => {
                 <div className="flex items-start justify-center ml-1 flex-col">
                   <div className="flex items-center gap-1 -mb-1">
                     <label className="font-bold text-md">{task.name}</label>
-                    <Tips side="top" trigger={<DotsHorizontalIcon className="cursor-pointer"  color="gray" />}>
+                    <Tips
+                      side="top"
+                      trigger={
+                        <DotsHorizontalIcon
+                          className="cursor-pointer"
+                          color="gray"
+                        />
+                      }
+                    >
                       <div className="grid grid-cols-2 gap-x-3 gap-y-1">
-                        {typeof task.min === 'number' && (
+                        {typeof task.min === "number" && (
                           <>
-                            <span className="text-muted-foreground">{t('chart.min')}</span>
-                            <span className="font-mono">{Math.round(task.min)} ms</span>
+                            <span className="text-muted-foreground">
+                              {t("chart.min")}
+                            </span>
+                            <span className="font-mono">
+                              {Math.round(task.min)} ms
+                            </span>
                           </>
                         )}
-                        {typeof task.max === 'number' && (
+                        {typeof task.max === "number" && (
                           <>
-                            <span className="text-muted-foreground">{t('chart.max')}</span>
-                            <span className="font-mono">{Math.round(task.max)} ms</span>
+                            <span className="text-muted-foreground">
+                              {t("chart.max")}
+                            </span>
+                            <span className="font-mono">
+                              {Math.round(task.max)} ms
+                            </span>
                           </>
                         )}
-                        {typeof task.avg === 'number' && (
+                        {typeof task.avg === "number" && (
                           <>
-                            <span className="text-muted-foreground">{t('chart.avg')}</span>
-                            <span className="font-mono">{Math.round(task.avg)} ms</span>
+                            <span className="text-muted-foreground">
+                              {t("chart.avg")}
+                            </span>
+                            <span className="font-mono">
+                              {Math.round(task.avg)} ms
+                            </span>
                           </>
                         )}
-                        {typeof task.latest === 'number' && (
+                        {typeof task.latest === "number" && (
                           <>
-                            <span className="text-muted-foreground">{t('chart.latest')}</span>
-                            <span className="font-mono">{Math.round(task.latest)} ms</span>
+                            <span className="text-muted-foreground">
+                              {t("chart.latest")}
+                            </span>
+                            <span className="font-mono">
+                              {Math.round(task.latest)} ms
+                            </span>
                           </>
                         )}
-                        {typeof task.p99_p50_ratio === 'number' && (
+                        {typeof task.p99_p50_ratio === "number" && (
                           <>
-                            <span className="text-muted-foreground">{t('chart.volatility')}</span>
-                            <span className="font-mono">{task.p99_p50_ratio.toFixed(2)}</span>
+                            <span className="text-muted-foreground">
+                              {t("chart.volatility")}
+                            </span>
+                            <span className="font-mono">
+                              {task.p99_p50_ratio.toFixed(2)}
+                            </span>
                           </>
                         )}
-                        {typeof task.p50 === 'number' && (
+                        {typeof task.p50 === "number" && (
                           <>
                             <span className="text-muted-foreground">p50</span>
-                            <span className="font-mono">{Math.round(task.p50)} ms</span>
+                            <span className="font-mono">
+                              {Math.round(task.p50)} ms
+                            </span>
                           </>
                         )}
-                        {typeof task.p99 === 'number' && (
+                        {typeof task.p99 === "number" && (
                           <>
                             <span className="text-muted-foreground">p99</span>
-                            <span className="font-mono">{Math.round(task.p99)} ms</span>
+                            <span className="font-mono">
+                              {Math.round(task.p99)} ms
+                            </span>
                           </>
                         )}
-                        {typeof task.loss === 'number' && (
+                        {typeof task.loss === "number" && (
                           <>
-                            <span className="text-muted-foreground">{t('chart.lossRate')}</span>
-                            <span className="font-mono">{Number(task.loss).toFixed(1)}%</span>
+                            <span className="text-muted-foreground">
+                              {t("chart.lossRate")}
+                            </span>
+                            <span className="font-mono">
+                              {Number(task.loss).toFixed(1)}%
+                            </span>
                           </>
                         )}
-                        {typeof task.interval === 'number' && (
+                        {typeof task.interval === "number" && (
                           <>
-                            <span className="text-muted-foreground">{t('chart.interval')}</span>
+                            <span className="text-muted-foreground">
+                              {t("chart.interval")}
+                            </span>
                             <span className="font-mono">{task.interval}s</span>
                           </>
                         )}
                         {task.type && (
                           <>
-                            <span className="text-muted-foreground">{t('chart.type')}</span>
-                            <span className="font-mono uppercase">{task.type}</span>
+                            <span className="text-muted-foreground">
+                              {t("chart.type")}
+                            </span>
+                            <span className="font-mono uppercase">
+                              {task.type}
+                            </span>
                           </>
                         )}
-                        {typeof task.total === 'number' && (
+                        {typeof task.total === "number" && (
                           <>
-                            <span className="text-muted-foreground">{t('chart.total')}</span>
+                            <span className="text-muted-foreground">
+                              {t("chart.total")}
+                            </span>
                             <span className="font-mono">{task.total}</span>
                           </>
                         )}
@@ -429,14 +517,17 @@ const PingChart = ({ uuid }: { uuid: string }) => {
                   </div>
                   <div className="flex gap-2 text-sm text-muted-foreground">
                     <span>
-                      {task.value !== null ? `${Number(task.value).toFixed(0)} ms` : '-'}
+                      {task.value !== null
+                        ? `${Number(task.value).toFixed(0)} ms`
+                        : "-"}
                     </span>
                     <span>
                       {`${Number(task.loss).toFixed(1)}%${t("chart.lossRate")}`}
                     </span>
-                    {typeof task.p99_p50_ratio === 'number' && (
+                    {typeof task.p99_p50_ratio === "number" && (
                       <span title="p99/p50">
-                        {(task.p99_p50_ratio).toFixed(1)}{t('chart.volatility')}
+                        {task.p99_p50_ratio.toFixed(1)}
+                        {t("chart.volatility")}
                       </span>
                     )}
                   </div>
@@ -505,7 +596,7 @@ const PingChart = ({ uuid }: { uuid: string }) => {
                       isAnimationActive={false}
                       strokeWidth={2}
                       connectNulls={connect}
-                      type={cutPeak ? 'basis' : 'linear'}
+                      type={cutPeak ? "basis" : "linear"}
                       hide={!!hiddenLines[String(task.id)]}
                     />
                   );
@@ -525,9 +616,16 @@ const PingChart = ({ uuid }: { uuid: string }) => {
               checked={cutPeak}
               onCheckedChange={setCutPeak}
             />
-            <label htmlFor="cut-peak" className="text-sm font-medium flex items-center gap-1 flex-row">
+            <label
+              htmlFor="cut-peak"
+              className="text-sm font-medium flex items-center gap-1 flex-row"
+            >
               {t("chart.cutPeak")}
-              <Tips><span dangerouslySetInnerHTML={{ __html: t("chart.cutPeak_tips") }} /></Tips>
+              <Tips>
+                <span
+                  dangerouslySetInnerHTML={{ __html: t("chart.cutPeak_tips") }}
+                />
+              </Tips>
             </label>
           </div>
           <Button

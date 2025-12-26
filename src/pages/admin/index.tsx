@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   NodeDetailsProvider,
   useNodeDetails,
@@ -85,7 +85,7 @@ const NodeDetailsPage = () => {
 };
 
 const Layout = () => {
-  const { nodeDetail, isLoading, error } = useNodeDetails();
+  const { nodeDetail, isLoading, error, refresh } = useNodeDetails();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedNodes, setSelectedNodes] = useState<string[]>([]);
   const filteredNodes = Array.isArray(nodeDetail)
@@ -95,7 +95,12 @@ const Layout = () => {
         )
         .sort((a, b) => a.weight - b.weight)
     : [];
-
+  
+  useEffect(() => {
+    const interval = setInterval(() => { refresh() }, 5000);
+    return () => clearInterval(interval);
+  }, [nodeDetail]);
+  
   if (isLoading) return <Loading text="" />;
   if (error) return <div>{error}</div>;
 
@@ -199,10 +204,12 @@ const SortableRow = ({
   node,
   selectedNodes,
   handleSelectNode,
+  settings
 }: {
   node: NodeDetail;
   selectedNodes: string[];
   handleSelectNode: (uuid: string, checked: boolean) => void;
+  settings: any;
 }) => {
   const { attributes, listeners, setNodeRef, transform, transition } =
     useSortable({ id: node.uuid });
@@ -308,7 +315,7 @@ const SortableRow = ({
         />
       </TableCell>
       <TableCell>
-        <ActionButtons node={node} />
+        <ActionButtons node={node} settings={settings} />
       </TableCell>
     </TableRow>
   );
@@ -343,6 +350,7 @@ const NodeTable = ({
   // 添加 localNodes 状态，实现即时 UI 更新
   const [localNodes, setLocalNodes] = useState<NodeDetail[]>(nodes);
   const [isDragging, setIsDragging] = useState(false);
+  const { settings } = useSettings();
   React.useEffect(() => {
     setLocalNodes(nodes);
   }, [nodes]);
@@ -444,6 +452,7 @@ const NodeTable = ({
                   node={node}
                   selectedNodes={selectedNodes}
                   handleSelectNode={handleSelectNode}
+                  settings={settings}
                 />
               ))}
             </SortableContext>
@@ -455,11 +464,11 @@ const NodeTable = ({
 };
 
 type Platform = "linux" | "windows" | "macos";
-const ActionButtons = ({ node }: { node: NodeDetail }) => {
+const ActionButtons = ({ node, settings }: { node: NodeDetail, settings: any }) => {
   const { t } = useTranslation();
   return (
     <div className="flex items-center gap-4">
-      <GenerateCommandButton node={node} />
+      <GenerateCommandButton node={node} settings={settings} />
       <IconButton
         title={t("terminal.title")}
         variant="ghost"
@@ -536,7 +545,7 @@ type InstallOptions = {
   includeMountpoints: string;
   monthRotate: string;
 };
-function GenerateCommandButton({ node }: { node: NodeDetail }) {
+function GenerateCommandButton({ node, settings }: { node: NodeDetail, settings: any }) {
   const [selectedPlatform, setSelectedPlatform] =
     React.useState<Platform>("linux");
   const [installOptions, setInstallOptions] = React.useState<InstallOptions>({
@@ -562,7 +571,6 @@ function GenerateCommandButton({ node }: { node: NodeDetail }) {
   const [enableIncludeMountpoints, setEnableIncludeMountpoints] =
     React.useState(false);
   const [enableMonthRotate, setEnableMonthRotate] = React.useState(false);
-  const {settings} = useSettings();
 
   const generateCommand = () => {
     const host = function () {
@@ -645,7 +653,7 @@ function GenerateCommandButton({ node }: { node: NodeDetail }) {
     let finalCommand = "";
     switch (selectedPlatform) {
       case "linux":
-        finalCommand = `bash <(curl -sL ${scriptUrl}) ` + args.join(" ");
+        finalCommand = `wget -qO- ${scriptUrl} | sudo bash -s -- ` + args.join(" ");
         break;
       case "windows":
         finalCommand =

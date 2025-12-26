@@ -1,4 +1,11 @@
 {
+  "about": {
+    "ai": "The development process of the Komari project has been assisted by artificial intelligence tools. These tools are used for tasks such as code generation, refactoring, and debugging to improve development efficiency and code quality. All AI-generated code and suggestions have been reviewed and validated by human developers.",
+    "open_source": "Komari is open source under the MIT license and is built using the following open source software:",
+    "open_source_title": "Open Source Software License",
+    "readme_open_in_new_tab": "Open in new tab",
+    "title": "About"
+  },
   "account": {
     "2fa_disabled": "Two-factor authentication is disabled",
     "2fa_enabled": "Two-factor authentication is enabled",
@@ -529,6 +536,10 @@
       },
       "enable": "Enable Notifications",
       "enable_description": "Enable to get updates via your preferred method.",
+      "Javascript": {
+        "script": "JavaScript code",
+        "script_help": "JavaScript code that implements the sendMessage(message, title) and optional sendEvent(event) functions (partially supports ES6). Both should return a Promise or a boolean value. Available APIs: fetch(), xhr(), console.log(). Guide: https://komari-document.pages.dev/faq/notification-template.html"
+      },
       "method": "Delivery Method",
       "method_description": "Pick your preferred platform for alerts.",
       "moved": "Looking for expired notifications? Moved to notification-general",
@@ -686,6 +697,7 @@
     "upload_success": "Theme uploaded successfully",
     "upload_theme": "Upload Theme",
     "uploading": "Uploading theme...",
+    "uploda_413_content_too_large": "File upload failed (413). Please check and increase the file size limit in your reverse proxy server (such as Nginx/CDN) configuration (client_max_body_size) to ensure that this value is greater than your target file size.",
     "version": "Version",
     "zip_files_only": "Only .zip files are supported"
   },

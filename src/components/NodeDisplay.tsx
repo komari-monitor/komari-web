@@ -1,4 +1,4 @@
-import React, { useState, useMemo, useRef, useEffect } from "react";
+import React, { useState, useMemo, useRef, useEffect, Suspense } from "react";
 import {
   Flex,
   Text,
@@ -12,7 +12,7 @@ import { useLocalStorage } from "@/hooks/useLocalStorage";
 import type { NodeBasicInfo } from "@/contexts/NodeListContext";
 import type { LiveData } from "../types/LiveData";
 import { NodeGrid } from "./Node";
-import NodeTable from "./NodeTable";
+const NodeTable = React.lazy(() => import("./NodeTable"));
 import { isRegionMatch } from "@/utils/regionHelper";
 import "./NodeDisplay.css";
 
@@ -176,7 +176,11 @@ const NodeDisplay: React.FC<NodeDisplayProps> = ({ nodes, liveData }) => {
       </Flex>
       {/* 分组选择器 */}
       {showGroupSelector && (
-        <Flex align="center" gap="2" className="mx-4 mb-2 -mt-2 overflow-x-auto">
+        <Flex
+          align="center"
+          gap="2"
+          className="mx-4 mb-2 -mt-2 overflow-x-auto"
+        >
           <label className="whitespace-nowrap text-md text-muted-foreground">
             {t("common.group", { defaultValue: "分组" })}
           </label>
@@ -267,7 +271,11 @@ const NodeDisplay: React.FC<NodeDisplayProps> = ({ nodes, liveData }) => {
           {viewMode === "grid" ? (
             <NodeGrid nodes={filteredNodes} liveData={liveData} />
           ) : (
-            <NodeTable nodes={filteredNodes} liveData={liveData} />
+            <Suspense
+              fallback={<div style={{ padding: 16 }}>Loading table…</div>}
+            >
+              <NodeTable nodes={filteredNodes} liveData={liveData} />
+            </Suspense>
           )}
         </>
       )}

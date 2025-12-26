@@ -1,4 +1,11 @@
 {
+  "about": {
+    "ai": "Proses pengembangan proyek Komari didukung oleh alat kecerdasan buatan. Alat-alat ini digunakan untuk menjalankan tugas seperti pembuatan kode, refactoring, dan debugging, untuk meningkatkan efisiensi pengembangan dan kualitas kode. Semua kode dan saran yang dihasilkan oleh AI telah diperiksa dan divalidasi oleh pengembang manusia.",
+    "open_source": "Komari bersifat open source berdasarkan lisensi MIT dan dibangun menggunakan perangkat lunak open source berikut:",
+    "open_source_title": "Lisensi Perangkat Lunak Open Source",
+    "readme_open_in_new_tab": "Buka di tab baru",
+    "title": "Tentang"
+  },
   "account": {
     "2fa_disabled": "Autentikasi dua faktor dinonaktifkan",
     "2fa_enabled": "Autentikasi dua faktor diaktifkan",
@@ -529,6 +536,10 @@
       },
       "enable": "Aktifkan Notifikasi",
       "enable_description": "Aktifkan untuk mendapatkan pembaruan melalui metode pilihan Anda.",
+      "Javascript": {
+        "script": "Kode JavaScript",
+        "script_help": "Kode JavaScript yang mengimplementasikan fungsi sendMessage(message, title) dan sendEvent(event) yang bersifat opsional (dukungan sebagian untuk ES6). Keduanya harus mengembalikan Promise atau nilai boolean. API yang tersedia: fetch(), xhr(), console.log(). Panduan: https://komari-document.pages.dev/faq/notification-template.html"
+      },
       "method": "Metode Pengiriman",
       "method_description": "Pilih platform favorit Anda untuk peringatan.",
       "moved": "Mencari notifikasi kedaluwarsa? Pindah ke notification-general",
@@ -686,6 +697,7 @@
     "upload_success": "Tema berhasil diunggah",
     "upload_theme": "Unggah Tema",
     "uploading": "Mengunggah tema...",
+    "uploda_413_content_too_large": "Unggahan file gagal (413). Silakan periksa dan tingkatkan batas ukuran file dalam konfigurasi server proxy terbalik Anda (seperti Nginx/CDN) (client_max_body_size), pastikan nilai tersebut lebih besar dari ukuran file yang Anda tuju.",
     "version": "Versi",
     "zip_files_only": "Hanya file .zip yang didukung"
   },
