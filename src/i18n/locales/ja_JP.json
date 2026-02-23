@@ -607,6 +607,8 @@
       "private_site_description": "サイトをプライベートに設定し、オンにするとデータはログイン後にのみ取得できます。",
       "script_domain": "エージェント接続アドレス",
       "script_domain_description": "インストールスクリプトの接続アドレスを定義します。複数のドメインのユーザーに便利で、他のドメインのアクセスには影響しません。空白の場合は現在のドメインを使用します。",
+      "base_scripts_url": "インストールスクリプトURL",
+      "base_scripts_url_description": "インストールスクリプトのダウンロードURLプレフィックスをカスタマイズします。空白の場合はデフォルトのGitHub URLを使用します。",
       "send_ip_addr_to_guest": "ゲストに一部のIPアドレスを表示",
       "send_ip_addr_to_guest_description": "未ログインの場合、common:getNodesを通じて一部のIPアドレス情報を確認できます。形式は9.*.*.* / fe80:*:*:*:*:*:*:*です。特定のテーマでIPを表示するために使用されます。",
       "tempory_share": "一時的な共有",

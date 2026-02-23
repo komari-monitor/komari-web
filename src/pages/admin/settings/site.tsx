@@ -162,6 +162,15 @@ export default function SiteSettings() {
           await updateSettingsWithToast({ script_domain: data }, t);
         }}
       />
+      <SettingCardShortTextInput
+        title={t("settings.site.base_scripts_url")}
+        description={t("settings.site.base_scripts_url_description")}
+        placeholder="https://raw.githubusercontent.com/komari-monitor/komari-agent/refs/heads/main"
+        defaultValue={settings.base_scripts_url || ""}
+        OnSave={async (data) => {
+          await updateSettingsWithToast({ base_scripts_url: data }, t);
+        }}
+      />
       <SettingCardLabel>{t("settings.site.private_site")}</SettingCardLabel>
       <SettingCardSwitch
         title={t("settings.site.private_site")}

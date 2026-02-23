@@ -635,8 +635,8 @@ function GenerateCommandButton({ node, settings }: { node: NodeDetail, settings:
     if (selectedPlatform === "windows") {
       scriptFile = "install.ps1";
     }
-    let scriptUrl =
-      `https://raw.githubusercontent.com/komari-monitor/komari-agent/refs/heads/main/${scriptFile}`;
+    const baseScriptsUrl = (settings.base_scripts_url || "https://raw.githubusercontent.com/komari-monitor/komari-agent/refs/heads/main").replace(/\/+$/, "");
+    let scriptUrl = `${baseScriptsUrl}/${scriptFile}`;
     if (enableGhproxy) {
       if (enableGhproxy && installOptions.ghproxy) {
         scriptUrl = scriptUrl.slice(8); // 去掉 https://

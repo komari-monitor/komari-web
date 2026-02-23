@@ -607,6 +607,8 @@
       "private_site_description": "Jadikan situs privat. Setelah diaktifkan, data hanya dapat diakses setelah login.",
       "script_domain": "Alamat koneksi Agen",
       "script_domain_description": "Tentukan alamat koneksi panel untuk skrip instalasi, memudahkan pengguna dengan beberapa domain, dan tidak akan mempengaruhi akses domain lain. Biarkan kosong untuk menggunakan domain saat ini.",
+      "base_scripts_url": "URL skrip instalasi",
+      "base_scripts_url_description": "Kustomisasi URL dasar untuk mengunduh skrip instalasi. Biarkan kosong untuk menggunakan URL GitHub default.",
       "send_ip_addr_to_guest": "Tampilkan sebagian alamat IP kepada pengunjung",
       "send_ip_addr_to_guest_description": "Dalam keadaan tidak login, sebagian informasi alamat IP dapat dilihat melalui common:getNodes, berbentuk 9.*.*.* / fe80:*:*:*:*:*:*:*. Digunakan untuk menampilkan IP pada beberapa tema.",
       "tempory_share": "Berbagi sementara",

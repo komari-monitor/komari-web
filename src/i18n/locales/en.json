@@ -607,6 +607,8 @@
       "private_site_description": "Set the site to private. Once enabled, data can only be accessed after logging in.",
       "script_domain": "Agent connection address",
       "script_domain_description": "Define the connection address for the installation script panel, convenient for users with multiple domains, and will not affect access to other domains. Leave empty to use the current domain.",
+      "base_scripts_url": "Install script URL",
+      "base_scripts_url_description": "Custom base URL for downloading install scripts. Leave empty to use the default GitHub URL.",
       "send_ip_addr_to_guest": "Show partial IP address to guests",
       "send_ip_addr_to_guest_description": "Under non-logged-in conditions, partial IP address information can be viewed through common:getNodes, in the form of 9.*.*.* / fe80:*:*:*:*:*:*:*. Used for displaying IP in some themes.",
       "tempory_share": "Temporary Share",

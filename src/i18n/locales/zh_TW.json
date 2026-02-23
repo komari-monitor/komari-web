@@ -607,6 +607,8 @@
       "private_site_description": "將站點設置為私有，開啟後資料都需要登錄後才能獲取。",
       "script_domain": "Agent 連接地址",
       "script_domain_description": "為安裝腳本定義面板的連接地址，方便多個域名的用戶，並不會影響其他域名的訪問。留空使用當前域名。",
+      "base_scripts_url": "安裝腳本地址",
+      "base_scripts_url_description": "自訂安裝腳本的下載地址前綴。留空使用預設 GitHub 地址。",
       "send_ip_addr_to_guest": "向訪客顯示部分IP地址",
       "send_ip_addr_to_guest_description": "未登入的情況下可以透過 common:getNodes 查看部分IP地址資訊，形如 9.*.*.* / fe80:*:*:*:*:*:*:*。用於部分主題展示IP。",
       "tempory_share": "臨時分享",
