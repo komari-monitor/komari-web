@@ -583,6 +583,15 @@
       "record_preserve_time_label": "负载数据保存时间",
       "title": "历史记录"
     },
+    "resource_limits": {
+      "title": "资源限制",
+      "description": "配置系统资源使用限制，防止过度消耗服务器资源。",
+      "config_title": "资源限制配置",
+      "config_description": "设置各类资源的最大使用限制",
+      "max_terminal_sessions": "最大终端会话数",
+      "max_websocket_conns": "最大 WebSocket 连接数",
+      "max_records_cache_size": "最大记录缓存大小"
+    },
     "settings_save_failed": "保存设置失败",
     "settings_saved": "设置已保存",
     "sign_on": {

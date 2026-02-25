@@ -583,6 +583,15 @@
       "record_preserve_time_label": "Periode penyimpanan data beban",
       "title": "Pencatatan"
     },
+    "resource_limits": {
+      "title": "Batas Sumber Daya",
+      "description": "Konfigurasikan batas penggunaan sumber daya sistem untuk mencegah konsumsi berlebihan pada server.",
+      "config_title": "Konfigurasi Batas Sumber Daya",
+      "config_description": "Atur batas maksimum untuk berbagai sumber daya",
+      "max_terminal_sessions": "Maksimum Sesi Terminal",
+      "max_websocket_conns": "Maksimum Koneksi WebSocket",
+      "max_records_cache_size": "Maksimum Ukuran Cache Catatan"
+    },
     "settings_save_failed": "Gagal menyimpan pengaturan",
     "settings_saved": "Pengaturan berhasil disimpan",
     "sign_on": {

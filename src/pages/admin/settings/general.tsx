@@ -232,6 +232,63 @@ export default function GeneralSettings() {
           await updateSettingsWithToast({ nezha_compat_listen: value }, t);
         }}
       />
+      <SettingCardLabel>{t("settings.resource_limits.title")}</SettingCardLabel>
+      <label className="text-sm text-muted-foreground -mt-4">
+        {t("settings.resource_limits.description")}
+      </label>
+      <SettingCardMultiInputCollapse
+        title={t("settings.resource_limits.config_title")}
+        description={t("settings.resource_limits.config_description")}
+        items={[
+          {
+            tag: "max_terminal_sessions",
+            label: t("settings.resource_limits.max_terminal_sessions"),
+            type: "short",
+            placeholder: "100",
+            defaultValue: String(settings.max_terminal_sessions ?? 100),
+            number: true,
+          },
+          {
+            tag: "max_websocket_conns",
+            label: t("settings.resource_limits.max_websocket_conns"),
+            type: "short",
+            placeholder: "500",
+            defaultValue: String(settings.max_websocket_conns ?? 500),
+            number: true,
+          },
+          {
+            tag: "max_records_cache_size",
+            label: t("settings.resource_limits.max_records_cache_size"),
+            type: "short",
+            placeholder: "10000",
+            defaultValue: String(settings.max_records_cache_size ?? 10000),
+            number: true,
+          },
+        ]}
+        onSave={async (values) => {
+          const maxTerminalSessions = parseInt(values.max_terminal_sessions, 10);
+          const maxWebsocketConns = parseInt(values.max_websocket_conns, 10);
+          const maxRecordsCacheSize = parseInt(values.max_records_cache_size, 10);
+
+          if (
+            isNaN(maxTerminalSessions) ||
+            isNaN(maxWebsocketConns) ||
+            isNaN(maxRecordsCacheSize)
+          ) {
+            toast.error(t("settings.invalid_number"));
+            return;
+          }
+
+          await updateSettingsWithToast(
+            {
+              max_terminal_sessions: maxTerminalSessions,
+              max_websocket_conns: maxWebsocketConns,
+              max_records_cache_size: maxRecordsCacheSize,
+            },
+            t
+          );
+        }}
+      />
     </>
   );
 }

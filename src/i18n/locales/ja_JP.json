@@ -583,6 +583,15 @@
       "record_preserve_time_label": "負荷データ保存時間",
       "title": "履歴"
     },
+    "resource_limits": {
+      "title": "リソース制限",
+      "description": "システムリソースの使用制限を設定し、サーバーリソースの過度な消費を防ぎます。",
+      "config_title": "リソース制限設定",
+      "config_description": "各種リソースの最大制限を設定します",
+      "max_terminal_sessions": "最大ターミナルセッション数",
+      "max_websocket_conns": "最大 WebSocket 接続数",
+      "max_records_cache_size": "最大レコードキャッシュサイズ"
+    },
     "settings_save_failed": "設定の保存に失敗しました",
     "settings_saved": "設定が保存されました",
     "sign_on": {

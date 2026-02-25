@@ -583,6 +583,15 @@
       "record_preserve_time_label": "Load data retention period",
       "title": "Record"
     },
+    "resource_limits": {
+      "title": "Resource Limits",
+      "description": "Configure system resource usage limits to prevent excessive server resource consumption.",
+      "config_title": "Resource Limits Configuration",
+      "config_description": "Set maximum limits for various resources",
+      "max_terminal_sessions": "Max Terminal Sessions",
+      "max_websocket_conns": "Max WebSocket Connections",
+      "max_records_cache_size": "Max Records Cache Size"
+    },
     "settings_save_failed": "Failed to Save Settings",
     "settings_saved": "Settings Saved",
     "sign_on": {

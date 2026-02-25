@@ -583,6 +583,15 @@
       "record_preserve_time_label": "負載數據保存時間",
       "title": "歷史記錄"
     },
+    "resource_limits": {
+      "title": "資源限制",
+      "description": "配置系統資源使用限制，防止過度消耗伺服器資源。",
+      "config_title": "資源限制配置",
+      "config_description": "設置各類資源的最大使用限制",
+      "max_terminal_sessions": "最大終端會話數",
+      "max_websocket_conns": "最大 WebSocket 連接數",
+      "max_records_cache_size": "最大記錄緩存大小"
+    },
     "settings_save_failed": "保存設置失敗",
     "settings_saved": "設置已保存",
     "sign_on": {
