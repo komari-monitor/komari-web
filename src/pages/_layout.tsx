@@ -1,3 +1,4 @@
+import React from "react";
 import { LiveDataProvider } from "@/contexts/LiveDataContext";
 import Footer from "../components/Footer";
 import NavBar from "../components/NavBar";
@@ -5,17 +6,32 @@ import { Outlet } from "react-router-dom";
 import { NodeListProvider } from "@/contexts/NodeListContext";
 import { usePublicInfo } from "@/contexts/PublicInfoContext";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { AccountProvider, useAccount } from "@/contexts/AccountContext";
+import PasswordMigrationDialog, {
+  shouldShowPasswordMigrationDialog,
+} from "@/components/PasswordMigrationDialog";
 
 const IndexLayout = () => {
   // 使用我们的LiveDataContext
   const InnerLayout = () => {
     const { publicInfo } = usePublicInfo();
+    const { account } = useAccount();
     const isMobile = useIsMobile();
     const bgUrlDesktop = publicInfo?.theme_settings?.backgroundImageUrlDesktop;
     const bgUrlMobile = publicInfo?.theme_settings?.backgroundImageUrlMobile;
     const bgUrl = isMobile ? bgUrlMobile || bgUrlDesktop : bgUrlDesktop;
     const mainContentWidth =
       publicInfo?.theme_settings?.mainContentWidth ?? 100;
+    
+    // 密码迁移提示
+    const [showMigrationDialog, setShowMigrationDialog] = React.useState(false);
+
+    React.useEffect(() => {
+      if (account?.logged_in && shouldShowPasswordMigrationDialog(account.password_migration_required)) {
+        setShowMigrationDialog(true);
+      }
+    }, [account]);
+
     return (
       <>
         <div
@@ -41,6 +57,10 @@ const IndexLayout = () => {
           </main>
           <Footer />
         </div>
+        <PasswordMigrationDialog
+          open={showMigrationDialog}
+          onOpenChange={setShowMigrationDialog}
+        />
       </>
     );
   };
@@ -48,7 +68,9 @@ const IndexLayout = () => {
   return (
     <LiveDataProvider>
       <NodeListProvider>
-        <InnerLayout />
+        <AccountProvider>
+          <InnerLayout />
+        </AccountProvider>
       </NodeListProvider>
     </LiveDataProvider>
   );

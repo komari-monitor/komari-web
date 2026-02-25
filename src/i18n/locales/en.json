@@ -409,6 +409,12 @@
     "title": "Notification"
   },
   "page_not_found": "The server cannot find the specific page you're trying to access.",
+  "password_migration": {
+    "title": "Password Security Notice",
+    "description": "Your account password uses an older encryption method. We recommend changing your password to improve security.",
+    "later": "Remind Later",
+    "change_now": "Change Now"
+  },
   "ping": {
     "disk_usage_estimate": "Estimated disk space required",
     "disk_usage_with_settings": "Based on the {{hour}} hour retention period you set, you'll need {{space}} disk space.",

@@ -409,6 +409,12 @@
     "title": "Notifikasi"
   },
   "page_not_found": "Server tidak dapat menemukan halaman yang Anda minta.",
+  "password_migration": {
+    "title": "Pemberitahuan Keamanan Kata Sandi",
+    "description": "Kata sandi akun Anda menggunakan metode enkripsi lama. Kami sarankan mengubah kata sandi untuk meningkatkan keamanan.",
+    "later": "Ingatkan Nanti",
+    "change_now": "Ubah Sekarang"
+  },
   "ping": {
     "disk_usage_estimate": "Perkiraan ruang disk yang dibutuhkan",
     "disk_usage_with_settings": "Berdasarkan periode retensi {{hour}} jam yang Anda atur, Anda memerlukan ruang disk sebesar {{space}}.",

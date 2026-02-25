@@ -409,6 +409,12 @@
     "title": "通知"
   },
   "page_not_found": "真不巧，網頁被小鞠吃掉了。",
+  "password_migration": {
+    "title": "密碼安全提示",
+    "description": "您的帳戶密碼使用了舊的加密方式，建議修改密碼以提升安全性。",
+    "later": "稍後提醒",
+    "change_now": "立即修改"
+  },
   "ping": {
     "disk_usage_estimate": "預計需要磁碟空間",
     "disk_usage_with_settings": "根據設定的 {{hour}} 小時保存時間，需要使用 {{space}} 磁碟空間。",

@@ -8,6 +8,7 @@ type Account = {
   username: string;
   uuid: string;
   "2fa_enabled": boolean;
+  password_migration_required?: boolean;
 };
 
 // Context

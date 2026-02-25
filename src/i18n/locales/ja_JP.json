@@ -409,6 +409,12 @@
     "title": "通知"
   },
   "page_not_found": "残念ながら、ページは小鞠に食べられてしまいました。",
+  "password_migration": {
+    "title": "パスワードセキュリティのお知らせ",
+    "description": "アカウントのパスワードは古い暗号化方式を使用しています。セキュリティ向上のため、パスワードの変更をお勧めします。",
+    "later": "後で通知",
+    "change_now": "今すぐ変更"
+  },
   "ping": {
     "disk_usage_estimate": "必要なディスクスペースの見積もり",
     "disk_usage_with_settings": "設定された {{hour}} 時間の保存時間に基づき、{{space}} のディスクスペースが必要です。",
