@@ -412,6 +412,8 @@
   },
   "page_not_found": "残念ながら、ページは小鞠に食べられてしまいました。",
   "ping": {
+    "all_servers": "すべてのサーバー",
+    "all_servers_description": "有効にすると、現在および今後追加されるサーバーでこの監視が実行されます。",
     "disk_usage_estimate": "必要なディスクスペースの見積もり",
     "disk_usage_with_settings": "設定された {{hour}} 時間の保存時間に基づき、{{space}} のディスクスペースが必要です。",
     "interval": "間隔",

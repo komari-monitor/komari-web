@@ -2,6 +2,7 @@ import React from "react";
 
 export interface PingTask {
   clients?: string[];
+  all_clients?: boolean;
   id?: number;
   interval?: number;
   target?: string;

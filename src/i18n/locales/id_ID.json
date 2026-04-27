@@ -412,6 +412,8 @@
   },
   "page_not_found": "Server tidak dapat menemukan halaman yang Anda minta.",
   "ping": {
+    "all_servers": "Semua server",
+    "all_servers_description": "Jika diaktifkan, server saat ini dan server baru berikutnya akan menjalankan pemantauan ini.",
     "disk_usage_estimate": "Perkiraan ruang disk yang dibutuhkan",
     "disk_usage_with_settings": "Berdasarkan periode retensi {{hour}} jam yang Anda atur, Anda memerlukan ruang disk sebesar {{space}}.",
     "interval": "Interval",

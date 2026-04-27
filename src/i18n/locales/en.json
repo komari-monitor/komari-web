@@ -412,6 +412,8 @@
   },
   "page_not_found": "The server cannot find the specific page you're trying to access.",
   "ping": {
+    "all_servers": "All servers",
+    "all_servers_description": "When enabled, current and future servers will run this monitor.",
     "disk_usage_estimate": "Estimated disk space required",
     "disk_usage_with_settings": "Based on the {{hour}} hour retention period you set, you'll need {{space}} disk space.",
     "interval": "Interval",

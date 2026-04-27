@@ -28,6 +28,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import {
   Button,
+  Checkbox,
   Dialog,
   Flex,
   IconButton,
@@ -74,6 +75,14 @@ export const TaskView = ({ pingTasks }: { pingTasks: PingTask[] }) => {
     return pingTasks
       .map((task) => {
         const original = task.clients || [];
+        if (task.all_clients) {
+          return {
+            ...task,
+            clients: original,
+            __allClientsDeleted: false,
+            __originalCount: original.length,
+          };
+        }
         const existing = original.filter((uuid) => nodeUuidSet.has(uuid));
         const allDeleted = original.length > 0 && existing.length === 0;
         return {
@@ -195,6 +204,7 @@ const Row = ({
     type: task.type || "icmp",
     target: task.target || "",
     clients: task.clients || [],
+    all_clients: task.all_clients || false,
     interval: task.interval || 60,
   });
 
@@ -210,7 +220,8 @@ const Row = ({
             name: newForm.name,
             type: newForm.type,
             target: newForm.target,
-            clients: newForm.clients,
+            all_clients: newForm.all_clients,
+            clients: newForm.all_clients ? [] : newForm.clients,
             interval: newForm.interval,
           },
         ],
@@ -294,30 +305,35 @@ const Row = ({
       <TableCell>{task.name}</TableCell>
       <TableCell>
         <Flex gap="2" align="center">
-          {task.clients && task.clients.length > 0
-            ? (() => {
-                const names = task.clients.map((uuid) => {
-                  const name =
-                    nodeDetail.find((node) => node.uuid === uuid)?.name || uuid;
-                  return name;
-                });
-                const joined = names.join(", ");
-                return joined.length > 40
-                  ? joined.slice(0, 40) + "..."
-                  : joined;
-              })()
-            : t("common.none")}
-          <NodeSelectorDialog
-            value={form.clients ?? []}
-            onChange={(uuids) => {
-              setForm((f) => ({ ...f, clients: uuids }));
-              submitEdit({ ...form, clients: uuids });
-            }}
-          >
-            <IconButton variant="ghost">
-              <MoreHorizontal size="16" />
-            </IconButton>
-          </NodeSelectorDialog>
+          {task.all_clients
+            ? t("ping.all_servers")
+            : task.clients && task.clients.length > 0
+              ? (() => {
+                  const names = task.clients.map((uuid) => {
+                    const name =
+                      nodeDetail.find((node) => node.uuid === uuid)?.name || uuid;
+                    return name;
+                  });
+                  const joined = names.join(", ");
+                  return joined.length > 40
+                    ? joined.slice(0, 40) + "..."
+                    : joined;
+                })()
+              : t("common.none")}
+          {!task.all_clients && (
+            <NodeSelectorDialog
+              value={form.clients ?? []}
+              onChange={(uuids) => {
+                const nextForm = { ...form, all_clients: false, clients: uuids };
+                setForm(nextForm);
+                submitEdit(nextForm);
+              }}
+            >
+              <IconButton variant="ghost">
+                <MoreHorizontal size="16" />
+              </IconButton>
+            </NodeSelectorDialog>
+          )}
         </Flex>
       </TableCell>
       <TableCell>{task.target}</TableCell>
@@ -365,11 +381,30 @@ const Row = ({
                 required
               />
               <label>{t("common.server")}</label>
-              <Flex>
-                <NodeSelectorDialog
-                  value={form.clients}
-                  onChange={(v) => setForm((f) => ({ ...f, clients: v }))}
-                />
+              <Flex direction="column" gap="2">
+                <label className="flex min-h-10 items-center gap-2 text-sm font-normal">
+                  <Checkbox
+                    checked={form.all_clients}
+                    onCheckedChange={(checked) =>
+                      setForm((f) => ({
+                        ...f,
+                        all_clients: !!checked,
+                        clients: checked ? [] : f.clients,
+                      }))
+                    }
+                  />
+                  <span>{t("ping.all_servers")}</span>
+                </label>
+                {form.all_clients ? (
+                  <label className="text-sm font-normal text-gray-500">
+                    {t("ping.all_servers_description")}
+                  </label>
+                ) : (
+                  <NodeSelectorDialog
+                    value={form.clients}
+                    onChange={(v) => setForm((f) => ({ ...f, clients: v }))}
+                  />
+                )}
               </Flex>
               <label>
                 {t("ping.interval")} ({t("time.second")})

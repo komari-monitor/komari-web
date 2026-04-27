@@ -412,6 +412,8 @@
   },
   "page_not_found": "真不巧，網頁被小鞠吃掉了。",
   "ping": {
+    "all_servers": "全部伺服器",
+    "all_servers_description": "勾選後，目前和後續新增的伺服器都會啟用此監測。",
     "disk_usage_estimate": "預計需要磁碟空間",
     "disk_usage_with_settings": "根據設定的 {{hour}} 小時保存時間，需要使用 {{space}} 磁碟空間。",
     "interval": "間隔",
