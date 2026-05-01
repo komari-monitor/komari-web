@@ -77,7 +77,6 @@ const InnerLayout = () => {
 
 const DiskUsageEstimate = () => {
   const { pingTasks } = usePingTask();
-  const { nodeDetail } = useNodeDetails();
   const { t } = useTranslation();
 
   // 计算预估磁盘消耗
@@ -93,8 +92,7 @@ const DiskUsageEstimate = () => {
     const recordSize = (36 + 8 + 8 + 33 + 20) * 2; // 回收余量2倍
 
     const totalRecordsPerDay = pingTasks.reduce((total, task) => {
-      // 全部服务器任务会覆盖当前所有服务器，后续新增服务器由后端动态加入。
-      const clientCount = task.all_clients ? nodeDetail.length : task.clients?.length || 0;
+      const clientCount = task.clients?.length || 0;
       const interval = task.interval || 60; // 默认60秒
       const recordsPerDay = (clientCount * (24 * 60 * 60)) / interval;
       return total + recordsPerDay;
@@ -137,7 +135,7 @@ const AddButton: React.FC = () => {
   const { t } = useTranslation();
   const [isOpen, setIsOpen] = React.useState(false);
   const [selected, setSelected] = React.useState<string[]>([]);
-  const [allClients, setAllClients] = React.useState(false);
+  const [defaultOn, setDefaultOn] = React.useState(false);
   const { refresh } = usePingTask();
   const [selectedType, setSelectedType] = React.useState<
     "icmp" | "tcp" | "http"
@@ -145,12 +143,16 @@ const AddButton: React.FC = () => {
   const [saving, setSaving] = React.useState(false);
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
+    if (!defaultOn && selected.length === 0) {
+      toast.error(t("ping.default_on_description"));
+      return;
+    }
     const payload = {
       name: e.currentTarget.ping_name.value,
       type: selectedType,
       target: e.currentTarget.ping_target.value,
-      all_clients: allClients,
-      clients: allClients ? [] : selected,
+      default_on: defaultOn,
+      clients: selected,
       interval: parseInt(e.currentTarget.interval.value, 10),
     };
     setSaving(true);
@@ -165,7 +167,7 @@ const AddButton: React.FC = () => {
         if (response.ok) {
           setIsOpen(false);
           setSelected([]);
-          setAllClients(false);
+          setDefaultOn(false);
           setSelectedType("icmp");
           toast.success(t("common.success"));
         } else {
@@ -221,25 +223,22 @@ const AddButton: React.FC = () => {
             />
             <label htmlFor="ping_server">{t("common.server")}</label>
             <div className="flex flex-col gap-2">
+              <div className="flex items-center justify-start gap-2">
+                <NodeSelectorDialog value={selected} onChange={setSelected} />
+                <label className="text-md font-normal">
+                  {t("common.selected", { count: selected.length })}
+                </label>
+              </div>
               <label className="flex min-h-10 items-center gap-2 text-sm font-normal">
                 <Checkbox
-                  checked={allClients}
-                  onCheckedChange={(checked) => setAllClients(!!checked)}
+                  checked={defaultOn}
+                  onCheckedChange={(checked) => setDefaultOn(!!checked)}
                 />
-                <span>{t("ping.all_servers")}</span>
+                <span>{t("ping.default_on")}</span>
               </label>
-              {allClients ? (
-                <label className="text-sm font-normal text-gray-500">
-                  {t("ping.all_servers_description")}
-                </label>
-              ) : (
-                <div className="flex items-center justify-start gap-2">
-                  <NodeSelectorDialog value={selected} onChange={setSelected} />
-                  <label className="text-md font-normal">
-                    {t("common.selected", { count: selected.length })}
-                  </label>
-                </div>
-              )}
+              <label className="text-sm font-normal text-gray-500">
+                {t("ping.default_on_description")}
+              </label>
             </div>
             <label htmlFor="interval">
               {t("ping.interval")} ({t("time.second")})

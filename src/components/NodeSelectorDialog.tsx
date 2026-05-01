@@ -1,6 +1,7 @@
 import React from "react";
 import { Dialog, Button, Flex } from "@radix-ui/themes";
 import NodeSelector from "./NodeSelector";
+import { useNodeDetails } from "@/contexts/NodeDetailsContext";
 import { useTranslation } from "react-i18next";
 
 interface NodeSelectorDialogProps {
@@ -27,6 +28,7 @@ const NodeSelectorDialog: React.FC<NodeSelectorDialogProps> = ({
   children, // 解构 children
 }) => {
   const { t } = useTranslation();
+  const { nodeDetail } = useNodeDetails();
   // 自动/受控弹窗开关
   const [autoOpen, setAutoOpen] = React.useState(false);
   const open = openProp !== undefined ? openProp : autoOpen;
@@ -36,6 +38,27 @@ const NodeSelectorDialog: React.FC<NodeSelectorDialogProps> = ({
   React.useEffect(() => {
     if (open) setTemp(value ?? []);
   }, [open, value]);
+
+  const allUuids = React.useMemo(() => {
+    const uuids = nodeDetail.map((n) => n.uuid);
+    if (hiddenUuidOnlyClient) {
+      return uuids.filter(
+        (u) => !nodeDetail.find((n) => n.uuid === u)?.is_only_client
+      );
+    }
+    return uuids;
+  }, [nodeDetail, hiddenUuidOnlyClient]);
+  const totalCount = allUuids.length;
+  const isAllSelected =
+    totalCount > 0 && allUuids.every((u) => temp.includes(u));
+
+  const handleToggleAll = () => {
+    if (isAllSelected) {
+      setTemp(temp.filter((u) => !allUuids.includes(u)));
+    } else {
+      setTemp(Array.from(new Set([...temp, ...allUuids])));
+    }
+  };
 
   const handleOk = () => {
     onChange(temp);
@@ -50,6 +73,25 @@ const NodeSelectorDialog: React.FC<NodeSelectorDialogProps> = ({
       <Dialog.Content style={{ maxWidth: 400 }}>
         <Dialog.Title>{title || t("common.select")}</Dialog.Title>
         <Flex direction="column" gap="3">
+          <Flex justify="between" align="center" gap="2">
+            <label className="text-sm text-gray-600">
+              {t("common.selected_total", {
+                count: temp.length,
+                total: totalCount,
+              })}
+            </label>
+            <Button
+              type="button"
+              variant="soft"
+              size="1"
+              onClick={handleToggleAll}
+              disabled={totalCount === 0}
+            >
+              {isAllSelected
+                ? t("common.deselect_all")
+                : t("common.select_all")}
+            </Button>
+          </Flex>
           <NodeSelector
             value={temp}
             onChange={setTemp}

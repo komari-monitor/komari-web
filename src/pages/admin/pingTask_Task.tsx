@@ -72,26 +72,17 @@ export const TaskView = ({ pingTasks }: { pingTasks: PingTask[] }) => {
         __originalCount?: number;
       })[];
     const nodeUuidSet = new Set(nodeDetail.map((n) => n.uuid));
-    return pingTasks
-      .map((task) => {
-        const original = task.clients || [];
-        if (task.all_clients) {
-          return {
-            ...task,
-            clients: original,
-            __allClientsDeleted: false,
-            __originalCount: original.length,
-          };
-        }
-        const existing = original.filter((uuid) => nodeUuidSet.has(uuid));
-        const allDeleted = original.length > 0 && existing.length === 0;
-        return {
-          ...task,
-          clients: existing,
-          __allClientsDeleted: allDeleted,
-          __originalCount: original.length,
-        };
-      });
+    return pingTasks.map((task) => {
+      const original = task.clients || [];
+      const existing = original.filter((uuid) => nodeUuidSet.has(uuid));
+      const allDeleted = original.length > 0 && existing.length === 0;
+      return {
+        ...task,
+        clients: existing,
+        __allClientsDeleted: allDeleted,
+        __originalCount: original.length,
+      };
+    });
   }, [pingTasks, nodeDetail]);
 
   const [localTasks, setLocalTasks] = React.useState(processedTasks);
@@ -204,11 +195,15 @@ const Row = ({
     type: task.type || "icmp",
     target: task.target || "",
     clients: task.clients || [],
-    all_clients: task.all_clients || false,
+    default_on: task.default_on || false,
     interval: task.interval || 60,
   });
 
   const submitEdit = (newForm: typeof form) => {
+    if (!newForm.default_on && newForm.clients.length === 0) {
+      toast.error(t("ping.default_on_description"));
+      return;
+    }
     setEditSaving(true);
     fetch("/api/admin/ping/edit", {
       method: "POST",
@@ -220,8 +215,8 @@ const Row = ({
             name: newForm.name,
             type: newForm.type,
             target: newForm.target,
-            all_clients: newForm.all_clients,
-            clients: newForm.all_clients ? [] : newForm.clients,
+            default_on: newForm.default_on,
+            clients: newForm.clients,
             interval: newForm.interval,
           },
         ],
@@ -305,35 +300,36 @@ const Row = ({
       <TableCell>{task.name}</TableCell>
       <TableCell>
         <Flex gap="2" align="center">
-          {task.all_clients
-            ? t("ping.all_servers")
-            : task.clients && task.clients.length > 0
-              ? (() => {
-                  const names = task.clients.map((uuid) => {
-                    const name =
-                      nodeDetail.find((node) => node.uuid === uuid)?.name || uuid;
-                    return name;
-                  });
-                  const joined = names.join(", ");
-                  return joined.length > 40
-                    ? joined.slice(0, 40) + "..."
-                    : joined;
-                })()
-              : t("common.none")}
-          {!task.all_clients && (
-            <NodeSelectorDialog
-              value={form.clients ?? []}
-              onChange={(uuids) => {
-                const nextForm = { ...form, all_clients: false, clients: uuids };
-                setForm(nextForm);
-                submitEdit(nextForm);
-              }}
-            >
-              <IconButton variant="ghost">
-                <MoreHorizontal size="16" />
-              </IconButton>
-            </NodeSelectorDialog>
+          {task.clients && task.clients.length > 0
+            ? (() => {
+                const names = task.clients.map((uuid) => {
+                  const name =
+                    nodeDetail.find((node) => node.uuid === uuid)?.name || uuid;
+                  return name;
+                });
+                const joined = names.join(", ");
+                return joined.length > 40
+                  ? joined.slice(0, 40) + "..."
+                  : joined;
+              })()
+            : t("common.none")}
+          {task.default_on && (
+            <span className="text-xs text-accent-11">
+              {t("ping.default_on_short")}
+            </span>
           )}
+          <NodeSelectorDialog
+            value={form.clients ?? []}
+            onChange={(uuids) => {
+              const nextForm = { ...form, clients: uuids };
+              setForm(nextForm);
+              submitEdit(nextForm);
+            }}
+          >
+            <IconButton variant="ghost">
+              <MoreHorizontal size="16" />
+            </IconButton>
+          </NodeSelectorDialog>
         </Flex>
       </TableCell>
       <TableCell>{task.target}</TableCell>
@@ -382,29 +378,25 @@ const Row = ({
               />
               <label>{t("common.server")}</label>
               <Flex direction="column" gap="2">
+                <NodeSelectorDialog
+                  value={form.clients}
+                  onChange={(v) => setForm((f) => ({ ...f, clients: v }))}
+                />
+                <label className="text-sm font-normal text-gray-500">
+                  {t("common.selected", { count: form.clients.length })}
+                </label>
                 <label className="flex min-h-10 items-center gap-2 text-sm font-normal">
                   <Checkbox
-                    checked={form.all_clients}
+                    checked={form.default_on}
                     onCheckedChange={(checked) =>
-                      setForm((f) => ({
-                        ...f,
-                        all_clients: !!checked,
-                        clients: checked ? [] : f.clients,
-                      }))
+                      setForm((f) => ({ ...f, default_on: !!checked }))
                     }
                   />
-                  <span>{t("ping.all_servers")}</span>
+                  <span>{t("ping.default_on")}</span>
                 </label>
-                {form.all_clients ? (
-                  <label className="text-sm font-normal text-gray-500">
-                    {t("ping.all_servers_description")}
-                  </label>
-                ) : (
-                  <NodeSelectorDialog
-                    value={form.clients}
-                    onChange={(v) => setForm((f) => ({ ...f, clients: v }))}
-                  />
-                )}
+                <label className="text-sm font-normal text-gray-500">
+                  {t("ping.default_on_description")}
+                </label>
               </Flex>
               <label>
                 {t("ping.interval")} ({t("time.second")})

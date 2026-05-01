@@ -30,10 +30,6 @@ export const ServerView = ({ pingTasks }: { pingTasks: PingTask[] }) => {
       }),
     [nodeDetail]
   );
-  const nodeUuids = React.useMemo(
-    () => sortedNodes.map((node) => node.uuid),
-    [sortedNodes]
-  );
 
   return (
     <div className="rounded-xl overflow-hidden">
@@ -48,7 +44,6 @@ export const ServerView = ({ pingTasks }: { pingTasks: PingTask[] }) => {
               key={n.uuid}
               nodeUuid={n.uuid}
               nodeName={n.name}
-              nodeUuids={nodeUuids}
               pingTasks={pingTasks}
             />
           ))}
@@ -61,9 +56,8 @@ export const ServerView = ({ pingTasks }: { pingTasks: PingTask[] }) => {
 const ServerRow: React.FC<{
   nodeUuid: string;
   nodeName: string;
-  nodeUuids: string[];
   pingTasks: PingTask[];
-}> = ({ nodeUuid, nodeName, nodeUuids, pingTasks }) => {
+}> = ({ nodeUuid, nodeName, pingTasks }) => {
   const { t } = useTranslation();
   const { refresh } = usePingTask();
   const [open, setOpen] = React.useState(false);
@@ -71,7 +65,7 @@ const ServerRow: React.FC<{
 
   // 当前服务器拥有的任务集合
   const ownedTasks = React.useMemo(
-    () => pingTasks.filter((t) => t.all_clients || t.clients?.includes(nodeUuid)),
+    () => pingTasks.filter((t) => t.clients?.includes(nodeUuid)),
     [pingTasks, nodeUuid]
   );
 
@@ -93,14 +87,13 @@ const ServerRow: React.FC<{
     const toUpdate = pingTasks
       .filter((task) => task.id !== undefined)
       .filter((task) => {
-        const hasBefore = !!task.all_clients || !!task.clients?.includes(nodeUuid);
+        const hasBefore = !!task.clients?.includes(nodeUuid);
         const hasAfter = selectedIds.includes(String(task.id));
         return hasBefore !== hasAfter; // 仅当变化才提交
       })
       .map((task) => {
         const hasAfter = selectedIds.includes(String(task.id));
-        // 全部服务器任务被取消单台绑定时，转换为当前服务器显式列表再排除该服务器。
-        const current = new Set(task.all_clients ? nodeUuids : task.clients || []);
+        const current = new Set(task.clients || []);
         if (hasAfter) current.add(nodeUuid);
         else current.delete(nodeUuid);
         return {
@@ -109,7 +102,7 @@ const ServerRow: React.FC<{
           type: task.type,
           // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
           target: task.target!,
-          all_clients: false,
+          default_on: task.default_on || false,
           clients: Array.from(current),
           interval: task.interval,
         };
@@ -170,9 +163,9 @@ const ServerRow: React.FC<{
                   getLabel={(task) => (
                     <span className="text-sm">
                       {task.name}
-                      {task.all_clients && (
+                      {task.default_on && (
                         <span className="ml-2 text-xs text-accent-11">
-                          {t("common.all")}
+                          {t("ping.default_on_short")}
                         </span>
                       )}
                       <span className="ml-2 text-xs text-gray-500">
