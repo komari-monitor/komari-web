@@ -14,6 +14,7 @@ import {
   IconButton,
   TextArea,
   SegmentedControl,
+  Select,
 } from "@radix-ui/themes";
 import {
   CircleDollarSign,
@@ -74,6 +75,35 @@ import {
 } from "@/components/admin/SettingCard";
 import { useSettings } from "@/lib/api";
 import { SelectOrInput } from "@/components/ui/select-or-input";
+
+const currencyOptions = [
+  { code: "USD", symbol: "$", label: "美元 ($)" },
+  { code: "EUR", symbol: "€", label: "欧元 (€)" },
+  { code: "CAD", symbol: "$", label: "加拿大元 ($)" },
+  { code: "CNY", symbol: "¥", label: "人民币 (¥)" },
+  { code: "JPY", symbol: "¥", label: "日元 (¥)" },
+  { code: "GBP", symbol: "£", label: "英镑 (£)" },
+  { code: "AUD", symbol: "$", label: "澳大利亚元 ($)" },
+  { code: "HKD", symbol: "$", label: "港元 ($)" },
+  { code: "SGD", symbol: "$", label: "新加坡元 ($)" },
+  { code: "RUB", symbol: "₽", label: "俄罗斯卢布 (₽)" },
+  { code: "CHF", symbol: "₣", label: "瑞士法郎 (₣)" },
+  { code: "INR", symbol: "₹", label: "印度卢比 (₹)" },
+  { code: "VND", symbol: "₫", label: "越南盾 (₫)" },
+  { code: "THB", symbol: "฿", label: "泰铢 (฿)" },
+];
+
+const getCurrencyOption = (currencyCode?: string, currencySymbol?: string) => {
+  const byCode = currencyOptions.find(
+    (option) => option.code === currencyCode?.toUpperCase()
+  );
+  if (byCode) return byCode;
+
+  return (
+    currencyOptions.find((option) => option.symbol === currencySymbol) ??
+    currencyOptions[0]
+  );
+};
 
 
 const NodeDetailsPage = () => {
@@ -1732,7 +1762,10 @@ function BillingButton({ node }: { node: NodeDetail }) {
   const [autoRenewal, setAutoRenewal] = React.useState<boolean>(
     node.auto_renewal || false
   );
-  const [currency, setCurrency] = React.useState<string>(node.currency || "$");
+  const [currencyCode, setCurrencyCode] = React.useState<string>(() =>
+    getCurrencyOption(node.currency_code, node.currency).code
+  );
+  const selectedCurrency = getCurrencyOption(currencyCode);
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -1751,7 +1784,10 @@ function BillingButton({ node }: { node: NodeDetail }) {
         (formData.get("billingCycle") as string) || "30"
       );
       const expiredAtValue = (formData.get("expiredAt") as string) || "";
-      const currencyValue = (formData.get("currency") as string) || "$";
+      const currencyCodeValue =
+        (formData.get("currencyCode") as string) || selectedCurrency.code;
+      const currencyValue =
+        getCurrencyOption(currencyCodeValue).symbol || selectedCurrency.symbol;
 
       await fetch(`/api/admin/client/${node.uuid}/edit`, {
         method: "POST",
@@ -1760,6 +1796,7 @@ function BillingButton({ node }: { node: NodeDetail }) {
           billing_cycle: billingCycleValue,
           expired_at: expiredAtValue,
           currency: currencyValue,
+          currency_code: currencyCodeValue,
           auto_renewal: autoRenewal,
         }),
         headers: {
@@ -1799,15 +1836,18 @@ function BillingButton({ node }: { node: NodeDetail }) {
 
             <label className="font-bold">
               <label>{t("admin.nodeTable.currency", "货币")}</label>
-              <label className="text-muted-foreground text-sm ml-1 font-medium">
-                {t("admin.nodeTable.currencyTips")}
-              </label>
             </label>
-            <TextField.Root
-              name="currency"
-              defaultValue={currency}
-              onChange={(e) => setCurrency(e.target.value)}
-            />
+            <input type="hidden" name="currencyCode" value={currencyCode} />
+            <Select.Root value={currencyCode} onValueChange={setCurrencyCode}>
+              <Select.Trigger />
+              <Select.Content>
+                {currencyOptions.map((option) => (
+                  <Select.Item key={option.code} value={option.code}>
+                    {option.label}
+                  </Select.Item>
+                ))}
+              </Select.Content>
+            </Select.Root>
 
             <label className="font-bold flex items-center gap-1">
               {t("admin.nodeTable.billingCycle")} <Tips><span dangerouslySetInnerHTML={{ __html: t("admin.nodeTable.billingCycleTips") }}></span></Tips>
