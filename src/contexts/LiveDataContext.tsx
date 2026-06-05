@@ -71,7 +71,10 @@ export const LiveDataProvider: React.FC<{ children: React.ReactNode }> = ({
               load5: rec.load5 ?? 0,
               load15: rec.load15 ?? 0,
             },
-            disk: { used: rec.disk ?? 0 },
+            disk: {
+              used: rec.disk ?? 0,
+              partitions: rec.disk_partitions || [],
+            },
             network: {
               up: rec.net_out ?? 0,
               down: rec.net_in ?? 0,

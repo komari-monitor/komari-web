@@ -17,19 +17,132 @@ import {
   NodeDetailsProvider,
   useNodeDetails,
 } from "@/contexts/NodeDetailsContext";
+import { useLiveData } from "@/contexts/LiveDataContext";
 
 import {
   Button,
+  Checkbox,
   Dialog,
   Flex,
   IconButton,
   Select,
+  Text,
   TextField,
 } from "@radix-ui/themes";
 import { MoreHorizontal, Pencil, Trash } from "lucide-react";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+
+/** 解析 partition 字段，兼容 JSON 数组和旧版单字符串 */
+const parsePartitions = (partition: string | undefined): string[] => {
+  if (!partition) return [];
+  if (partition.startsWith("[")) {
+    try {
+      const parsed = JSON.parse(partition);
+      if (Array.isArray(parsed)) return parsed;
+    } catch {
+      // fall through
+    }
+  }
+  return [partition];
+};
+
+/**
+ * 从 LiveData 中获取指定节点的分区名
+ * 同时尝试默认主题和 PurCarte 两种数据源，哪个有数据就用哪个
+ * 数据结构：
+ *   - 默认主题: { data: { data: { uuid: { disk: { partitions: [{name}] } } } } }
+ *   - PurCarte:  { uuid: { disk_partitions: [{name}] } }
+ * @param sources LiveData 数据源数组（依次尝试）
+ * @param nodeUUIDs 要查询的节点 UUID 列表（空则查所有节点）
+ */
+const getAvailablePartitions = (
+  sources: any[],
+  nodeUUIDs?: string[],
+): string[] => {
+  const trySource = (liveData: any): string[] => {
+    try {
+      if (!liveData || typeof liveData !== "object") return [];
+      const set = new Set<string>();
+      const uuidSet = new Set(nodeUUIDs);
+
+      const addNames = (arr: any[] | undefined) => {
+        if (!Array.isArray(arr)) return;
+        for (const p of arr) {
+          if (p && typeof p.name === "string") set.add(p.name);
+        }
+      };
+
+      // 尝试1: PurCarte 结构 —— 顶层 uuid → { disk_partitions: [...] }
+      const topKeys = Object.keys(liveData);
+      if (topKeys.length > 0) {
+        const sample = liveData[topKeys[0]];
+        if (
+          sample &&
+          typeof sample === "object" &&
+          !Array.isArray(sample)
+        ) {
+          if (
+            Array.isArray(sample.disk_partitions) ||
+            "disk_permissions" in sample
+          ) {
+            for (const k of topKeys) {
+              if (uuidSet.size > 0 && !uuidSet.has(k)) continue;
+              addNames((liveData[k] as any)?.disk_partitions);
+            }
+            if (set.size > 0) return Array.from(set).sort();
+          }
+        }
+      }
+
+      // 尝试2: 默认主题嵌套结构 —— 循环解开 data.data...
+      let inner = liveData;
+      for (let i = 0; i < 4; i++) {
+        if (
+          inner &&
+          inner.data &&
+          typeof inner.data === "object" &&
+          !Array.isArray(inner.data)
+        ) {
+          inner = inner.data;
+        } else {
+          break;
+        }
+      }
+      if (inner && typeof inner === "object" && !Array.isArray(inner)) {
+        for (const k of Object.keys(inner)) {
+          if (uuidSet.size > 0 && !uuidSet.has(k)) continue;
+          const node = inner[k];
+          if (node && typeof node === "object") {
+            addNames(node?.disk?.partitions);
+            addNames((node as any)?.disk_partitions);
+          }
+        }
+        if (set.size > 0) return Array.from(set).sort();
+      }
+
+      return [];
+    } catch {
+      return [];
+    }
+  };
+
+  // 依次尝试每个数据源，返回第一个非空结果
+  for (const src of sources) {
+    const result = trySource(src);
+    if (result.length > 0) return result;
+  }
+  // 所有数据源都没找到，返回空（即使有数据但结构不匹配也不误报）
+  return [];
+};
+
+/** 格式化分区列表为显示字符串 */
+const formatPartitionDisplay = (partition: string | undefined): string => {
+  const parts = parsePartitions(partition);
+  if (parts.length === 0) return "";
+  return parts.join(", ");
+};
 
 const LoadPage = () => {
   return (
@@ -90,10 +203,15 @@ const Row = ({ alert }: { alert: LoadAlert }) => {
   const { t } = useTranslation();
   const { refresh } = useLoadAlert();
   const { nodeDetail } = useNodeDetails();
+  const { live_data: liveDataDefault, liveData: liveDataPurcarte } =
+    useLiveData() as any;
   const [editOpen, setEditOpen] = React.useState(false);
   const [editSaving, setEditSaving] = React.useState(false);
   const [deleteOpen, setDeleteOpen] = React.useState(false);
   const [deleteLoading, setDeleteLoading] = React.useState(false);
+  const [selectedPartitions, setSelectedPartitions] = React.useState<string[]>(
+    parsePartitions(alert.partition),
+  );
   const [form, setForm] = React.useState({
     name: alert.name || "",
     metric: alert.metric || "cpu",
@@ -103,24 +221,35 @@ const Row = ({ alert }: { alert: LoadAlert }) => {
     interval: alert.interval || 15,
   });
 
+  const availablePartitions = React.useMemo(
+    () => getAvailablePartitions(
+      [liveDataDefault, liveDataPurcarte],
+      form.clients,
+    ),
+    [liveDataDefault, liveDataPurcarte, form.clients],
+  );
+
+  // 稳定 NodeSelectorDialog 的 value 引用，避免每次 render 创建新 []
+  const nodeSelectorValue = React.useMemo(() => form.clients ?? [], [form.clients]);
+
   const submitEdit = (newForm: typeof form) => {
     setEditSaving(true);
+    const payload: Record<string, any> = {
+      id: alert.id,
+      name: newForm.name,
+      metric: newForm.metric,
+      threshold: newForm.threshold,
+      ratio: newForm.ratio,
+      clients: newForm.clients,
+      interval: newForm.interval,
+    };
+    if (newForm.metric === "disk" && selectedPartitions.length > 0) {
+      payload.partition = JSON.stringify(selectedPartitions);
+    }
     fetch("/api/admin/notification/load/edit", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        notifications: [
-          {
-            id: alert.id,
-            name: newForm.name,
-            metric: newForm.metric,
-            threshold: newForm.threshold,
-            ratio: newForm.ratio,
-            clients: newForm.clients,
-            interval: newForm.interval,
-          },
-        ],
-      }),
+      body: JSON.stringify({ notifications: [payload] }),
     })
       .then((res) => {
         if (!res.ok) {
@@ -193,7 +322,7 @@ const Row = ({ alert }: { alert: LoadAlert }) => {
               })()
             : t("common.none")}
           <NodeSelectorDialog
-            value={form.clients ?? []}
+            value={nodeSelectorValue}
             hiddenUuidOnlyClient
             onChange={(uuids) => {
               setForm((f) => ({ ...f, clients: uuids }));
@@ -206,7 +335,12 @@ const Row = ({ alert }: { alert: LoadAlert }) => {
           </NodeSelectorDialog>
         </Flex>
       </TableCell>
-      <TableCell>{alert.metric?.toUpperCase()}</TableCell>
+      <TableCell>
+        {alert.metric?.toUpperCase()}
+        {alert.partition
+          ? ` (${formatPartitionDisplay(alert.partition)})`
+          : ""}
+      </TableCell>
       <TableCell>{alert.threshold}%</TableCell>
       <TableCell>{alert.ratio}</TableCell>
       <TableCell>
@@ -231,11 +365,22 @@ const Row = ({ alert }: { alert: LoadAlert }) => {
                 }
                 required
               />
+              <label>{t("common.server")}</label>
+              <Flex>
+                <NodeSelectorDialog
+                  value={form.clients}
+                  hiddenUuidOnlyClient
+                  onChange={(v) => setForm((f) => ({ ...f, clients: v }))}
+                />
+              </Flex>
               <label>{t("loadAlert.metric")}</label>
               <Select.Root
                 value={form.metric}
                 onValueChange={(v) =>
-                  setForm((f) => ({ ...f, metric: v as any }))
+                  setForm((f) => ({
+                    ...f,
+                    metric: v as any,
+                  }))
                 }
               >
                 <Select.Trigger />
@@ -247,6 +392,90 @@ const Row = ({ alert }: { alert: LoadAlert }) => {
                   <Select.Item value="net_out">Net Out</Select.Item>
                 </Select.Content>
               </Select.Root>
+              {form.metric === "disk" && (
+                <>
+                  <label>{t("loadAlert.partition")}</label>
+                  {availablePartitions.length === 0 ? (
+                    <Text size="2" color="gray">
+                      {form.clients.length === 0
+                        ? t("loadAlert.selectServerFirst")
+                        : t("loadAlert.noPartitionData")}
+                    </Text>
+                  ) : (
+                    <>
+                      <Flex gap="1" align="baseline" className="select-none">
+                        <Checkbox
+                          checked={
+                            selectedPartitions.length ===
+                              availablePartitions.length &&
+                            availablePartitions.length > 0
+                          }
+                          onCheckedChange={(checked) =>
+                            setSelectedPartitions(
+                              checked ? availablePartitions : [],
+                            )
+                          }
+                        />
+                        <Text
+                          size="2"
+                          className="cursor-pointer"
+                          onClick={() =>
+                            setSelectedPartitions(
+                              selectedPartitions.length ===
+                                availablePartitions.length
+                                ? []
+                                : availablePartitions,
+                            )
+                          }
+                        >
+                          {selectedPartitions.length ===
+                          availablePartitions.length
+                            ? t("loadAlert.deselectAll")
+                            : t("loadAlert.allPartitions")}
+                        </Text>
+                      </Flex>
+                      <Flex gap="2" wrap="wrap" className="ml-1">
+                        {availablePartitions.map((p) => {
+                          const isSelected = selectedPartitions.includes(p);
+                          return (
+                            <Flex
+                              key={p}
+                              gap="1"
+                              align="baseline"
+                              className="select-none"
+                            >
+                              <Checkbox
+                                checked={isSelected}
+                                onCheckedChange={() =>
+                                  setSelectedPartitions((prev) =>
+                                    prev.includes(p)
+                                      ? prev.filter((x) => x !== p)
+                                      : [...prev, p],
+                                  )
+                                }
+                              />
+                              <Text
+                                size="2"
+                                className="cursor-pointer"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setSelectedPartitions((prev) =>
+                                    prev.includes(p)
+                                      ? prev.filter((x) => x !== p)
+                                      : [...prev, p],
+                                  );
+                                }}
+                              >
+                                {p}
+                              </Text>
+                            </Flex>
+                          );
+                        })}
+                      </Flex>
+                    </>
+                  )}
+                </>
+              )}
               <label>{t("common.threshold")} (%)</label>
               <TextField.Root
                 type="number"
@@ -268,14 +497,6 @@ const Row = ({ alert }: { alert: LoadAlert }) => {
                 }
                 required
               />
-              <label>{t("common.server")}</label>
-              <Flex>
-                <NodeSelectorDialog
-                  value={form.clients}
-                  hiddenUuidOnlyClient
-                  onChange={(v) => setForm((f) => ({ ...f, clients: v }))}
-                />
-              </Flex>
               <label>
                 {t("ping.interval")} ({t("time.minute")})
               </label>
@@ -346,13 +567,27 @@ const AddButton: React.FC = () => {
   const [isOpen, setIsOpen] = React.useState(false);
   const [selected, setSelected] = React.useState<string[]>([]);
   const { refresh } = useLoadAlert();
+  const { live_data: liveDataDefault, liveData: liveDataPurcarte } =
+    useLiveData() as any;
   const [selectedType, setSelectedType] = React.useState<
     "cpu" | "ram" | "disk" | "net_in" | "net_out"
   >("cpu");
+  const [selectedPartitions, setSelectedPartitions] = React.useState<string[]>(
+    [],
+  );
   const [saving, setSaving] = React.useState(false);
+
+  const availablePartitions = React.useMemo(
+    () => getAvailablePartitions(
+      [liveDataDefault, liveDataPurcarte],
+      selected,
+    ),
+    [liveDataDefault, liveDataPurcarte, selected],
+  );
+
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    const payload = {
+    const payload: Record<string, any> = {
       name: e.currentTarget.load_name.value,
       metric: selectedType,
       threshold: parseFloat(e.currentTarget.threshold.value),
@@ -360,6 +595,9 @@ const AddButton: React.FC = () => {
       clients: selected,
       interval: parseInt(e.currentTarget.interval.value, 10),
     };
+    if (selectedType === "disk" && selectedPartitions.length > 0) {
+      payload.partition = JSON.stringify(selectedPartitions);
+    }
     setSaving(true);
     fetch("/api/admin/notification/load/add", {
       method: "POST",
@@ -373,6 +611,7 @@ const AddButton: React.FC = () => {
           setIsOpen(false);
           setSelected([]);
           setSelectedType("cpu");
+          setSelectedPartitions([]);
           toast.success(t("common.success"));
         } else {
           response
@@ -405,14 +644,22 @@ const AddButton: React.FC = () => {
           <Flex direction="column" justify="end" gap="2" className="font-bold">
             <label htmlFor="load_name">{t("common.name")}</label>
             <TextField.Root id="load_name" name="load_name" />
+            <label htmlFor="select">{t("common.server")}</label>
+            <div className="flex items-center justify-start gap-2">
+              <NodeSelectorDialog value={selected} onChange={setSelected} />
+              <label className="text-md font-normal">
+                {t("common.selected", { count: selected.length })}
+              </label>
+            </div>
             <label htmlFor="type">{t("loadAlert.metric")}</label>
             <Select.Root
               value={selectedType}
-              onValueChange={(value) =>
+              onValueChange={(value) => {
                 setSelectedType(
                   value as "cpu" | "ram" | "disk" | "net_in" | "net_out",
-                )
-              }
+                );
+                if (value !== "disk") setSelectedPartitions([]);
+              }}
             >
               <Select.Trigger id="type" name="type" />
               <Select.Content>
@@ -423,6 +670,90 @@ const AddButton: React.FC = () => {
                 <Select.Item value="net_out">Net Out(Mbps)</Select.Item>
               </Select.Content>
             </Select.Root>
+            {selectedType === "disk" && (
+              <>
+                <label htmlFor="partition">{t("loadAlert.partition")}</label>
+                {availablePartitions.length === 0 ? (
+                  <Text size="2" color="gray">
+                    {selected.length === 0
+                      ? t("loadAlert.selectServerFirst")
+                      : t("loadAlert.noPartitionData")}
+                  </Text>
+                ) : (
+                  <>
+                    <Flex gap="1" align="baseline" className="select-none">
+                      <Checkbox
+                        checked={
+                          selectedPartitions.length ===
+                            availablePartitions.length &&
+                          availablePartitions.length > 0
+                        }
+                        onCheckedChange={(checked) =>
+                          setSelectedPartitions(
+                            checked ? availablePartitions : [],
+                          )
+                        }
+                      />
+                      <Text
+                        size="2"
+                        className="cursor-pointer"
+                        onClick={() =>
+                          setSelectedPartitions(
+                            selectedPartitions.length ===
+                              availablePartitions.length
+                              ? []
+                              : availablePartitions,
+                          )
+                        }
+                      >
+                        {selectedPartitions.length ===
+                        availablePartitions.length
+                          ? t("loadAlert.deselectAll")
+                          : t("loadAlert.allPartitions")}
+                      </Text>
+                    </Flex>
+                    <Flex gap="2" wrap="wrap" className="ml-1">
+                      {availablePartitions.map((p) => {
+                        const isSelected = selectedPartitions.includes(p);
+                        return (
+                          <Flex
+                            key={p}
+                            gap="1"
+                            align="baseline"
+                            className="select-none"
+                          >
+                            <Checkbox
+                              checked={isSelected}
+                              onCheckedChange={() =>
+                                setSelectedPartitions((prev) =>
+                                  prev.includes(p)
+                                    ? prev.filter((x) => x !== p)
+                                    : [...prev, p],
+                                )
+                              }
+                            />
+                            <Text
+                              size="2"
+                              className="cursor-pointer"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedPartitions((prev) =>
+                                  prev.includes(p)
+                                    ? prev.filter((x) => x !== p)
+                                    : [...prev, p],
+                                );
+                              }}
+                            >
+                              {p}
+                            </Text>
+                          </Flex>
+                        );
+                      })}
+                    </Flex>
+                  </>
+                )}
+              </>
+            )}
             <label htmlFor="threshold">{t("common.threshold")} (%/Mbps)</label>
             <TextField.Root
               id="threshold"
@@ -441,13 +772,6 @@ const AddButton: React.FC = () => {
               max="1"
               defaultValue={0.8}
             />
-            <label htmlFor="select">{t("common.server")}</label>
-            <div className="flex items-center justify-start gap-2">
-              <NodeSelectorDialog value={selected} onChange={setSelected} />
-              <label className="text-md font-normal">
-                {t("common.selected", { count: selected.length })}
-              </label>
-            </div>
             <label htmlFor="interval">
               {t("ping.interval")} ({t("time.minute")})
             </label>
