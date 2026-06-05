@@ -327,7 +327,12 @@
   "home_title": "Komari Monitor",
   "just_now": "刚刚",
   "loadAlert": {
+    "allPartitions": "全选",
+    "deselectAll": "取消全选",
     "metric": "监控项",
+    "noPartitionData": "暂无在线节点的分区数据",
+    "selectServerFirst": "请先选择要监控的服务器",
+    "partition": "磁盘分区",
     "ratio": "时间占比",
     "threshold_placeholder": "百分比，例如80代表80%",
     "title": "负载警报"

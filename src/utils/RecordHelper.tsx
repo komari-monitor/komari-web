@@ -26,6 +26,7 @@ export interface RecordFormat {
   temp: number | null;
   disk: number | null;
   disk_total: number | null;
+  disk_partitions?: { name: string; total: number; used: number }[];
   net_in: number | null;
   net_out: number | null;
   net_total_up: number | null;
@@ -66,6 +67,7 @@ export function liveDataToRecords(
     temp: 0,
     disk: data.disk.used ?? 0,
     disk_total: 0,
+    disk_partitions: data.disk.partitions || [],
     net_in: data.network?.down ?? 0,
     net_out: data.network?.up ?? 0,
     net_total_up: data.network?.totalUp ?? 0,

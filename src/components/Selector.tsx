@@ -135,17 +135,21 @@ function SelectorInner<T>(props: SelectorProps<T>) {
           <TableBody>
             {processed.map((it) => {
               const id = getId(it);
+              const isSelected = value.includes(id);
               return (
                 <TableRow
                   key={id}
+                  className="cursor-pointer"
                   onClick={() => {
-                    handleCheck(id, !value.includes(id));
+                    handleCheck(id, !isSelected);
                   }}
                 >
-                  <TableCell>
+                  <TableCell
+                    onClick={(e) => e.stopPropagation()}
+                  >
                     <Checkbox
-                      checked={value.includes(id)}
-                      onCheckedChange={(checked) => handleCheck(id, !!checked)}
+                      checked={isSelected}
+                      onCheckedChange={() => handleCheck(id, !isSelected)}
                       aria-label={`Select ${id}`}
                     />
                   </TableCell>
@@ -153,23 +157,29 @@ function SelectorInner<T>(props: SelectorProps<T>) {
                 </TableRow>
               );
             })}
-            {orphanIds.map((id) => (
-              <TableRow
-                key={id}
-                onClick={() => {
-                  handleCheck(id, !value.includes(id));
-                }}
-              >
-                <TableCell>
-                  <Checkbox
-                    checked={value.includes(id)}
-                    onCheckedChange={(checked) => handleCheck(id, !!checked)}
-                    aria-label={`Select ${id}`}
-                  />
-                </TableCell>
-                <TableCell>{id}</TableCell>
-              </TableRow>
-            ))}
+            {orphanIds.map((id) => {
+              const isSelected = value.includes(id);
+              return (
+                <TableRow
+                  key={id}
+                  className="cursor-pointer"
+                  onClick={() => {
+                    handleCheck(id, !isSelected);
+                  }}
+                >
+                  <TableCell
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    <Checkbox
+                      checked={isSelected}
+                      onCheckedChange={() => handleCheck(id, !isSelected)}
+                      aria-label={`Select ${id}`}
+                    />
+                  </TableCell>
+                  <TableCell>{id}</TableCell>
+                </TableRow>
+              );
+            })}
           </TableBody>
         </Table>
       </div>

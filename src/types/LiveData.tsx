@@ -20,6 +20,7 @@ export type Record = {
   };
   disk: {
     used: number;
+    partitions?: { name: string; total: number; used: number }[];
   };
   network: {
     up: number;

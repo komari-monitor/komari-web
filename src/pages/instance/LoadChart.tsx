@@ -547,6 +547,41 @@ const LoadChart = ({ data = [] }: LoadChartProps) => {
               />
             </AreaChart>
           </ChartContainer>
+          {/* 磁盘分区 */}
+          {live_data?.disk?.partitions && live_data.disk.partitions.length > 0 && (
+            <div className="px-4 pb-3 space-y-2">
+              {live_data.disk.partitions.map((p) => {
+                const pct =
+                  p.total > 0 ? Math.round((p.used / p.total) * 100) : 0;
+                return (
+                  <div key={p.name} className="space-y-0.5">
+                    <div className="flex justify-between text-xs text-gray-500 dark:text-gray-400">
+                      <span>{p.name}</span>
+                      <span>
+                        {formatBytes(p.used)} / {formatBytes(p.total)} ({pct}%)
+                      </span>
+                    </div>
+                    <div className="h-1.5 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                      <div
+                        className={`h-full rounded-full transition-all ${
+                          pct > 90
+                            ? "bg-red-500"
+                            : pct > 70
+                            ? "bg-yellow-500"
+                            : ""
+                        }`}
+                        style={{
+                          width: `${pct}%`,
+                          backgroundColor:
+                            pct <= 90 && pct <= 70 ? primaryColor : undefined,
+                        }}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+            </div>
+          )}
         </Card>
         {/* Netwodk */}
         <Card className={cn}>
