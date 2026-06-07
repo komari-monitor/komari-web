@@ -303,7 +303,7 @@
   "exec": {
     "allCompleted": "所有任務執行完成",
     "command": "執行命令",
-    "commandPlaceholder": "whoami",
+    "commandPlaceholder": "whoami（使用 Shift+Enter 換行）",
     "description": "在選定的節點上遠程執行命令",
     "errors": {
       "emptyCommand": "命令不能為空",

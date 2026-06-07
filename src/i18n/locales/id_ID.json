@@ -303,7 +303,7 @@
   "exec": {
     "allCompleted": "Semua tugas telah selesai dieksekusi",
     "command": "Perintah",
-    "commandPlaceholder": "whoami",
+    "commandPlaceholder": "whoami (gunakan Shift+Enter untuk baris baru)",
     "description": "Eksekusi perintah jarak jauh pada node yang dipilih",
     "errors": {
       "emptyCommand": "Perintah tidak boleh kosong.",

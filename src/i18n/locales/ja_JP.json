@@ -303,7 +303,7 @@
   "exec": {
     "allCompleted": "すべてのタスクが完了しました",
     "command": "コマンドを実行",
-    "commandPlaceholder": "whoami",
+    "commandPlaceholder": "whoami（Shift+Enter で改行）",
     "description": "選択したノードでリモートコマンドを実行",
     "errors": {
       "emptyCommand": "コマンドは空にできません",

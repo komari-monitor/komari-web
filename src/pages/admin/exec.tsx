@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect, useMemo, type KeyboardEvent } from "react";
 import Loading from "@/components/loading";
 import { NodeDetailsProvider, useNodeDetails } from "@/contexts/NodeDetailsContext";
 import { useTranslation } from "react-i18next";
@@ -6,12 +6,11 @@ import {
     Button,
     Card,
     Flex,
-    TextField,
     Text,
     Separator,
     Badge
 } from "@radix-ui/themes";
-import { Play, Terminal, AlertCircle, CheckCircle2, Copy, Clock } from "lucide-react";
+import { Play, AlertCircle, CheckCircle2, Copy, Clock } from "lucide-react";
 import { toast } from "sonner";
 import NodeSelector from "@/components/NodeSelector";
 import { SettingCardCollapse } from "@/components/admin/SettingCard";
@@ -51,6 +50,11 @@ interface TaskResultResponse {
     data?: TaskResult[];
 }
 
+const COMMAND_EDITOR_COLLAPSED_LINES = 3;
+const COMMAND_EDITOR_LINE_HEIGHT = 24;
+const COMMAND_EDITOR_VERTICAL_PADDING = 24;
+const COMMAND_EDITOR_COLLAPSED_HEIGHT = COMMAND_EDITOR_COLLAPSED_LINES * COMMAND_EDITOR_LINE_HEIGHT + COMMAND_EDITOR_VERTICAL_PADDING;
+
 const ExecPage = () => {
     return (
         <NodeDetailsProvider>
@@ -68,10 +72,30 @@ const ExecContent = () => {
     const [results, setResults] = useState<TaskResult[]>([]);
     const [taskId, setTaskId] = useState<string | null>(null);
     const [polling, setPolling] = useState(false);
+    const [commandFocused, setCommandFocused] = useState(false);
+    const [commandEditorHeight, setCommandEditorHeight] = useState(COMMAND_EDITOR_COLLAPSED_HEIGHT);
 
     // 使用 useRef 来保存轮询相关的引用
-    const pollingIntervalRef = useRef<NodeJS.Timeout | null>(null);
-    const pollingTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+    const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const pollingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const commandTextareaRef = useRef<HTMLTextAreaElement | null>(null);
+
+    const commandLineCount = useMemo(() => {
+        return command === "" ? 1 : command.split("\n").length;
+    }, [command]);
+
+    const commandLineLabels = useMemo(() => {
+        if (commandFocused || commandLineCount <= COMMAND_EDITOR_COLLAPSED_LINES) {
+            return Array.from({ length: commandLineCount }, (_, index) => String(index + 1));
+        }
+
+        const visibleNumberedLines = COMMAND_EDITOR_COLLAPSED_LINES - 1;
+        const remainingLines = commandLineCount - visibleNumberedLines;
+        return [
+            ...Array.from({ length: visibleNumberedLines }, (_, index) => String(index + 1)),
+            `+${remainingLines}`,
+        ];
+    }, [commandFocused, commandLineCount]);
 
     // 清理轮询的函数
     const clearPolling = () => {
@@ -92,6 +116,23 @@ const ExecContent = () => {
             clearPolling();
         };
     }, []);
+
+    useEffect(() => {
+        const textarea = commandTextareaRef.current;
+        if (!textarea) {
+            return;
+        }
+
+        if (!commandFocused) {
+            textarea.scrollTop = 0;
+            setCommandEditorHeight(COMMAND_EDITOR_COLLAPSED_HEIGHT);
+            return;
+        }
+
+        textarea.style.height = "auto";
+        setCommandEditorHeight(Math.max(COMMAND_EDITOR_COLLAPSED_HEIGHT, textarea.scrollHeight));
+        textarea.style.height = "100%";
+    }, [command, commandFocused]);
 
     if (isLoading) {
         return <Loading />;
@@ -190,7 +231,7 @@ const ExecContent = () => {
                     "Content-Type": "application/json",
                 },
                 body: JSON.stringify({
-                    command: command.trim(),
+                    command,
                     clients: selectedNodes,
                 }),
             });
@@ -218,6 +259,17 @@ const ExecContent = () => {
             toast.error(errorMessage);
         } finally {
             setExecuting(false);
+        }
+    };
+
+    const handleCommandKeyDown = (event: KeyboardEvent<HTMLTextAreaElement>) => {
+        if (event.key !== "Enter" || event.shiftKey || event.nativeEvent.isComposing) {
+            return;
+        }
+
+        event.preventDefault();
+        if (!executing) {
+            executeCommand();
         }
     };
 
@@ -265,16 +317,42 @@ const ExecContent = () => {
                     <label className="text-xl font-bold">
                         {t("exec.command")}
                     </label>
-                    <TextField.Root
-                        value={command}
-                        onChange={(e) => setCommand(e.target.value)}
-                        placeholder={t("exec.commandPlaceholder")}
-                        size="3"
+                    <div
+                        className="grid grid-cols-[3.75rem_minmax(0,1fr)] overflow-hidden rounded-md border border-[var(--gray-a7)] bg-[var(--color-surface)] transition-[height,border-color,box-shadow] duration-200 focus-within:border-[var(--accent-8)] focus-within:shadow-[0_0_0_1px_var(--accent-8)]"
+                        style={{ height: commandEditorHeight }}
                     >
-                        <TextField.Slot>
-                            <Terminal size={16} />
-                        </TextField.Slot>
-                    </TextField.Root>
+                        <div
+                            aria-hidden="true"
+                            className="select-none overflow-hidden border-r border-[var(--gray-a5)] bg-[var(--gray-2)] px-2 py-3 text-right font-mono text-xs leading-6 text-[var(--gray-11)]"
+                        >
+                            {commandLineLabels.map((label, index) => (
+                                <div
+                                    key={`${label}-${index}`}
+                                    className={label.startsWith("+") ? "font-medium text-[var(--accent-11)]" : undefined}
+                                >
+                                    {label}
+                                </div>
+                            ))}
+                        </div>
+                        <textarea
+                            ref={commandTextareaRef}
+                            value={command}
+                            onChange={(e) => setCommand(e.target.value)}
+                            onFocus={() => setCommandFocused(true)}
+                            onBlur={() => setCommandFocused(false)}
+                            onKeyDown={handleCommandKeyDown}
+                            placeholder={t("exec.commandPlaceholder")}
+                            rows={COMMAND_EDITOR_COLLAPSED_LINES}
+                            wrap="soft"
+                            spellCheck={false}
+                            className="h-full w-full resize-none border-0 bg-transparent px-3 py-3 font-mono text-sm leading-6 text-[var(--gray-12)] outline-none placeholder:text-[var(--gray-9)]"
+                            style={{
+                                overflowY: "hidden",
+                                overflowWrap: "break-word",
+                                whiteSpace: "pre-wrap",
+                            }}
+                        />
+                    </div>
 
 
                     <div>

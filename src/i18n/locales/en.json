@@ -303,7 +303,7 @@
   "exec": {
     "allCompleted": "All tasks executed successfully",
     "command": "Execute command",
-    "commandPlaceholder": "whoami",
+    "commandPlaceholder": "whoami (use Shift+Enter to start a new line)",
     "description": "Remotely execute commands on selected nodes",
     "errors": {
       "emptyCommand": "The command cannot be empty.",
