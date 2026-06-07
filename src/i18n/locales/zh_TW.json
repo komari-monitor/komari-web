@@ -419,7 +419,14 @@
       "daily": "日報",
       "weekly": "週報",
       "monthly": "月報",
-      "batch_edit": "批量修改"
+      "batch_edit": "批量修改",
+      "separator": "、",
+      "errors": {
+        "fetch_failed": "取得流量定時報告設定失敗",
+        "save_failed": "儲存流量定時報告設定失敗",
+        "select_cadence": "啟用流量定時報告時，至少選擇一種報告週期",
+        "update_failed": "更新流量定時報告設定失敗"
+      }
     }
   },
   "page_not_found": "真不巧，網頁被小鞠吃掉了。",

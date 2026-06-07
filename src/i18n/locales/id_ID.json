@@ -419,7 +419,14 @@
       "daily": "Harian",
       "weekly": "Mingguan",
       "monthly": "Bulanan",
-      "batch_edit": "Edit Massal"
+      "batch_edit": "Edit Massal",
+      "separator": ", ",
+      "errors": {
+        "fetch_failed": "Gagal memuat pengaturan laporan trafik",
+        "save_failed": "Gagal menyimpan pengaturan laporan trafik",
+        "select_cadence": "Pilih setidaknya satu periode laporan saat mengaktifkan laporan trafik",
+        "update_failed": "Gagal memperbarui pengaturan laporan trafik"
+      }
     }
   },
   "page_not_found": "Server tidak dapat menemukan halaman yang Anda minta.",

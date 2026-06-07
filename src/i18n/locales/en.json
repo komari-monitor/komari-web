@@ -419,7 +419,14 @@
       "daily": "Daily",
       "weekly": "Weekly",
       "monthly": "Monthly",
-      "batch_edit": "Batch Edit"
+      "batch_edit": "Batch Edit",
+      "separator": ", ",
+      "errors": {
+        "fetch_failed": "Failed to fetch traffic report notifications",
+        "save_failed": "Failed to save traffic report settings",
+        "select_cadence": "Select at least one report cadence when enabling traffic reports",
+        "update_failed": "Failed to update traffic report notifications"
+      }
     }
   },
   "page_not_found": "The server cannot find the specific page you're trying to access.",

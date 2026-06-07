@@ -31,6 +31,44 @@ import {
 import { toast } from "sonner";
 import Loading from "@/components/loading";
 
+const ensureCadenceSelected = (
+  values: { enable: boolean; daily: boolean; weekly: boolean; monthly: boolean },
+  t: (key: string, options?: Record<string, unknown>) => string
+) => {
+  if (values.enable && !values.daily && !values.weekly && !values.monthly) {
+    throw new Error(t("notification.traffic_report.errors.select_cadence"));
+  }
+};
+
+const getErrorMessage = (
+  error: unknown,
+  t: (key: string, options?: Record<string, unknown>) => string
+) => {
+  return error instanceof Error ? error.message : t("common.error");
+};
+
+const parseJsonOrThrow = async (res: Response, fallbackMessage: string) => {
+  if (!res.ok) {
+    const data = await res.json().catch(() => null);
+    throw new Error(data?.message || fallbackMessage);
+  }
+  if (res.status === 204) {
+    return null;
+  }
+
+  const contentType = res.headers.get("content-type") || "";
+  if (!contentType.includes("application/json")) {
+    return null;
+  }
+
+  const text = await res.text();
+  if (!text) {
+    return null;
+  }
+
+  return JSON.parse(text);
+};
+
 const TrafficReportPage = () => {
   return (
     <TrafficReportNotificationProvider>
@@ -131,7 +169,9 @@ const reportTypeLabel = (
   if (n.daily) parts.push(t("notification.traffic_report.daily"));
   if (n.weekly) parts.push(t("notification.traffic_report.weekly"));
   if (n.monthly) parts.push(t("notification.traffic_report.monthly"));
-  return parts.length > 0 ? parts.join("、") : "-";
+  return parts.length > 0
+    ? parts.join(t("notification.traffic_report.separator"))
+    : "-";
 };
 
 const InnerLayout = () => {
@@ -160,6 +200,13 @@ const InnerLayout = () => {
     weekly: boolean;
     monthly: boolean;
   }) => {
+    try {
+      ensureCadenceSelected(values, t);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : t("common.error"));
+      return;
+    }
+
     setBatchLoading(true);
     const payload = selected.map((id) => ({
       client: id,
@@ -170,31 +217,31 @@ const InnerLayout = () => {
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
     })
-      .then((res) => {
-        if (!res.ok) {
-          toast.error("Failed to update traffic report notifications: " + res.statusText);
-        } else {
-          toast.success(t("common.updated_successfully"));
-        }
-        return res.json();
-      })
+      .then((res) =>
+        parseJsonOrThrow(
+          res,
+          t("notification.traffic_report.errors.update_failed")
+        )
+      )
       .then(() => {
-        setBatchLoading(false);
         setBatchDialogOpen(false);
+        toast.success(t("common.updated_successfully"));
         refresh();
       })
       .catch((error) => {
         console.error("Error updating traffic report notifications:", error);
-        toast.error(t("common.error", { message: error.message }));
+        toast.error(getErrorMessage(error, t));
+      })
+      .finally(() => {
         setBatchLoading(false);
       });
   };
 
   if (onLoading || onNodeLoading) {
-    return <Loading text="(o゜▽゜)o☆" />;
+    return <Loading text={t("loading")} />;
   }
   if (onError || onNodeError) {
-    return <div>Error: {onError?.message || onNodeError}</div>;
+    return <div>{t("common.error")}: {onError?.message || onNodeError}</div>;
   }
 
   return (
@@ -246,11 +293,11 @@ const InnerLayout = () => {
               }}
               disabled={batchLoading || selected.length === 0}
             >
-              {t("notification.offline.batch_edit")}
+              {t("notification.traffic_report.batch_edit")}
             </Button>
           </Dialog.Trigger>
           <Dialog.Content>
-            <Dialog.Title>{t("notification.offline.batch_edit")}</Dialog.Title>
+            <Dialog.Title>{t("notification.traffic_report.batch_edit")}</Dialog.Title>
             <TrafficReportEditForm
               initialValues={batchForm}
               loading={batchLoading}
@@ -380,6 +427,15 @@ const ActionButtons = ({
             }}
             loading={editSaving}
             onSubmit={(values) => {
+              try {
+                ensureCadenceSelected(values, t);
+              } catch (error) {
+                toast.error(
+                  error instanceof Error ? error.message : t("common.error")
+                );
+                return;
+              }
+
               setEditSaving(true);
               fetch("/api/admin/notification/traffic-report/edit", {
                 method: "POST",
@@ -391,23 +447,22 @@ const ActionButtons = ({
                   },
                 ]),
               })
-                .then((res) => {
-                  if (!res.ok) {
-                    toast.error(
-                      "Failed to save traffic report settings: " + res.statusText
-                    );
-                  }
-                  toast.success(t("common.updated_successfully"));
-                  return res.json();
-                })
+                .then((res) =>
+                  parseJsonOrThrow(
+                    res,
+                    t("notification.traffic_report.errors.save_failed")
+                  )
+                )
                 .then(() => {
                   setEditOpen(false);
+                  toast.success(t("common.updated_successfully"));
                   refresh();
-                  setEditSaving(false);
                 })
                 .catch((error) => {
                   console.error("Error saving traffic report settings:", error);
-                  toast.error(t("common.error", { message: error.message }));
+                  toast.error(getErrorMessage(error, t));
+                })
+                .finally(() => {
                   setEditSaving(false);
                 });
             }}

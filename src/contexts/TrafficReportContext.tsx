@@ -1,4 +1,5 @@
 import React from "react";
+import { useTranslation } from "react-i18next";
 
 export type TrafficReportNotification = {
   client: string;
@@ -22,6 +23,7 @@ const TrafficReportContext = React.createContext<
 export const TrafficReportNotificationProvider: React.FC<{
   children: React.ReactNode;
 }> = ({ children }) => {
+  const { t } = useTranslation();
   const [trafficReportNotification, setTrafficReportNotification] =
     React.useState<TrafficReportNotification[]>([]);
   const [loading, setLoading] = React.useState<boolean>(false);
@@ -31,9 +33,10 @@ export const TrafficReportNotificationProvider: React.FC<{
   const refresh = async () => {
     if (firstLoad.current) setLoading(true);
     try {
+      setError(null);
       const response = await fetch("/api/admin/notification/traffic-report/");
       if (!response.ok) {
-        throw new Error("Failed to fetch traffic report notifications");
+        throw new Error(t("notification.traffic_report.errors.fetch_failed"));
       }
       const data = await response.json();
       setTrafficReportNotification(data.data || []);

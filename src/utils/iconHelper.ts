@@ -2,6 +2,7 @@ import React from "react";
 import {
   Bolt,
   Home,
+  BarChart2,
   CircleArrowRight,
   MessageCircleMore,
   Ellipsis,
@@ -26,6 +27,7 @@ export const iconMap: Record<string, React.ComponentType<any>> = {
   Server,
   Bolt,
   Home,
+  BarChart2,
   CircleArrowRight,
   MessageCircleMore,
   Ellipsis,

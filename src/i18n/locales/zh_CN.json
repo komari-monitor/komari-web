@@ -415,9 +415,16 @@
     "traffic_report": {
       "batch_edit": "批量修改",
       "daily": "日报",
+      "errors": {
+        "fetch_failed": "获取流量定时报告配置失败",
+        "save_failed": "保存流量定时报告配置失败",
+        "select_cadence": "启用流量定时报告时，至少选择一种报告周期",
+        "update_failed": "更新流量定时报告配置失败"
+      },
       "full_title": "流量定时报告设置",
       "monthly": "月报",
       "report_type": "定时类型",
+      "separator": "、",
       "title": "流量定时报告",
       "weekly": "周报"
     }
