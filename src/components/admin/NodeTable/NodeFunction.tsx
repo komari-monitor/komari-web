@@ -6,6 +6,7 @@ import { Terminal, Trash2, Copy, Download, DollarSign } from "lucide-react";
 import { t } from "i18next";
 import type { Row } from "@tanstack/react-table";
 import { EditDialog } from "./NodeEditDialog";
+import { quotePowerShellArg, quoteShellArgs } from "@/utils/shellQuote";
 import {
   Button,
   Checkbox,
@@ -63,20 +64,23 @@ export function ActionsCell({ row }: { row: Row<z.infer<typeof schema>> }) {
     if (installOptions.ignoreUnsafeCert) {
       args.push("--ignore-unsafe-cert");
     }
-    if (installOptions.ghproxy) {
-      if (!installOptions.ghproxy.startsWith("http")) {
-        installOptions.ghproxy = `http://${installOptions.ghproxy}`;
-      }
+    const ghproxy = installOptions.ghproxy.trim();
+    if (ghproxy) {
+      const finalGhproxy = ghproxy.startsWith("http")
+        ? ghproxy
+        : `http://${ghproxy}`;
       args.push(`--install-ghproxy`);
-      args.push(installOptions.ghproxy);
+      args.push(finalGhproxy);
     }
-    if (installOptions.dir) {
+    const installDir = installOptions.dir.trim();
+    if (installDir) {
       args.push(`--install-dir`);
-      args.push(installOptions.dir);
+      args.push(installDir);
     }
-    if (installOptions.serviceName) {
+    const serviceName = installOptions.serviceName.trim();
+    if (serviceName) {
       args.push(`--install-service-name`);
-      args.push(installOptions.serviceName);
+      args.push(serviceName);
     }
 
     let finalCommand = "";
@@ -84,7 +88,7 @@ export function ActionsCell({ row }: { row: Row<z.infer<typeof schema>> }) {
       case "linux":
         finalCommand =
           `wget -qO- https://raw.githubusercontent.com/komari-monitor/komari-agent/refs/heads/main/install.sh | sudo bash -s -- ` +
-          args.join(" ");
+          quoteShellArgs(args);
         break;
       case "windows":
         finalCommand =
@@ -93,14 +97,14 @@ export function ActionsCell({ row }: { row: Row<z.infer<typeof schema>> }) {
           ` -UseBasicParsing -OutFile 'install.ps1'; &` +
           ` '.\\install.ps1'`;
         args.forEach((arg) => {
-          finalCommand += ` '${arg}'`;
+          finalCommand += ` ${quotePowerShellArg(arg)}`;
         });
         finalCommand += `"`;
         break;
       case "macos":
         finalCommand =
-            `zsh <(curl -sL https://raw.githubusercontent.com/komari-monitor/komari-agent/refs/heads/main/install.sh) ` +
-            args.join(" ");
+          `zsh <(curl -sL https://raw.githubusercontent.com/komari-monitor/komari-agent/refs/heads/main/install.sh) ` +
+          quoteShellArgs(args);
         break;
     }
     return finalCommand;

@@ -1,3 +1,8 @@
+import {
+  quotePowerShellArg,
+  quoteShellArg,
+  quoteShellArgs,
+} from "@/utils/shellQuote";
 import React, { useEffect, useState } from "react";
 import {
   NodeDetailsProvider,
@@ -627,34 +632,40 @@ function GenerateCommandButton({ node, settings }: { node: NodeDetail, settings:
     if (installOptions.enableGpu) {
       args.push("--gpu");
     }
-    if (enableGhproxy && installOptions.ghproxy) {
+    const ghproxy = installOptions.ghproxy.trim();
+    if (enableGhproxy && ghproxy) {
       const finalUrl = (
-        installOptions.ghproxy.startsWith("http")
-          ? installOptions.ghproxy
-          : `http://${installOptions.ghproxy}`
+        ghproxy.startsWith("http")
+          ? ghproxy
+          : `http://${ghproxy}`
       ).replace(/\/+$/, "");
       args.push(`--install-ghproxy`);
       args.push(finalUrl);
     }
-    if (enableCustomDir && installOptions.dir) {
+    const installDir = installOptions.dir.trim();
+    if (enableCustomDir && installDir) {
       args.push(`--install-dir`);
-      args.push(installOptions.dir);
+      args.push(installDir);
     }
-    if (enableCustomServiceName && installOptions.serviceName) {
+    const serviceName = installOptions.serviceName.trim();
+    if (enableCustomServiceName && serviceName) {
       args.push(`--install-service-name`);
-      args.push(installOptions.serviceName);
+      args.push(serviceName);
     }
-    if (enableIncludeNics && installOptions.includeNics) {
+    const includeNics = installOptions.includeNics.trim();
+    if (enableIncludeNics && includeNics) {
       args.push(`--include-nics`);
-      args.push(installOptions.includeNics);
+      args.push(includeNics);
     }
-    if (enableExcludeNics && installOptions.excludeNics) {
+    const excludeNics = installOptions.excludeNics.trim();
+    if (enableExcludeNics && excludeNics) {
       args.push(`--exclude-nics`);
-      args.push(installOptions.excludeNics);
+      args.push(excludeNics);
     }
-    if (enableIncludeMountpoints && installOptions.includeMountpoints) {
+    const includeMountpoints = installOptions.includeMountpoints.trim();
+    if (enableIncludeMountpoints && includeMountpoints) {
       args.push(`--include-mountpoint`);
-      args.push(installOptions.includeMountpoints);
+      args.push(includeMountpoints);
     }
     if (enableInterval) {
       const intervalVal = Number.parseFloat((installOptions.interval || "").trim());
@@ -673,12 +684,12 @@ function GenerateCommandButton({ node, settings }: { node: NodeDetail, settings:
     let scriptUrl =
       `https://raw.githubusercontent.com/komari-monitor/komari-agent/refs/heads/main/${scriptFile}`;
     if (enableGhproxy) {
-      if (enableGhproxy && installOptions.ghproxy) {
+      if (enableGhproxy && ghproxy) {
         scriptUrl = scriptUrl.slice(8); // 去掉 https://
-        if (installOptions.ghproxy.endsWith("/")) {
-          scriptUrl = `${installOptions.ghproxy}${scriptUrl}`;
+        if (ghproxy.endsWith("/")) {
+          scriptUrl = `${ghproxy}${scriptUrl}`;
         } else {
-          scriptUrl = `${installOptions.ghproxy}/${scriptUrl}`;
+          scriptUrl = `${ghproxy}/${scriptUrl}`;
         }
         if (!scriptUrl.startsWith("http")) {
           scriptUrl = `http://${scriptUrl}`;
@@ -688,21 +699,24 @@ function GenerateCommandButton({ node, settings }: { node: NodeDetail, settings:
     let finalCommand = "";
     switch (selectedPlatform) {
       case "linux":
-        finalCommand = `wget -qO- ${scriptUrl} | sudo bash -s -- ` + args.join(" ");
+        finalCommand =
+          `wget -qO- ${quoteShellArg(scriptUrl)} | sudo bash -s -- ` +
+          quoteShellArgs(args);
         break;
       case "windows":
         finalCommand =
           `powershell.exe -NoProfile -ExecutionPolicy Bypass -Command ` +
-          `"iwr '${scriptUrl}'` +
+          `"iwr ${quotePowerShellArg(scriptUrl)}` +
           ` -UseBasicParsing -OutFile 'install.ps1'; &` +
           ` '.\\install.ps1'`;
         args.forEach((arg) => {
-          finalCommand += ` '${arg}'`;
+          finalCommand += ` ${quotePowerShellArg(arg)}`;
         });
         finalCommand += `"`;
         break;
       case "macos":
-        finalCommand = `zsh <(curl -sL ${scriptUrl}) ` + args.join(" ");
+        finalCommand =
+          `zsh <(curl -sL ${quoteShellArg(scriptUrl)}) ` + quoteShellArgs(args);
         break;
     }
     return finalCommand;
