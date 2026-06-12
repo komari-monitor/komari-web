@@ -122,9 +122,14 @@ export default defineConfig(({ mode }) => {
       __BUILD_TIME__: JSON.stringify(buildTime),
     },
     resolve: {
-      alias: {
-        "@": path.resolve(__dirname, "./src"),
-      },
+      alias: [
+        { find: "@", replacement: path.resolve(__dirname, "./src") },
+        // Force xterm to use the CJS build to avoid a rollup bug where `||=` in
+        // xterm.mjs is incorrectly lowered to `void 0||(i={})` with an undeclared `i`,
+        // causing `ReferenceError: i is not defined` at requestMode when vi sends DECRQM sequences.
+        // Regex to match only the bare specifier, not subpaths like @xterm/xterm/css/xterm.css.
+        { find: /^@xterm\/xterm$/, replacement: path.resolve(__dirname, "node_modules/@xterm/xterm/lib/xterm.js") },
+      ],
     },
     build: {
       assetsDir: "assets",
