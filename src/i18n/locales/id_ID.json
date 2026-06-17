@@ -103,6 +103,17 @@
     },
     "nodeTable": {
       "addNode": "Tambah Node",
+      "autoDiscovery": {
+        "title": "Penemuan otomatis",
+        "disabledDescription": "Dengan penemuan otomatis aktif, Anda tidak perlu menambahkan node satu per satu. Cukup jalankan satu perintah di server target dan Agent akan otomatis terdaftar dan online menggunakan kunci tersebut. Ideal untuk men-deploy banyak server sekaligus.",
+        "enabledDescription": "Jalankan perintah di bawah ini pada server target. Agent akan otomatis terdaftar dan online tanpa perlu membuat node secara manual.",
+        "goToSettings": "Buka Pengaturan Umum untuk mengaktifkan penemuan otomatis",
+        "tryIt": "Coba penemuan otomatis"
+      },
+      "emptyGuide": {
+        "title": "Belum ada server",
+        "description": "Klik \"Tambah Node\" di kanan atas untuk memulai, atau aktifkan penemuan otomatis untuk menambahkan server secara massal."
+      },
       "autoRenewal": "Perpanjangan Otomatis",
       "autoRenewalDescription": "Jika server kedaluwarsa dan masih online, Komari akan otomatis mengatur waktu kedaluwarsa ke bulan (atau tahun) berikutnya.",
       "billing": "Penagihan",
