@@ -104,15 +104,11 @@
     "nodeTable": {
       "addNode": "添加节点",
       "autoDiscovery": {
-        "title": "自动发现",
         "disabledDescription": "开启自动发现后，无需逐台手动添加节点。只要在目标服务器上运行一条命令，Agent 就会携带密钥自动注册并上线，非常适合批量部署多台服务器。",
         "enabledDescription": "在目标服务器上运行下面的命令，Agent 将自动注册并上线，无需手动添加节点。",
         "goToSettings": "前往“设置”开启自动发现",
+        "title": "自动发现",
         "tryIt": "试试自动发现"
-      },
-      "emptyGuide": {
-        "title": "还没有任何服务器",
-        "description": "点击右上角的“添加节点”开始，或开启自动发现批量接入服务器。"
       },
       "autoRenewal": "自动续费",
       "autoRenewalDescription": "如果服务器过期且当前在线，Komari 将自动将到期时间设置为下个自然月（年）",
@@ -132,6 +128,10 @@
       "disableWebSsh": "禁用远程控制",
       "dragToReorder": "长按拖拽重新排序",
       "editNodePrice": "编辑账单",
+      "emptyGuide": {
+        "description": "点击右上角的“添加节点”开始，或开启自动发现批量接入服务器。",
+        "title": "还没有任何服务器"
+      },
       "enableGpuMonitoring": "启用详细 GPU 监控",
       "errorLoadNodeList": "无法加载节点列表",
       "errorRefreshNodeList": "刷新列表失败",
