@@ -22,7 +22,10 @@ jobs:
         uses: actions/github-script@v9
         with:
           script: |
-            const tag = context.payload.release?.tag_name || core.getInput("tag");
+            const clean = (value) => (typeof value === "string" ? value.trim() : "");
+            const releaseTimestamp = (release) => Date.parse(release.published_at || release.created_at || "");
+
+            const tag = clean(context.payload.release?.tag_name) || clean(core.getInput("tag"));
             if (!tag) {
               core.setFailed("No release tag was provided.");
               return;
@@ -33,28 +36,115 @@ jobs:
               ? context.payload.release
               : (await github.rest.repos.getReleaseByTag({ owner, repo, tag })).data;
 
-            const generated = await github.request(
-              "POST /repos/{owner}/{repo}/releases/generate-notes",
-              {
+            async function getPreviousReleaseTag() {
+              const releases = await github.paginate(github.rest.repos.listReleases, {
                 owner,
                 repo,
-                tag_name: tag,
-                target_commitish: release.target_commitish || undefined,
-              },
+                per_page: 100,
+              });
+
+              const currentTime = releaseTimestamp(release);
+              const candidates = releases
+                .filter((item) => !item.draft && item.tag_name !== tag)
+                .filter((item) => {
+                  if (!Number.isFinite(currentTime)) {
+                    return true;
+                  }
+
+                  const itemTime = releaseTimestamp(item);
+                  return Number.isFinite(itemTime) && itemTime < currentTime;
+                })
+                .sort((left, right) => releaseTimestamp(right) - releaseTimestamp(left));
+
+              return candidates[0]?.tag_name || "";
+            }
+
+            async function getComparedCommits(previousTag) {
+              if (!previousTag) {
+                return [];
+              }
+
+              const commits = [];
+              for (let page = 1; page <= 20; page += 1) {
+                const response = await github.rest.repos.compareCommitsWithBasehead({
+                  owner,
+                  repo,
+                  basehead: `${previousTag}...${tag}`,
+                  per_page: 100,
+                  page,
+                });
+
+                commits.push(...response.data.commits);
+
+                if (!response.headers.link?.includes('rel="next"')) {
+                  break;
+                }
+              }
+
+              return commits;
+            }
+
+            function renderCommitLine(commit) {
+              const subject = clean(commit.commit.message.split("\n")[0]) || "(no subject)";
+              const shortSha = commit.sha.slice(0, 7);
+              const author = commit.author?.login
+                ? ` @${commit.author.login}`
+                : (commit.commit.author?.name ? ` ${commit.commit.author.name}` : "");
+
+              return `- ${subject} ([${shortSha}](${commit.html_url}))${author}`;
+            }
+
+            async function buildCommitSection(previousTag) {
+              if (!previousTag) {
+                return "## Commits\n\nNo previous release tag was found; commit comparison is unavailable.";
+              }
+
+              const commits = await getComparedCommits(previousTag);
+              if (commits.length === 0) {
+                return `## Commits\n\nNo commits found between \`${previousTag}\` and \`${tag}\`.`;
+              }
+
+              return ["## Commits", "", ...commits.map(renderCommitLine)].join("\n");
+            }
+
+            const previousTag = await getPreviousReleaseTag();
+            const noteParams = {
+              owner,
+              repo,
+              tag_name: tag,
+              target_commitish: release.target_commitish || undefined,
+            };
+
+            if (previousTag) {
+              noteParams.previous_tag_name = previousTag;
+            }
+
+            const generated = await github.request(
+              "POST /repos/{owner}/{repo}/releases/generate-notes",
+              noteParams,
             );
 
-            const body = generated.data.body?.trim();
-            if (!body) {
+            const generatedBody = clean(generated.data.body);
+            if (!generatedBody) {
               core.setFailed(`GitHub returned empty release notes for ${tag}.`);
               return;
             }
 
-            await github.rest.repos.updateRelease({
-              owner,
-              repo,
-              release_id: release.id,
-              body,
-            });
+            const body = [
+              generatedBody,
+              await buildCommitSection(previousTag),
+            ].join("\n\n");
+
+            if (clean(release.body) === clean(body)) {
+              core.info(`Release notes for ${tag} are already up to date.`);
+            } else {
+              await github.rest.repos.updateRelease({
+                owner,
+                repo,
+                release_id: release.id,
+                body,
+              });
+            }
 
             await core.summary
               .addHeading("Release Notes")

@@ -115,20 +115,109 @@ jobs:
 
       - name: Generate release notes
         if: steps.release.outputs.exists != 'true' || steps.release.outputs.force == 'true'
-        shell: bash
-        run: |
-          set -euo pipefail
+        uses: actions/github-script@v9
+        env:
+          RELEASE_TAG: ${{ steps.release.outputs.tag }}
+        with:
+          script: |
+            const fs = require("fs");
+            const { owner, repo } = context.repo;
+            const tag = process.env.RELEASE_TAG;
 
-          tag="${{ steps.release.outputs.tag }}"
-          gh api "repos/${GITHUB_REPOSITORY}/releases/generate-notes" \
-            -f tag_name="$tag" \
-            -f target_commitish="$GITHUB_SHA" \
-            --jq .body > release-notes.md
+            const clean = (value) => (typeof value === "string" ? value.trim() : "");
+            const releaseTimestamp = (release) => Date.parse(release.published_at || release.created_at || "");
 
-          if [ ! -s release-notes.md ]; then
-            echo "GitHub returned empty release notes for ${tag}." >&2
-            exit 1
-          fi
+            async function getPreviousReleaseTag() {
+              const releases = await github.paginate(github.rest.repos.listReleases, {
+                owner,
+                repo,
+                per_page: 100,
+              });
+
+              const candidates = releases
+                .filter((item) => !item.draft && item.tag_name !== tag)
+                .sort((left, right) => releaseTimestamp(right) - releaseTimestamp(left));
+
+              return candidates[0]?.tag_name || "";
+            }
+
+            async function getComparedCommits(previousTag) {
+              if (!previousTag) {
+                return [];
+              }
+
+              const commits = [];
+              for (let page = 1; page <= 20; page += 1) {
+                const response = await github.rest.repos.compareCommitsWithBasehead({
+                  owner,
+                  repo,
+                  basehead: `${previousTag}...${process.env.GITHUB_SHA}`,
+                  per_page: 100,
+                  page,
+                });
+
+                commits.push(...response.data.commits);
+
+                if (!response.headers.link?.includes('rel="next"')) {
+                  break;
+                }
+              }
+
+              return commits;
+            }
+
+            function renderCommitLine(commit) {
+              const subject = clean(commit.commit.message.split("\n")[0]) || "(no subject)";
+              const shortSha = commit.sha.slice(0, 7);
+              const author = commit.author?.login
+                ? ` @${commit.author.login}`
+                : (commit.commit.author?.name ? ` ${commit.commit.author.name}` : "");
+
+              return `- ${subject} ([${shortSha}](${commit.html_url}))${author}`;
+            }
+
+            async function buildCommitSection(previousTag) {
+              if (!previousTag) {
+                return "## Commits\n\nNo previous release tag was found; commit comparison is unavailable.";
+              }
+
+              const commits = await getComparedCommits(previousTag);
+              if (commits.length === 0) {
+                return `## Commits\n\nNo commits found between \`${previousTag}\` and \`${tag}\`.`;
+              }
+
+              return ["## Commits", "", ...commits.map(renderCommitLine)].join("\n");
+            }
+
+            const previousTag = await getPreviousReleaseTag();
+            const noteParams = {
+              owner,
+              repo,
+              tag_name: tag,
+              target_commitish: process.env.GITHUB_SHA,
+            };
+
+            if (previousTag) {
+              noteParams.previous_tag_name = previousTag;
+            }
+
+            const generated = await github.request(
+              "POST /repos/{owner}/{repo}/releases/generate-notes",
+              noteParams,
+            );
+
+            const generatedBody = clean(generated.data.body);
+            if (!generatedBody) {
+              core.setFailed(`GitHub returned empty release notes for ${tag}.`);
+              return;
+            }
+
+            const body = [
+              generatedBody,
+              await buildCommitSection(previousTag),
+            ].join("\n\n");
+
+            fs.writeFileSync("release-notes.md", `${body}\n`);
 
       - name: Create or update web release
         if: steps.release.outputs.exists != 'true' || steps.release.outputs.force == 'true'
@@ -161,4 +250,32 @@ jobs:
             echo "Published $tag following ${{ steps.release.outputs.main_url }}."
             echo
             echo "Asset: \`dist-release.zip\`"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+      - name: Refresh Komari release notes
+        if: steps.release.outputs.exists != 'true' || steps.release.outputs.force == 'true'
+        shell: bash
+        env:
+          KOMARI_RELEASE_NOTES_TOKEN: ${{ secrets.KOMARI_RELEASE_NOTES_TOKEN }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${KOMARI_RELEASE_NOTES_TOKEN:-}" ]; then
+            {
+              echo
+              echo "Skipped Komari release note refresh because KOMARI_RELEASE_NOTES_TOKEN is not configured."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 0
+          fi
+
+          tag="${{ steps.release.outputs.tag }}"
+          payload="$(jq -n --arg tag "$tag" '{event_type:"komari-web-release-published", client_payload:{tag:$tag}}')"
+          GH_TOKEN="$KOMARI_RELEASE_NOTES_TOKEN" gh api \
+            repos/komari-monitor/komari/dispatches \
+            --method POST \
+            --input - <<< "$payload"
+
+          {
+            echo
+            echo "Requested Komari release notes refresh for ${tag}."
           } >> "$GITHUB_STEP_SUMMARY"
