@@ -134,7 +134,7 @@ export function useSettings() {
     UpdatedAt: "",
   });
 
-  const [loading, setLoading] = React.useState(false);
+  const [loading, setLoading] = React.useState(true);
   const [error, setError] = React.useState<string | null>(null);
 
   // Fetch settings on mount

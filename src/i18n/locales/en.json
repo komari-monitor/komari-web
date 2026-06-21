@@ -103,6 +103,17 @@
     },
     "nodeTable": {
       "addNode": "Add",
+      "autoDiscovery": {
+        "title": "Auto discovery",
+        "disabledDescription": "With auto discovery enabled, you no longer need to add nodes one by one. Just run a single command on the target server and the Agent will register and come online automatically using the key. Ideal for deploying many servers at once.",
+        "enabledDescription": "Run the command below on the target server. The Agent will register and come online automatically, no manual node creation needed.",
+        "goToSettings": "Go to General settings to enable auto discovery",
+        "tryIt": "Try auto discovery"
+      },
+      "emptyGuide": {
+        "title": "No servers yet",
+        "description": "Click \"Add\" in the top right to get started, or enable auto discovery to onboard servers in bulk."
+      },
       "autoRenewal": "Auto renewal",
       "autoRenewalDescription": "If the server expires and is currently online, Komari will automatically set the expiration time to the next natural month (year)",
       "billing": "Billing",

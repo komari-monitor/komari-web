@@ -103,6 +103,17 @@
     },
     "nodeTable": {
       "addNode": "添加節點",
+      "autoDiscovery": {
+        "title": "自動發現",
+        "disabledDescription": "開啟自動發現後，無需逐台手動添加節點。只要在目標伺服器上執行一條命令，Agent 就會攜帶金鑰自動註冊並上線，非常適合批次部署多台伺服器。",
+        "enabledDescription": "在目標伺服器上執行下面的命令，Agent 將自動註冊並上線，無需手動添加節點。",
+        "goToSettings": "前往「設定」開啟自動發現",
+        "tryIt": "試試自動發現"
+      },
+      "emptyGuide": {
+        "title": "還沒有任何伺服器",
+        "description": "點擊右上角的「添加節點」開始，或開啟自動發現批次接入伺服器。"
+      },
       "autoRenewal": "自動續費",
       "autoRenewalDescription": "如果伺服器過期且當前線上，Komari 將自動將到期時間設定為下個自然月（年）",
       "billing": "帳單",
