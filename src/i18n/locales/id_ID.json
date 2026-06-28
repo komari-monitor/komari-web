@@ -284,7 +284,9 @@
     "name": "Nama",
     "no_results": "Tidak ada hasil",
     "none": "Tidak ada",
+    "unknown": "Tidak diketahui",
     "once": "Sekali",
+
     "private_site": "Ini adalah situs Komari privat. Silakan masuk terlebih dahulu.",
     "quarterly": "Triwulanan",
     "quinquennial": "Lima Tahunan",
@@ -561,12 +563,23 @@
       "header_description": "Tambahkan HTML/CSS/JavaScript kustom ke header situs. Akan dimuat di semua halaman.",
       "note": "Konten personalisasi dapat ditimpa saat menggunakan tema kustom. Pastikan kode aman dan hindari konten yang tidak tepercaya."
     },
+    "database": {
+      "title": "Basis Data",
+      "vacuum_button": "Kompres",
+      "vacuum_confirm": "Proses kompresi akan memblokir Komari berjalan dan panel mungkin tidak responsif selama proses ini. Lanjutkan?",
+      "vacuum_description": "Kompres basis data SQLite untuk mengurangi penggunaan disk. Proses ini akan memblokir Komari berjalan. Ukuran basis data saat ini {{size}}.",
+      "vacuum_error": "Gagal mengompres basis data",
+      "vacuum_success": "Basis data berhasil dikompres",
+      "vacuum_title": "Kompres Basis Data",
+      "vacuuming": "Mengompres..."
+    },
     "general": {
       "auto_discovery": "Penemuan Otomatis",
       "auto_discovery_key": "Kunci Penemuan Otomatis",
       "auto_discovery_key_description": "Gunakan penemuan otomatis untuk mendaftarkan klien secara massal. Biarkan kosong untuk menonaktifkan penemuan otomatis.",
       "title": "Umum"
     },
+
     "geoip": {
       "enable_description": "Tampilkan lokasi geografis node",
       "enable_title": "Aktifkan GeoIP",

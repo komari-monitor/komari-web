@@ -7,7 +7,17 @@ import { WebLinksAddon } from "@xterm/addon-web-links";
 import { SearchAddon } from "@xterm/addon-search";
 import "@xterm/xterm/css/xterm.css";
 import "./Terminal.css";
-import { Callout, Flex, IconButton, Theme } from "@radix-ui/themes";
+import {
+  Button,
+  Callout,
+  Dialog,
+  Flex,
+  IconButton,
+  TextField,
+  Theme,
+} from "@radix-ui/themes";
+
+
 import { useTranslation } from "react-i18next";
 import { Cross1Icon } from "@radix-ui/react-icons";
 import { TablerAlertTriangleFilled } from "../../components/Icones/Tabler";
@@ -100,6 +110,10 @@ const TerminalPage = () => {
   const [appearance, setAppearance] = useState<CSSProperties>({});
   const [twoFaEnabled, setTwoFaEnabled] = useState(false);
   const [twoFaResolved, setTwoFaResolved] = useState(false);
+  const [otpCode, setOtpCode] = useState<string | null>(null);
+  const [otpDialogOpen, setOtpDialogOpen] = useState(false);
+  const [otpInput, setOtpInput] = useState("");
+
 
   useEffect(() => {
     fetch("/api/me")
@@ -230,21 +244,24 @@ const TerminalPage = () => {
       });
   }, [t, uuid]);
 
+  // Trigger OTP dialog when 2FA is enabled
+  useEffect(() => {
+    if (!settingsResolved || !twoFaResolved) return;
+    if (twoFaEnabled && otpCode === null) {
+      setOtpDialogOpen(true);
+    }
+  }, [settingsResolved, twoFaResolved, twoFaEnabled, otpCode]);
+
+  // Connection effect - waits for OTP if 2FA is enabled
   useEffect(() => {
     if (!settingsResolved || !twoFaResolved || uuid === null || !terminalRef.current) return;
     if (initializedUuidRef.current === uuid) return;
+    if (twoFaEnabled && otpCode === null) return; // Wait for OTP
 
     initializedUuidRef.current = uuid;
     firstBinary.current = false;
-    let otpQuery = "";
-    if (twoFaEnabled) {
-      const code = window.prompt(t("account.2fa_otp_input_prompt"));
-      if (!code) {
-        initializedUuidRef.current = null;
-        return;
-      }
-      otpQuery = `?2fa_code=${encodeURIComponent(code)}`;
-    }
+    const otpQuery = twoFaEnabled && otpCode ? `?2fa_code=${encodeURIComponent(otpCode)}` : "";
+
 
     const snapshot = resolvedSettingsRef.current;
     const terminalOptions: Partial<ITerminalOptions> = {
@@ -469,7 +486,14 @@ const TerminalPage = () => {
       document.removeEventListener("keydown", handleKeyDown);
       document.removeEventListener("contextmenu", handleContextMenu);
     };
-  }, [settingsResolved, twoFaEnabled, twoFaResolved, uuid, resizeTerminal, t]);
+  }, [settingsResolved, twoFaEnabled, twoFaResolved, otpCode, uuid, resizeTerminal, t]);
+
+  const submitOtp = useCallback(() => {
+    if (!otpInput) return;
+    setOtpCode(otpInput);
+    setOtpDialogOpen(false);
+  }, [otpInput]);
+
 
   // 移除对 leftWidth 的直接依赖，改用防抖
   useEffect(() => {
@@ -558,7 +582,56 @@ const TerminalPage = () => {
           {isClipboardOpen && <Divider onMouseDown={startDragging} />}
           {isClipboardOpen && <ClipboardPanel />}
         </Flex>
+        <Dialog.Root
+          open={otpDialogOpen}
+          onOpenChange={(open) => {
+            // 阻止在未输入验证码时关闭
+            if (!open && otpCode === null) {
+              return;
+            }
+            setOtpDialogOpen(open);
+          }}
+        >
+          <Dialog.Content maxWidth="400px">
+            <Dialog.Title>{t("login.two_factor")}</Dialog.Title>
+            <Dialog.Description size="2" mb="3">
+              {t("account.2fa_otp_input_prompt")}
+            </Dialog.Description>
+            <form
+              onSubmit={(e) => {
+                e.preventDefault();
+                submitOtp();
+              }}
+            >
+              <Flex direction="column" gap="3">
+                <TextField.Root
+                  type="number"
+                  autoFocus
+                  value={otpInput}
+                  placeholder="123456"
+                  onChange={(e) => setOtpInput(e.target.value)}
+                />
+                <Flex gap="3" justify="end">
+                  <Button
+                    variant="soft"
+                    color="gray"
+                    type="button"
+                    onClick={() => {
+                      window.location.href = "/";
+                    }}
+                  >
+                    {t("common.cancel")}
+                  </Button>
+                  <Button type="submit" disabled={!otpInput}>
+                    {t("common.confirm")}
+                  </Button>
+                </Flex>
+              </Flex>
+            </form>
+          </Dialog.Content>
+        </Dialog.Root>
       </Theme>
+
     </TerminalContext.Provider>
   );
 };

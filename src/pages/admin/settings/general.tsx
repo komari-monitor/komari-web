@@ -6,6 +6,7 @@ import {
   type SettingsResponse,
 } from "@/lib/api";
 import {
+  SettingCard,
   SettingCardButton,
   SettingCardCollapse,
   SettingCardLabel,
@@ -13,6 +14,9 @@ import {
   SettingCardShortTextInput,
   SettingCardSwitch,
 } from "@/components/admin/SettingCard";
+import { Dialog } from "@radix-ui/themes";
+
+
 import React from "react";
 import { toast } from "sonner";
 import Loading from "@/components/loading";
@@ -208,7 +212,10 @@ export default function GeneralSettings() {
           })}
         </label>
       </SettingCardMultiInputCollapse>
+      <SettingCardLabel>{t("settings.database.title")}</SettingCardLabel>
+      <DatabaseCard />
       <SettingCardLabel>{t("settings.nezha.title")}</SettingCardLabel>
+
       <label className="text-sm text-muted-foreground -mt-4">
         {t("settings.nezha.description")}
       </label>
@@ -257,7 +264,119 @@ function calculateExpectedUsage(
   return formatBytes(totalPingBytes + totalRecordBytes);
 }
 
+const DatabaseCard = () => {
+  const { t } = useTranslation();
+  const [size, setSize] = React.useState<number | null>(null);
+  const [dbType, setDbType] = React.useState<string>("");
+  const [vacuuming, setVacuuming] = React.useState(false);
+  const [confirmOpen, setConfirmOpen] = React.useState(false);
+
+  const fetchSize = React.useCallback(async () => {
+    try {
+      const res = await fetch("/api/admin/database/size");
+      const data = await res.json();
+      if (data.status === "success" && data.data) {
+        setSize(typeof data.data.size === "number" ? data.data.size : null);
+        setDbType(data.data.type || "");
+      }
+    } catch {
+      // 忽略读取失败，保持未知状态
+    }
+  }, []);
+
+  React.useEffect(() => {
+    fetchSize();
+  }, [fetchSize]);
+
+  const handleVacuum = async () => {
+    setVacuuming(true);
+    try {
+      const res = await fetch("/api/admin/database/vacuum", {
+        method: "POST",
+      });
+      const data = await res.json();
+      if (data.status === "success") {
+        const after =
+          data.data && typeof data.data.after === "number"
+            ? data.data.after
+            : null;
+        if (after !== null) {
+          setSize(after);
+        } else {
+          await fetchSize();
+        }
+        toast.success(t("settings.database.vacuum_success"));
+      } else {
+        toast.error(data.message || t("settings.database.vacuum_error"));
+      }
+    } catch (e) {
+      toast.error(t("settings.database.vacuum_error") + ": " + e);
+    } finally {
+      setVacuuming(false);
+      setConfirmOpen(false);
+    }
+  };
+
+  const sizeText = size !== null ? formatBytes(size) : t("common.unknown");
+  const isSQLite = dbType === "" || dbType === "sqlite";
+
+  return (
+    <SettingCard
+      title={t("settings.database.vacuum_title")}
+      description={t("settings.database.vacuum_description", {
+        size: sizeText,
+      })}
+    >
+      <SettingCard.Action>
+        <Dialog.Root open={confirmOpen} onOpenChange={setConfirmOpen}>
+          <Dialog.Trigger>
+            <Button
+              variant="solid"
+              color="orange"
+              disabled={vacuuming || !isSQLite}
+            >
+              {vacuuming
+                ? t("settings.database.vacuuming")
+                : t("settings.database.vacuum_button")}
+            </Button>
+          </Dialog.Trigger>
+          <Dialog.Content maxWidth="450px">
+            <Dialog.Title>
+              {t("settings.database.vacuum_title")}
+            </Dialog.Title>
+            <Dialog.Description size="2">
+              {t("settings.database.vacuum_confirm")}
+            </Dialog.Description>
+            <Flex gap="3" mt="4" justify="end">
+              <Dialog.Close>
+                <Button variant="soft" color="gray" disabled={vacuuming}>
+                  {t("common.cancel")}
+                </Button>
+              </Dialog.Close>
+              <Button
+                variant="solid"
+                color="orange"
+                disabled={vacuuming}
+                onClick={(e) => {
+                  e.preventDefault();
+                  handleVacuum();
+                }}
+              >
+                {vacuuming
+                  ? t("settings.database.vacuuming")
+                  : t("settings.database.vacuum_button")}
+              </Button>
+            </Flex>
+          </Dialog.Content>
+        </Dialog.Root>
+      </SettingCard.Action>
+
+    </SettingCard>
+  );
+};
+
 const ApiCard = ({ settings }: { settings: SettingsResponse }) => {
+
   //const { settings } = useSettings();
   const { t } = useTranslation();
   const [apiValues, setApiValues] = React.useState<string>(
