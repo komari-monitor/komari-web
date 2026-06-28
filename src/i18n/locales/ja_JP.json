@@ -284,7 +284,9 @@
     "name": "名前",
     "no_results": "結果がありません",
     "none": "なし",
+    "unknown": "不明",
     "once": "一回限り",
+
     "private_site": "これはプライベートなKomariサイトです。ログインしてください。",
     "quarterly": "四半期",
     "quinquennial": "5年",
@@ -561,12 +563,23 @@
       "header_description": "サイトのヘッダーにカスタム HTML/CSS/JavaScript を追加します。これらの内容はすべてのページで読み込まれます",
       "note": "カスタムテーマを使用している場合、パーソナライズされた内容は上書きされる可能性があります。コードの安全性を確保し、信頼できない内容の使用を避けてください。"
     },
+    "database": {
+      "title": "データベース",
+      "vacuum_button": "圧縮",
+      "vacuum_confirm": "圧縮処理中は Komari の動作がブロックされ、パネルが応答しなくなる場合があります。続行しますか？",
+      "vacuum_description": "SQLite データベースを圧縮してディスク使用量を削減します。圧縮処理中は Komari の動作がブロックされます。現在のデータベースサイズは {{size}} です。",
+      "vacuum_error": "データベースの圧縮に失敗しました",
+      "vacuum_success": "データベースの圧縮が完了しました",
+      "vacuum_title": "データベースを圧縮",
+      "vacuuming": "圧縮中..."
+    },
     "general": {
       "auto_discovery": "自動検出",
       "auto_discovery_key": "自動検出キー",
       "auto_discovery_key_description": "自動検出を使用すると、クライアントを一括登録できます。空白の場合、自動検出は無効になります。",
       "title": "一般"
     },
+
     "geoip": {
       "enable_description": "ノードの地理位置情報を表示します",
       "enable_title": "地理位置情報を有効にする",
