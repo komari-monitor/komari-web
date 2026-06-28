@@ -284,7 +284,9 @@
     "name": "Name",
     "no_results": "No results",
     "none": "None",
+    "unknown": "Unknown",
     "once": "Once",
+
     "private_site": "This is a private Komari site. Please log in first.",
     "quarterly": "Quarterly",
     "quinquennial": "Quinquennial",
@@ -561,12 +563,23 @@
       "header_description": "Add custom HTML/CSS/JavaScript to the site header. This will be loaded on all pages.",
       "note": "Personalized content may be overwritten when using a custom theme. Please make sure the code is secure and avoid using untrusted content."
     },
+    "database": {
+      "title": "Database",
+      "vacuum_button": "Compact",
+      "vacuum_confirm": "The compaction process will block Komari from running and the panel may be unresponsive during this time. Continue?",
+      "vacuum_description": "Compact the SQLite database to reduce disk usage. The process will block Komari from running. Current database size {{size}}.",
+      "vacuum_error": "Failed to compact database",
+      "vacuum_success": "Database compacted successfully",
+      "vacuum_title": "Compact Database",
+      "vacuuming": "Compacting..."
+    },
     "general": {
       "auto_discovery": "Auto discovery",
       "auto_discovery_key": "Auto discovery key",
       "auto_discovery_key_description": "Use automatic discovery to register clients in bulk. Leave blank to disable automatic discovery.",
       "title": "General"
     },
+
     "geoip": {
       "enable_description": "Display node geographic locations",
       "enable_title": "Enable GeoIP",

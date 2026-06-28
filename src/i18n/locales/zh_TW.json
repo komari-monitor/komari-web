@@ -284,7 +284,9 @@
     "name": "名稱",
     "no_results": "沒有結果",
     "none": "無",
+    "unknown": "未知",
     "once": "一次性",
+
     "private_site": "這是一個私有的Komari站點，請先登入。",
     "quarterly": "季",
     "quinquennial": "五年",
@@ -561,12 +563,23 @@
       "header_description": "添加自定義 HTML/CSS/JavaScript 到站點頭部，這些內容將會在所有頁面加載",
       "note": "個性化內容在使用自定義主題時可能會被覆蓋。請確保代碼的安全性，避免使用不受信任的內容。"
     },
+    "database": {
+      "title": "資料庫",
+      "vacuum_button": "壓縮",
+      "vacuum_confirm": "壓縮過程會阻塞 Komari 運行，期間面板可能無法回應，確定繼續嗎？",
+      "vacuum_description": "壓縮 SQLite 資料庫，減小磁碟佔用，壓縮過程會阻塞 Komari 運行。當前資料庫大小 {{size}}。",
+      "vacuum_error": "壓縮資料庫失敗",
+      "vacuum_success": "資料庫壓縮完成",
+      "vacuum_title": "壓縮資料庫",
+      "vacuuming": "壓縮中..."
+    },
     "general": {
       "auto_discovery": "自動發現",
       "auto_discovery_key": "自動發現密鑰",
       "auto_discovery_key_description": "使用自動發現可以批量註冊客戶端，留空表示禁用自動發現。",
       "title": "通用"
     },
+
     "geoip": {
       "enable_description": "顯示節點的地理位置信息",
       "enable_title": "啟用地理位置信息",

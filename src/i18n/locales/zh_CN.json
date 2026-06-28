@@ -312,6 +312,7 @@
     "title": "标题",
     "triennial": "三年",
     "ungrouped": "未分组",
+    "unknown": "未知",
     "update": "更新",
     "update_available": "有新版本",
     "updated_successfully": "成功更新",
@@ -560,6 +561,16 @@
       "header": "自定义头部",
       "header_description": "添加自定义 HTML/CSS/JavaScript 到站点头部，这些内容将会在所有页面加载",
       "note": "个性化内容在使用自定义主题时可能会被覆盖。请确保代码的安全性，避免使用不受信任的内容。"
+    },
+    "database": {
+      "title": "数据库",
+      "vacuum_button": "压缩",
+      "vacuum_confirm": "压缩过程会阻塞 Komari 运行，期间面板可能无法响应，确定继续吗？",
+      "vacuum_description": "压缩 SQLite 数据库，减小磁盘占用，压缩过程会阻塞 Komari 运行。当前数据库大小 {{size}}。",
+      "vacuum_error": "压缩数据库失败",
+      "vacuum_success": "数据库压缩完成",
+      "vacuum_title": "压缩数据库",
+      "vacuuming": "压缩中..."
     },
     "general": {
       "auto_discovery": "自动发现",
