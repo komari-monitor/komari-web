@@ -103,6 +103,12 @@ export const routes: RouteObject[] = [
               lazy(() => import("./pages/admin/settings/reverse-proxy"))
             ),
           },
+          {
+            path: "metrics",
+            element: React.createElement(
+              lazy(() => import("./pages/admin/settings/metrics"))
+            ),
+          },
         ],
       },
       {
