@@ -7,6 +7,7 @@ import {
   SettingCardSwitch,
 } from "@/components/admin/SettingCard";
 import { updateSettingsWithToast, useSettings } from "@/lib/api";
+import type { SettingsResponse } from "@/lib/api";
 import { useRPC2Call } from "@/contexts/RPC2Context";
 import {
   Badge,
@@ -58,6 +59,20 @@ function toNumber(value: unknown, fallback: number): number {
 export default function MetricsSettings() {
   const { t } = useTranslation();
   const { settings, loading, error, refetch } = useSettings();
+  const [saveError, setSaveError] = React.useState<string | null>(null);
+
+  const saveMetricSettings = React.useCallback(
+    async (changes: Partial<SettingsResponse>) => {
+      try {
+        await updateSettingsWithToast(changes, t);
+        setSaveError(null);
+      } catch (e) {
+        setSaveError(e instanceof Error ? e.message : String(e));
+        throw e;
+      }
+    },
+    [t]
+  );
 
   if (loading) {
     return <Loading />;
@@ -81,12 +96,21 @@ export default function MetricsSettings() {
         <Callout.Text>{t("settings.metrics.intro")}</Callout.Text>
       </Callout.Root>
 
+      {saveError && (
+        <Callout.Root color="red" variant="surface">
+          <Callout.Icon>
+            <AlertTriangle size={16} />
+          </Callout.Icon>
+          <Callout.Text>{saveError}</Callout.Text>
+        </Callout.Root>
+      )}
+
       <SettingCardSwitch
         title={t("settings.metrics.enable_title")}
         description={t("settings.metrics.enable_description")}
         defaultChecked={enabled}
         onChange={async (checked) => {
-          await updateSettingsWithToast({ metric_store_enabled: checked }, t);
+          await saveMetricSettings({ metric_store_enabled: checked });
         }}
       />
 
@@ -104,7 +128,7 @@ export default function MetricsSettings() {
             toast.error(t("settings.metrics.driver_invalid"));
             return;
           }
-          await updateSettingsWithToast({ metric_db_driver: value }, t);
+          await saveMetricSettings({ metric_db_driver: value });
         }}
       />
 
@@ -115,7 +139,7 @@ export default function MetricsSettings() {
         defaultValue={String(settings.metric_db_dsn || "")}
         placeholder={DSN_PLACEHOLDER[driver] || DSN_PLACEHOLDER.sqlite}
         OnSave={async (value) => {
-          await updateSettingsWithToast({ metric_db_dsn: value.trim() }, t);
+          await saveMetricSettings({ metric_db_dsn: value.trim() });
         }}
       />
 
@@ -136,7 +160,7 @@ export default function MetricsSettings() {
             toast.error(t("settings.metrics.retention_invalid"));
             return;
           }
-          await updateSettingsWithToast({ metric_retention_days: days }, t);
+          await saveMetricSettings({ metric_retention_days: days });
         }}
       />
 
@@ -147,10 +171,9 @@ export default function MetricsSettings() {
         defaultValue={String(settings.metric_table_prefix || "metric_")}
         placeholder="metric_"
         OnSave={async (value) => {
-          await updateSettingsWithToast(
-            { metric_table_prefix: value.trim() || "metric_" },
-            t
-          );
+          await saveMetricSettings({
+            metric_table_prefix: value.trim() || "metric_",
+          });
         }}
       />
 
@@ -167,7 +190,7 @@ export default function MetricsSettings() {
             toast.error(t("settings.metrics.conns_invalid"));
             return;
           }
-          await updateSettingsWithToast({ metric_max_open_conns: n }, t);
+          await saveMetricSettings({ metric_max_open_conns: n });
         }}
       />
 
@@ -184,16 +207,17 @@ export default function MetricsSettings() {
             toast.error(t("settings.metrics.conns_invalid"));
             return;
           }
-          await updateSettingsWithToast({ metric_max_idle_conns: n }, t);
+          await saveMetricSettings({ metric_max_idle_conns: n });
         }}
       />
 
-      <Callout.Root color="amber" variant="surface">
+      <Callout.Root color="green" variant="surface">
         <Callout.Icon>
-          <AlertTriangle size={16} />
+          <Info size={16} />
         </Callout.Icon>
         <Callout.Text>{t("settings.metrics.restart_hint")}</Callout.Text>
       </Callout.Root>
+
 
       <SettingCardLabel>
         {t("settings.metrics.migration_title")}
