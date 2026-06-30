@@ -2,7 +2,6 @@ import Loading from "@/components/loading";
 import {
   SettingCard,
   SettingCardLabel,
-  SettingCardSelect,
   SettingCardShortTextInput,
   SettingCardSwitch,
 } from "@/components/admin/SettingCard";
@@ -38,15 +37,8 @@ interface MigrationStatusResponse {
   tables?: Record<string, number>;
 }
 
-const DRIVER_OPTIONS = ["sqlite", "mysql", "postgresql"];
-
-const DSN_PLACEHOLDER: Record<string, string> = {
-  sqlite: "./data/metrics.db",
-  mysql:
-    "user:password@tcp(localhost:3306)/metrics?charset=utf8mb4&parseTime=True",
-  postgresql:
-    "host=localhost user=komari password=secret dbname=metrics port=5432 sslmode=disable",
-};
+const DSN_PLACEHOLDER =
+  "./data/metrics.db 或 user:password@tcp(host:3306)/metrics?charset=utf8mb4&parseTime=True";
 
 function toNumber(value: unknown, fallback: number): number {
   const n =
@@ -83,7 +75,6 @@ export default function MetricsSettings() {
   }
 
   const enabled = Boolean(settings.metric_store_enabled);
-  const driver = String(settings.metric_db_driver || "sqlite");
 
   return (
     <Flex direction="column" gap="3">
@@ -114,30 +105,12 @@ export default function MetricsSettings() {
         }}
       />
 
-      <SettingCardSelect
-        title={t("settings.metrics.driver_title")}
-        description={t("settings.metrics.driver_description")}
-        value={driver}
-        options={[
-          { value: "sqlite", label: "SQLite" },
-          { value: "mysql", label: "MySQL" },
-          { value: "postgresql", label: "PostgreSQL" },
-        ]}
-        OnSave={async (value) => {
-          if (!DRIVER_OPTIONS.includes(value)) {
-            toast.error(t("settings.metrics.driver_invalid"));
-            return;
-          }
-          await saveMetricSettings({ metric_db_driver: value });
-        }}
-      />
-
       <SettingCardShortTextInput
         title={t("settings.metrics.dsn_title")}
         description={t("settings.metrics.dsn_description")}
         descriptionPlacement="footer"
         defaultValue={String(settings.metric_db_dsn || "")}
-        placeholder={DSN_PLACEHOLDER[driver] || DSN_PLACEHOLDER.sqlite}
+        placeholder={DSN_PLACEHOLDER}
         OnSave={async (value) => {
           await saveMetricSettings({ metric_db_dsn: value.trim() });
         }}
