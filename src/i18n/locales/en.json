@@ -684,7 +684,7 @@
       "driver_description": "Database type: SQLite, MySQL or PostgreSQL",
       "driver_invalid": "Unsupported database driver",
       "driver_title": "Database type",
-      "dsn_description": "Connection string. SQLite: ./data/metrics.db; MySQL: user:password@tcp(host:3306)/metrics?charset=utf8mb4&parseTime=True; PostgreSQL: host=localhost user=komari password=secret dbname=metrics port=5432 sslmode=disable",
+      "dsn_description": "Connection string. The database type is detected automatically from the connection string (SQLite / MySQL / PostgreSQL). SQLite: ./data/metrics.db; MySQL: user:password@tcp(host:3306)/metrics?charset=utf8mb4&parseTime=True; PostgreSQL: host=localhost user=komari password=secret dbname=metrics port=5432 sslmode=disable",
       "dsn_title": "Connection string (DSN)",
       "enable_description": "Migrate monitoring data (records, GPU records, ping records) to an independent metrics database.",
       "enable_title": "Enable independent metrics database",

@@ -612,7 +612,7 @@
       "driver_description": "数据库类型：SQLite、MySQL 或 PostgreSQL",
       "driver_invalid": "不支持的数据库类型",
       "driver_title": "数据库类型",
-      "dsn_description": "数据库连接串。SQLite：./data/metrics.db；MySQL：user:password@tcp(host:3306)/metrics?charset=utf8mb4&parseTime=True；PostgreSQL：host=localhost user=komari password=secret dbname=metrics port=5432 sslmode=disable",
+      "dsn_description": "数据库连接串，系统会根据连接串自动识别数据库类型（SQLite / MySQL / PostgreSQL）。SQLite：./data/metrics.db；MySQL：user:password@tcp(host:3306)/metrics?charset=utf8mb4&parseTime=True；PostgreSQL：host=localhost user=komari password=secret dbname=metrics port=5432 sslmode=disable",
       "dsn_title": "连接串（DSN）",
       "enable_description": "将监控数据（records、GPU records、ping records）迁移到独立的 metrics 数据库。",
       "enable_title": "启用独立 metrics 数据库",
