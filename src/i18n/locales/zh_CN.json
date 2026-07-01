@@ -634,7 +634,6 @@
       "migration_started": "迁移已开始",
       "migration_title": "迁移",
       "restart_hint": "配置保存后会自动热重载并立即生效，无需重启 Komari 服务器。保存时会先测试数据库连接，连接失败会提示错误且不会保存。",
-
       "retention_description": "数据保留天数，默认 30",
       "retention_invalid": "请输入有效的保留天数",
       "retention_title": "数据保留天数",
@@ -645,11 +644,22 @@
         "completed": "已完成",
         "failed": "失败",
         "in_progress": "进行中",
-        "not_started": "未开始"
+        "not_started": "未开始",
+        "paused": "已暂停"
       },
       "table_prefix_description": "metrics 表名前缀，默认 metric_",
       "table_prefix_title": "表名前缀",
-      "title": "Metrics 数据库"
+      "title": "Metrics 数据库",
+      "migration_progress": "迁移进度",
+      "migration_paused_hint": "迁移已暂停。您可以调整批次大小后点击恢复按钮继续迁移。",
+      "migration_paused": "迁移已暂停",
+      "migration_resumed": "迁移已恢复",
+      "migration_pause_failed": "暂停失败",
+      "migration_resume_failed": "恢复失败",
+      "pause_migration": "暂停迁移",
+      "resume_migration": "恢复迁移",
+      "pausing": "暂停中...",
+      "resuming": "恢复中..."
     },
     "missing_required_fields": "请填写必填字段: {{fieldNames}}",
     "nezha": {

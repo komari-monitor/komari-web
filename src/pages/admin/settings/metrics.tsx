@@ -14,10 +14,11 @@ import {
   Callout,
   Dialog,
   Flex,
+  Progress,
   Text,
   TextField,
 } from "@radix-ui/themes";
-import { AlertTriangle, Database, Info, RefreshCw } from "lucide-react";
+import { AlertTriangle, Database, Info, Pause, Play, RefreshCw } from "lucide-react";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -26,6 +27,7 @@ import { toast } from "sonner";
 type MigrationStatus =
   | "not_started"
   | "in_progress"
+  | "paused"
   | "completed"
   | "failed";
 
@@ -35,6 +37,10 @@ interface MigrationStatusResponse {
   estimated_gpu_records: number;
   estimated_ping_records: number;
   tables?: Record<string, number>;
+  is_running?: boolean;
+  can_resume?: boolean;
+  migrated_records?: number;
+  migrated_ping?: number;
 }
 
 const DSN_PLACEHOLDER =
@@ -191,7 +197,6 @@ export default function MetricsSettings() {
         <Callout.Text>{t("settings.metrics.restart_hint")}</Callout.Text>
       </Callout.Root>
 
-
       <SettingCardLabel>
         {t("settings.metrics.migration_title")}
       </SettingCardLabel>
@@ -202,12 +207,10 @@ export default function MetricsSettings() {
 
 function StatusBadge({ status }: { status: MigrationStatus }) {
   const { t } = useTranslation();
-  const colorMap: Record<
-    MigrationStatus,
-    "gray" | "blue" | "green" | "red"
-  > = {
+  const colorMap: Record<MigrationStatus, "gray" | "blue" | "green" | "red" | "amber"> = {
     not_started: "gray",
     in_progress: "blue",
+    paused: "amber",
     completed: "green",
     failed: "red",
   };
@@ -228,10 +231,11 @@ function MigrationCard({
   const { t } = useTranslation();
   const { call } = useRPC2Call();
 
-  const [statusData, setStatusData] =
-    React.useState<MigrationStatusResponse | null>(null);
+  const [statusData, setStatusData] = React.useState<MigrationStatusResponse | null>(null);
   const [loadingStatus, setLoadingStatus] = React.useState(false);
   const [starting, setStarting] = React.useState(false);
+  const [pausing, setPausing] = React.useState(false);
+  const [resuming, setResuming] = React.useState(false);
   const [deleting, setDeleting] = React.useState(false);
   const [batchSize, setBatchSize] = React.useState("500");
   const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
@@ -266,15 +270,16 @@ function MigrationCard({
     void fetchStatus(true);
   }, [fetchStatus]);
 
-  // 迁移进行中时轮询刷新状态
+  // 迁移进行中时轮询刷新状态（in_progress 或 is_running 时）
   React.useEffect(() => {
     if (!enabled) return;
-    if (statusData?.status !== "in_progress") return;
+    const shouldPoll = statusData?.status === "in_progress" || statusData?.is_running;
+    if (!shouldPoll) return;
     const timer = window.setInterval(() => {
       void fetchStatus(true);
     }, 3000);
     return () => window.clearInterval(timer);
-  }, [enabled, statusData?.status, fetchStatus]);
+  }, [enabled, statusData?.status, statusData?.is_running, fetchStatus]);
 
   if (!enabled) {
     return (
@@ -287,9 +292,22 @@ function MigrationCard({
     );
   }
 
-  const status: MigrationStatus = statusData?.status || "not_started";
-  const canStart = status !== "in_progress" && !starting;
+  const status: MigrationStatus = statusData?.status ?? "not_started";
+  const isRunning = statusData?.is_running ?? false;
+  const canResume = statusData?.can_resume ?? false;
+  // 只有未开始/失败/完成时才显示"开始"按钮，paused 时显示"恢复"按钮
+  const canStart = status !== "in_progress" && status !== "paused" && !starting;
   const canDelete = status === "completed" && !deleting;
+
+  // 进度计算（基于持久化的已迁移计数）
+  const migratedRecords = statusData?.migrated_records ?? 0;
+  const migratedPing = statusData?.migrated_ping ?? 0;
+  const totalRecords = statusData?.estimated_records ?? 0;
+  const totalPing = statusData?.estimated_ping_records ?? 0;
+  const totalAll = totalRecords + totalPing;
+  const migratedAll = migratedRecords + migratedPing;
+  const progressPercent = totalAll > 0 ? Math.min(100, Math.round((migratedAll / totalAll) * 100)) : 0;
+  const showProgress = (status === "in_progress" || status === "paused") && totalAll > 0;
 
   const handleStart = async () => {
     const size = parseInt(batchSize, 10);
@@ -301,7 +319,6 @@ function MigrationCard({
     try {
       await call("admin:startMetricMigration", { batch_size: size });
       toast.success(t("settings.metrics.migration_started"));
-      // 立即刷新状态，并等待状态更新为 in_progress
       await fetchStatus(true);
     } catch (e) {
       toast.error(
@@ -311,6 +328,45 @@ function MigrationCard({
       );
     } finally {
       setStarting(false);
+    }
+  };
+
+  const handlePause = async () => {
+    setPausing(true);
+    try {
+      await call("admin:pauseMetricMigration", {});
+      toast.success(t("settings.metrics.migration_paused"));
+      await fetchStatus(true);
+    } catch (e) {
+      toast.error(
+        t("settings.metrics.migration_pause_failed") +
+          ": " +
+          (e instanceof Error ? e.message : String(e))
+      );
+    } finally {
+      setPausing(false);
+    }
+  };
+
+  const handleResume = async () => {
+    const size = parseInt(batchSize, 10);
+    if (isNaN(size) || size <= 0 || size > 5000) {
+      toast.error(t("settings.metrics.batch_size_invalid"));
+      return;
+    }
+    setResuming(true);
+    try {
+      await call("admin:resumeMetricMigration", { batch_size: size });
+      toast.success(t("settings.metrics.migration_resumed"));
+      await fetchStatus(true);
+    } catch (e) {
+      toast.error(
+        t("settings.metrics.migration_resume_failed") +
+          ": " +
+          (e instanceof Error ? e.message : String(e))
+      );
+    } finally {
+      setResuming(false);
     }
   };
 
@@ -341,6 +397,7 @@ function MigrationCard({
       direction="column"
     >
       <Flex direction="column" gap="3" className="w-full pt-3">
+        {/* 状态行 */}
         <Flex gap="2" align="center" wrap="wrap">
           <Text size="2" weight="medium">
             {t("settings.metrics.current_status")}:
@@ -352,31 +409,40 @@ function MigrationCard({
             disabled={loadingStatus}
             onClick={() => void fetchStatus()}
           >
-            <RefreshCw
-              size={14}
-              className={loadingStatus ? "animate-spin" : ""}
-            />
+            <RefreshCw size={14} className={loadingStatus ? "animate-spin" : ""} />
             {t("common.refresh")}
           </Button>
         </Flex>
 
+        {/* 数据量估算 */}
         {statusData && (
           <Flex gap="2" wrap="wrap">
             <Badge variant="soft" color="gray">
-              {t("settings.metrics.estimated_records")}:{" "}
-              {statusData.estimated_records}
+              {t("settings.metrics.estimated_records")}: {statusData.estimated_records}
             </Badge>
             <Badge variant="soft" color="gray">
-              {t("settings.metrics.estimated_gpu_records")}:{" "}
-              {statusData.estimated_gpu_records}
+              {t("settings.metrics.estimated_gpu_records")}: {statusData.estimated_gpu_records}
             </Badge>
             <Badge variant="soft" color="gray">
-              {t("settings.metrics.estimated_ping_records")}:{" "}
-              {statusData.estimated_ping_records}
+              {t("settings.metrics.estimated_ping_records")}: {statusData.estimated_ping_records}
             </Badge>
           </Flex>
         )}
 
+        {/* 进度条（in_progress 或 paused 时显示） */}
+        {showProgress && (
+          <Flex direction="column" gap="1">
+            <Flex justify="between" align="center">
+              <Text size="1" color="gray">
+                {t("settings.metrics.migration_progress")}: {migratedAll.toLocaleString()} / {totalAll.toLocaleString()}
+              </Text>
+              <Text size="1" color="gray">{progressPercent}%</Text>
+            </Flex>
+            <Progress value={progressPercent} size="2" />
+          </Flex>
+        )}
+
+        {/* 状态 Callout */}
         {status === "in_progress" && (
           <Callout.Root color="blue" variant="surface">
             <Callout.Icon>
@@ -384,6 +450,17 @@ function MigrationCard({
             </Callout.Icon>
             <Callout.Text>
               {t("settings.metrics.migration_in_progress_hint")}
+            </Callout.Text>
+          </Callout.Root>
+        )}
+
+        {status === "paused" && (
+          <Callout.Root color="amber" variant="surface">
+            <Callout.Icon>
+              <Pause size={16} />
+            </Callout.Icon>
+            <Callout.Text>
+              {t("settings.metrics.migration_paused_hint")}
             </Callout.Text>
           </Callout.Root>
         )}
@@ -399,6 +476,7 @@ function MigrationCard({
           </Callout.Root>
         )}
 
+        {/* 批次大小 + 操作按钮 */}
         <Flex direction="column" gap="2" className="w-full">
           <label className="text-sm font-medium">
             {t("settings.metrics.batch_size")}
@@ -415,18 +493,36 @@ function MigrationCard({
               style={{ maxWidth: "160px" }}
               disabled={status === "in_progress"}
             />
-            <Button disabled={!canStart} onClick={handleStart}>
-              {starting
-                ? t("settings.metrics.starting")
-                : status === "completed"
-                  ? t("settings.metrics.start_again")
-                  : t("settings.metrics.start_migration")}
-            </Button>
+            {/* 开始按钮：仅 not_started / failed / completed 时显示 */}
+            {canStart && (
+              <Button disabled={starting} onClick={() => void handleStart()}>
+                {starting
+                  ? t("settings.metrics.starting")
+                  : status === "completed"
+                    ? t("settings.metrics.start_again")
+                    : t("settings.metrics.start_migration")}
+              </Button>
+            )}
+            {/* 暂停按钮：迁移运行中时显示 */}
+            {isRunning && (
+              <Button color="amber" variant="soft" disabled={pausing} onClick={() => void handlePause()}>
+                <Pause size={14} />
+                {pausing ? t("settings.metrics.pausing") : t("settings.metrics.pause_migration")}
+              </Button>
+            )}
+            {/* 恢复按钮：paused 且未运行时显示 */}
+            {canResume && !isRunning && (
+              <Button color="blue" variant="soft" disabled={resuming} onClick={() => void handleResume()}>
+                <Play size={14} />
+                {resuming ? t("settings.metrics.resuming") : t("settings.metrics.resume_migration")}
+              </Button>
+            )}
           </Flex>
         </Flex>
 
         <div className="border-t-1 my-1" />
 
+        {/* 删除旧表 */}
         <Flex direction="column" gap="2" className="w-full">
           <label className="text-sm font-medium">
             {t("settings.metrics.delete_legacy_title")}
