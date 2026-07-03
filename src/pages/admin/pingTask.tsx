@@ -23,6 +23,7 @@ import {
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { ImportPingTasksDialog } from "./pingTask_Import";
 import { TaskView } from "./pingTask_Task";
 import { ServerView } from "./pingTask_Server";
 
@@ -52,7 +53,10 @@ const InnerLayout = () => {
     <Flex direction="column" gap="4" className="p-4">
       <div className="flex justify-between items-center">
         <label className="text-2xl font-bold">{t("ping.title")}</label>
-        <AddButton />
+        <Flex gap="2" align="center">
+          <ImportPingTasksDialog />
+          <AddButton />
+        </Flex>
       </div>
       <Tabs.Root defaultValue="task">
         <Tabs.List>

@@ -36,6 +36,7 @@
     "http-proxy-middleware": "^3.0.5",
     "i18next": "^25.1.2",
     "i18next-browser-languagedetector": "^8.1.0",
+    "jsonc-parser": "^3.3.1",
     "komari-web": "file:",
     "lucide-react": "^0.511.0",
     "motion": "^12.10.5",

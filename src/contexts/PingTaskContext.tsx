@@ -5,6 +5,7 @@ export interface PingTask {
   default_on?: boolean;
   id?: number;
   interval?: number;
+  name?: string;
   target?: string;
   type?: string;
   [property: string]: any;

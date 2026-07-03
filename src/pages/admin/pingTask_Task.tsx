@@ -28,6 +28,7 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import {
   Button,
+  Callout,
   Checkbox,
   Dialog,
   Flex,
@@ -35,7 +36,7 @@ import {
   Select,
   TextField,
 } from "@radix-ui/themes";
-import { MenuIcon, MoreHorizontal, Pencil, Trash } from "lucide-react";
+import { AlertCircle, MenuIcon, MoreHorizontal, Pencil, Trash } from "lucide-react";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -86,10 +87,126 @@ export const TaskView = ({ pingTasks }: { pingTasks: PingTask[] }) => {
   }, [pingTasks, nodeDetail]);
 
   const [localTasks, setLocalTasks] = React.useState(processedTasks);
+  const [selectedIds, setSelectedIds] = React.useState<number[]>([]);
+  const [bulkDeleteOpen, setBulkDeleteOpen] = React.useState(false);
+  const [bulkDeleting, setBulkDeleting] = React.useState(false);
+  const [bulkEditOpen, setBulkEditOpen] = React.useState(false);
+  const [bulkIntervalEnabled, setBulkIntervalEnabled] = React.useState(false);
+  const [bulkInterval, setBulkInterval] = React.useState("60");
+  const [bulkClientsEnabled, setBulkClientsEnabled] = React.useState(false);
+  const [bulkClients, setBulkClients] = React.useState<string[]>([]);
+  const [bulkSaving, setBulkSaving] = React.useState(false);
+  const [bulkError, setBulkError] = React.useState("");
 
   React.useEffect(() => {
     setLocalTasks(processedTasks);
   }, [processedTasks]);
+
+  React.useEffect(() => {
+    const existingIds = new Set(
+      processedTasks
+        .map((task) => task.id)
+        .filter((id): id is number => id !== undefined)
+    );
+    setSelectedIds((ids) => ids.filter((id) => existingIds.has(id)));
+  }, [processedTasks]);
+
+  const selectedTasks = React.useMemo(
+    () =>
+      localTasks.filter(
+        (task) => task.id !== undefined && selectedIds.includes(task.id)
+      ),
+    [localTasks, selectedIds]
+  );
+  const selectableIds = React.useMemo(
+    () =>
+      localTasks
+        .map((task) => task.id)
+        .filter((id): id is number => id !== undefined),
+    [localTasks]
+  );
+  const allSelected =
+    selectableIds.length > 0 && selectedIds.length === selectableIds.length;
+
+  const setTaskSelected = (id: number | undefined, checked: boolean) => {
+    if (id === undefined) return;
+    setSelectedIds((ids) =>
+      checked ? Array.from(new Set([...ids, id])) : ids.filter((x) => x !== id)
+    );
+  };
+
+  const handleBulkDelete = async () => {
+    setBulkDeleting(true);
+    try {
+      const response = await fetch("/api/admin/ping/delete", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ id: selectedIds }),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data?.message || t("common.error"));
+      }
+      toast.success(t("common.deleted_successfully"));
+      setSelectedIds([]);
+      setBulkDeleteOpen(false);
+      refresh();
+    } catch (error: any) {
+      toast.error(error?.message || t("common.error"));
+    } finally {
+      setBulkDeleting(false);
+    }
+  };
+
+  const handleBulkEdit = async () => {
+    if (!bulkIntervalEnabled && !bulkClientsEnabled) {
+      setBulkError(t("common.error"));
+      return;
+    }
+    const interval = Number(bulkInterval);
+    if (bulkIntervalEnabled && (!Number.isInteger(interval) || interval <= 0)) {
+      setBulkError(t("ping.interval") + " " + t("common.error"));
+      return;
+    }
+    if (
+      bulkClientsEnabled &&
+      bulkClients.length === 0 &&
+      selectedTasks.some((task) => !task.default_on)
+    ) {
+      setBulkError(t("ping.batch_select_server"));
+      return;
+    }
+    setBulkError("");
+    setBulkSaving(true);
+    try {
+      const response = await fetch("/api/admin/ping/edit", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          tasks: selectedTasks.map((task) => ({
+            id: task.id,
+            name: task.name,
+            type: task.type,
+            target: task.target,
+            default_on: task.default_on,
+            clients: bulkClientsEnabled ? bulkClients : task.clients,
+            interval: bulkIntervalEnabled ? interval : task.interval,
+          })),
+        }),
+      });
+      if (!response.ok) {
+        const data = await response.json().catch(() => ({}));
+        throw new Error(data?.message || t("common.error"));
+      }
+      toast.success(t("common.updated_successfully"));
+      setBulkEditOpen(false);
+      refresh();
+    } catch (error: any) {
+      setBulkError(error?.message || t("common.error"));
+    } finally {
+      setBulkSaving(false);
+    }
+  };
 
   const handleDragEnd = async (event: DragEndEvent) => {
     const { active, over } = event;
@@ -136,11 +253,159 @@ export const TaskView = ({ pingTasks }: { pingTasks: PingTask[] }) => {
   };
 
   return (
-    <div className="rounded-xl overflow-hidden">
+    <div>
+      {selectedIds.length > 0 && (
+        <div className="mb-3 flex flex-wrap items-center justify-between gap-2">
+          <span className="text-sm text-muted-foreground">
+            {t("common.selected", { count: selectedIds.length })}
+          </span>
+          <Flex gap="2" wrap="wrap" justify="end">
+            <Dialog.Root
+              open={bulkEditOpen}
+              onOpenChange={(open) => {
+                setBulkEditOpen(open);
+                if (!open) setBulkError("");
+              }}
+            >
+              <Dialog.Trigger>
+                <Button variant="soft">
+                  {t("common.batch_edit")} ({selectedIds.length})
+                </Button>
+              </Dialog.Trigger>
+              <Dialog.Content>
+                <Dialog.Title>
+                  {t("common.batch_edit")} ({selectedIds.length})
+                </Dialog.Title>
+                <Flex direction="column" gap="4">
+                  {bulkError && (
+                    <Callout.Root color="red" size="1" variant="surface">
+                      <Callout.Icon>
+                        <AlertCircle size="16" />
+                      </Callout.Icon>
+                      <Callout.Text>{bulkError}</Callout.Text>
+                    </Callout.Root>
+                  )}
+                  <label className="flex items-center gap-2 text-sm font-normal">
+                    <Checkbox
+                      checked={bulkIntervalEnabled}
+                      onCheckedChange={(checked) => {
+                        setBulkIntervalEnabled(!!checked);
+                        setBulkError("");
+                      }}
+                    />
+                    <span>
+                      {t("ping.interval")} ({t("time.second")})
+                    </span>
+                  </label>
+                  <TextField.Root
+                    id="bulk_interval"
+                    type="number"
+                    value={bulkInterval}
+                    disabled={!bulkIntervalEnabled}
+                    onChange={(event) => {
+                      setBulkInterval(event.target.value);
+                      setBulkError("");
+                    }}
+                  />
+                  <label className="flex items-center gap-2 text-sm font-normal">
+                    <Checkbox
+                      checked={bulkClientsEnabled}
+                      onCheckedChange={(checked) => {
+                        setBulkClientsEnabled(!!checked);
+                        setBulkError("");
+                      }}
+                    />
+                    <span>{t("common.server")}</span>
+                  </label>
+                  <div
+                    className={
+                      bulkClientsEnabled
+                        ? ""
+                        : "pointer-events-none opacity-50"
+                    }
+                  >
+                    <Flex align="center" gap="2" wrap="wrap">
+                      <NodeSelectorDialog
+                        value={bulkClients}
+                        onChange={(clients) => {
+                          setBulkClients(clients);
+                          setBulkError("");
+                        }}
+                      />
+                      <span className="text-sm text-muted-foreground">
+                        {t("common.selected", { count: bulkClients.length })}
+                      </span>
+                    </Flex>
+                  </div>
+                  <Flex gap="2" justify="end" className="mt-2">
+                    <Dialog.Close>
+                      <Button variant="soft" color="gray" type="button">
+                        {t("common.cancel")}
+                      </Button>
+                    </Dialog.Close>
+                    <Button
+                      onClick={handleBulkEdit}
+                      disabled={
+                        bulkSaving ||
+                        (!bulkIntervalEnabled && !bulkClientsEnabled)
+                      }
+                    >
+                      {t("common.save")}
+                    </Button>
+                  </Flex>
+                </Flex>
+              </Dialog.Content>
+            </Dialog.Root>
+            <Dialog.Root open={bulkDeleteOpen} onOpenChange={setBulkDeleteOpen}>
+              <Dialog.Trigger>
+                <Button variant="solid" color="red">
+                  <Trash size="16" />
+                  {t("common.batch_delete")} ({selectedIds.length})
+                </Button>
+              </Dialog.Trigger>
+              <Dialog.Content>
+                <Dialog.Title>
+                  {t("common.batch_delete")} ({selectedIds.length})
+                </Dialog.Title>
+                <p className="text-sm text-muted-foreground">
+                  {t("ping.batch_delete_desc", {
+                    count: selectedIds.length,
+                  })}
+                </p>
+                <Flex gap="2" justify="end" className="mt-4">
+                  <Dialog.Close>
+                    <Button variant="soft" color="gray" type="button">
+                      {t("common.cancel")}
+                    </Button>
+                  </Dialog.Close>
+                  <Button
+                    variant="solid"
+                    color="red"
+                    onClick={handleBulkDelete}
+                    disabled={bulkDeleting}
+                  >
+                    {t("common.delete")}
+                  </Button>
+                </Flex>
+              </Dialog.Content>
+            </Dialog.Root>
+          </Flex>
+        </div>
+      )}
+      <div className="rounded-xl overflow-hidden">
       <Table>
         <TableHeader>
           <TableRow>
             <TableHead className="w-10" aria-label={t("common.sort")}></TableHead>
+            <TableHead className="w-10">
+              <Checkbox
+                checked={allSelected}
+                onCheckedChange={(checked) =>
+                  setSelectedIds(checked ? selectableIds : [])
+                }
+                aria-label={t("common.selected", { count: selectedIds.length })}
+              />
+            </TableHead>
             <TableHead>{t("common.name")}</TableHead>
             <TableHead>{t("common.server")}</TableHead>
             <TableHead>{t("ping.target")}</TableHead>
@@ -160,20 +425,32 @@ export const TaskView = ({ pingTasks }: { pingTasks: PingTask[] }) => {
           >
             <TableBody>
               {localTasks.map((task) => (
-                <Row key={getTaskSortableId(task)} task={task} />
+                <Row
+                  key={getTaskSortableId(task)}
+                  task={task}
+                  selected={
+                    task.id !== undefined && selectedIds.includes(task.id)
+                  }
+                  onSelectedChange={setTaskSelected}
+                />
               ))}
             </TableBody>
           </SortableContext>
         </DndContext>
       </Table>
+      </div>
     </div>
   );
 };
 
 const Row = ({
   task,
+  selected,
+  onSelectedChange,
 }: {
   task: PingTask & { __allClientsDeleted?: boolean; __originalCount?: number };
+  selected: boolean;
+  onSelectedChange: (id: number | undefined, checked: boolean) => void;
 }) => {
   const { t } = useTranslation();
   const { refresh } = usePingTask();
@@ -202,6 +479,10 @@ const Row = ({
   const submitEdit = (newForm: typeof form) => {
     if (!newForm.default_on && newForm.clients.length === 0) {
       toast.error(t("ping.default_on_description"));
+      return;
+    }
+    if (!Number.isInteger(newForm.interval) || newForm.interval <= 0) {
+      toast.error(t("ping.interval") + " " + t("common.error"));
       return;
     }
     setEditSaving(true);
@@ -296,6 +577,13 @@ const Row = ({
         >
           <MenuIcon size={isMobile ? 18 : 16} color={"var(--gray-8)"} />
         </div>
+      </TableCell>
+      <TableCell>
+        <Checkbox
+          checked={selected}
+          onCheckedChange={(checked) => onSelectedChange(task.id, !!checked)}
+          aria-label={task.name}
+        />
       </TableCell>
       <TableCell>{task.name}</TableCell>
       <TableCell>
