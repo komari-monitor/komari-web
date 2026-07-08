@@ -23,7 +23,6 @@ export default function AboutPage() {
 
   const open_source_licenses = {
     "Apache-2.0 License": [
-      "github.com/coreos/go-oidc/v3",
       "github.com/pquerna/otp",
       "github.com/spf13/cobra",
       "google.golang.org/grpc",
