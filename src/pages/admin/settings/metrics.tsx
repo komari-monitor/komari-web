@@ -3,7 +3,6 @@ import {
   SettingCard,
   SettingCardLabel,
   SettingCardShortTextInput,
-  SettingCardSwitch,
 } from "@/components/admin/SettingCard";
 import { updateSettingsWithToast, useSettings } from "@/lib/api";
 import type { SettingsResponse } from "@/lib/api";
@@ -12,35 +11,34 @@ import {
   Badge,
   Button,
   Callout,
-  Dialog,
   Flex,
   Progress,
   Text,
   TextField,
 } from "@radix-ui/themes";
-import { AlertTriangle, Database, Info, Pause, Play, RefreshCw } from "lucide-react";
+import { AlertTriangle, Database, Info, RefreshCw, X } from "lucide-react";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
-// 迁移状态类型
-type MigrationStatus =
-  | "not_started"
-  | "in_progress"
-  | "paused"
-  | "completed"
-  | "failed";
+// store-to-store 迁移状态。旧的 not_started/in_progress/paused 已废弃，
+// 后端语义改为：把某个 metrics 源库的数据搬运到当前运行中的 metrics 目标库。
+type MigrationStatus = "idle" | "running" | "completed" | "failed" | "canceled";
 
 interface MigrationStatusResponse {
   status: MigrationStatus;
-  estimated_records: number;
-  estimated_gpu_records: number;
-  estimated_ping_records: number;
-  tables?: Record<string, number>;
-  is_running?: boolean;
-  can_resume?: boolean;
-  migrated_records?: number;
-  migrated_ping?: number;
+  is_running: boolean;
+  source_driver: string;
+  source_dsn: string;
+  target_driver: string;
+  target_dsn: string;
+  total_metrics: number;
+  metrics_done: number;
+  current_metric: string;
+  migrated_points: number;
+  start_time?: string;
+  end_time?: string;
+  error?: string;
 }
 
 const DSN_PLACEHOLDER =
@@ -48,15 +46,13 @@ const DSN_PLACEHOLDER =
 
 function toNumber(value: unknown, fallback: number): number {
   const n =
-    typeof value === "number"
-      ? value
-      : parseInt(String(value ?? ""), 10);
+    typeof value === "number" ? value : parseInt(String(value ?? ""), 10);
   return Number.isFinite(n) ? n : fallback;
 }
 
 export default function MetricsSettings() {
   const { t } = useTranslation();
-  const { settings, loading, error, refetch } = useSettings();
+  const { settings, loading, error } = useSettings();
   const [saveError, setSaveError] = React.useState<string | null>(null);
 
   const saveMetricSettings = React.useCallback(
@@ -80,8 +76,6 @@ export default function MetricsSettings() {
     return <Text color="red">{error}</Text>;
   }
 
-  const enabled = Boolean(settings.metric_store_enabled);
-
   return (
     <Flex direction="column" gap="3">
       <SettingCardLabel>{t("settings.metrics.title")}</SettingCardLabel>
@@ -101,15 +95,6 @@ export default function MetricsSettings() {
           <Callout.Text>{saveError}</Callout.Text>
         </Callout.Root>
       )}
-
-      <SettingCardSwitch
-        title={t("settings.metrics.enable_title")}
-        description={t("settings.metrics.enable_description")}
-        defaultChecked={enabled}
-        onChange={async (checked) => {
-          await saveMetricSettings({ metric_store_enabled: checked });
-        }}
-      />
 
       <SettingCardShortTextInput
         title={t("settings.metrics.dsn_title")}
@@ -200,19 +185,22 @@ export default function MetricsSettings() {
       <SettingCardLabel>
         {t("settings.metrics.migration_title")}
       </SettingCardLabel>
-      <MigrationCard enabled={enabled} onConfigRefetch={refetch} />
+      <MigrationCard />
     </Flex>
   );
 }
 
 function StatusBadge({ status }: { status: MigrationStatus }) {
   const { t } = useTranslation();
-  const colorMap: Record<MigrationStatus, "gray" | "blue" | "green" | "red" | "amber"> = {
-    not_started: "gray",
-    in_progress: "blue",
-    paused: "amber",
+  const colorMap: Record<
+    MigrationStatus,
+    "gray" | "blue" | "green" | "red" | "amber"
+  > = {
+    idle: "gray",
+    running: "blue",
     completed: "green",
     failed: "red",
+    canceled: "amber",
   };
   return (
     <Badge color={colorMap[status]} variant="soft">
@@ -221,29 +209,19 @@ function StatusBadge({ status }: { status: MigrationStatus }) {
   );
 }
 
-function MigrationCard({
-  enabled,
-  onConfigRefetch,
-}: {
-  enabled: boolean;
-  onConfigRefetch: () => Promise<void>;
-}) {
+function MigrationCard() {
   const { t } = useTranslation();
   const { call } = useRPC2Call();
 
-  const [statusData, setStatusData] = React.useState<MigrationStatusResponse | null>(null);
+  const [statusData, setStatusData] =
+    React.useState<MigrationStatusResponse | null>(null);
   const [loadingStatus, setLoadingStatus] = React.useState(false);
   const [starting, setStarting] = React.useState(false);
-  const [pausing, setPausing] = React.useState(false);
-  const [resuming, setResuming] = React.useState(false);
-  const [deleting, setDeleting] = React.useState(false);
-  const [batchSize, setBatchSize] = React.useState("500");
-  const [deleteDialogOpen, setDeleteDialogOpen] = React.useState(false);
-  const [confirmText, setConfirmText] = React.useState("");
+  const [canceling, setCanceling] = React.useState(false);
+  const [sourceDsn, setSourceDsn] = React.useState("");
 
   const fetchStatus = React.useCallback(
     async (silent = false) => {
-      if (!enabled) return;
       if (!silent) setLoadingStatus(true);
       try {
         const data = await call<unknown, MigrationStatusResponse>(
@@ -263,61 +241,44 @@ function MigrationCard({
         if (!silent) setLoadingStatus(false);
       }
     },
-    [call, enabled, t]
+    [call, t]
   );
 
   React.useEffect(() => {
     void fetchStatus(true);
   }, [fetchStatus]);
 
-  // 迁移进行中时轮询刷新状态（in_progress 或 is_running 时）
+  // 迁移进行中时轮询刷新状态。
   React.useEffect(() => {
-    if (!enabled) return;
-    const shouldPoll = statusData?.status === "in_progress" || statusData?.is_running;
+    const shouldPoll =
+      statusData?.status === "running" || statusData?.is_running;
     if (!shouldPoll) return;
     const timer = window.setInterval(() => {
       void fetchStatus(true);
-    }, 3000);
+    }, 2000);
     return () => window.clearInterval(timer);
-  }, [enabled, statusData?.status, statusData?.is_running, fetchStatus]);
+  }, [statusData?.status, statusData?.is_running, fetchStatus]);
 
-  if (!enabled) {
-    return (
-      <Callout.Root color="gray" variant="surface">
-        <Callout.Icon>
-          <Database size={16} />
-        </Callout.Icon>
-        <Callout.Text>{t("settings.metrics.migration_disabled")}</Callout.Text>
-      </Callout.Root>
-    );
-  }
-
-  const status: MigrationStatus = statusData?.status ?? "not_started";
+  const status: MigrationStatus = statusData?.status ?? "idle";
   const isRunning = statusData?.is_running ?? false;
-  const canResume = statusData?.can_resume ?? false;
-  // 只有未开始/失败/完成时才显示"开始"按钮，paused 时显示"恢复"按钮
-  const canStart = status !== "in_progress" && status !== "paused" && !starting;
-  const canDelete = status === "completed" && !deleting;
+  const canStart = !isRunning && !starting;
 
-  // 进度计算（基于持久化的已迁移计数）
-  const migratedRecords = statusData?.migrated_records ?? 0;
-  const migratedPing = statusData?.migrated_ping ?? 0;
-  const totalRecords = statusData?.estimated_records ?? 0;
-  const totalPing = statusData?.estimated_ping_records ?? 0;
-  const totalAll = totalRecords + totalPing;
-  const migratedAll = migratedRecords + migratedPing;
-  const progressPercent = totalAll > 0 ? Math.min(100, Math.round((migratedAll / totalAll) * 100)) : 0;
-  const showProgress = (status === "in_progress" || status === "paused") && totalAll > 0;
+  const totalMetrics = statusData?.total_metrics ?? 0;
+  const metricsDone = statusData?.metrics_done ?? 0;
+  const migratedPoints = statusData?.migrated_points ?? 0;
+  const progressPercent =
+    totalMetrics > 0
+      ? Math.min(100, Math.round((metricsDone / totalMetrics) * 100))
+      : 0;
+  const showProgress = isRunning || status === "running";
 
   const handleStart = async () => {
-    const size = parseInt(batchSize, 10);
-    if (isNaN(size) || size <= 0 || size > 5000) {
-      toast.error(t("settings.metrics.batch_size_invalid"));
-      return;
-    }
     setStarting(true);
     try {
-      await call("admin:startMetricMigration", { batch_size: size });
+      const params: { source_dsn?: string } = {};
+      const dsn = sourceDsn.trim();
+      if (dsn) params.source_dsn = dsn;
+      await call("admin:startMetricMigration", params);
       toast.success(t("settings.metrics.migration_started"));
       await fetchStatus(true);
     } catch (e) {
@@ -331,62 +292,20 @@ function MigrationCard({
     }
   };
 
-  const handlePause = async () => {
-    setPausing(true);
+  const handleCancel = async () => {
+    setCanceling(true);
     try {
-      await call("admin:pauseMetricMigration", {});
-      toast.success(t("settings.metrics.migration_paused"));
+      await call("admin:cancelMetricMigration", {});
+      toast.success(t("settings.metrics.migration_canceled"));
       await fetchStatus(true);
     } catch (e) {
       toast.error(
-        t("settings.metrics.migration_pause_failed") +
+        t("settings.metrics.migration_cancel_failed") +
           ": " +
           (e instanceof Error ? e.message : String(e))
       );
     } finally {
-      setPausing(false);
-    }
-  };
-
-  const handleResume = async () => {
-    const size = parseInt(batchSize, 10);
-    if (isNaN(size) || size <= 0 || size > 5000) {
-      toast.error(t("settings.metrics.batch_size_invalid"));
-      return;
-    }
-    setResuming(true);
-    try {
-      await call("admin:resumeMetricMigration", { batch_size: size });
-      toast.success(t("settings.metrics.migration_resumed"));
-      await fetchStatus(true);
-    } catch (e) {
-      toast.error(
-        t("settings.metrics.migration_resume_failed") +
-          ": " +
-          (e instanceof Error ? e.message : String(e))
-      );
-    } finally {
-      setResuming(false);
-    }
-  };
-
-  const handleDelete = async () => {
-    setDeleting(true);
-    try {
-      await call("admin:deleteLegacyTables", {});
-      toast.success(t("settings.metrics.delete_legacy_success"));
-      setDeleteDialogOpen(false);
-      setConfirmText("");
-      await fetchStatus(true);
-      await onConfigRefetch();
-    } catch (e) {
-      toast.error(
-        t("settings.metrics.delete_legacy_failed") +
-          ": " +
-          (e instanceof Error ? e.message : String(e))
-      );
-    } finally {
-      setDeleting(false);
+      setCanceling(false);
     }
   };
 
@@ -409,41 +328,59 @@ function MigrationCard({
             disabled={loadingStatus}
             onClick={() => void fetchStatus()}
           >
-            <RefreshCw size={14} className={loadingStatus ? "animate-spin" : ""} />
+            <RefreshCw
+              size={14}
+              className={loadingStatus ? "animate-spin" : ""}
+            />
             {t("common.refresh")}
           </Button>
         </Flex>
 
-        {/* 数据量估算 */}
-        {statusData && (
+        {/* 源库 / 目标库信息 */}
+        {statusData && (statusData.source_driver || statusData.target_driver) && (
           <Flex gap="2" wrap="wrap">
-            <Badge variant="soft" color="gray">
-              {t("settings.metrics.estimated_records")}: {statusData.estimated_records}
-            </Badge>
-            <Badge variant="soft" color="gray">
-              {t("settings.metrics.estimated_gpu_records")}: {statusData.estimated_gpu_records}
-            </Badge>
-            <Badge variant="soft" color="gray">
-              {t("settings.metrics.estimated_ping_records")}: {statusData.estimated_ping_records}
-            </Badge>
+            {statusData.target_driver && (
+              <Badge variant="soft" color="green">
+                {t("settings.metrics.migration_target")}:{" "}
+                {statusData.target_driver}
+                {statusData.target_dsn ? ` (${statusData.target_dsn})` : ""}
+              </Badge>
+            )}
+            {statusData.source_driver && (
+              <Badge variant="soft" color="gray">
+                {t("settings.metrics.migration_source")}:{" "}
+                {statusData.source_driver}
+                {statusData.source_dsn ? ` (${statusData.source_dsn})` : ""}
+              </Badge>
+            )}
           </Flex>
         )}
 
-        {/* 进度条（in_progress 或 paused 时显示） */}
+        {/* 进度条 */}
         {showProgress && (
           <Flex direction="column" gap="1">
             <Flex justify="between" align="center">
               <Text size="1" color="gray">
-                {t("settings.metrics.migration_progress")}: {migratedAll.toLocaleString()} / {totalAll.toLocaleString()}
+                {t("settings.metrics.migration_progress")}: {metricsDone} /{" "}
+                {totalMetrics}
+                {statusData?.current_metric
+                  ? ` · ${statusData.current_metric}`
+                  : ""}
               </Text>
-              <Text size="1" color="gray">{progressPercent}%</Text>
+              <Text size="1" color="gray">
+                {progressPercent}%
+              </Text>
             </Flex>
             <Progress value={progressPercent} size="2" />
+            <Text size="1" color="gray">
+              {t("settings.metrics.migrated_points")}:{" "}
+              {migratedPoints.toLocaleString()}
+            </Text>
           </Flex>
         )}
 
         {/* 状态 Callout */}
-        {status === "in_progress" && (
+        {status === "running" && (
           <Callout.Root color="blue" variant="surface">
             <Callout.Icon>
               <RefreshCw size={16} className="animate-spin" />
@@ -454,13 +391,24 @@ function MigrationCard({
           </Callout.Root>
         )}
 
-        {status === "paused" && (
-          <Callout.Root color="amber" variant="surface">
+        {status === "completed" && (
+          <Callout.Root color="green" variant="surface">
             <Callout.Icon>
-              <Pause size={16} />
+              <Info size={16} />
             </Callout.Icon>
             <Callout.Text>
-              {t("settings.metrics.migration_paused_hint")}
+              {t("settings.metrics.migration_completed_hint")}
+            </Callout.Text>
+          </Callout.Root>
+        )}
+
+        {status === "canceled" && (
+          <Callout.Root color="amber" variant="surface">
+            <Callout.Icon>
+              <AlertTriangle size={16} />
+            </Callout.Icon>
+            <Callout.Text>
+              {t("settings.metrics.migration_canceled_hint")}
             </Callout.Text>
           </Callout.Root>
         )}
@@ -471,31 +419,32 @@ function MigrationCard({
               <AlertTriangle size={16} />
             </Callout.Icon>
             <Callout.Text>
-              {t("settings.metrics.migration_failed_hint")}
+              {statusData?.error
+                ? statusData.error
+                : t("settings.metrics.migration_failed_hint")}
             </Callout.Text>
           </Callout.Root>
         )}
 
-        {/* 批次大小 + 操作按钮 */}
+        {/* 源 DSN + 操作按钮 */}
         <Flex direction="column" gap="2" className="w-full">
           <label className="text-sm font-medium">
-            {t("settings.metrics.batch_size")}
+            {t("settings.metrics.source_dsn_title")}
           </label>
           <Text size="1" color="gray">
-            {t("settings.metrics.batch_size_description")}
+            {t("settings.metrics.source_dsn_description")}
           </Text>
           <Flex gap="2" align="center" wrap="wrap">
             <TextField.Root
-              type="number"
-              value={batchSize}
-              onChange={(e) => setBatchSize(e.target.value)}
-              placeholder="500"
-              style={{ maxWidth: "160px" }}
-              disabled={status === "in_progress"}
+              value={sourceDsn}
+              onChange={(e) => setSourceDsn(e.target.value)}
+              placeholder={t("settings.metrics.source_dsn_placeholder")}
+              style={{ minWidth: "260px", flex: 1 }}
+              disabled={isRunning}
             />
-            {/* 开始按钮：仅 not_started / failed / completed 时显示 */}
             {canStart && (
               <Button disabled={starting} onClick={() => void handleStart()}>
+                <Database size={14} />
                 {starting
                   ? t("settings.metrics.starting")
                   : status === "completed"
@@ -503,91 +452,20 @@ function MigrationCard({
                     : t("settings.metrics.start_migration")}
               </Button>
             )}
-            {/* 暂停按钮：迁移运行中时显示 */}
             {isRunning && (
-              <Button color="amber" variant="soft" disabled={pausing} onClick={() => void handlePause()}>
-                <Pause size={14} />
-                {pausing ? t("settings.metrics.pausing") : t("settings.metrics.pause_migration")}
-              </Button>
-            )}
-            {/* 恢复按钮：paused 且未运行时显示 */}
-            {canResume && !isRunning && (
-              <Button color="blue" variant="soft" disabled={resuming} onClick={() => void handleResume()}>
-                <Play size={14} />
-                {resuming ? t("settings.metrics.resuming") : t("settings.metrics.resume_migration")}
+              <Button
+                color="amber"
+                variant="soft"
+                disabled={canceling}
+                onClick={() => void handleCancel()}
+              >
+                <X size={14} />
+                {canceling
+                  ? t("settings.metrics.canceling")
+                  : t("settings.metrics.cancel_migration")}
               </Button>
             )}
           </Flex>
-        </Flex>
-
-        <div className="border-t-1 my-1" />
-
-        {/* 删除旧表 */}
-        <Flex direction="column" gap="2" className="w-full">
-          <label className="text-sm font-medium">
-            {t("settings.metrics.delete_legacy_title")}
-          </label>
-          <Text size="1" color="gray">
-            {t("settings.metrics.delete_legacy_description")}
-          </Text>
-          <div>
-            <Dialog.Root
-              open={deleteDialogOpen}
-              onOpenChange={(open) => {
-                setDeleteDialogOpen(open);
-                if (!open) setConfirmText("");
-              }}
-            >
-              <Dialog.Trigger>
-                <Button color="red" variant="solid" disabled={!canDelete}>
-                  {t("settings.metrics.delete_legacy_button")}
-                </Button>
-              </Dialog.Trigger>
-              <Dialog.Content maxWidth="480px">
-                <Dialog.Title>
-                  {t("settings.metrics.delete_legacy_title")}
-                </Dialog.Title>
-                <Dialog.Description size="2">
-                  {t("settings.metrics.delete_legacy_confirm")}
-                </Dialog.Description>
-                <Flex direction="column" gap="2" className="mt-4">
-                  <Text size="2" color="gray">
-                    {t("settings.metrics.delete_legacy_confirm_hint")}
-                  </Text>
-                  <TextField.Root
-                    value={confirmText}
-                    onChange={(e) => setConfirmText(e.target.value)}
-                    placeholder="DELETE"
-                    autoComplete="off"
-                  />
-                </Flex>
-                <Flex gap="3" mt="4" justify="end">
-                  <Dialog.Close>
-                    <Button variant="soft" color="gray" disabled={deleting}>
-                      {t("common.cancel")}
-                    </Button>
-                  </Dialog.Close>
-                  <Button
-                    color="red"
-                    disabled={deleting || confirmText.trim() !== "DELETE"}
-                    onClick={(e) => {
-                      e.preventDefault();
-                      void handleDelete();
-                    }}
-                  >
-                    {deleting
-                      ? t("settings.metrics.deleting")
-                      : t("settings.metrics.delete_legacy_button")}
-                  </Button>
-                </Flex>
-              </Dialog.Content>
-            </Dialog.Root>
-          </div>
-          {!canDelete && status !== "completed" && (
-            <Text size="1" color="gray">
-              {t("settings.metrics.delete_legacy_requires_completed")}
-            </Text>
-          )}
         </Flex>
       </Flex>
     </SettingCard>
