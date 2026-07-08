@@ -41,11 +41,6 @@
           "icon": "Terminal"
         },
         {
-          "labelKey": "settings.reverse_proxy.title",
-          "path": "/admin/settings/reverse-proxy",
-          "icon": "Globe"
-        },
-        {
           "labelKey": "settings.metrics.title",
           "path": "/admin/settings/metrics",
           "icon": "Database"
