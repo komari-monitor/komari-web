@@ -459,8 +459,6 @@
     "default_on": "Aktif default untuk server baru",
     "default_on_description": "Jika diaktifkan, server yang baru ditambahkan akan otomatis menjalankan pemantauan ini. Server yang sudah ada tidak terpengaruh.",
     "default_on_short": "Aktif default",
-    "disk_usage_estimate": "Perkiraan ruang disk yang dibutuhkan",
-    "disk_usage_with_settings": "Berdasarkan periode retensi {{hour}} jam yang Anda atur, Anda memerlukan ruang disk sebesar {{space}}.",
     "interval": "Interval",
     "server_view": "Tampilan Server",
     "target": "Target",
@@ -701,17 +699,6 @@
       "test_description": "Kirim pesan uji coba",
       "test_title": "Kirim pesan uji coba",
       "title": "Notifikasi"
-    },
-    "record": {
-      "enabled": "Aktifkan Pencatatan",
-      "enabled_description": "Catat riwayat beban server dan detail Ping, serta data lainnya.",
-      "expected_usage": "Penyimpanan data untuk satu server diperkirakan membutuhkan ruang disk sebesar {{space}} (data Ping tergantung pada interval waktu yang ditetapkan)",
-      "invalid_preserve_time": "Waktu tidak valid",
-      "ping_record_preserve_time": "Periode penyimpanan data Ping",
-      "record_preserve_time": "Periode penyimpanan",
-      "record_preserve_time_description": "Komari akan menyimpan catatan selama jumlah jam yang ditentukan dan membersihkannya setelah kadaluarsa.",
-      "record_preserve_time_label": "Periode penyimpanan data beban",
-      "title": "Pencatatan"
     },
     "settings_save_failed": "Gagal menyimpan pengaturan",
     "settings_saved": "Pengaturan berhasil disimpan",

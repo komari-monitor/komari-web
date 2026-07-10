@@ -55,7 +55,7 @@ const PingChart = ({ uuid }: { uuid: string }) => {
   const { t } = useTranslation();
   const { publicInfo } = usePublicInfo();
   const { call } = useRPC2Call();
-  const max_record_preserve_time = publicInfo?.ping_record_preserve_time || 0;
+  const maxMetricRetentionHours = (publicInfo?.metric_retention_days || 30) * 24;
   // 视图选项
   const presetViews = [
     { label: t("chart.hours", { count: 1 }), hours: 1 },
@@ -65,39 +65,39 @@ const PingChart = ({ uuid }: { uuid: string }) => {
   ];
   const avaliableView: { label: string; hours?: number }[] = [];
   if (
-    typeof max_record_preserve_time === "number" &&
-    max_record_preserve_time > 0
+    typeof maxMetricRetentionHours === "number" &&
+    maxMetricRetentionHours > 0
   ) {
     for (const v of presetViews) {
-      if (max_record_preserve_time >= v.hours) {
+      if (maxMetricRetentionHours >= v.hours) {
         avaliableView.push({ label: v.label, hours: v.hours });
       }
     }
     const maxPreset = presetViews[presetViews.length - 1];
-    if (max_record_preserve_time > maxPreset.hours) {
+    if (maxMetricRetentionHours > maxPreset.hours) {
       const dynamicLabel =
-        max_record_preserve_time % 24 === 0
+        maxMetricRetentionHours % 24 === 0
           ? `${t("chart.days", {
-              count: Math.floor(max_record_preserve_time / 24),
+              count: Math.floor(maxMetricRetentionHours / 24),
             })}`
-          : `${t("chart.hours", { count: max_record_preserve_time })}`;
+          : `${t("chart.hours", { count: maxMetricRetentionHours })}`;
       avaliableView.push({
         label: dynamicLabel,
-        hours: max_record_preserve_time,
+        hours: maxMetricRetentionHours,
       });
     } else if (
-      max_record_preserve_time > 1 &&
-      !presetViews.some((v) => v.hours === max_record_preserve_time)
+      maxMetricRetentionHours > 1 &&
+      !presetViews.some((v) => v.hours === maxMetricRetentionHours)
     ) {
       const dynamicLabel =
-        max_record_preserve_time % 24 === 0
+        maxMetricRetentionHours % 24 === 0
           ? `${t("chart.days", {
-              count: Math.floor(max_record_preserve_time / 24),
+              count: Math.floor(maxMetricRetentionHours / 24),
             })}`
-          : `${t("chart.hours", { count: max_record_preserve_time })}`;
+          : `${t("chart.hours", { count: maxMetricRetentionHours })}`;
       avaliableView.push({
         label: dynamicLabel,
-        hours: max_record_preserve_time,
+        hours: maxMetricRetentionHours,
       });
     }
   }

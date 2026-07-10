@@ -459,8 +459,6 @@
     "default_on": "預設啟用",
     "default_on_description": "開啟後，新加入的伺服器會自動啟用此監測；已存在的伺服器不受影響。",
     "default_on_short": "預設啟用",
-    "disk_usage_estimate": "預計需要磁碟空間",
-    "disk_usage_with_settings": "根據設定的 {{hour}} 小時保存時間，需要使用 {{space}} 磁碟空間。",
     "interval": "間隔",
     "server_view": "伺服器檢視",
     "target": "目標",
@@ -701,17 +699,6 @@
       "test_description": "發送測試消息",
       "test_title": "發送測試消息",
       "title": "通知"
-    },
-    "record": {
-      "enabled": "開啟歷史記錄",
-      "enabled_description": "記錄伺服器歷史負載詳情和Ping記錄等",
-      "expected_usage": "保存一台伺服器的數據預計需要{{space}}磁碟空間（Ping數據取決於設置的時間間隔）",
-      "invalid_preserve_time": "無效的時間",
-      "ping_record_preserve_time": "Ping數據保存時間",
-      "record_preserve_time": "保存時間",
-      "record_preserve_time_description": "Komari將會按照設定的小時數保存記錄，過期清理",
-      "record_preserve_time_label": "負載數據保存時間",
-      "title": "歷史記錄"
     },
     "settings_save_failed": "保存設置失敗",
     "settings_saved": "設置已保存",

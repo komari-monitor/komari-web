@@ -9,7 +9,6 @@ import {
   usePingTask,
   type PingTask,
 } from "@/contexts/PingTaskContext";
-import { useSettings } from "@/lib/api";
 import {
   Box,
   Button,
@@ -68,66 +67,7 @@ const InnerLayout = () => {
           </Tabs.Content>
         </Box>
       </Tabs.Root>
-      <DiskUsageEstimate />
     </Flex>
-  );
-};
-
-
-
-const DiskUsageEstimate = () => {
-  const { pingTasks } = usePingTask();
-  const { t } = useTranslation();
-
-  // 计算预估磁盘消耗
-  const calculateDiskUsage = () => {
-    if (!pingTasks || pingTasks.length === 0) return 0;
-
-    // 一条记录的大小估算：
-    // - uuid: 36字节 (UUID字符串)
-    // - int: 8字节 (64位整数)
-    // - int: 8字节 (64位整数)
-    // - time: 33字节 (RFC3339格式字符串，如 "2006-01-02T15:04:05.000Z07:00")
-    // - 其他开销: 20字节
-    const recordSize = (36 + 8 + 8 + 33 + 20) * 2; // 回收余量2倍
-
-    const totalRecordsPerDay = pingTasks.reduce((total, task) => {
-      const clientCount = task.clients?.length || 0;
-      const interval = task.interval || 60; // 默认60秒
-      const recordsPerDay = (clientCount * (24 * 60 * 60)) / interval;
-      return total + recordsPerDay;
-    }, 0);
-
-    return totalRecordsPerDay * recordSize;
-  };
-
-  // 格式化文件大小
-  const formatBytes = (bytes: number) => {
-    if (bytes === 0) return "0 B";
-    const k = 1024;
-    const sizes = ["B", "KB", "MB", "GB"];
-    const i = Math.floor(Math.log(bytes) / Math.log(k));
-    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + " " + sizes[i];
-  };
-  const { settings } = useSettings();
-
-  const dailyUsage = calculateDiskUsage();
-  //const monthlyUsage = dailyUsage * 31;
-  //const yearlyUsage = dailyUsage * 365;
-
-  return (
-    <div className="text-sm text-muted-foreground">
-      <label>
-        {t("ping.disk_usage_estimate")}: {formatBytes(dailyUsage)}/
-        {t("common.day")},{" "}
-        {t("ping.disk_usage_with_settings", {
-          hour: settings.ping_record_preserve_time,
-          space: formatBytes(
-            (dailyUsage * settings.ping_record_preserve_time) / 24
-          ),
-        })}
-      </label>
-    </div>
   );
 };
 

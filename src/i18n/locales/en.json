@@ -459,8 +459,6 @@
     "default_on": "Default on for new servers",
     "default_on_description": "When enabled, newly added servers will automatically start running this monitor. Existing servers are unaffected.",
     "default_on_short": "Default on",
-    "disk_usage_estimate": "Estimated disk space required",
-    "disk_usage_with_settings": "Based on the {{hour}} hour retention period you set, you'll need {{space}} disk space.",
     "interval": "Interval",
     "server_view": "Server View",
     "target": "Target",
@@ -701,17 +699,6 @@
       "test_description": "Send a test message",
       "test_title": "Send test message",
       "title": "Notifications"
-    },
-    "record": {
-      "enabled": "Enable Record",
-      "enabled_description": "Log server historical load details and Ping records,etc.",
-      "expected_usage": "Storing data for one server is estimated to require {{space}} disk space (Ping data depends on the set time interval)",
-      "invalid_preserve_time": "Invalid time",
-      "ping_record_preserve_time": "Ping data retention period",
-      "record_preserve_time": "Preserve time",
-      "record_preserve_time_description": "Komari will store records for a set number of hours and clean them up upon expiration.",
-      "record_preserve_time_label": "Load data retention period",
-      "title": "Record"
     },
     "settings_save_failed": "Failed to Save Settings",
     "settings_saved": "Settings Saved",

@@ -65,7 +65,7 @@ const LoadChart = ({ data = [] }: LoadChartProps) => {
   const { uuid } = useParams<{ uuid: string }>();
   const { nodeList } = useNodeList();
   const { publicInfo } = usePublicInfo();
-  const max_record_preserve_time = publicInfo?.record_preserve_time || 0;
+  const maxMetricRetentionHours = (publicInfo?.metric_retention_days || 30) * 24;
   // 计算可用视图
   const [hoursView, setHoursView] = useState<string>("real-time");
   const [remoteData, setRemoteData] = useState<RecordFormat[] | null>(null);
@@ -77,10 +77,10 @@ const LoadChart = ({ data = [] }: LoadChartProps) => {
     if (avaliableView.length > 0) {
       setHoursView(avaliableView[0].label);
     }
-  }, [max_record_preserve_time]);
+  }, [maxMetricRetentionHours]);
 
   // real-time 总是可用
-  // 其余根据 max_record_preserve_time (单位: 小时) 动态生成
+  // 其余根据 metrics 保留时间 (单位: 小时) 动态生成
   // 4hour, 1day(24h), 7day(168h), 30day(720h)
   // 超过最大预设则显示 "xxx hours"
   const presetViews = [
@@ -93,42 +93,42 @@ const LoadChart = ({ data = [] }: LoadChartProps) => {
     { label: t("common.real_time") },
   ];
   if (
-    typeof max_record_preserve_time === "number" &&
-    max_record_preserve_time > 0
+    typeof maxMetricRetentionHours === "number" &&
+    maxMetricRetentionHours > 0
   ) {
     for (const v of presetViews) {
-      if (max_record_preserve_time >= v.hours) {
+      if (maxMetricRetentionHours >= v.hours) {
         avaliableView.push({ label: v.label, hours: v.hours });
       }
     }
     // 如果大于最大预设，显示 "xxx hours"
     const maxPreset = presetViews[presetViews.length - 1];
-    if (max_record_preserve_time > maxPreset.hours) {
+    if (maxMetricRetentionHours > maxPreset.hours) {
       // 若能被24整除，显示为“xx天”，否则显示为“xx小时”
       const dynamicLabel =
-        max_record_preserve_time % 24 === 0
+        maxMetricRetentionHours % 24 === 0
           ? `${t("chart.days", {
-              count: Math.floor(max_record_preserve_time / 24),
+              count: Math.floor(maxMetricRetentionHours / 24),
             })}`
-          : `${t("chart.hours", { count: max_record_preserve_time })}`;
+          : `${t("chart.hours", { count: maxMetricRetentionHours })}`;
       avaliableView.push({
         label: dynamicLabel,
-        hours: max_record_preserve_time,
+        hours: maxMetricRetentionHours,
       });
     } else if (
-      max_record_preserve_time > 4 &&
-      !presetViews.some((v) => v.hours === max_record_preserve_time)
+      maxMetricRetentionHours > 4 &&
+      !presetViews.some((v) => v.hours === maxMetricRetentionHours)
     ) {
       // 如果不是预设但大于4小时，显示具体小时
       const dynamicLabel =
-        max_record_preserve_time % 24 === 0
+        maxMetricRetentionHours % 24 === 0
           ? `${t("chart.days", {
-              count: Math.floor(max_record_preserve_time / 24),
+              count: Math.floor(maxMetricRetentionHours / 24),
             })}`
-          : `${t("chart.hours", { count: max_record_preserve_time })}`;
+          : `${t("chart.hours", { count: maxMetricRetentionHours })}`;
       avaliableView.push({
         label: dynamicLabel,
-        hours: max_record_preserve_time,
+        hours: maxMetricRetentionHours,
       });
     }
   }

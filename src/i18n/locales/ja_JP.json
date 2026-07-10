@@ -459,8 +459,6 @@
     "default_on": "新規サーバーで既定有効",
     "default_on_description": "有効にすると、新しく追加されるサーバーで自動的にこの監視が開始されます。既存のサーバーには影響しません。",
     "default_on_short": "既定有効",
-    "disk_usage_estimate": "必要なディスクスペースの見積もり",
-    "disk_usage_with_settings": "設定された {{hour}} 時間の保存時間に基づき、{{space}} のディスクスペースが必要です。",
     "interval": "間隔",
     "server_view": "サーバービュー",
     "target": "ターゲット",
@@ -701,17 +699,6 @@
       "test_description": "テストメッセージを送信",
       "test_title": "テストメッセージを送信",
       "title": "通知"
-    },
-    "record": {
-      "enabled": "履歴を有効にする",
-      "enabled_description": "サーバーの履歴負荷詳細や Ping 記録などを記録します",
-      "expected_usage": "サーバーのデータを保存するのに必要なディスクスペースは約 {{space}} です（Ping データは設定した時間間隔に依存します）",
-      "invalid_preserve_time": "無効な時間",
-      "ping_record_preserve_time": "Ping データ保存時間",
-      "record_preserve_time": "保存時間",
-      "record_preserve_time_description": "Komari は設定した時間数に従って記録を保存し、期限切れのものをクリーンアップします",
-      "record_preserve_time_label": "負荷データ保存時間",
-      "title": "履歴"
     },
     "settings_save_failed": "設定の保存に失敗しました",
     "settings_saved": "設定が保存されました",
