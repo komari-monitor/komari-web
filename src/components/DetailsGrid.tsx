@@ -1,24 +1,39 @@
 import { useTranslation } from "react-i18next";
 import { UpDownStack } from "./UpDownStack";
-import { useNodeList } from "@/contexts/NodeListContext";
+import {
+  useNodeList,
+  type NodeBasicInfo,
+} from "@/contexts/NodeListContext";
 import { useLiveData } from "@/contexts/LiveDataContext";
 import { formatUptime } from "./Node";
 import { formatBytes } from "@/utils/unitHelper";
 import { Flex, Text, Card } from "@radix-ui/themes";
+import type { Record as LiveRecord } from "@/types/LiveData";
 
 type DetailsGridProps = {
   uuid: string;
   gap?: string;
   box?: boolean;
   align?: "start" | "center" | "end";
+  node?: NodeBasicInfo;
+  liveRecord?: LiveRecord;
 };
 
-export const DetailsGrid = ({ uuid, gap, box, align }: DetailsGridProps) => {
+export const DetailsGrid = ({
+  uuid,
+  gap,
+  box,
+  align,
+  node: nodeProp,
+  liveRecord,
+}: DetailsGridProps) => {
   const { t } = useTranslation();
 
-  const { nodeList } = useNodeList();
+  const nodeListContext = useNodeList(false);
   const { live_data } = useLiveData();
-  const node = nodeList?.find((n) => n.uuid === uuid);
+  const node =
+    nodeProp ?? nodeListContext?.nodeList?.find((n) => n.uuid === uuid);
+  const currentRecord = liveRecord ?? live_data?.data.data[uuid ?? ""];
 
   const Container: any = box ? Card : 'div';
 
@@ -54,25 +69,25 @@ export const DetailsGrid = ({ uuid, gap, box, align }: DetailsGridProps) => {
           className="md:w-64 w-full flex-[0_0_calc(50%-0.5rem)]"
           up={t("nodeCard.networkSpeed")}
           down={` ↑ ${formatBytes(
-            live_data?.data.data[uuid ?? ""]?.network.up || 0
+            currentRecord?.network.up || 0
           )}/s
           ↓
           ${formatBytes(
-            live_data?.data.data[uuid ?? ""]?.network.down || 0
+            currentRecord?.network.down || 0
           )}/s`}
         />
         <UpDownStack
           up={t("nodeCard.totalTraffic")}
           align={align === "center" ? "end" : "start"}
           className="flex-[0_0_calc(50%-0.5rem)]"
-          down={`↑
+            down={`↑
           ${formatBytes(
-            live_data?.data.data[uuid ?? ""]?.network.totalUp || 0
-          )}
+              currentRecord?.network.totalUp || 0
+            )}
           ↓
           ${formatBytes(
-            live_data?.data.data[uuid ?? ""]?.network.totalDown || 0
-          )}`}
+              currentRecord?.network.totalDown || 0
+            )}`}
         />
         <UpDownStack
           className="md:w-70 w-full flex-[0_0_calc(50%-0.5rem)]"
@@ -95,8 +110,8 @@ export const DetailsGrid = ({ uuid, gap, box, align }: DetailsGridProps) => {
           up={t("nodeCard.uptime")}
           className="flex-[0_0_calc(50%-0.5rem)]"
           down={
-            live_data?.data.data[uuid ?? ""]?.uptime
-              ? formatUptime(live_data?.data.data[uuid ?? ""]?.uptime, t)
+            currentRecord?.uptime
+              ? formatUptime(currentRecord.uptime, t)
               : "-"
           }
         />
@@ -108,7 +123,7 @@ export const DetailsGrid = ({ uuid, gap, box, align }: DetailsGridProps) => {
             <Text size="2">
               {node?.updated_at
                 ? new Date(
-                  live_data?.data.data[uuid ?? ""]?.updated_at ||
+                  currentRecord?.updated_at ||
                   node.updated_at
                 ).toLocaleString()
                 : "-"}

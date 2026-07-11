@@ -1,14 +1,13 @@
-import { useEffect, useState, useMemo } from "react";
+import { useCallback, useEffect, useState, useMemo } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useLiveData } from "../../contexts/LiveDataContext";
 import { useTranslation } from "react-i18next";
 import type { Record } from "../../types/LiveData";
 import Flag from "../../components/Flag";
-import { Card, Flex, SegmentedControl, Text } from "@radix-ui/themes";
+import { Card, Flex, Text } from "@radix-ui/themes";
 import { useNodeList } from "@/contexts/NodeListContext";
 import { liveDataToRecords } from "@/utils/RecordHelper";
 import LoadChart from "./LoadChart";
-import PingChart from "./PingChart";
 import { DetailsGrid } from "@/components/DetailsGrid";
 import { usePublicInfo } from "@/contexts/PublicInfoContext";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -19,9 +18,9 @@ export default function InstancePage() {
   const { onRefresh, live_data } = useLiveData();
   const { uuid } = useParams<{ uuid: string }>();
   const [recent, setRecent] = useState<Record[]>([]);
+  const [chartRealtimeActive, setChartRealtimeActive] = useState(true);
   const { nodeList } = useNodeList();
   const length = 30 * 5;
-  const [chartView, setChartView] = useState<"load" | "ping">("load");
   // #region 初始数据加载
   const node = nodeList?.find((n) => n.uuid === uuid);
   const { publicInfo } = usePublicInfo();
@@ -34,6 +33,13 @@ export default function InstancePage() {
     () => new Set(live_data?.data?.online ?? []),
     [live_data?.data?.online],
   );
+  const chartRecords = useMemo(
+    () => liveDataToRecords(uuid ?? "", recent),
+    [uuid, recent],
+  );
+  const handleChartRealtimeChange = useCallback((active: boolean) => {
+    setChartRealtimeActive(active);
+  }, []);
 
   // 组织按分组的服务器列表
   const groupedNodes = useMemo(() => {
@@ -120,7 +126,7 @@ export default function InstancePage() {
   // 动态追加数据
   useEffect(() => {
     const unsubscribe = onRefresh((resp) => {
-      if (!uuid) return;
+      if (!uuid || !chartRealtimeActive) return;
       const data = resp.data.data[uuid];
       if (!data) return;
 
@@ -143,7 +149,7 @@ export default function InstancePage() {
 
     // 清理订阅
     return unsubscribe;
-  }, [onRefresh, uuid]);
+  }, [chartRealtimeActive, length, onRefresh, uuid]);
   // #region 布局
   return (
     <div className="flex flex-row justify-center p-4 gap-4">
@@ -225,26 +231,18 @@ export default function InstancePage() {
               {node?.uuid}
             </Text>
           </h1>
-          <DetailsGrid box align="center" uuid={uuid ?? ""} />
+          <DetailsGrid
+            box
+            align="center"
+            uuid={uuid ?? ""}
+            node={node}
+            liveRecord={uuid ? live_data?.data.data[uuid] : undefined}
+          />
         </div>
-        <SegmentedControl.Root
-          radius="full"
-          value={chartView}
-          onValueChange={(value) => setChartView(value as "load" | "ping")}
-        >
-          <SegmentedControl.Item value="load">
-            {t("nodeCard.load")}
-          </SegmentedControl.Item>
-          <SegmentedControl.Item value="ping">
-            {t("nodeCard.ping")}
-          </SegmentedControl.Item>
-        </SegmentedControl.Root>
-        {/* Recharts */}
-        {chartView === "load" ? (
-          <LoadChart data={liveDataToRecords(uuid ?? "", recent)} />
-        ) : (
-          <PingChart uuid={uuid ?? ""} />
-        )}
+        <LoadChart
+          data={chartRecords}
+          onRealtimeActiveChange={handleChartRealtimeChange}
+        />
       </div>
     </div>
   );

@@ -62,9 +62,17 @@ interface NodeListContextType {
   refresh: () => void;
 }
 
-const NodeListContext = React.createContext<NodeListContextType | undefined>(
-  undefined
-);
+const NODE_LIST_CONTEXT_KEY = "__komariNodeListContext" as const;
+
+type NodeListContextGlobal = typeof globalThis & {
+  [NODE_LIST_CONTEXT_KEY]?: React.Context<NodeListContextType | undefined>;
+};
+
+const globalNodeListContext = globalThis as NodeListContextGlobal;
+const NodeListContext =
+  globalNodeListContext[NODE_LIST_CONTEXT_KEY] ??
+  (globalNodeListContext[NODE_LIST_CONTEXT_KEY] =
+    React.createContext<NodeListContextType | undefined>(undefined));
 
 export const NodeListProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
@@ -155,10 +163,12 @@ export const NodeListProvider: React.FC<{ children: React.ReactNode }> = ({
   );
 };
 
-export const useNodeList = () => {
+export function useNodeList(): NodeListContextType;
+export function useNodeList(required: false): NodeListContextType | undefined;
+export function useNodeList(required = true) {
   const context = React.useContext(NodeListContext);
-  if (!context) {
+  if (!context && required) {
     throw new Error("useNodeList must be used within a NodeListProvider");
   }
   return context;
-};
+}

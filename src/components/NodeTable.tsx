@@ -486,10 +486,18 @@ interface ExpandedNodeDetailsProps {
   nodeData: Record;
 }
 
-const ExpandedNodeDetails: React.FC<ExpandedNodeDetailsProps> = ({ node }) => {
+const ExpandedNodeDetails: React.FC<ExpandedNodeDetailsProps> = ({
+  node,
+  nodeData,
+}) => {
   return (
     <div className="p-4 space-y-4">
-      <DetailsGrid gap="0" uuid={node.uuid} />
+      <DetailsGrid
+        gap="0"
+        uuid={node.uuid}
+        node={node}
+        liveRecord={nodeData}
+      />
       <div>
         <MiniPingChart hours={24} uuid={node.uuid} />
       </div>

@@ -55,9 +55,23 @@ export function liveDataToRecords(
         usage: gpu.utilization ?? null,
         memory: (gpu.memory_used / gpu.memory_total) * 100,
         temperature: gpu.temperature ?? null,
+        device_index: index,
+        device_name: gpu.name,
+        mem_total: gpu.memory_total,
+        mem_used: gpu.memory_used,
       };
       return acc;
-    }, {} as { [index: number]: { usage: number | null; memory: number | null; temperature: number | null; } }) || undefined,
+    }, {} as {
+      [index: number]: {
+        usage: number | null;
+        memory: number | null;
+        temperature: number | null;
+        device_index?: number;
+        device_name?: string;
+        mem_total?: number;
+        mem_used?: number;
+      };
+    }) || undefined,
     ram: data.ram.used ?? 0,
     ram_total: 0,
     swap: data.swap.used ?? 0,

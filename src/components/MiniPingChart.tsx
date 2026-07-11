@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useState, useCallback } from "react";
 import { Card, Switch } from "@radix-ui/themes";
+import { LineChart, Line, XAxis, YAxis, CartesianGrid } from "recharts";
+import { useTranslation } from "react-i18next";
 import Loading from "@/components/loading";
 import {
   ChartContainer,
@@ -7,30 +9,41 @@ import {
   ChartTooltipContent,
   ChartLegend,
 } from "@/components/ui/chart";
-import { LineChart, Line, XAxis, YAxis, CartesianGrid } from "recharts";
-import { useTranslation } from "react-i18next";
-import { cutPeakValues, interpolateNullsLinear } from "@/utils/RecordHelper";
 import Tips from "./ui/tips";
 import { useRPC2Call } from "@/contexts/RPC2Context";
 
-interface PingRecord {
-  client: string;
-  task_id: number;
-  time: string;
-  value: number;
-}
-interface TaskInfo {
+type PingTask = {
   id: number;
   name: string;
-  interval: number;
-  loss: number;
-  p99?: number;
-  p50?: number;
-  p99_p50_ratio?: number;
-}
-// 移除旧 REST 类型，改用 RPC2 返回结构
+  interval?: number;
+  clients?: string[];
+  default_on?: boolean;
+};
 
-//const MAX_POINTS = 1000;
+type MetricPoint = {
+  time: string;
+  value: number | null;
+  tags?: Record<string, string>;
+};
+
+type MetricSeries = {
+  metric_key: string;
+  tags?: Record<string, string>;
+  count: number;
+  points: MetricPoint[];
+};
+
+type QueryMetricsResponse = {
+  series: MetricSeries[];
+};
+
+type RenderSeries = {
+  dataKey: string;
+  taskId: string;
+  name: string;
+  color: string;
+};
+
 const colors = [
   "#F38181",
   "#347433",
@@ -46,8 +59,33 @@ interface MiniPingChartProps {
   uuid: string;
   width?: string | number;
   height?: string | number;
-  hours?: number; // Add hours as an optional prop
+  hours?: number;
 }
+
+const applyEwma = (
+  rows: Array<Record<string, string | number | null>>,
+  series: RenderSeries[],
+  enabled: boolean,
+) => {
+  if (!enabled) return rows;
+  const alpha = 0.35;
+  const out = rows.map((row) => ({ ...row }));
+  for (const item of series) {
+    let previous: number | null = null;
+    for (const row of out) {
+      const value = row[item.dataKey];
+      if (typeof value !== "number" || !Number.isFinite(value)) continue;
+      previous = previous === null ? value : alpha * value + (1 - alpha) * previous;
+      row[item.dataKey] = previous;
+    }
+  }
+  return out;
+};
+
+const taskIdFromSeries = (series: MetricSeries, index: number) => {
+  const raw = series.tags?.task_id;
+  return raw && raw.trim() ? raw : String(index + 1);
+};
 
 const MiniPingChart = ({
   uuid,
@@ -55,99 +93,96 @@ const MiniPingChart = ({
   height = 300,
   hours = 12,
 }: MiniPingChartProps) => {
-  const [remoteData, setRemoteData] = useState<PingRecord[] | null>(null);
-  const [tasks, setTasks] = useState<TaskInfo[]>([]);
+  const [metricSeries, setMetricSeries] = useState<MetricSeries[]>([]);
+  const [tasks, setTasks] = useState<PingTask[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [hiddenLines, setHiddenLines] = useState<Record<string, boolean>>({});
-  const [t] = useTranslation();
-  const [cutPeak, setCutPeak] = useState(false);
+  const { t } = useTranslation();
+  const [ewmaEnabled, setEwmaEnabled] = useState(false);
   const { call } = useRPC2Call();
+
   useEffect(() => {
     if (!uuid) return;
 
     let active = true;
     setLoading(true);
     setError(null);
-    (async () => {
-      try {
-        type RpcResp = { count: number; records: PingRecord[]; tasks?: TaskInfo[] };
-        const result = await call<any, RpcResp>("common:getRecords", { uuid, type: "ping", hours });
+
+    Promise.all([
+      call<unknown, PingTask[]>("public:getPublicPingTasks"),
+      call<any, QueryMetricsResponse>(
+        "public:queryMetrics",
+        {
+          metric_keys: ["ping.latency_ms"],
+          entity_id: uuid,
+          hours,
+          downsample: true,
+          max_points: 240,
+          aggregation: "avg",
+          fill_empty: true,
+        },
+        { timeout: 30000 },
+      ),
+    ])
+      .then(([taskList, result]) => {
         if (!active) return;
-        const records = result?.records || [];
-        records.sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime());
-        setRemoteData(records);
-        setTasks(result?.tasks || []);
+        setTasks(Array.isArray(taskList) ? taskList : []);
+        setMetricSeries(result?.series ?? []);
         setLoading(false);
-      } catch (err: any) {
+      })
+      .catch((err) => {
         if (!active) return;
         setError(err?.message || "Error");
         setLoading(false);
-      }
-    })();
+      });
 
     return () => {
       active = false;
     };
   }, [uuid, hours, call]);
 
-  const chartData = useMemo(() => {
-    // 思路：仅保留真实采样时间点（各任务原始时间点的并集），
-    // 不再用最小间隔对整段时间做补点，否则长间隔任务会被大量 null 分割成若干段。
-    const data = remoteData || [];
-    if (!data.length) return [];
+  const taskMap = useMemo(
+    () => new Map(tasks.map((task) => [String(task.id), task])),
+    [tasks],
+  );
 
-    // 动态匹配容差：取各任务最小 interval * 0.4（秒）转换为 ms，范围 [800ms, 1500ms]
-    const validIntervals = tasks
-      .map((t) => t.interval)
-      .filter((v): v is number => typeof v === "number" && v > 0);
-    const minTaskInterval = validIntervals.length
-      ? Math.min(...validIntervals)
-      : 60;
-    const toleranceMs = Math.min(
-      1500,
-      Math.max(800, (minTaskInterval * 1000 * 0.4) | 0)
-    );
+  const built = useMemo(() => {
+    const rows = new Map<string, Record<string, string | number | null>>();
+    const renderSeries: RenderSeries[] = [];
 
-    const grouped: Record<string, any> = {}; // key: anchor timestamp(ms)
-    const anchors: number[] = [];
+    metricSeries.forEach((series, index) => {
+      const taskId = taskIdFromSeries(series, index);
+      const task = taskMap.get(taskId);
+      const dataKey = `task_${taskId}_${index}`;
+      renderSeries.push({
+        dataKey,
+        taskId,
+        name: task?.name || `Task ${taskId}`,
+        color: colors[index % colors.length],
+      });
 
-    for (const rec of data) {
-      const ts = new Date(rec.time).getTime();
-      let anchor: number | null = null;
-      // 线性扫描量通常较小（点数有限），后续如需优化可改为二分。
-      for (const a of anchors) {
-        if (Math.abs(a - ts) <= toleranceMs) {
-          anchor = a;
-          break;
-        }
+      for (const point of series.points ?? []) {
+        const time = new Date(point.time).toISOString();
+        const row = rows.get(time) ?? { time };
+        row[dataKey] =
+          typeof point.value === "number" && point.value >= 0 ? point.value : null;
+        rows.set(time, row);
       }
-      const use = anchor ?? ts;
-      if (!grouped[use]) {
-        grouped[use] = { time: new Date(use).toISOString() };
-        if (anchor === null) anchors.push(use);
-      }
-      grouped[use][rec.task_id] = rec.value < 0 ? null : rec.value; // 负值隐藏
-    }
+    });
 
-    let rows = Object.values(grouped).sort(
-      (a: any, b: any) => new Date(a.time).getTime() - new Date(b.time).getTime()
-    );
+    return {
+      rows: Array.from(rows.values()).sort(
+        (a, b) => new Date(String(a.time)).getTime() - new Date(String(b.time)).getTime(),
+      ),
+      series: renderSeries,
+    };
+  }, [metricSeries, taskMap]);
 
-    if (cutPeak && tasks.length > 0) {
-      const taskKeys = tasks.map((t) => String(t.id));
-      rows = cutPeakValues(rows, taskKeys);
-    }
-
-    // 真实感插值（数据驱动）：
-    // 每条线以“中位采样间隔 * 倍数(默认6)”作为最大插值跨度，并钳制在 [2min, 30min]。
-    if (tasks.length > 0 && rows.length > 0) {
-      const keys = tasks.map((t) => String(t.id));
-      rows = interpolateNullsLinear(rows as any[], keys, { maxGapMultiplier: 6, minCapMs: 2 * 60_000, maxCapMs: 30 * 60_000 }) as any[];
-    }
-
-    return rows;
-  }, [remoteData, cutPeak, tasks]);
+  const chartData = useMemo(
+    () => applyEwma(built.rows, built.series, ewmaEnabled),
+    [built.rows, built.series, ewmaEnabled],
+  );
 
   const timeFormatter = (value: any, index: number) => {
     if (!chartData.length) return "";
@@ -160,7 +195,7 @@ const MiniPingChart = ({
     return "";
   };
 
-  const lableFormatter = (value: any) => {
+  const labelFormatter = (value: any) => {
     const date = new Date(value);
     return date.toLocaleString([], {
       month: "2-digit",
@@ -173,14 +208,14 @@ const MiniPingChart = ({
 
   const chartConfig = useMemo(() => {
     const config: Record<string, any> = {};
-    tasks.forEach((task, idx) => {
-      config[task.id] = {
-        label: `${task.name}${typeof task.p99_p50_ratio === 'number' ? ` (${t('chart.volatility')}: ${task.p99_p50_ratio.toFixed(2)})` : ''}`,
-        color: colors[idx % colors.length],
+    for (const item of built.series) {
+      config[item.dataKey] = {
+        label: item.name,
+        color: item.color,
       };
-    });
+    }
     return config;
-  }, [tasks]);
+  }, [built.series]);
 
   const handleLegendClick = useCallback((e: any) => {
     const key = e.dataKey;
@@ -237,8 +272,8 @@ const MiniPingChart = ({
                 tickLine={false}
                 axisLine={false}
                 tickFormatter={timeFormatter}
-                interval="preserveStartEnd" // Preserve start and end ticks
-                minTickGap={30} // Minimum gap between ticks to prevent overlap
+                interval="preserveStartEnd"
+                minTickGap={30}
               />
               <YAxis
                 tickLine={false}
@@ -252,53 +287,41 @@ const MiniPingChart = ({
               />
               <ChartTooltip
                 cursor={false}
-                formatter={(v: any) => v === null ? null : `${Math.round(v)} ms`}
+                formatter={(v: any) => (v === null ? null : `${Math.round(v)} ms`)}
                 content={
                   <ChartTooltipContent
-                    labelFormatter={lableFormatter}
+                    labelFormatter={labelFormatter}
                     indicator="dot"
                   />
                 }
               />
               <ChartLegend onClick={handleLegendClick} />
-              {(() => {
-                const minInterval = Math.min(
-                  ...tasks
-                    .map((t) => t.interval || Infinity)
-                    .filter((v) => v !== undefined)
-                );
-                return tasks.map((task, idx) => {
-                  const interval = task.interval || minInterval;
-                  // 对于 interval 大于最小 interval 的任务，开启 connectNulls，
-                  // 这样它们不会因为其他任务的额外时间点被打断。
-                  const connect = interval > minInterval;
-                  return (
-                    <Line
-                      key={task.id}
-                      dataKey={String(task.id)}
-                      name={task.name}
-                      stroke={colors[idx % colors.length]}
-                      dot={false}
-                      isAnimationActive={false}
-                      strokeWidth={2}
-                      connectNulls={connect}
-                      type={cutPeak ? "basisOpen" : "linear"}
-                      hide={!!hiddenLines[task.id]}
-                    />
-                  );
-                });
-              })()}
+              {built.series.map((item) => (
+                <Line
+                  key={item.dataKey}
+                  dataKey={item.dataKey}
+                  name={item.dataKey}
+                  stroke={item.color}
+                  dot={false}
+                  isAnimationActive={false}
+                  strokeWidth={2}
+                  connectNulls={true}
+                  type="linear"
+                  hide={!!hiddenLines[item.dataKey]}
+                />
+              ))}
             </LineChart>
           </ChartContainer>
         )
       )}
       <div className="-mt-3 flex items-center" style={{ display: loading ? "none" : "flex" }}>
-        <Switch size="1" checked={cutPeak} onCheckedChange={setCutPeak} />
-        <label htmlFor="cut-peak" className="text-sm font-medium flex items-center gap-1 flex-row">
-          {t("chart.cutPeak")}
-          <Tips mode="popup" side="top"><span dangerouslySetInnerHTML={{ __html: t("chart.cutPeak_tips") }} /></Tips>
+        <Switch size="1" checked={ewmaEnabled} onCheckedChange={setEwmaEnabled} />
+        <label className="text-sm font-medium flex items-center gap-1 flex-row">
+          EWMA
+          <Tips mode="popup" side="top">
+            <span dangerouslySetInnerHTML={{ __html: t("chart.cutPeak_tips") }} />
+          </Tips>
         </label>
-
       </div>
     </Card>
   );
