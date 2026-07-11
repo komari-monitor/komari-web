@@ -599,11 +599,18 @@
       "current_status": "当前状态",
       "dsn_description": "当前运行的监控数据库连接串，系统会根据连接串自动识别数据库类型（SQLite / MySQL / PostgreSQL）。SQLite：./data/metrics.db；MySQL：user:password@tcp(host:3306)/metrics?charset=utf8mb4&parseTime=True；PostgreSQL：host=localhost user=komari password=secret dbname=metrics port=5432 sslmode=disable",
       "dsn_title": "连接串（DSN）",
+      "fetch_metrics_failed": "获取指标列表失败",
       "fetch_status_failed": "获取迁移状态失败",
+      "loading_metrics": "正在加载指标...",
       "max_idle_conns_description": "数据库最大空闲连接数，默认 5",
       "max_idle_conns_title": "最大空闲连接数",
       "max_open_conns_description": "数据库最大连接数，默认 25",
       "max_open_conns_title": "最大连接数",
+      "metric_description": "描述",
+      "metric_key": "指标 Key",
+      "metric_name": "指标名称",
+      "metric_type": "类型",
+      "metric_unit": "单位",
       "migrated_points": "已搬运采样点",
       "migration_cancel_failed": "取消迁移失败",
       "migration_canceled": "迁移已取消",
@@ -619,8 +626,13 @@
       "migration_started": "迁移已开始",
       "migration_target": "目标库",
       "migration_title": "迁移",
+      "no_metrics": "暂无指标定义",
+      "retention_days": "保留天数",
       "retention_description": "数据保留天数，默认 30",
       "retention_invalid": "请输入有效的保留天数",
+      "retention_save_failed": "保存保留天数失败",
+      "retention_saved": "保留天数已保存",
+      "retention_table_description": "为每个监控指标设置原始数据保留天数。默认保留 {{days}} 天。",
       "retention_title": "数据保留天数",
       "source_dsn_description": "留空时自动使用上一个使用过的监控数据库（默认本地 SQLite ./data/metrics.db）作为源库；也可手动填写源库连接串。目标库固定为当前运行中的监控数据库。",
       "source_dsn_placeholder": "留空自动推断，或填写源库 DSN",
@@ -634,6 +646,136 @@
         "failed": "失败",
         "idle": "空闲",
         "running": "进行中"
+      },
+      "system": {
+        "connections": {
+          "tcp": {
+            "description": "TCP 连接数量",
+            "name": "TCP 连接数"
+          },
+          "udp": {
+            "description": "UDP 连接数量",
+            "name": "UDP 连接数"
+          }
+        },
+        "cpu": {
+          "usage": {
+            "description": "CPU 使用率百分比",
+            "name": "CPU 使用率"
+          }
+        },
+        "disk": {
+          "total": {
+            "description": "磁盘总容量",
+            "name": "总磁盘"
+          },
+          "used": {
+            "description": "当前已用磁盘空间",
+            "name": "已用磁盘"
+          }
+        },
+        "gpu": {
+          "device": {
+            "usage": {
+              "description": "单个 GPU 设备的使用率",
+              "name": "GPU 设备使用率"
+            }
+          },
+          "memory": {
+            "total": {
+              "description": "GPU 总显存容量",
+              "name": "GPU 总显存"
+            },
+            "used": {
+              "description": "GPU 当前已用显存",
+              "name": "GPU 已用显存"
+            }
+          },
+          "temperature": {
+            "description": "GPU 温度",
+            "name": "GPU 温度"
+          },
+          "usage": {
+            "description": "节点级平均 GPU 使用率百分比",
+            "name": "GPU 使用率"
+          }
+        },
+        "load": {
+          "average": {
+            "description": "系统负载平均值",
+            "name": "系统负载"
+          }
+        },
+        "memory": {
+          "total": {
+            "description": "内存总容量",
+            "name": "总内存"
+          },
+          "used": {
+            "description": "当前已用内存",
+            "name": "已用内存"
+          }
+        },
+        "net": {
+          "in": {
+            "rate": {
+              "description": "网络入站传输速率",
+              "name": "网络入站速率"
+            }
+          },
+          "out": {
+            "rate": {
+              "description": "网络出站传输速率",
+              "name": "网络出站速率"
+            }
+          },
+          "total": {
+            "down": {
+              "description": "网络累计下载流量",
+              "name": "累计下载"
+            },
+            "up": {
+              "description": "网络累计上传流量",
+              "name": "累计上传"
+            }
+          }
+        },
+        "ping": {
+          "latency_ms": {
+            "description": "Ping 延迟，单位毫秒",
+            "name": "Ping 延迟"
+          }
+        },
+        "process": {
+          "count": {
+            "description": "正在运行的进程数量",
+            "name": "进程数量"
+          }
+        },
+        "swap": {
+          "total": {
+            "description": "交换空间总容量",
+            "name": "总交换空间"
+          },
+          "used": {
+            "description": "当前已用交换空间",
+            "name": "已用交换空间"
+          }
+        },
+        "temperature": {
+          "description": "系统温度",
+          "name": "系统温度"
+        },
+        "traffic": {
+          "down": {
+            "description": "单次上报周期内的下载流量增量",
+            "name": "下载流量增量"
+          },
+          "up": {
+            "description": "单次上报周期内的上传流量增量",
+            "name": "上传流量增量"
+          }
+        }
       },
       "table_prefix_description": "监控表名前缀，默认 metric_",
       "table_prefix_title": "表名前缀",

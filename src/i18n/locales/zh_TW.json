@@ -599,11 +599,18 @@
       "current_status": "目前狀態",
       "dsn_description": "目前執行中的監控資料庫連線字串，系統會依連線字串自動辨識資料庫類型（SQLite / MySQL / PostgreSQL）。SQLite：./data/metrics.db；MySQL：user:password@tcp(host:3306)/metrics?charset=utf8mb4&parseTime=True；PostgreSQL：host=localhost user=komari password=secret dbname=metrics port=5432 sslmode=disable",
       "dsn_title": "連線字串（DSN）",
+      "fetch_metrics_failed": "取得指標列表失敗",
       "fetch_status_failed": "取得遷移狀態失敗",
+      "loading_metrics": "正在載入指標...",
       "max_idle_conns_description": "資料庫最大閒置連線數，預設 5",
       "max_idle_conns_title": "最大閒置連線數",
       "max_open_conns_description": "資料庫最大連線數，預設 25",
       "max_open_conns_title": "最大連線數",
+      "metric_description": "描述",
+      "metric_key": "指標 Key",
+      "metric_name": "指標名稱",
+      "metric_type": "類型",
+      "metric_unit": "單位",
       "migrated_points": "已搬運取樣點",
       "migration_canceled": "遷移已取消",
       "migration_cancel_failed": "取消遷移失敗",
@@ -619,8 +626,13 @@
       "migration_started": "遷移已開始",
       "migration_target": "目標庫",
       "migration_title": "遷移",
+      "no_metrics": "暫無指標定義",
       "retention_description": "資料保留天數，預設 30",
+      "retention_days": "保留天數",
       "retention_invalid": "請輸入有效的保留天數",
+      "retention_save_failed": "儲存保留天數失敗",
+      "retention_saved": "保留天數已儲存",
+      "retention_table_description": "為每個監控指標設定原始資料保留天數。預設保留 {{days}} 天。",
       "retention_title": "資料保留天數",
       "source_dsn_description": "留空時自動使用上一個使用過的監控資料庫（預設本機 SQLite ./data/metrics.db）作為來源庫；也可手動填寫來源庫連線字串。目標庫固定為目前執行中的監控資料庫。",
       "source_dsn_placeholder": "留空自動推斷，或填寫來源庫 DSN",
@@ -637,7 +649,137 @@
       },
       "table_prefix_description": "監控表名前綴，預設 metric_",
       "table_prefix_title": "表名前綴",
-      "title": "監控資料庫"
+      "title": "監控資料庫",
+      "system": {
+        "cpu": {
+          "usage": {
+            "name": "CPU 使用率",
+            "description": "CPU 使用率百分比"
+          }
+        },
+        "gpu": {
+          "usage": {
+            "name": "GPU 使用率",
+            "description": "節點級平均 GPU 使用率百分比"
+          },
+          "device": {
+            "usage": {
+              "name": "GPU 裝置使用率",
+              "description": "單個 GPU 裝置的使用率"
+            }
+          },
+          "memory": {
+            "used": {
+              "name": "GPU 已用顯存",
+              "description": "GPU 目前已用顯存"
+            },
+            "total": {
+              "name": "GPU 總顯存",
+              "description": "GPU 總顯存容量"
+            }
+          },
+          "temperature": {
+            "name": "GPU 溫度",
+            "description": "GPU 溫度"
+          }
+        },
+        "memory": {
+          "used": {
+            "name": "已用記憶體",
+            "description": "目前已用記憶體"
+          },
+          "total": {
+            "name": "總記憶體",
+            "description": "記憶體總容量"
+          }
+        },
+        "swap": {
+          "used": {
+            "name": "已用交換空間",
+            "description": "目前已用交換空間"
+          },
+          "total": {
+            "name": "總交換空間",
+            "description": "交換空間總容量"
+          }
+        },
+        "load": {
+          "average": {
+            "name": "系統負載",
+            "description": "系統負載平均值"
+          }
+        },
+        "temperature": {
+          "name": "系統溫度",
+          "description": "系統溫度"
+        },
+        "disk": {
+          "used": {
+            "name": "已用磁碟",
+            "description": "目前已用磁碟空間"
+          },
+          "total": {
+            "name": "總磁碟",
+            "description": "磁碟總容量"
+          }
+        },
+        "net": {
+          "in": {
+            "rate": {
+              "name": "網路入站速率",
+              "description": "網路入站傳輸速率"
+            }
+          },
+          "out": {
+            "rate": {
+              "name": "網路出站速率",
+              "description": "網路出站傳輸速率"
+            }
+          },
+          "total": {
+            "up": {
+              "name": "累計上傳",
+              "description": "網路累計上傳流量"
+            },
+            "down": {
+              "name": "累計下載",
+              "description": "網路累計下載流量"
+            }
+          }
+        },
+        "traffic": {
+          "up": {
+            "name": "上傳流量增量",
+            "description": "單次上報週期內的上傳流量增量"
+          },
+          "down": {
+            "name": "下載流量增量",
+            "description": "單次上報週期內的下載流量增量"
+          }
+        },
+        "process": {
+          "count": {
+            "name": "行程數量",
+            "description": "正在執行的行程數量"
+          }
+        },
+        "connections": {
+          "tcp": {
+            "name": "TCP 連線數",
+            "description": "TCP 連線數量"
+          },
+          "udp": {
+            "name": "UDP 連線數",
+            "description": "UDP 連線數量"
+          }
+        },
+        "ping": {
+          "latency_ms": {
+            "name": "Ping 延遲",
+            "description": "Ping 延遲，單位毫秒"
+          }
+        }
+      }
     },
     "missing_required_fields": "請填寫必填字段: {{fieldNames}}",
     "nezha": {

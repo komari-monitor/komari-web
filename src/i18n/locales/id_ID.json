@@ -599,11 +599,18 @@
       "current_status": "Status saat ini",
       "dsn_description": "String koneksi basis data pemantauan yang sedang berjalan. Jenis basis data dideteksi otomatis dari string koneksi (SQLite / MySQL / PostgreSQL). SQLite: ./data/metrics.db; MySQL: user:password@tcp(host:3306)/metrics?charset=utf8mb4&parseTime=True; PostgreSQL: host=localhost user=komari password=secret dbname=metrics port=5432 sslmode=disable",
       "dsn_title": "String koneksi (DSN)",
+      "fetch_metrics_failed": "Gagal mengambil daftar metrik",
       "fetch_status_failed": "Gagal mengambil status migrasi",
+      "loading_metrics": "Memuat metrik...",
       "max_idle_conns_description": "Jumlah maksimum koneksi idle basis data, default 5",
       "max_idle_conns_title": "Koneksi idle maksimum",
       "max_open_conns_description": "Jumlah maksimum koneksi terbuka basis data, default 25",
       "max_open_conns_title": "Koneksi terbuka maksimum",
+      "metric_description": "Deskripsi",
+      "metric_key": "Key metrik",
+      "metric_name": "Nama metrik",
+      "metric_type": "Tipe",
+      "metric_unit": "Unit",
       "migrated_points": "Titik sampel yang dipindahkan",
       "migration_canceled": "Migrasi dibatalkan",
       "migration_cancel_failed": "Gagal membatalkan migrasi",
@@ -619,8 +626,13 @@
       "migration_started": "Migrasi dimulai",
       "migration_target": "Target",
       "migration_title": "Migrasi",
+      "no_metrics": "Tidak ada definisi metrik",
       "retention_description": "Jumlah hari penyimpanan data, default 30",
+      "retention_days": "Hari penyimpanan",
       "retention_invalid": "Masukkan jumlah hari yang valid",
+      "retention_save_failed": "Gagal menyimpan hari penyimpanan",
+      "retention_saved": "Hari penyimpanan disimpan",
+      "retention_table_description": "Atur hari penyimpanan data mentah untuk setiap metrik pemantauan. Penyimpanan default adalah {{days}} hari.",
       "retention_title": "Hari penyimpanan",
       "source_dsn_description": "Kosongkan untuk otomatis menggunakan basis data pemantauan yang digunakan sebelumnya (default SQLite lokal ./data/metrics.db) sebagai sumber; atau masukkan string koneksi sumber secara manual. Target ditetapkan ke basis data pemantauan yang sedang berjalan.",
       "source_dsn_placeholder": "Kosongkan untuk deteksi otomatis, atau masukkan DSN sumber",
@@ -637,7 +649,137 @@
       },
       "table_prefix_description": "Prefiks untuk tabel pemantauan, default metric_",
       "table_prefix_title": "Prefiks tabel",
-      "title": "Basis Data Pemantauan"
+      "title": "Basis Data Pemantauan",
+      "system": {
+        "cpu": {
+          "usage": {
+            "name": "Penggunaan CPU",
+            "description": "Persentase penggunaan CPU"
+          }
+        },
+        "gpu": {
+          "usage": {
+            "name": "Penggunaan GPU",
+            "description": "Persentase rata-rata penggunaan GPU pada node"
+          },
+          "device": {
+            "usage": {
+              "name": "Penggunaan perangkat GPU",
+              "description": "Utilisasi tiap perangkat GPU"
+            }
+          },
+          "memory": {
+            "used": {
+              "name": "Memori GPU terpakai",
+              "description": "Memori GPU yang sedang digunakan"
+            },
+            "total": {
+              "name": "Total memori GPU",
+              "description": "Total kapasitas memori GPU"
+            }
+          },
+          "temperature": {
+            "name": "Suhu GPU",
+            "description": "Suhu GPU"
+          }
+        },
+        "memory": {
+          "used": {
+            "name": "RAM terpakai",
+            "description": "RAM yang sedang digunakan"
+          },
+          "total": {
+            "name": "Total RAM",
+            "description": "Total kapasitas RAM"
+          }
+        },
+        "swap": {
+          "used": {
+            "name": "Swap terpakai",
+            "description": "Ruang swap yang sedang digunakan"
+          },
+          "total": {
+            "name": "Total swap",
+            "description": "Total kapasitas swap"
+          }
+        },
+        "load": {
+          "average": {
+            "name": "Rata-rata beban",
+            "description": "Rata-rata beban sistem"
+          }
+        },
+        "temperature": {
+          "name": "Suhu sistem",
+          "description": "Suhu sistem"
+        },
+        "disk": {
+          "used": {
+            "name": "Disk terpakai",
+            "description": "Ruang disk yang sedang digunakan"
+          },
+          "total": {
+            "name": "Total disk",
+            "description": "Total kapasitas disk"
+          }
+        },
+        "net": {
+          "in": {
+            "rate": {
+              "name": "Laju jaringan masuk",
+              "description": "Laju transfer jaringan masuk"
+            }
+          },
+          "out": {
+            "rate": {
+              "name": "Laju jaringan keluar",
+              "description": "Laju transfer jaringan keluar"
+            }
+          },
+          "total": {
+            "up": {
+              "name": "Total unggah",
+              "description": "Unggahan jaringan kumulatif"
+            },
+            "down": {
+              "name": "Total unduh",
+              "description": "Unduhan jaringan kumulatif"
+            }
+          }
+        },
+        "traffic": {
+          "up": {
+            "name": "Delta trafik unggah",
+            "description": "Delta trafik unggah dalam satu interval laporan"
+          },
+          "down": {
+            "name": "Delta trafik unduh",
+            "description": "Delta trafik unduh dalam satu interval laporan"
+          }
+        },
+        "process": {
+          "count": {
+            "name": "Jumlah proses",
+            "description": "Jumlah proses yang berjalan"
+          }
+        },
+        "connections": {
+          "tcp": {
+            "name": "Koneksi TCP",
+            "description": "Jumlah koneksi TCP"
+          },
+          "udp": {
+            "name": "Koneksi UDP",
+            "description": "Jumlah koneksi UDP"
+          }
+        },
+        "ping": {
+          "latency_ms": {
+            "name": "Latensi ping",
+            "description": "Latensi ping dalam milidetik"
+          }
+        }
+      }
     },
     "missing_required_fields": "Silakan isi kolom yang wajib: {{fieldNames}}",
     "nezha": {

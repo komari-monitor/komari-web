@@ -599,11 +599,18 @@
       "current_status": "Current status",
       "dsn_description": "Connection string of the currently running monitoring database. The database type is detected automatically from the connection string (SQLite / MySQL / PostgreSQL). SQLite: ./data/metrics.db; MySQL: user:password@tcp(host:3306)/metrics?charset=utf8mb4&parseTime=True; PostgreSQL: host=localhost user=komari password=secret dbname=metrics port=5432 sslmode=disable",
       "dsn_title": "Connection string (DSN)",
+      "fetch_metrics_failed": "Failed to fetch metrics",
       "fetch_status_failed": "Failed to fetch migration status",
+      "loading_metrics": "Loading metrics...",
       "max_idle_conns_description": "Maximum number of idle database connections, default 5",
       "max_idle_conns_title": "Max idle connections",
       "max_open_conns_description": "Maximum number of open database connections, default 25",
       "max_open_conns_title": "Max open connections",
+      "metric_description": "Description",
+      "metric_key": "Metric key",
+      "metric_name": "Metric name",
+      "metric_type": "Type",
+      "metric_unit": "Unit",
       "migrated_points": "Migrated points",
       "migration_canceled": "Migration canceled",
       "migration_cancel_failed": "Failed to cancel migration",
@@ -619,8 +626,13 @@
       "migration_started": "Migration started",
       "migration_target": "Target",
       "migration_title": "Migration",
+      "no_metrics": "No metric definitions",
       "retention_description": "Number of days to keep data, default 30",
+      "retention_days": "Retention days",
       "retention_invalid": "Please enter a valid number of days",
+      "retention_save_failed": "Failed to save retention days",
+      "retention_saved": "Retention days saved",
+      "retention_table_description": "Set raw-data retention days for each monitoring metric. Default retention is {{days}} days.",
       "retention_title": "Retention days",
       "source_dsn_description": "Leave empty to automatically use the previously used monitoring database (default local SQLite ./data/metrics.db) as the source; or enter a source connection string manually. The target is fixed to the currently running monitoring database.",
       "source_dsn_placeholder": "Leave empty to auto-detect, or enter the source DSN",
@@ -637,7 +649,137 @@
       },
       "table_prefix_description": "Prefix for monitoring tables, default metric_",
       "table_prefix_title": "Table prefix",
-      "title": "Monitoring Database"
+      "title": "Monitoring Database",
+      "system": {
+        "cpu": {
+          "usage": {
+            "name": "CPU usage",
+            "description": "CPU usage percentage"
+          }
+        },
+        "gpu": {
+          "usage": {
+            "name": "GPU usage",
+            "description": "Average GPU usage percentage for the node"
+          },
+          "device": {
+            "usage": {
+              "name": "GPU device usage",
+              "description": "Per-device GPU utilization"
+            }
+          },
+          "memory": {
+            "used": {
+              "name": "GPU memory used",
+              "description": "GPU memory currently used"
+            },
+            "total": {
+              "name": "GPU memory total",
+              "description": "Total GPU memory"
+            }
+          },
+          "temperature": {
+            "name": "GPU temperature",
+            "description": "GPU temperature"
+          }
+        },
+        "memory": {
+          "used": {
+            "name": "RAM used",
+            "description": "RAM currently used"
+          },
+          "total": {
+            "name": "RAM total",
+            "description": "Total RAM"
+          }
+        },
+        "swap": {
+          "used": {
+            "name": "Swap used",
+            "description": "Swap space currently used"
+          },
+          "total": {
+            "name": "Swap total",
+            "description": "Total swap space"
+          }
+        },
+        "load": {
+          "average": {
+            "name": "Load average",
+            "description": "System load average"
+          }
+        },
+        "temperature": {
+          "name": "System temperature",
+          "description": "System temperature"
+        },
+        "disk": {
+          "used": {
+            "name": "Disk used",
+            "description": "Disk space currently used"
+          },
+          "total": {
+            "name": "Disk total",
+            "description": "Total disk space"
+          }
+        },
+        "net": {
+          "in": {
+            "rate": {
+              "name": "Network inbound rate",
+              "description": "Network inbound rate"
+            }
+          },
+          "out": {
+            "rate": {
+              "name": "Network outbound rate",
+              "description": "Network outbound rate"
+            }
+          },
+          "total": {
+            "up": {
+              "name": "Total upload",
+              "description": "Cumulative network upload"
+            },
+            "down": {
+              "name": "Total download",
+              "description": "Cumulative network download"
+            }
+          }
+        },
+        "traffic": {
+          "up": {
+            "name": "Upload traffic delta",
+            "description": "Upload traffic delta in one report interval"
+          },
+          "down": {
+            "name": "Download traffic delta",
+            "description": "Download traffic delta in one report interval"
+          }
+        },
+        "process": {
+          "count": {
+            "name": "Process count",
+            "description": "Number of running processes"
+          }
+        },
+        "connections": {
+          "tcp": {
+            "name": "TCP connections",
+            "description": "Number of TCP connections"
+          },
+          "udp": {
+            "name": "UDP connections",
+            "description": "Number of UDP connections"
+          }
+        },
+        "ping": {
+          "latency_ms": {
+            "name": "Ping latency",
+            "description": "Ping latency in milliseconds"
+          }
+        }
+      }
     },
     "missing_required_fields": "Please fill in the required fields: {{fieldNames}}",
     "nezha": {

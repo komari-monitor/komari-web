@@ -4,9 +4,18 @@ import {
   SettingCardLabel,
   SettingCardShortTextInput,
 } from "@/components/admin/SettingCard";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { updateSettingsWithToast, useSettings } from "@/lib/api";
 import type { SettingsResponse } from "@/lib/api";
 import { useRPC2Call } from "@/contexts/RPC2Context";
+import { resolveI18nText, type I18nText } from "@/utils/i18nText";
 import {
   Badge,
   Button,
@@ -16,7 +25,7 @@ import {
   Text,
   TextField,
 } from "@radix-ui/themes";
-import { AlertTriangle, Database, Info, RefreshCw, X } from "lucide-react";
+import { AlertTriangle, Database, Info, RefreshCw, Save, X } from "lucide-react";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -41,6 +50,18 @@ interface MigrationStatusResponse {
   error?: string;
 }
 
+interface MetricDefinition {
+  name: string;
+  description?: I18nText | null;
+  type: string;
+  unit?: string;
+  retention_days: number;
+  metadata?: Record<string, string>;
+}
+
+type MetricTextField = "name" | "description";
+type TranslationFunction = ReturnType<typeof useTranslation>["t"];
+
 const DSN_PLACEHOLDER =
   "./data/metrics.db 或 user:password@tcp(host:3306)/metrics?charset=utf8mb4&parseTime=True";
 
@@ -48,6 +69,75 @@ function toNumber(value: unknown, fallback: number): number {
   const n =
     typeof value === "number" ? value : parseInt(String(value ?? ""), 10);
   return Number.isFinite(n) ? n : fallback;
+}
+
+function isI18nTextDict(value: unknown): value is Record<string, string> {
+  return (
+    typeof value === "object" &&
+    value !== null &&
+    !Array.isArray(value) &&
+    Object.values(value).every((item) => typeof item === "string")
+  );
+}
+
+function parseI18nText(value: unknown): I18nText | undefined {
+  if (typeof value === "string") {
+    const text = value.trim();
+    if (!text) return undefined;
+    try {
+      const parsed = JSON.parse(text);
+      if (isI18nTextDict(parsed)) return parsed;
+    } catch {
+      // Plain strings are valid metric descriptions.
+    }
+    return value;
+  }
+  if (isI18nTextDict(value)) return value;
+  return undefined;
+}
+
+function metadataText(
+  metadata: Record<string, string> | undefined,
+  keys: string[],
+): I18nText | undefined {
+  if (!metadata) return undefined;
+  for (const key of keys) {
+    const value = parseI18nText(metadata[key]);
+    if (value) return value;
+  }
+  return undefined;
+}
+
+function systemMetricText(
+  t: TranslationFunction,
+  metricName: string,
+  field: MetricTextField,
+): string | undefined {
+  const key = `settings.metrics.system.${metricName}.${field}`;
+  const text = t(key, { defaultValue: "" });
+  return typeof text === "string" && text ? text : undefined;
+}
+
+function metricDisplayName(
+  metric: MetricDefinition,
+  language: string,
+  t: TranslationFunction,
+): string {
+  const system = systemMetricText(t, metric.name, "name");
+  const custom = metadataText(metric.metadata, ["display_name", "name", "title"]);
+  return system ?? resolveI18nText(custom, language) ?? metric.name;
+}
+
+function metricDescription(
+  metric: MetricDefinition,
+  language: string,
+  t: TranslationFunction,
+): string {
+  const system = systemMetricText(t, metric.name, "description");
+  const custom =
+    parseI18nText(metric.description) ??
+    metadataText(metric.metadata, ["description", "desc", "help"]);
+  return system ?? resolveI18nText(custom, language) ?? "";
 }
 
 export default function MetricsSettings() {
@@ -111,21 +201,8 @@ export default function MetricsSettings() {
         {t("settings.metrics.advanced_title")}
       </SettingCardLabel>
 
-      <SettingCardShortTextInput
-        title={t("settings.metrics.retention_title")}
-        description={t("settings.metrics.retention_description")}
-        descriptionPlacement="footer"
-        type="number"
-        defaultValue={String(toNumber(settings.metric_retention_days, 30))}
-        placeholder="30"
-        OnSave={async (value) => {
-          const days = parseInt(value, 10);
-          if (isNaN(days) || days <= 0) {
-            toast.error(t("settings.metrics.retention_invalid"));
-            return;
-          }
-          await saveMetricSettings({ metric_retention_days: days });
-        }}
+      <MetricRetentionTable
+        defaultRetentionDays={toNumber(settings.metric_retention_days, 30)}
       />
 
       <SettingCardShortTextInput
@@ -187,6 +264,218 @@ export default function MetricsSettings() {
       </SettingCardLabel>
       <MigrationCard />
     </Flex>
+  );
+}
+
+function MetricRetentionTable({
+  defaultRetentionDays,
+}: {
+  defaultRetentionDays: number;
+}) {
+  const { t, i18n } = useTranslation();
+  const { call } = useRPC2Call();
+  const [metrics, setMetrics] = React.useState<MetricDefinition[]>([]);
+  const [drafts, setDrafts] = React.useState<Record<string, string>>({});
+  const [loading, setLoading] = React.useState(true);
+  const [loadError, setLoadError] = React.useState<string | null>(null);
+  const [savingMetric, setSavingMetric] = React.useState<string | null>(null);
+  const language = i18n.resolvedLanguage || i18n.language;
+
+  const fetchMetrics = React.useCallback(
+    async (silent = false) => {
+      if (!silent) setLoading(true);
+      try {
+        const data = await call<unknown, MetricDefinition[]>(
+          "admin:listMetricDefinitions",
+          {},
+        );
+        const list = Array.isArray(data) ? data : [];
+        setMetrics(list);
+        setDrafts(
+          Object.fromEntries(
+            list.map((metric) => [
+              metric.name,
+              String(toNumber(metric.retention_days, defaultRetentionDays)),
+            ]),
+          ),
+        );
+        setLoadError(null);
+      } catch (e) {
+        const message = e instanceof Error ? e.message : String(e);
+        setLoadError(message);
+        if (!silent) {
+          toast.error(t("settings.metrics.fetch_metrics_failed") + ": " + message);
+        }
+      } finally {
+        if (!silent) setLoading(false);
+      }
+    },
+    [call, defaultRetentionDays, t],
+  );
+
+  React.useEffect(() => {
+    void fetchMetrics();
+  }, [fetchMetrics]);
+
+  const handleSave = async (metric: MetricDefinition) => {
+    const value = drafts[metric.name] ?? String(metric.retention_days);
+    const days = parseInt(value, 10);
+    if (isNaN(days) || days <= 0) {
+      toast.error(t("settings.metrics.retention_invalid"));
+      return;
+    }
+
+    setSavingMetric(metric.name);
+    try {
+      const updated = await call<
+        { name: string; retention_days: number },
+        MetricDefinition
+      >("admin:updateMetricDefinition", {
+        name: metric.name,
+        retention_days: days,
+      });
+      setMetrics((previous) =>
+        previous.map((item) =>
+          item.name === metric.name ? { ...item, ...updated } : item,
+        ),
+      );
+      setDrafts((previous) => ({
+        ...previous,
+        [metric.name]: String(updated.retention_days ?? days),
+      }));
+      toast.success(t("settings.metrics.retention_saved"));
+    } catch (e) {
+      toast.error(
+        t("settings.metrics.retention_save_failed") +
+          ": " +
+          (e instanceof Error ? e.message : String(e)),
+      );
+    } finally {
+      setSavingMetric(null);
+    }
+  };
+
+  return (
+    <SettingCard
+      title={t("settings.metrics.retention_title")}
+      description={t("settings.metrics.retention_table_description", {
+        days: defaultRetentionDays,
+      })}
+      direction="column"
+    >
+      <Flex direction="column" gap="3" className="w-full pt-3">
+        <Flex justify="end">
+          <Button
+            variant="ghost"
+            size="1"
+            disabled={loading}
+            onClick={() => void fetchMetrics()}
+          >
+            <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
+            {t("common.refresh")}
+          </Button>
+        </Flex>
+
+        {loadError && (
+          <Callout.Root color="red" variant="surface">
+            <Callout.Icon>
+              <AlertTriangle size={16} />
+            </Callout.Icon>
+            <Callout.Text>{loadError}</Callout.Text>
+          </Callout.Root>
+        )}
+
+        <div className="overflow-hidden rounded-lg">
+          <Table>
+            <TableHeader>
+              <TableRow>
+                <TableHead className="min-w-44">
+                  {t("settings.metrics.metric_name")}
+                </TableHead>
+                <TableHead className="min-w-40">
+                  {t("settings.metrics.metric_key")}
+                </TableHead>
+                <TableHead className="min-w-64">
+                  {t("settings.metrics.metric_description")}
+                </TableHead>
+                <TableHead>{t("settings.metrics.metric_type")}</TableHead>
+                <TableHead>{t("settings.metrics.metric_unit")}</TableHead>
+                <TableHead>{t("settings.metrics.retention_days")}</TableHead>
+                <TableHead>{t("common.action")}</TableHead>
+              </TableRow>
+            </TableHeader>
+            <TableBody>
+              {metrics.length === 0 ? (
+                <TableRow>
+                  <TableCell colSpan={7} className="text-center text-muted-foreground">
+                    {loading
+                      ? t("settings.metrics.loading_metrics")
+                      : t("settings.metrics.no_metrics")}
+                  </TableCell>
+                </TableRow>
+              ) : (
+                metrics.map((metric) => {
+                  const isSaving = savingMetric === metric.name;
+                  const description = metricDescription(metric, language, t);
+                  return (
+                    <TableRow key={metric.name}>
+                      <TableCell className="min-w-44 whitespace-normal font-medium">
+                        {metricDisplayName(metric, language, t)}
+                      </TableCell>
+                      <TableCell className="min-w-40">
+                        <Text size="1" color="gray">
+                          {metric.name}
+                        </Text>
+                      </TableCell>
+                      <TableCell className="min-w-64 max-w-96 whitespace-normal">
+                        {description ? (
+                          <Text size="2" color="gray">
+                            {description}
+                          </Text>
+                        ) : (
+                          <Text size="2" color="gray">
+                            {t("common.none")}
+                          </Text>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        <Badge variant="soft">{metric.type}</Badge>
+                      </TableCell>
+                      <TableCell>{metric.unit || t("common.none")}</TableCell>
+                      <TableCell>
+                        <TextField.Root
+                          type="number"
+                          min="1"
+                          value={drafts[metric.name] ?? ""}
+                          disabled={isSaving}
+                          onChange={(event) =>
+                            setDrafts((previous) => ({
+                              ...previous,
+                              [metric.name]: event.target.value,
+                            }))
+                          }
+                          style={{ width: "7rem" }}
+                        />
+                      </TableCell>
+                      <TableCell>
+                        <Button
+                          size="1"
+                          disabled={isSaving}
+                          onClick={() => void handleSave(metric)}
+                        >
+                          <Save size={14} />
+                          {t("save")}
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })
+              )}
+            </TableBody>
+          </Table>
+        </div>
+      </Flex>
+    </SettingCard>
   );
 }
 
