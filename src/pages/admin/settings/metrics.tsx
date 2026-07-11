@@ -65,7 +65,7 @@ export default function MetricsSettings() {
         throw e;
       }
     },
-    [t]
+    [t],
   );
 
   if (loading) {
@@ -80,12 +80,12 @@ export default function MetricsSettings() {
     <Flex direction="column" gap="3">
       <SettingCardLabel>{t("settings.metrics.title")}</SettingCardLabel>
 
-      <Callout.Root color="blue" variant="surface">
+      {/*<Callout.Root color="blue" variant="surface">
         <Callout.Icon>
           <Info size={16} />
         </Callout.Icon>
         <Callout.Text>{t("settings.metrics.intro")}</Callout.Text>
-      </Callout.Root>
+      </Callout.Root>*/}
 
       {saveError && (
         <Callout.Root color="red" variant="surface">
@@ -175,12 +175,12 @@ export default function MetricsSettings() {
         }}
       />
 
-      <Callout.Root color="green" variant="surface">
+      {/*<Callout.Root color="green" variant="surface">
         <Callout.Icon>
           <Info size={16} />
         </Callout.Icon>
         <Callout.Text>{t("settings.metrics.restart_hint")}</Callout.Text>
-      </Callout.Root>
+      </Callout.Root>*/}
 
       <SettingCardLabel>
         {t("settings.metrics.migration_title")}
@@ -226,7 +226,7 @@ function MigrationCard() {
       try {
         const data = await call<unknown, MigrationStatusResponse>(
           "admin:getMetricMigrationStatus",
-          {}
+          {},
         );
         setStatusData(data);
       } catch (e) {
@@ -234,14 +234,14 @@ function MigrationCard() {
           toast.error(
             t("settings.metrics.fetch_status_failed") +
               ": " +
-              (e instanceof Error ? e.message : String(e))
+              (e instanceof Error ? e.message : String(e)),
           );
         }
       } finally {
         if (!silent) setLoadingStatus(false);
       }
     },
-    [call, t]
+    [call, t],
   );
 
   React.useEffect(() => {
@@ -285,7 +285,7 @@ function MigrationCard() {
       toast.error(
         t("settings.metrics.migration_start_failed") +
           ": " +
-          (e instanceof Error ? e.message : String(e))
+          (e instanceof Error ? e.message : String(e)),
       );
     } finally {
       setStarting(false);
@@ -302,7 +302,7 @@ function MigrationCard() {
       toast.error(
         t("settings.metrics.migration_cancel_failed") +
           ": " +
-          (e instanceof Error ? e.message : String(e))
+          (e instanceof Error ? e.message : String(e)),
       );
     } finally {
       setCanceling(false);
@@ -337,24 +337,25 @@ function MigrationCard() {
         </Flex>
 
         {/* 源库 / 目标库信息 */}
-        {statusData && (statusData.source_driver || statusData.target_driver) && (
-          <Flex gap="2" wrap="wrap">
-            {statusData.target_driver && (
-              <Badge variant="soft" color="green">
-                {t("settings.metrics.migration_target")}:{" "}
-                {statusData.target_driver}
-                {statusData.target_dsn ? ` (${statusData.target_dsn})` : ""}
-              </Badge>
-            )}
-            {statusData.source_driver && (
-              <Badge variant="soft" color="gray">
-                {t("settings.metrics.migration_source")}:{" "}
-                {statusData.source_driver}
-                {statusData.source_dsn ? ` (${statusData.source_dsn})` : ""}
-              </Badge>
-            )}
-          </Flex>
-        )}
+        {statusData &&
+          (statusData.source_driver || statusData.target_driver) && (
+            <Flex gap="2" wrap="wrap">
+              {statusData.target_driver && (
+                <Badge variant="soft" color="green">
+                  {t("settings.metrics.migration_target")}:{" "}
+                  {statusData.target_driver}
+                  {statusData.target_dsn ? ` (${statusData.target_dsn})` : ""}
+                </Badge>
+              )}
+              {statusData.source_driver && (
+                <Badge variant="soft" color="gray">
+                  {t("settings.metrics.migration_source")}:{" "}
+                  {statusData.source_driver}
+                  {statusData.source_dsn ? ` (${statusData.source_dsn})` : ""}
+                </Badge>
+              )}
+            </Flex>
+          )}
 
         {/* 进度条 */}
         {showProgress && (
