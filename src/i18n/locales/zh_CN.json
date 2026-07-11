@@ -186,6 +186,7 @@
   "chart": {
     "addChart": "新增图表",
     "addMetric": "添加指标",
+    "approximate": "近似",
     "avg": "平均值",
     "connections": "连接数",
     "cpu_usage": "CPU 使用率",
@@ -231,7 +232,6 @@
     "udp_connections": "UDP",
     "usage": "使用率",
     "valid": "有效样本",
-    "approximate": "近似",
     "volatility": "波动"
   },
   "close": "关闭",
