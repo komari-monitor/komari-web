@@ -10,6 +10,7 @@ interface TipsProps {
   trigger?: React.ReactNode;
   mode?: "popup" | "dialog" | "auto";
   side?: "top" | "right" | "bottom" | "left";
+  ariaLabel?: string;
 }
 
 const Tips: React.FC<TipsProps & React.HTMLAttributes<HTMLDivElement>> = ({
@@ -19,6 +20,7 @@ const Tips: React.FC<TipsProps & React.HTMLAttributes<HTMLDivElement>> = ({
   children,
   side = "bottom",
   mode = "popup",
+  ariaLabel,
   ...props
 }) => {
   const [isOpen, setIsOpen] = useState(false);
@@ -38,7 +40,7 @@ const Tips: React.FC<TipsProps & React.HTMLAttributes<HTMLDivElement>> = ({
     <div className="relative inline-block" {...props}>
       {isDialog ? (
         <Dialog.Root open={isOpen} onOpenChange={setIsOpen}>
-          <Dialog.Trigger>
+          <Dialog.Trigger aria-label={ariaLabel}>
             <div
               className={`flex items-center justify-center rounded-full font-bold cursor-pointer `}
               onClick={handleInteraction}
@@ -55,7 +57,7 @@ const Tips: React.FC<TipsProps & React.HTMLAttributes<HTMLDivElement>> = ({
         </Dialog.Root>
       ) : (
         <Popover.Root open={isOpen} onOpenChange={setIsOpen}>
-          <Popover.Trigger>
+          <Popover.Trigger aria-label={ariaLabel}>
             <div
               className={`flex items-center justify-center rounded-full font-bold cursor-pointer `}
               onClick={isMobile ? handleInteraction : undefined}

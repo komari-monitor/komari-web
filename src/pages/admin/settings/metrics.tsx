@@ -1,8 +1,10 @@
 import Loading from "@/components/loading";
+import { Selector } from "@/components/Selector";
 import {
   SettingCard,
   SettingCardLabel,
   SettingCardShortTextInput,
+  SettingCardSwitch,
 } from "@/components/admin/SettingCard";
 import {
   Table,
@@ -20,12 +22,21 @@ import {
   Badge,
   Button,
   Callout,
+  Dialog,
   Flex,
   Progress,
   Text,
   TextField,
 } from "@radix-ui/themes";
-import { AlertTriangle, Database, Info, RefreshCw, Save, X } from "lucide-react";
+import {
+  AlertTriangle,
+  Database,
+  Info,
+  ListChecks,
+  RefreshCw,
+  Save,
+  X,
+} from "lucide-react";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
@@ -58,6 +69,11 @@ interface MetricDefinition {
   retention_days: number;
   metadata?: Record<string, string>;
 }
+
+type MetricRetentionChange = {
+  name: string;
+  retention_days: number;
+};
 
 type MetricTextField = "name" | "description";
 type TranslationFunction = ReturnType<typeof useTranslation>["t"];
@@ -201,8 +217,18 @@ export default function MetricsSettings() {
         {t("settings.metrics.advanced_title")}
       </SettingCardLabel>
 
+      <SettingCardSwitch
+        title={t("settings.metrics.downsampling_title")}
+        description={t("settings.metrics.downsampling_description")}
+        label={t("settings.metrics.downsampling_enabled")}
+        defaultChecked={settings.metric_downsampling_enabled !== false}
+        onChange={async (checked) => {
+          await saveMetricSettings({ metric_downsampling_enabled: checked });
+        }}
+      />
+
       <MetricRetentionTable
-        defaultRetentionDays={toNumber(settings.metric_retention_days, 30)}
+        defaultRetentionDays={toNumber(settings.metric_retention_days, 90)}
       />
 
       <SettingCardShortTextInput
@@ -278,7 +304,12 @@ function MetricRetentionTable({
   const [drafts, setDrafts] = React.useState<Record<string, string>>({});
   const [loading, setLoading] = React.useState(true);
   const [loadError, setLoadError] = React.useState<string | null>(null);
-  const [savingMetric, setSavingMetric] = React.useState<string | null>(null);
+  const [saving, setSaving] = React.useState(false);
+  const [batchDialogOpen, setBatchDialogOpen] = React.useState(false);
+  const [batchMetricNames, setBatchMetricNames] = React.useState<string[]>([]);
+  const [batchRetentionDays, setBatchRetentionDays] = React.useState(
+    String(defaultRetentionDays),
+  );
   const language = i18n.resolvedLanguage || i18n.language;
 
   const fetchMetrics = React.useCallback(
@@ -317,43 +348,117 @@ function MetricRetentionTable({
     void fetchMetrics();
   }, [fetchMetrics]);
 
-  const handleSave = async (metric: MetricDefinition) => {
-    const value = drafts[metric.name] ?? String(metric.retention_days);
-    const days = parseInt(value, 10);
+  const saveRetentionChanges = React.useCallback(
+    async (changes: MetricRetentionChange[]) => {
+      if (changes.length === 0) return true;
+
+      setSaving(true);
+      try {
+        const results = await Promise.allSettled(
+          changes.map((change) =>
+            call<MetricRetentionChange, MetricDefinition>(
+              "admin:updateMetricDefinition",
+              change,
+            ),
+          ),
+        );
+        const successful = new Map<string, MetricDefinition>();
+        const errors: string[] = [];
+        results.forEach((result, index) => {
+          const change = changes[index];
+          if (result.status === "fulfilled") {
+            successful.set(change.name, {
+              ...result.value,
+              retention_days: toNumber(
+                result.value.retention_days,
+                change.retention_days,
+              ),
+            });
+          } else {
+            errors.push(
+              result.reason instanceof Error
+                ? result.reason.message
+                : String(result.reason),
+            );
+          }
+        });
+
+        if (successful.size > 0) {
+          setMetrics((previous) =>
+            previous.map((metric) => {
+              const updated = successful.get(metric.name);
+              return updated ? { ...metric, ...updated } : metric;
+            }),
+          );
+          setDrafts((previous) => {
+            const next = { ...previous };
+            for (const [name, metric] of successful) {
+              next[name] = String(metric.retention_days);
+            }
+            return next;
+          });
+        }
+
+        if (errors.length > 0) {
+          toast.error(
+            `${t("settings.metrics.retention_save_failed")}: ${errors[0]}`,
+          );
+          return false;
+        }
+        toast.success(t("settings.metrics.retention_saved"));
+        return true;
+      } finally {
+        setSaving(false);
+      }
+    },
+    [call, t],
+  );
+
+  const handleSaveAll = async () => {
+    const changes: MetricRetentionChange[] = [];
+    const canonicalDrafts: Record<string, string> = {};
+    for (const metric of metrics) {
+      const value = drafts[metric.name] ?? String(metric.retention_days);
+      const days = parseInt(value, 10);
+      if (isNaN(days) || days <= 0) {
+        toast.error(t("settings.metrics.retention_invalid"));
+        return;
+      }
+      canonicalDrafts[metric.name] = String(days);
+      if (days !== metric.retention_days) {
+        changes.push({ name: metric.name, retention_days: days });
+      }
+    }
+    setDrafts(canonicalDrafts);
+    await saveRetentionChanges(changes);
+  };
+
+  const handleBatchSave = async () => {
+    if (batchMetricNames.length === 0) {
+      toast.error(t("settings.metrics.batch_select_required"));
+      return;
+    }
+    const days = parseInt(batchRetentionDays, 10);
     if (isNaN(days) || days <= 0) {
       toast.error(t("settings.metrics.retention_invalid"));
       return;
     }
 
-    setSavingMetric(metric.name);
-    try {
-      const updated = await call<
-        { name: string; retention_days: number },
-        MetricDefinition
-      >("admin:updateMetricDefinition", {
-        name: metric.name,
-        retention_days: days,
-      });
-      setMetrics((previous) =>
-        previous.map((item) =>
-          item.name === metric.name ? { ...item, ...updated } : item,
-        ),
-      );
-      setDrafts((previous) => ({
-        ...previous,
-        [metric.name]: String(updated.retention_days ?? days),
-      }));
-      toast.success(t("settings.metrics.retention_saved"));
-    } catch (e) {
-      toast.error(
-        t("settings.metrics.retention_save_failed") +
-          ": " +
-          (e instanceof Error ? e.message : String(e)),
-      );
-    } finally {
-      setSavingMetric(null);
-    }
+    setDrafts((previous) => ({
+      ...previous,
+      ...Object.fromEntries(batchMetricNames.map((name) => [name, String(days)])),
+    }));
+    const saved = await saveRetentionChanges(
+      batchMetricNames.map((name) => ({ name, retention_days: days })),
+    );
+    if (saved) setBatchDialogOpen(false);
   };
+
+  const hasDraftChanges = metrics.some(
+    (metric) =>
+      (drafts[metric.name] ?? String(metric.retention_days)) !==
+      String(metric.retention_days),
+  );
 
   return (
     <SettingCard
@@ -364,11 +469,93 @@ function MetricRetentionTable({
       direction="column"
     >
       <Flex direction="column" gap="3" className="w-full pt-3">
-        <Flex justify="end">
+        <Flex justify="between" align="center" gap="2" wrap="wrap">
+          <Dialog.Root open={batchDialogOpen} onOpenChange={setBatchDialogOpen}>
+            <Dialog.Trigger>
+              <Button
+                variant="soft"
+                size="1"
+                disabled={loading || saving || metrics.length === 0}
+                onClick={() => {
+                  setBatchMetricNames([]);
+                  setBatchRetentionDays(String(defaultRetentionDays));
+                }}
+              >
+                <ListChecks size={14} />
+                {t("settings.metrics.batch_edit")}
+              </Button>
+            </Dialog.Trigger>
+            <Dialog.Content maxWidth="640px">
+              <Dialog.Title>{t("settings.metrics.batch_title")}</Dialog.Title>
+              <Dialog.Description>
+                {t("settings.metrics.batch_description")}
+              </Dialog.Description>
+              <Flex direction="column" gap="3" mt="3">
+                <div className="max-h-[50vh] overflow-y-auto pr-1">
+                  <Selector
+                    value={batchMetricNames}
+                    onChange={setBatchMetricNames}
+                    items={metrics}
+                    getId={(metric) => metric.name}
+                    getLabel={(metric) => (
+                      <Flex direction="column" gap="1">
+                        <Text size="2" weight="medium">
+                          {metricDisplayName(metric, language, t)}
+                        </Text>
+                        <Text size="1" color="gray">
+                          {metric.name}
+                        </Text>
+                      </Flex>
+                    )}
+                    filterItem={(metric, keyword) => {
+                      const normalized = keyword.trim().toLowerCase();
+                      return (
+                        metric.name.toLowerCase().includes(normalized) ||
+                        metricDisplayName(metric, language, t)
+                          .toLowerCase()
+                          .includes(normalized)
+                      );
+                    }}
+                    sortItems={(left, right) => left.name.localeCompare(right.name)}
+                    headerLabel={t("settings.metrics.metric_name")}
+                    searchPlaceholder={t("settings.metrics.batch_search_placeholder")}
+                  />
+                </div>
+                <label>
+                  <Text as="div" size="2" weight="medium" mb="1">
+                    {t("settings.metrics.retention_days")}
+                  </Text>
+                  <TextField.Root
+                    type="number"
+                    min="1"
+                    value={batchRetentionDays}
+                    onChange={(event) => setBatchRetentionDays(event.target.value)}
+                  />
+                </label>
+                <Flex justify="end" gap="2">
+                  <Button
+                    variant="soft"
+                    color="gray"
+                    disabled={saving}
+                    onClick={() => setBatchDialogOpen(false)}
+                  >
+                    {t("cancel")}
+                  </Button>
+                  <Button
+                    disabled={saving || batchMetricNames.length === 0}
+                    onClick={() => void handleBatchSave()}
+                  >
+                    <Save size={14} />
+                    {t("save")}
+                  </Button>
+                </Flex>
+              </Flex>
+            </Dialog.Content>
+          </Dialog.Root>
           <Button
             variant="ghost"
             size="1"
-            disabled={loading}
+            disabled={loading || saving}
             onClick={() => void fetchMetrics()}
           >
             <RefreshCw size={14} className={loading ? "animate-spin" : ""} />
@@ -385,7 +572,7 @@ function MetricRetentionTable({
           </Callout.Root>
         )}
 
-        <div className="overflow-hidden rounded-lg">
+        <div className="overflow-x-auto rounded-lg">
           <Table>
             <TableHeader>
               <TableRow>
@@ -401,13 +588,12 @@ function MetricRetentionTable({
                 <TableHead>{t("settings.metrics.metric_type")}</TableHead>
                 <TableHead>{t("settings.metrics.metric_unit")}</TableHead>
                 <TableHead>{t("settings.metrics.retention_days")}</TableHead>
-                <TableHead>{t("common.action")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {metrics.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={7} className="text-center text-muted-foreground">
+                  <TableCell colSpan={6} className="text-center text-muted-foreground">
                     {loading
                       ? t("settings.metrics.loading_metrics")
                       : t("settings.metrics.no_metrics")}
@@ -415,7 +601,6 @@ function MetricRetentionTable({
                 </TableRow>
               ) : (
                 metrics.map((metric) => {
-                  const isSaving = savingMetric === metric.name;
                   const description = metricDescription(metric, language, t);
                   return (
                     <TableRow key={metric.name}>
@@ -447,7 +632,7 @@ function MetricRetentionTable({
                           type="number"
                           min="1"
                           value={drafts[metric.name] ?? ""}
-                          disabled={isSaving}
+                          disabled={saving}
                           onChange={(event) =>
                             setDrafts((previous) => ({
                               ...previous,
@@ -457,16 +642,6 @@ function MetricRetentionTable({
                           style={{ width: "7rem" }}
                         />
                       </TableCell>
-                      <TableCell>
-                        <Button
-                          size="1"
-                          disabled={isSaving}
-                          onClick={() => void handleSave(metric)}
-                        >
-                          <Save size={14} />
-                          {t("save")}
-                        </Button>
-                      </TableCell>
                     </TableRow>
                   );
                 })
@@ -474,6 +649,15 @@ function MetricRetentionTable({
             </TableBody>
           </Table>
         </div>
+        <Flex justify="end">
+          <Button
+            disabled={loading || saving || !hasDraftChanges}
+            onClick={() => void handleSaveAll()}
+          >
+            <Save size={14} />
+            {t("settings.metrics.save_changes")}
+          </Button>
+        </Flex>
       </Flex>
     </SettingCard>
   );
