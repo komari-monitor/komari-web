@@ -1,7 +1,14 @@
 import { memo, type ReactNode, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Card, Flex, SegmentedControl, Select, Switch } from "@radix-ui/themes";
+import {
+  Card,
+  Flex,
+  SegmentedControl,
+  Select,
+  Switch,
+  TextField,
+} from "@radix-ui/themes";
 import {
   DndContext,
   KeyboardSensor,
@@ -22,15 +29,19 @@ import {
 import { CSS } from "@dnd-kit/utilities";
 import {
   Activity,
+  CalendarDays,
   ChartLine,
   Eye,
   EyeOff,
   Menu,
   RotateCcw,
+  Save,
+  Search,
   Trash2,
   X,
 } from "lucide-react";
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
+import { toast } from "sonner";
 import {
   ChartContainer,
   ChartTooltip,
@@ -42,6 +53,7 @@ import Loading from "@/components/loading";
 import MetricBoundaryAxisTick from "@/components/MetricBoundaryAxisTick";
 import PingMetricStatContent from "@/components/PingMetricStatContent";
 import Tips from "@/components/ui/tips";
+import { useAccount } from "@/contexts/AccountContext";
 import { useNodeList } from "@/contexts/NodeListContext";
 import { usePublicInfo } from "@/contexts/PublicInfoContext";
 import { useRPC2Call } from "@/contexts/RPC2Context";
@@ -166,8 +178,15 @@ type TimeView = {
   hours?: number;
 };
 
+type CustomTimeRange = {
+  start: string;
+  end: string;
+};
+
 const MAX_REALTIME_POINTS = 30 * 5;
 const HISTORY_MAX_POINTS = 700;
+const DASHBOARD_TEMPLATE_KEY = "chartDashboardTemplate";
+const CUSTOM_RANGE_DEFAULT_DAYS = 24;
 
 const AGGREGATIONS: Array<{ value: Aggregation; labelKey: string }> = [
   { value: "avg", labelKey: "chart.sampling.average" },
@@ -527,34 +546,32 @@ const chartSizeClass: Record<ChartSize, string> = {
 
 const buildTimeViews = (
   t: ReturnType<typeof useTranslation>["t"],
-  maxMetricRetentionHours: number,
+  maxMetricRetentionDays: number,
 ): TimeView[] => {
   const views: TimeView[] = [{ key: "real-time", label: t("common.real_time") }];
-  const presets = [
-    { key: "4h", label: t("chart.hours", { count: 4 }), hours: 4 },
-    { key: "1d", label: t("chart.days", { count: 1 }), hours: 24 },
-    { key: "7d", label: t("chart.days", { count: 7 }), hours: 168 },
-    { key: "30d", label: t("chart.days", { count: 30 }), hours: 720 },
-  ];
+  const validRetentionDays =
+    Number.isFinite(maxMetricRetentionDays) && maxMetricRetentionDays > 0
+      ? maxMetricRetentionDays
+      : 0;
 
-  if (Number.isFinite(maxMetricRetentionHours) && maxMetricRetentionHours > 0) {
-    for (const view of presets) {
-      if (maxMetricRetentionHours >= view.hours) views.push(view);
-    }
-    const maxPreset = presets[presets.length - 1];
-    const isPreset = presets.some((view) => view.hours === maxMetricRetentionHours);
-    if (maxMetricRetentionHours > maxPreset.hours || (maxMetricRetentionHours > 4 && !isPreset)) {
-      views.push({
-        key: `retention-${maxMetricRetentionHours}`,
-        label:
-          maxMetricRetentionHours % 24 === 0
-            ? t("chart.days", { count: Math.floor(maxMetricRetentionHours / 24) })
-            : t("chart.hours", { count: maxMetricRetentionHours }),
-        hours: maxMetricRetentionHours,
-      });
-    }
+  if (validRetentionDays >= 1) {
+    views.push({ key: "1d", label: t("chart.days", { count: 1 }), hours: 24 });
+  }
+  if (validRetentionDays >= 7) {
+    views.push({ key: "7d", label: t("chart.days", { count: 7 }), hours: 7 * 24 });
+  }
+  if (validRetentionDays > 0 && validRetentionDays !== 1 && validRetentionDays !== 7) {
+    const retentionHours = validRetentionDays * 24;
+    views.push({
+      key: `retention-${retentionHours}`,
+      label: Number.isInteger(validRetentionDays)
+        ? t("chart.days", { count: validRetentionDays })
+        : t("chart.hours", { count: retentionHours }),
+      hours: retentionHours,
+    });
   }
 
+  views.push({ key: "custom", label: t("chart.customRange") });
   return views;
 };
 
@@ -856,31 +873,102 @@ const getLatestText = (
   return "-";
 };
 
-const normalizeDashboard = (value: DashboardChart[]): DashboardChart[] => {
+const normalizeDashboard = (value: unknown): DashboardChart[] => {
   if (!Array.isArray(value)) return DEFAULT_DASHBOARD;
-  return value.map((chart, index) => ({
-    id: chart.id || `chart-${index}`,
-    title: chart.title || `Chart ${index + 1}`,
-    metrics: Array.isArray(chart.metrics) ? chart.metrics : [],
-    size: chart.size === "medium" || chart.size === "large" ? chart.size : "small",
-  }));
+  return value
+    .filter((chart): chart is Partial<DashboardChart> => {
+      return typeof chart === "object" && chart !== null;
+    })
+    .map((chart, index) => ({
+      id: typeof chart.id === "string" && chart.id ? chart.id : `chart-${index}`,
+      title:
+        typeof chart.title === "string" && chart.title
+          ? chart.title
+          : `Chart ${index + 1}`,
+      metrics: Array.isArray(chart.metrics)
+        ? chart.metrics.filter((metric): metric is string => typeof metric === "string")
+        : [],
+      size:
+        chart.size === "medium" || chart.size === "large" ? chart.size : "small",
+    }));
+};
+
+const parseDashboardTemplate = (value: unknown): DashboardChart[] => {
+  if (Array.isArray(value)) return normalizeDashboard(value);
+  if (typeof value !== "string" || value.trim() === "") return DEFAULT_DASHBOARD;
+  try {
+    const parsed = JSON.parse(value);
+    return Array.isArray(parsed) ? normalizeDashboard(parsed) : DEFAULT_DASHBOARD;
+  } catch {
+    return DEFAULT_DASHBOARD;
+  }
+};
+
+const toDateTimeLocalValue = (date: Date) => {
+  const offset = date.getTimezoneOffset() * 60_000;
+  return new Date(date.getTime() - offset).toISOString().slice(0, 16);
+};
+
+const buildRecentRange = (days: number): CustomTimeRange => {
+  const end = new Date();
+  const start = new Date(end.getTime() - days * 24 * 60 * 60 * 1000);
+  return {
+    start: toDateTimeLocalValue(start),
+    end: toDateTimeLocalValue(end),
+  };
+};
+
+const toQueryRange = (range: CustomTimeRange) => {
+  const start = new Date(range.start);
+  const end = new Date(range.end);
+  if (
+    !range.start ||
+    !range.end ||
+    !Number.isFinite(start.getTime()) ||
+    !Number.isFinite(end.getTime()) ||
+    end <= start
+  ) {
+    return null;
+  }
+  return { start: start.toISOString(), end: end.toISOString() };
 };
 
 const LoadChart = ({ data = [], onRealtimeActiveChange }: LoadChartProps) => {
   const { t } = useTranslation();
   const { uuid } = useParams<{ uuid: string }>();
   const { call } = useRPC2Call();
-  const { publicInfo } = usePublicInfo();
+  const { account } = useAccount();
+  const { publicInfo, refresh: refreshPublicInfo } = usePublicInfo();
   const { nodeList } = useNodeList();
   const node = nodeList?.find((item) => item.uuid === uuid);
-  const maxMetricRetentionHours = (publicInfo?.metric_retention_days || 90) * 24;
+  const [definitions, setDefinitions] = useState<MetricDefinition[]>([]);
+  const [definitionsLoaded, setDefinitionsLoaded] = useState(false);
+  const maxMetricRetentionDays = useMemo(() => {
+    if (!definitionsLoaded) return 0;
+    const retentionDays = definitions
+      .map((definition) => Number(definition.retention_days))
+      .filter((days) => Number.isFinite(days) && days > 0);
+    if (retentionDays.length > 0) return Math.max(...retentionDays);
+
+    const fallback = Number(publicInfo?.metric_retention_days);
+    return Number.isFinite(fallback) && fallback > 0 ? fallback : 0;
+  }, [definitions, definitionsLoaded, publicInfo?.metric_retention_days]);
   const timeViews = useMemo(
-    () => buildTimeViews(t, maxMetricRetentionHours),
-    [t, maxMetricRetentionHours],
+    () => buildTimeViews(t, maxMetricRetentionDays),
+    [t, maxMetricRetentionDays],
   );
   const [viewKey, setViewKey] = useState("real-time");
   const selectedView = timeViews.find((view) => view.key === viewKey) ?? timeViews[0];
   const isRealtime = selectedView.key === "real-time";
+  const isCustomRange = selectedView.key === "custom";
+  const [customDraftRange, setCustomDraftRange] = useState<CustomTimeRange>(() =>
+    buildRecentRange(CUSTOM_RANGE_DEFAULT_DAYS),
+  );
+  const [customQueryRange, setCustomQueryRange] = useState<CustomTimeRange>(() =>
+    buildRecentRange(CUSTOM_RANGE_DEFAULT_DAYS),
+  );
+  const [customQueryRevision, setCustomQueryRevision] = useState(0);
+  const [customRangeError, setCustomRangeError] = useState<string | null>(null);
   const [aggregation, setAggregation] = useLocalStorage<Aggregation>(
     "komari-instance-metric-aggregation",
     "avg",
@@ -893,12 +981,13 @@ const LoadChart = ({ data = [], onRealtimeActiveChange }: LoadChartProps) => {
     "komari-instance-metric-hidden-series",
     {},
   );
-  const [dashboard, setDashboard] = useLocalStorage<DashboardChart[]>(
-    "komari-instance-metric-dashboard",
-    DEFAULT_DASHBOARD,
+  const globalDashboardTemplate =
+    publicInfo?.theme_settings?.[DASHBOARD_TEMPLATE_KEY];
+  const [dashboard, setDashboard] = useState<DashboardChart[]>(() =>
+    parseDashboardTemplate(globalDashboardTemplate),
   );
   const charts = useMemo(() => normalizeDashboard(dashboard), [dashboard]);
-  const [definitions, setDefinitions] = useState<MetricDefinition[]>([]);
+  const [savingGlobalTemplate, setSavingGlobalTemplate] = useState(false);
   const [pingTasks, setPingTasks] = useState<PublicPingTask[]>([]);
   const [pingStats, setPingStats] = useState<PingMetricStat[]>([]);
   const [metricData, setMetricData] = useState<QueryMetricsResponse | null>(null);
@@ -911,6 +1000,10 @@ const LoadChart = ({ data = [], onRealtimeActiveChange }: LoadChartProps) => {
     }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
   );
+
+  useEffect(() => {
+    setDashboard(parseDashboardTemplate(globalDashboardTemplate));
+  }, [globalDashboardTemplate]);
 
   useEffect(() => {
     onRealtimeActiveChange?.(isRealtime);
@@ -926,10 +1019,16 @@ const LoadChart = ({ data = [], onRealtimeActiveChange }: LoadChartProps) => {
     let active = true;
     call<unknown, MetricDefinition[]>("public:listMetricDefinitions")
       .then((items) => {
-        if (active) setDefinitions(Array.isArray(items) ? items : []);
+        if (active) {
+          setDefinitions(Array.isArray(items) ? items : []);
+          setDefinitionsLoaded(true);
+        }
       })
       .catch(() => {
-        if (active) setDefinitions([]);
+        if (active) {
+          setDefinitions([]);
+          setDefinitionsLoaded(true);
+        }
       });
     return () => {
       active = false;
@@ -993,10 +1092,29 @@ const LoadChart = ({ data = [], onRealtimeActiveChange }: LoadChartProps) => {
   );
 
   const queriedMetricKeys = isRealtime ? realtimeFallbackMetricKeys : selectedMetricKeys;
+  const customQuery = useMemo(
+    () => toQueryRange(customQueryRange),
+    [customQueryRange],
+  );
   const queryHours = isRealtime ? 1 : selectedView.hours;
+  const queryRange = isCustomRange ? customQuery : null;
+  const queryStart = queryRange?.start;
+  const queryEnd = queryRange?.end;
+  const queryRangeSignature =
+    queryStart && queryEnd
+      ? `${queryStart}|${queryEnd}|${customQueryRevision}`
+      : "";
+  const chartRangeHours =
+    queryStart && queryEnd
+      ? (new Date(queryEnd).getTime() - new Date(queryStart).getTime()) / 3_600_000
+      : selectedView.hours;
 
   useEffect(() => {
-    if (!uuid || !queryHours || queriedMetricKeys.length === 0) {
+    if (
+      !uuid ||
+      (!queryHours && !queryRangeSignature) ||
+      queriedMetricKeys.length === 0
+    ) {
       setMetricData(null);
       setLoading(false);
       setError(null);
@@ -1007,12 +1125,19 @@ const LoadChart = ({ data = [], onRealtimeActiveChange }: LoadChartProps) => {
     setLoading(true);
     setError(null);
 
+    const rangeParams = queryRangeSignature
+      ? {
+          start: queryStart,
+          end: queryEnd,
+        }
+      : { hours: queryHours };
+
     call<any, QueryMetricsResponse>(
       "public:queryMetrics",
       {
         metric_keys: queriedMetricKeys,
         entity_id: uuid,
-        hours: queryHours,
+        ...rangeParams,
         downsample: true,
         max_points: HISTORY_MAX_POINTS,
         aggregation,
@@ -1037,7 +1162,16 @@ const LoadChart = ({ data = [], onRealtimeActiveChange }: LoadChartProps) => {
     return () => {
       active = false;
     };
-  }, [aggregation, call, queriedMetricKeys, queryHours, uuid]);
+  }, [
+    aggregation,
+    call,
+    queriedMetricKeys,
+    queryEnd,
+    queryHours,
+    queryRangeSignature,
+    queryStart,
+    uuid,
+  ]);
 
   useEffect(() => {
     const needsPingStats = selectedMetricKeys.some(isPingMetric);
@@ -1047,11 +1181,18 @@ const LoadChart = ({ data = [], onRealtimeActiveChange }: LoadChartProps) => {
     }
 
     let active = true;
+    const rangeParams = queryRangeSignature
+      ? {
+          start: queryStart,
+          end: queryEnd,
+        }
+      : { hours: queryHours ?? 1 };
+
     call<any, PingMetricStatsResponse>(
       "public:getPingMetricStats",
       {
         entity_id: uuid,
-        hours: queryHours ?? 1,
+        ...rangeParams,
         max_points: HISTORY_MAX_POINTS,
       },
       { timeout: 30000 },
@@ -1066,7 +1207,15 @@ const LoadChart = ({ data = [], onRealtimeActiveChange }: LoadChartProps) => {
     return () => {
       active = false;
     };
-  }, [call, queryHours, selectedMetricKeys, uuid]);
+  }, [
+    call,
+    queryEnd,
+    queryHours,
+    queryRangeSignature,
+    queryStart,
+    selectedMetricKeys,
+    uuid,
+  ]);
 
   const pingStatsMap = useMemo(() => {
     const map = new Map<string, PingMetricStat>();
@@ -1128,7 +1277,60 @@ const LoadChart = ({ data = [], onRealtimeActiveChange }: LoadChartProps) => {
   };
 
   const resetDashboard = () => {
-    setDashboard(DEFAULT_DASHBOARD);
+    setDashboard(parseDashboardTemplate(globalDashboardTemplate));
+  };
+
+  const selectRecentRange = (days: number) => {
+    setCustomDraftRange(buildRecentRange(days));
+    setCustomRangeError(null);
+  };
+
+  const applyCustomRange = () => {
+    if (!toQueryRange(customDraftRange)) {
+      setCustomRangeError(t("chart.invalidTimeRange"));
+      return;
+    }
+    setCustomQueryRange(customDraftRange);
+    setCustomQueryRevision((current) => current + 1);
+    setCustomRangeError(null);
+  };
+
+  const saveGlobalTemplate = async () => {
+    const theme = publicInfo?.theme;
+    if (!theme) return;
+
+    setSavingGlobalTemplate(true);
+    try {
+      const existingSettings =
+        publicInfo.theme_settings &&
+        typeof publicInfo.theme_settings === "object" &&
+        !Array.isArray(publicInfo.theme_settings)
+          ? publicInfo.theme_settings
+          : {};
+      const response = await fetch(
+        `/api/admin/theme/settings?theme=${encodeURIComponent(theme)}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            ...existingSettings,
+            [DASHBOARD_TEMPLATE_KEY]: JSON.stringify(charts, null, 2),
+          }),
+        },
+      );
+      if (!response.ok) {
+        const result = await response.json().catch(() => null);
+        throw new Error(result?.message || `HTTP ${response.status}`);
+      }
+      toast.success(t("chart.globalTemplateSaved"));
+      refreshPublicInfo();
+    } catch (saveError) {
+      const message =
+        saveError instanceof Error ? saveError.message : String(saveError);
+      toast.error(`${t("chart.globalTemplateSaveFailed")}: ${message}`);
+    } finally {
+      setSavingGlobalTemplate(false);
+    }
   };
 
   const addMetric = (chartId: string, metricKey: string) => {
@@ -1162,6 +1364,7 @@ const LoadChart = ({ data = [], onRealtimeActiveChange }: LoadChartProps) => {
       return arrayMove(normalized, oldIndex, newIndex);
     });
   };
+  const customInputMax = toDateTimeLocalValue(new Date());
 
   return (
     <Flex direction="column" align="center" gap="4" className="w-full max-w-screen">
@@ -1176,6 +1379,76 @@ const LoadChart = ({ data = [], onRealtimeActiveChange }: LoadChartProps) => {
           </SegmentedControl.Root>
         </div>
       </div>
+
+      {isCustomRange && (
+        <div className="w-full max-w-[1100px] px-2">
+          <div className="flex flex-col gap-3 border-y border-accent-5 py-3 sm:flex-row sm:flex-wrap sm:items-end">
+            <div className="flex items-center gap-2 text-sm font-medium sm:self-center">
+              <CalendarDays className="size-4 text-muted-foreground" />
+              <span>{t("chart.customRange")}</span>
+            </div>
+            <label className="flex min-w-0 flex-1 flex-col gap-1 text-xs text-muted-foreground sm:min-w-56">
+              <span>{t("chart.startTime")}</span>
+              <TextField.Root
+                type="datetime-local"
+                value={customDraftRange.start}
+                max={customInputMax}
+                onChange={(event) => {
+                  setCustomDraftRange((current) => ({
+                    ...current,
+                    start: event.target.value,
+                  }));
+                  setCustomRangeError(null);
+                }}
+                aria-label={t("chart.startTime")}
+              />
+            </label>
+            <span className="hidden pb-2 text-muted-foreground sm:block">-</span>
+            <label className="flex min-w-0 flex-1 flex-col gap-1 text-xs text-muted-foreground sm:min-w-56">
+              <span>{t("chart.endTime")}</span>
+              <TextField.Root
+                type="datetime-local"
+                value={customDraftRange.end}
+                max={customInputMax}
+                onChange={(event) => {
+                  setCustomDraftRange((current) => ({
+                    ...current,
+                    end: event.target.value,
+                  }));
+                  setCustomRangeError(null);
+                }}
+                aria-label={t("chart.endTime")}
+              />
+            </label>
+            <Select.Root
+              value=""
+              onValueChange={(value) => selectRecentRange(Number(value))}
+            >
+              <Select.Trigger
+                placeholder={t("chart.quickRange")}
+                aria-label={t("chart.quickRange")}
+              />
+              <Select.Content>
+                <Select.Item value="1">{t("chart.recentDay")}</Select.Item>
+                <Select.Item value="7">{t("chart.recentWeek")}</Select.Item>
+                <Select.Item value="15">
+                  {t("chart.recentDays", { count: 15 })}
+                </Select.Item>
+                <Select.Item value="30">
+                  {t("chart.recentDays", { count: 30 })}
+                </Select.Item>
+              </Select.Content>
+            </Select.Root>
+            <Button type="button" size="sm" onClick={applyCustomRange}>
+              <Search className="size-4" />
+              {t("chart.query")}
+            </Button>
+          </div>
+          {customRangeError && (
+            <div className="pt-2 text-sm text-red-500">{customRangeError}</div>
+          )}
+        </div>
+      )}
 
       <Card className="w-full max-w-[1100px]">
         <div className="flex flex-wrap items-center justify-between gap-3">
@@ -1215,7 +1488,19 @@ const LoadChart = ({ data = [], onRealtimeActiveChange }: LoadChartProps) => {
               </Tips>
             </label>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex max-w-full flex-wrap items-center justify-end gap-2">
+            {account?.logged_in && (
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={saveGlobalTemplate}
+                disabled={savingGlobalTemplate}
+              >
+                <Save className="size-4" />
+                {t("chart.saveGlobalTemplate")}
+              </Button>
+            )}
             <Button type="button" variant="outline" size="sm" onClick={resetDashboard}>
               <RotateCcw className="size-4" />
               {t("common.reset", "Reset")}
@@ -1461,7 +1746,7 @@ const LoadChart = ({ data = [], onRealtimeActiveChange }: LoadChartProps) => {
                       }}
                       content={
                         <ChartTooltipContent
-                          labelFormatter={labelFormatter(selectedView.hours)}
+                          labelFormatter={labelFormatter(chartRangeHours)}
                           indicator="dot"
                         />
                       }

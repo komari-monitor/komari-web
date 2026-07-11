@@ -11,6 +11,7 @@ import LoadChart from "./LoadChart";
 import { DetailsGrid } from "@/components/DetailsGrid";
 import { usePublicInfo } from "@/contexts/PublicInfoContext";
 import { useIsMobile } from "@/hooks/use-mobile";
+import { AccountProvider } from "@/contexts/AccountContext";
 
 export default function InstancePage() {
   const { t } = useTranslation();
@@ -239,10 +240,12 @@ export default function InstancePage() {
             liveRecord={uuid ? live_data?.data.data[uuid] : undefined}
           />
         </div>
-        <LoadChart
-          data={chartRecords}
-          onRealtimeActiveChange={handleChartRealtimeChange}
-        />
+        <AccountProvider>
+          <LoadChart
+            data={chartRecords}
+            onRealtimeActiveChange={handleChartRealtimeChange}
+          />
+        </AccountProvider>
       </div>
     </div>
   );

@@ -127,6 +127,35 @@
           "ja": "メインコンテンツエリアの最大幅をビューポート幅のパーセンテージ（vw）で調整します。全幅にするには100に設定します。"
         },
         "default": 100
+      },
+      {
+        "name": {
+          "en": "Chart Settings",
+          "zh-CN": "图表设置",
+          "zh-TW": "圖表設定",
+          "ja": "グラフ設定",
+          "id-ID": "Pengaturan Grafik"
+        },
+        "type": "title"
+      },
+      {
+        "key": "chartDashboardTemplate",
+        "type": "richtext",
+        "name": {
+          "en": "Global Chart Template",
+          "zh-CN": "全局图表模板",
+          "zh-TW": "全域圖表範本",
+          "ja": "グローバルグラフテンプレート",
+          "id-ID": "Templat Grafik Global"
+        },
+        "help": {
+          "en": "Arrange and resize the charts on an instance details page, then click Save as global template there. The saved JSON is used as the default layout whenever a details page is opened.",
+          "zh-CN": "请先在实例详情页排列图表并调整尺寸，然后点击“保存为全局模板”。保存后的 JSON 会在每次进入详情页时作为默认布局读取。",
+          "zh-TW": "請先在實例詳情頁排列圖表並調整尺寸，然後點擊「儲存為全域範本」。儲存後的 JSON 會在每次進入詳情頁時作為預設版面配置讀取。",
+          "ja": "インスタンス詳細ページでグラフの順序とサイズを調整し、そこで「グローバルテンプレートとして保存」をクリックしてください。保存された JSON は詳細ページを開くたびに既定のレイアウトとして読み込まれます。",
+          "id-ID": "Atur urutan dan ukuran grafik di halaman detail instans, lalu klik Simpan sebagai templat global. JSON yang disimpan digunakan sebagai tata letak default setiap kali halaman detail dibuka."
+        },
+        "default": ""
       }
     ]
   }
