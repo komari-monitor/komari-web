@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useCallback, useState } from "react";
 
 export function useLocalStorage<T>(key: string, initialValue: T) {
   const parseStoredValue = (item: string): T => {
@@ -28,7 +28,7 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
   const [storedValue, setStoredValue] = useState<T>(getStoredValue);
 
   // 更新存储的值
-  const setValue = (value: T | ((val: T) => T)) => {
+  const setValue = useCallback((value: T | ((val: T) => T)) => {
     try {
       setStoredValue((currentValue) => {
         const valueToStore =
@@ -44,7 +44,7 @@ export function useLocalStorage<T>(key: string, initialValue: T) {
     } catch (error) {
       console.warn(`Error setting localStorage key "${key}":`, error);
     }
-  };
+  }, [key]);
 
   return [storedValue, setValue] as const;
 }

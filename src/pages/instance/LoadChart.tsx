@@ -204,7 +204,7 @@ const DEFAULT_DASHBOARD: DashboardChart[] = [
   {
     id: "cpu",
     title: "CPU",
-    metrics: ["cpu.usage"],
+    metrics: ["cpu.usage", "load.average"],
     size: "small",
   },
   {
@@ -222,26 +222,19 @@ const DEFAULT_DASHBOARD: DashboardChart[] = [
   {
     id: "network",
     title: "Network",
-    metrics: ["net.in.rate", "net.out.rate"],
-    size: "small",
-  },
-  {
-    id: "connections",
-    title: "Connections",
-    metrics: ["connections.tcp", "connections.udp"],
-    size: "small",
-  },
-  {
-    id: "process",
-    title: "Processes",
-    metrics: ["process.count"],
-    size: "small",
+    metrics: [
+      "net.in.rate",
+      "net.out.rate",
+      "net.total.down",
+      "net.total.up",
+    ],
+    size: "large",
   },
   {
     id: "ping",
-    title: "Ping",
+    title: "Latency",
     metrics: [PING_LATENCY_METRIC],
-    size: "medium",
+    size: "large",
   },
 ];
 

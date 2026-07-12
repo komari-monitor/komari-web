@@ -155,7 +155,7 @@
           "ja": "インスタンス詳細ページでグラフの順序とサイズを調整し、そこで「グローバルテンプレートとして保存」をクリックしてください。保存された JSON は詳細ページを開くたびに既定のレイアウトとして読み込まれます。",
           "id-ID": "Atur urutan dan ukuran grafik di halaman detail instans, lalu klik Simpan sebagai templat global. JSON yang disimpan digunakan sebagai tata letak default setiap kali halaman detail dibuka."
         },
-        "default": ""
+        "default": "[\n  {\n    \"id\": \"cpu\",\n    \"title\": \"CPU\",\n    \"metrics\": [\n      \"cpu.usage\",\n      \"load.average\"\n    ],\n    \"size\": \"small\"\n  },\n  {\n    \"id\": \"memory\",\n    \"title\": \"Memory\",\n    \"metrics\": [\n      \"memory.used\",\n      \"swap.used\"\n    ],\n    \"size\": \"small\"\n  },\n  {\n    \"id\": \"disk\",\n    \"title\": \"Disk\",\n    \"metrics\": [\n      \"disk.used\"\n    ],\n    \"size\": \"small\"\n  },\n  {\n    \"id\": \"network\",\n    \"title\": \"Network\",\n    \"metrics\": [\n      \"net.in.rate\",\n      \"net.out.rate\",\n      \"net.total.down\",\n      \"net.total.up\"\n    ],\n    \"size\": \"large\"\n  },\n  {\n    \"id\": \"ping\",\n    \"title\": \"Latency\",\n    \"metrics\": [\n      \"ping.latency_ms\"\n    ],\n    \"size\": \"large\"\n  }\n]"
       }
     ]
   }

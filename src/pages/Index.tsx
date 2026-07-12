@@ -138,8 +138,32 @@ const Index = () => {
   );
 
   useEffect(() => {
-    const interval = window.setInterval(refresh, 5000);
-    return () => window.clearInterval(interval);
+    let interval: number | undefined;
+    const stopPolling = () => {
+      if (interval !== undefined) {
+        window.clearInterval(interval);
+        interval = undefined;
+      }
+    };
+    const startPolling = () => {
+      if (interval === undefined && !document.hidden) {
+        interval = window.setInterval(refresh, 5000);
+      }
+    };
+    const handleVisibilityChange = () => {
+      stopPolling();
+      if (!document.hidden) {
+        refresh();
+        startPolling();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    startPolling();
+    return () => {
+      stopPolling();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, [refresh]);
 
   if (isLoading) {
