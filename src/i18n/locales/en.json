@@ -594,14 +594,32 @@
       "note": "Personalized content may be overwritten when using a custom theme. Please make sure the code is secure and avoid using untrusted content."
     },
     "database": {
-      "title": "Database",
-      "vacuum_button": "Compact",
-      "vacuum_confirm": "The compaction process will block Komari from running and the panel may be unresponsive during this time. Continue?",
-      "vacuum_description": "Compact the SQLite database to reduce disk usage. The process will block Komari from running. Current database size {{size}}.",
-      "vacuum_error": "Failed to compact database",
-      "vacuum_success": "Database compacted successfully",
-      "vacuum_title": "Compact Database",
-      "vacuuming": "Compacting..."
+      "actions": {
+        "optimize": "Optimize MySQL / MariaDB tables (OPTIMIZE TABLE)",
+        "vacuum": "Reclaim SQLite file space (VACUUM)",
+        "vacuum_full": "Fully reclaim and analyze PostgreSQL tables (VACUUM (FULL, ANALYZE))"
+      },
+      "confirm_description": "Database maintenance may lock the databases and temporarily block Komari. Confirm the operations below.",
+      "confirm_title": "Confirm Database Maintenance",
+      "invalid_response": "The server returned invalid database information",
+      "load_error": "Failed to load database information",
+      "local_total": "Local Database Total",
+      "local_total_description": "Main database and locally stored monitoring database",
+      "locations": {
+        "external": "External",
+        "local": "Local"
+      },
+      "main": "Main Database",
+      "maintaining": "Maintaining...",
+      "maintenance_button": "Reclaim Space",
+      "maintenance_description": "Maintenance may lock the databases and make Komari temporarily unavailable.",
+      "maintenance_error": "Database maintenance failed",
+      "maintenance_partial_failure": "Database maintenance finished with failed operations",
+      "maintenance_success": "Database maintenance completed",
+      "maintenance_title": "Database Maintenance",
+      "monitoring": "Monitoring Database",
+      "operation_failed": "Operation failed",
+      "title": "Database"
     },
     "general": {
       "auto_discovery": "Auto discovery",

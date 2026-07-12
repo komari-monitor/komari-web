@@ -594,14 +594,32 @@
       "note": "Konten personalisasi dapat ditimpa saat menggunakan tema kustom. Pastikan kode aman dan hindari konten yang tidak tepercaya."
     },
     "database": {
-      "title": "Basis Data",
-      "vacuum_button": "Kompres",
-      "vacuum_confirm": "Proses kompresi akan memblokir Komari berjalan dan panel mungkin tidak responsif selama proses ini. Lanjutkan?",
-      "vacuum_description": "Kompres basis data SQLite untuk mengurangi penggunaan disk. Proses ini akan memblokir Komari berjalan. Ukuran basis data saat ini {{size}}.",
-      "vacuum_error": "Gagal mengompres basis data",
-      "vacuum_success": "Basis data berhasil dikompres",
-      "vacuum_title": "Kompres Basis Data",
-      "vacuuming": "Mengompres..."
+      "actions": {
+        "optimize": "Optimalkan tabel MySQL / MariaDB (OPTIMIZE TABLE)",
+        "vacuum": "Reklamasi ruang berkas SQLite (VACUUM)",
+        "vacuum_full": "Reklamasi penuh dan analisis tabel PostgreSQL (VACUUM (FULL, ANALYZE))"
+      },
+      "confirm_description": "Pemeliharaan basis data dapat mengunci basis data dan memblokir Komari sementara. Konfirmasikan operasi berikut.",
+      "confirm_title": "Konfirmasi Pemeliharaan Basis Data",
+      "invalid_response": "Server mengembalikan informasi basis data yang tidak valid",
+      "load_error": "Gagal memuat informasi basis data",
+      "local_total": "Total Basis Data Lokal",
+      "local_total_description": "Basis data utama dan basis data pemantauan yang disimpan secara lokal",
+      "locations": {
+        "external": "Eksternal",
+        "local": "Lokal"
+      },
+      "main": "Basis Data Utama",
+      "maintaining": "Memelihara...",
+      "maintenance_button": "Reklamasi Ruang",
+      "maintenance_description": "Pemeliharaan dapat mengunci basis data dan membuat Komari tidak tersedia untuk sementara.",
+      "maintenance_error": "Pemeliharaan basis data gagal",
+      "maintenance_partial_failure": "Pemeliharaan basis data selesai dengan operasi yang gagal",
+      "maintenance_success": "Pemeliharaan basis data selesai",
+      "maintenance_title": "Pemeliharaan Basis Data",
+      "monitoring": "Basis Data Pemantauan",
+      "operation_failed": "Operasi gagal",
+      "title": "Basis Data"
     },
     "general": {
       "auto_discovery": "Penemuan Otomatis",

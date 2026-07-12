@@ -594,14 +594,32 @@
       "note": "個性化內容在使用自定義主題時可能會被覆蓋。請確保代碼的安全性，避免使用不受信任的內容。"
     },
     "database": {
-      "title": "資料庫",
-      "vacuum_button": "壓縮",
-      "vacuum_confirm": "壓縮過程會阻塞 Komari 運行，期間面板可能無法回應，確定繼續嗎？",
-      "vacuum_description": "壓縮 SQLite 資料庫，減小磁碟佔用，壓縮過程會阻塞 Komari 運行。當前資料庫大小 {{size}}。",
-      "vacuum_error": "壓縮資料庫失敗",
-      "vacuum_success": "資料庫壓縮完成",
-      "vacuum_title": "壓縮資料庫",
-      "vacuuming": "壓縮中..."
+      "actions": {
+        "optimize": "最佳化 MySQL / MariaDB 資料表（OPTIMIZE TABLE）",
+        "vacuum": "回收 SQLite 檔案空間（VACUUM）",
+        "vacuum_full": "完整回收並分析 PostgreSQL 資料表（VACUUM (FULL, ANALYZE)）"
+      },
+      "confirm_description": "資料庫維護可能鎖定資料庫並暫時阻塞 Komari，請確認以下操作。",
+      "confirm_title": "確認資料庫維護",
+      "invalid_response": "伺服器返回了無效的資料庫資訊",
+      "load_error": "讀取資料庫資訊失敗",
+      "local_total": "本機資料庫合計",
+      "local_total_description": "主資料庫與儲存在本機的監控資料庫佔用",
+      "locations": {
+        "external": "外部",
+        "local": "本機"
+      },
+      "main": "主資料庫",
+      "maintaining": "維護中...",
+      "maintenance_button": "回收空間",
+      "maintenance_description": "維護期間資料庫可能被鎖定，Komari 可能暫時無法回應。",
+      "maintenance_error": "資料庫維護失敗",
+      "maintenance_partial_failure": "資料庫維護已結束，但存在失敗操作",
+      "maintenance_success": "資料庫維護完成",
+      "maintenance_title": "資料庫維護",
+      "monitoring": "監控資料庫",
+      "operation_failed": "操作失敗",
+      "title": "資料庫"
     },
     "general": {
       "auto_discovery": "自動發現",

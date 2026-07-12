@@ -594,14 +594,32 @@
       "note": "カスタムテーマを使用している場合、パーソナライズされた内容は上書きされる可能性があります。コードの安全性を確保し、信頼できない内容の使用を避けてください。"
     },
     "database": {
-      "title": "データベース",
-      "vacuum_button": "圧縮",
-      "vacuum_confirm": "圧縮処理中は Komari の動作がブロックされ、パネルが応答しなくなる場合があります。続行しますか？",
-      "vacuum_description": "SQLite データベースを圧縮してディスク使用量を削減します。圧縮処理中は Komari の動作がブロックされます。現在のデータベースサイズは {{size}} です。",
-      "vacuum_error": "データベースの圧縮に失敗しました",
-      "vacuum_success": "データベースの圧縮が完了しました",
-      "vacuum_title": "データベースを圧縮",
-      "vacuuming": "圧縮中..."
+      "actions": {
+        "optimize": "MySQL / MariaDB テーブルを最適化（OPTIMIZE TABLE）",
+        "vacuum": "SQLite ファイル領域を回収（VACUUM）",
+        "vacuum_full": "PostgreSQL テーブルを完全回収・分析（VACUUM (FULL, ANALYZE)）"
+      },
+      "confirm_description": "データベースのメンテナンス中はデータベースがロックされ、Komari が一時的に停止する場合があります。以下の操作を確認してください。",
+      "confirm_title": "データベースメンテナンスの確認",
+      "invalid_response": "サーバーから無効なデータベース情報が返されました",
+      "load_error": "データベース情報の読み込みに失敗しました",
+      "local_total": "ローカルデータベース合計",
+      "local_total_description": "メインデータベースとローカル保存の監視データベース",
+      "locations": {
+        "external": "外部",
+        "local": "ローカル"
+      },
+      "main": "メインデータベース",
+      "maintaining": "メンテナンス中...",
+      "maintenance_button": "領域を回収",
+      "maintenance_description": "メンテナンス中はデータベースがロックされ、Komari が一時的に応答しない場合があります。",
+      "maintenance_error": "データベースのメンテナンスに失敗しました",
+      "maintenance_partial_failure": "データベースのメンテナンスは終了しましたが、失敗した操作があります",
+      "maintenance_success": "データベースのメンテナンスが完了しました",
+      "maintenance_title": "データベースメンテナンス",
+      "monitoring": "監視データベース",
+      "operation_failed": "操作に失敗しました",
+      "title": "データベース"
     },
     "general": {
       "auto_discovery": "自動検出",

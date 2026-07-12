@@ -594,14 +594,32 @@
       "note": "个性化内容在使用自定义主题时可能会被覆盖。请确保代码的安全性，避免使用不受信任的内容。"
     },
     "database": {
-      "title": "数据库",
-      "vacuum_button": "压缩",
-      "vacuum_confirm": "压缩过程会阻塞 Komari 运行，期间面板可能无法响应，确定继续吗？",
-      "vacuum_description": "压缩 SQLite 数据库，减小磁盘占用，压缩过程会阻塞 Komari 运行。当前数据库大小 {{size}}。",
-      "vacuum_error": "压缩数据库失败",
-      "vacuum_success": "数据库压缩完成",
-      "vacuum_title": "压缩数据库",
-      "vacuuming": "压缩中..."
+      "actions": {
+        "optimize": "优化 MySQL / MariaDB 数据表（OPTIMIZE TABLE）",
+        "vacuum": "回收 SQLite 文件空间（VACUUM）",
+        "vacuum_full": "完整回收并分析 PostgreSQL 数据表（VACUUM (FULL, ANALYZE)）"
+      },
+      "confirm_description": "数据库维护可能锁定数据库并暂时阻塞 Komari，请确认以下操作。",
+      "confirm_title": "确认数据库维护",
+      "invalid_response": "服务端返回了无效的数据库信息",
+      "load_error": "读取数据库信息失败",
+      "local_total": "本机数据库合计",
+      "local_total_description": "主数据库与存储在本机的监控数据库占用",
+      "locations": {
+        "external": "外部",
+        "local": "本机"
+      },
+      "main": "主数据库",
+      "maintaining": "维护中...",
+      "maintenance_button": "回收空间",
+      "maintenance_description": "维护期间数据库可能被锁定，Komari 可能暂时无法响应。",
+      "maintenance_error": "数据库维护失败",
+      "maintenance_partial_failure": "数据库维护已结束，但存在失败操作",
+      "maintenance_success": "数据库维护完成",
+      "maintenance_title": "数据库维护",
+      "monitoring": "监控数据库",
+      "operation_failed": "操作失败",
+      "title": "数据库"
     },
     "general": {
       "auto_discovery": "自动发现",
