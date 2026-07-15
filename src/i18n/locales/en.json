@@ -113,6 +113,7 @@
       "autoRenewal": "Auto renewal",
       "autoRenewalDescription": "If the server expires and is currently online, Komari will automatically set the expiration time to the next natural month (year)",
       "billing": "Billing",
+      "billingSaveFailed": "Failed to save billing information",
       "billingCycle": "Billing cycle",
       "billingCycleTips": "<b>Billing Cycle Rules</b><br/> <br/> <b>By Preset Cycle (Calendar Renewal)</b><br/> When the number of days entered is close to the preset plan (such as monthly, quarterly, annually), it will renew according to the corresponding <b>calendar cycle</b>.<br/> - Common values: 30 (monthly), 92 (quarterly), 365 (annually), 730 (biennially), etc.<br/> - Example: Entering 30, the service renews on March 15, and the new expiration date will be April 15.<br/> <br/> <b>By Custom Days</b><br/> When other numbers of days are entered (such as 7, 45, 100), it will strictly renew according to the number of days.<br/> - Example: Entering 45, the service renews on March 15, and the new expiration date will be April 29 (45 days later).<br/> <br/> <b>One-time Payment</b><br/> Entering -1 indicates a one-time payment.",
       "cancel": "Cancel",
@@ -137,6 +138,9 @@
       "errorRefreshNodeList": "Failed to refresh the list",
       "excludeNics": "Exclude specific network interfaces.",
       "expiredAt": "Expired at",
+      "estimateTips": "Used for a live cost estimate. Empty values are treated as 0. The startup fee is included once after the Agent's first successful report.",
+      "estimatedAnchor": "Estimated from node creation time",
+      "firstAgentReportedAt": "First Agent report",
       "generatedCommand": "Command",
       "getIpAddrFromNic": "Get IP address from NIC",
       "ghproxy": "Github proxy",
@@ -150,6 +154,7 @@
       "installOptions": "Install options",
       "interval": "Collection interval (seconds)",
       "invalidPrice": "Invalid price",
+      "invalidRate": "Rates must be non-negative numbers",
       "ipAddress": "IP address",
       "loading": "loading...",
       "memoryModeAvailable": "Include cache memory",
@@ -167,8 +172,11 @@
       "serviceName": "Service name",
       "serviceName_placeholder": "Service name, leave empty to use the default name (komari-agent)",
       "setToLongTerm": "Set to Long term",
+      "startupFee": "One-time startup fee",
       "submit": "submit",
       "submitting": "wait"
+      ,"timeRate": "Time rate"
+      ,"trafficRate": "Traffic rate"
     },
     "notification": {
       "expire_enable": "Enable Expiration Reminder",
