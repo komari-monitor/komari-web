@@ -138,7 +138,7 @@
       "errorRefreshNodeList": "Failed to refresh the list",
       "excludeNics": "Exclude specific network interfaces.",
       "expiredAt": "Expired at",
-      "estimateTips": "Used for a live cost estimate. Empty values are treated as 0. The startup fee is included once after the Agent's first successful report.",
+      "estimateTips": "Used for a live cost estimate. Traffic is billed per TiB (1024^4 bytes), empty values are treated as 0, and the startup fee is included once after the Agent's first successful report.",
       "estimatedAnchor": "Estimated from node creation time",
       "firstAgentReportedAt": "First Agent report",
       "generatedCommand": "Command",
@@ -154,7 +154,7 @@
       "installOptions": "Install options",
       "interval": "Collection interval (seconds)",
       "invalidPrice": "Invalid price",
-      "invalidRate": "Rates must be non-negative numbers",
+      "invalidRate": "Rates must be numbers from 0 to 1e12",
       "ipAddress": "IP address",
       "loading": "loading...",
       "memoryModeAvailable": "Include cache memory",
@@ -172,10 +172,15 @@
       "serviceName": "Service name",
       "serviceName_placeholder": "Service name, leave empty to use the default name (komari-agent)",
       "setToLongTerm": "Set to Long term",
+      "billingAnchorTips": "The billing anchor can be corrected, but it cannot be cleared after the first successful Agent report.",
+      "runtimeEstimate": "Runtime cost",
       "startupFee": "One-time startup fee",
+      "startupEstimate": "Startup fee",
       "submit": "submit",
       "submitting": "wait"
       ,"timeRate": "Time rate"
+      ,"totalEstimate": "Current total estimate"
+      ,"trafficEstimate": "Traffic cost"
       ,"trafficRate": "Traffic rate"
     },
     "notification": {
