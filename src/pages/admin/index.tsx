@@ -2612,6 +2612,10 @@ function BillingButton({ node }: { node: NodeDetail }) {
     node.auto_renewal || false
   );
   const [currency, setCurrency] = React.useState<string>(node.currency || "$");
+  const billingEstimateSupported = Object.prototype.hasOwnProperty.call(
+    node,
+    "traffic_rate"
+  );
 
   const nextMonthDate = (anchor?: string) => {
     const source = anchor ? new Date(anchor) : new Date();
@@ -2663,25 +2667,23 @@ function BillingButton({ node }: { node: NodeDetail }) {
       );
       const expiredAtValue = (formData.get("expiredAt") as string) || "";
       const currencyValue = (formData.get("currency") as string) || "$";
-      const trafficRate = parseOptionalRate(formData, "trafficRate");
-      const timeRate = parseOptionalRate(formData, "timeRate");
-      const startupFee = parseOptionalRate(formData, "startupFee");
-      const firstAgentReportedAt = String(
-        formData.get("firstAgentReportedAt") ?? ""
-      ).trim();
-
       const payload: Record<string, string | number | boolean> = {
         price,
         billing_cycle: billingCycleValue,
         expired_at: expiredAtValue,
         currency: currencyValue,
         auto_renewal: autoRenewal,
-        traffic_rate: trafficRate,
-        time_rate: timeRate,
-        startup_fee: startupFee,
       };
-      if (firstAgentReportedAt) {
-        payload.first_agent_reported_at = firstAgentReportedAt;
+      if (billingEstimateSupported) {
+        payload.traffic_rate = parseOptionalRate(formData, "trafficRate");
+        payload.time_rate = parseOptionalRate(formData, "timeRate");
+        payload.startup_fee = parseOptionalRate(formData, "startupFee");
+        const firstAgentReportedAt = String(
+          formData.get("firstAgentReportedAt") ?? ""
+        ).trim();
+        if (firstAgentReportedAt) {
+          payload.first_agent_reported_at = firstAgentReportedAt;
+        }
       }
 
       const response = await fetch(`/api/admin/client/${node.uuid}/edit`, {
@@ -2796,7 +2798,8 @@ function BillingButton({ node }: { node: NodeDetail }) {
               </TextField.Slot>
             </TextField.Root>
 
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            {billingEstimateSupported && <>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
               <label className="space-y-1">
                 <span className="font-bold block">
                   {t("admin.nodeTable.trafficRate", "流量单价")}
@@ -2840,29 +2843,30 @@ function BillingButton({ node }: { node: NodeDetail }) {
                   placeholder="0"
                 />
               </label>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              {t(
-                "admin.nodeTable.estimateTips",
-                "用于实时费用估算；空值按 0 处理。首次开机费只在 Agent 首次成功上报后计入一次。"
-              )}
-            </p>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {t(
+                  "admin.nodeTable.estimateTips",
+                  "用于实时费用估算；空值按 0 处理。首次开机费只在 Agent 首次成功上报后计入一次。"
+                )}
+              </p>
 
-            <label className="font-bold flex items-center gap-1">
-              {t("admin.nodeTable.firstAgentReportedAt", "首次 Agent 上报时间")}
-              {node.first_agent_reported_at_estimated && (
-                <span className="text-xs font-normal text-amber-600">
-                  {t("admin.nodeTable.estimatedAnchor", "按节点创建时间推定")}
-                </span>
-              )}
-            </label>
-            <TextField.Root
-              name="firstAgentReportedAt"
-              type="datetime-local"
-              defaultValue={
-                formatLocalDateTimeInput(node.first_agent_reported_at)
-              }
-            />
+              <label className="font-bold flex items-center gap-1">
+                {t("admin.nodeTable.firstAgentReportedAt", "首次 Agent 上报时间")}
+                {node.first_agent_reported_at_estimated && (
+                  <span className="text-xs font-normal text-amber-600">
+                    {t("admin.nodeTable.estimatedAnchor", "按节点创建时间推定")}
+                  </span>
+                )}
+              </label>
+              <TextField.Root
+                name="firstAgentReportedAt"
+                type="datetime-local"
+                defaultValue={
+                  formatLocalDateTimeInput(node.first_agent_reported_at)
+                }
+              />
+            </>}
             <Flex gap="2" align="center"></Flex>
             <SettingCardSwitch
               title={t("admin.nodeTable.autoRenewal")}
