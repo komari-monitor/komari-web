@@ -203,6 +203,7 @@
     "gpu_memory": "GPU Memory Usage",
     "hideAll": "Hide All",
     "hours": "{{count}} Hours",
+    "minutes": "{{count}} Minutes",
     "interval": "Detection Interval",
     "invalidTimeRange": "Start time must be earlier than end time",
     "latest": "Latest",

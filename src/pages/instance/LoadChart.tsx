@@ -541,7 +541,11 @@ const buildTimeViews = (
   t: ReturnType<typeof useTranslation>["t"],
   maxMetricRetentionDays: number,
 ): TimeView[] => {
-  const views: TimeView[] = [{ key: "real-time", label: t("common.real_time") }];
+  const views: TimeView[] = [
+    { key: "real-time", label: t("common.real_time") },
+    { key: "10m", label: t("chart.minutes", { count: 10 }), hours: 10 / 60 },
+    { key: "1h", label: t("chart.hours", { count: 1 }), hours: 1 },
+  ];
   const validRetentionDays =
     Number.isFinite(maxMetricRetentionDays) && maxMetricRetentionDays > 0
       ? maxMetricRetentionDays

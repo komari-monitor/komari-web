@@ -203,6 +203,7 @@
     "gpu_memory": "GPU メモリ使用率",
     "hideAll": "すべて隠す",
     "hours": "{{count}} 時間",
+    "minutes": "{{count}} 分",
     "interval": "検出間隔",
     "invalidTimeRange": "開始時刻は終了時刻より前にしてください",
     "latest": "最新",

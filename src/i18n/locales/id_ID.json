@@ -203,6 +203,7 @@
     "gpu_memory": "Penggunaan Memori GPU",
     "hideAll": "Sembunyikan Semua",
     "hours": "{{count}} Jam",
+    "minutes": "{{count}} Menit",
     "interval": "Interval Deteksi",
     "invalidTimeRange": "Waktu mulai harus lebih awal dari waktu selesai",
     "latest": "Terbaru",

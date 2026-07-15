@@ -203,6 +203,7 @@
     "gpu_memory": "顯存使用率",
     "hideAll": "隱藏全部",
     "hours": "{{count}} 小時",
+    "minutes": "{{count}} 分鐘",
     "interval": "檢測間隔",
     "invalidTimeRange": "開始時間必須早於結束時間",
     "latest": "最新",
