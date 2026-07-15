@@ -2638,7 +2638,7 @@ function BillingButton({ node }: { node: NodeDetail }) {
   const trafficTiB = Math.max(0, Number(node.billing_traffic_bytes) || 0) / TIB_BYTES;
   const trafficEstimate = trafficTiB * Math.max(0, Number(node.traffic_rate) || 0);
   const runtimeEstimate = runtimeHours * Math.max(0, Number(node.time_rate) || 0);
-  const startupEstimate = hasBillingAnchor
+  const startupEstimate = hasBillingAnchor && node.billing_startup_fee_applied === true
     ? Math.max(0, Number(node.startup_fee) || 0)
     : 0;
   const totalEstimate = trafficEstimate + runtimeEstimate + startupEstimate;
