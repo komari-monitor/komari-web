@@ -843,14 +843,6 @@
       "title": "监控数据库"
     },
     "missing_required_fields": "请填写必填字段: {{fieldNames}}",
-    "nezha": {
-      "description": "哪吒的兼容选项，Komari 只能处理基础的监控，无法使用延迟检测、远程控制、NAT和内网穿透等功能。娱乐功能，后续无维护打算。（NTR爱好者）",
-      "enabled": "开启gRpc端口",
-      "enabled_description": "开启gRpc端口，随后哪吒 Agent 可以连接到 Komari, Nezha Agent将会自动注册。启动详情请查看日志。",
-      "listen": "gRpc监听地址",
-      "listen_description": "监听的gRpc地址",
-      "title": "哪吒"
-    },
     "notification": {
       "email": {
         "host": "SMTP 服务器",

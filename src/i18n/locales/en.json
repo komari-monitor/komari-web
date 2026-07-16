@@ -843,14 +843,6 @@
       }
     },
     "missing_required_fields": "Please fill in the required fields: {{fieldNames}}",
-    "nezha": {
-      "description": "Compatibility options for Nezha, Komari can only handle basic monitoring and cannot use features like delay detection, remote control, NAT, and internal penetration. Entertainment features, no maintenance plans in the future. (NTR enthusiasts)",
-      "enabled": "Enable gRpc Port",
-      "enabled_description": "Enable gRpc port, then Nezha Agent can connect to Komari, and Nezha Agent will automatically register. For startup details, please check the logs.",
-      "listen": "gRpc Listening Address",
-      "listen_description": "Listening gRpc address",
-      "title": "Nezha"
-    },
     "notification": {
       "email": {
         "host": "SMTP Server",

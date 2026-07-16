@@ -843,14 +843,6 @@
       }
     },
     "missing_required_fields": "必須フィールドを入力してください: {{fieldNames}}",
-    "nezha": {
-      "description": "哪吒の互換オプション、Komari は基本的な監視のみを処理でき、遅延検出、リモートコントロール、NAT および内部ネットワークの貫通などの機能は使用できません。エンターテインメント機能は、今後のメンテナンスの予定はありません。（NTR愛好者）",
-      "enabled": "gRpc ポートを有効にする",
-      "enabled_description": "gRpc ポートを有効にすると、哪吒エージェントが Komari に接続でき、Nezha エージェントが自動的に登録されます。起動の詳細はログを確認してください。",
-      "listen": "gRpc リスニングアドレス",
-      "listen_description": "リスニングする gRpc アドレス",
-      "title": "哪吒"
-    },
     "notification": {
       "email": {
         "host": "SMTP サーバー",

@@ -843,14 +843,6 @@
       }
     },
     "missing_required_fields": "Silakan isi kolom yang wajib: {{fieldNames}}",
-    "nezha": {
-      "description": "Opsi kompatibilitas untuk Nezha, Komari hanya dapat menangani pemantauan dasar dan tidak dapat menggunakan fitur seperti deteksi keterlambatan, kontrol jarak jauh, NAT, dan penetrasi internal. Fitur hiburan, tidak ada rencana pemeliharaan di masa depan. (Penggemar NTR)",
-      "enabled": "Aktifkan Port gRpc",
-      "enabled_description": "Aktifkan port gRpc, lalu Nezha Agent dapat terhubung ke Komari, dan Nezha Agent akan terdaftar secara otomatis. Untuk detail startup, silakan cek log.",
-      "listen": "Alamat Listening gRpc",
-      "listen_description": "Alamat listening gRpc",
-      "title": "Nezha"
-    },
     "notification": {
       "email": {
         "host": "Server SMTP",

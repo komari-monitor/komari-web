@@ -119,28 +119,6 @@ export default function GeneralSettings() {
       </SettingCardCollapse>
       <SettingCardLabel>{t("settings.database.title")}</SettingCardLabel>
       <DatabaseMaintenanceCard />
-      <SettingCardLabel>{t("settings.nezha.title")}</SettingCardLabel>
-
-      <label className="text-sm text-muted-foreground -mt-4">
-        {t("settings.nezha.description")}
-      </label>
-      <SettingCardSwitch
-        title={t("settings.nezha.enabled")}
-        description={t("settings.nezha.enabled_description")}
-        defaultChecked={settings.nezha_compat_enabled}
-        onChange={async (checked) => {
-          await updateSettingsWithToast({ nezha_compat_enabled: checked }, t);
-        }}
-      />
-      <SettingCardShortTextInput
-        title={t("settings.nezha.listen")}
-        description={t("settings.nezha.listen_description")}
-        defaultValue={settings.nezha_compat_listen || ""}
-        placeholder="0.0.0.0:5555"
-        OnSave={async (value) => {
-          await updateSettingsWithToast({ nezha_compat_listen: value }, t);
-        }}
-      />
     </>
   );
 }
