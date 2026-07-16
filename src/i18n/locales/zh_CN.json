@@ -1043,6 +1043,7 @@
     "theme_url": "主题URL",
     "title": "主题管理",
     "update": "更新主题",
+    "update_default_description": "更新会安装到数据目录中的可写覆盖层。二进制内嵌版本仍会保留，并在覆盖层不可用时自动回退。",
     "update_description": "如果原主题URL无法访问，请上传主题包进行更新。",
     "update_failed": "主题更新失败",
     "update_mode": "更新模式",

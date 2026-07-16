@@ -679,7 +679,8 @@ const ThemePage = () => {
                 {t("theme.set_active")}
               </Button>
             )}
-            {selectedTheme && selectedTheme.short !== "default" && (
+            {selectedTheme &&
+              (selectedTheme.short !== "default" || selectedTheme.url) && (
               <Button
                 variant="soft"
                 color="blue"
@@ -744,7 +745,9 @@ const ThemePage = () => {
         <Dialog.Content maxWidth="500px">
           <Dialog.Title>{t("theme.update_theme")}</Dialog.Title>
           <Dialog.Description>
-            {t("theme.update_description")}
+            {themeToUpdate?.short === "default"
+              ? t("theme.update_default_description")
+              : t("theme.update_description")}
           </Dialog.Description>
 
           <Box className="space-y-4 mt-4">

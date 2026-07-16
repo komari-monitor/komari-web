@@ -1044,6 +1044,7 @@
     "title": "主題管理",
     "update": "更新主題",
     "update_description": "如果原主題URL無法訪問，請上傳主題包進行更新。",
+    "update_default_description": "更新會安裝到資料目錄中的可寫覆蓋層。二進位內嵌版本仍會保留，並在覆蓋層無法使用時自動回退。",
     "update_failed": "主題更新失敗",
     "update_mode": "更新模式",
     "update_mode_auto": "自動（使用原始URL）",
