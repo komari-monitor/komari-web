@@ -2600,6 +2600,9 @@ function DetailView({ node }: { node: NodeDetail }) {
   );
 }
 
+const MAX_BILLING_RATE = 1e12;
+const TIB_BYTES = 1024 ** 4;
+
 function BillingButton({ node }: { node: NodeDetail }) {
   const { t } = useTranslation();
   const { refresh } = useNodeDetails();
@@ -2612,6 +2615,72 @@ function BillingButton({ node }: { node: NodeDetail }) {
     node.auto_renewal || false
   );
   const [currency, setCurrency] = React.useState<string>(node.currency || "$");
+  const billingEstimateSupported = Object.prototype.hasOwnProperty.call(
+    node,
+    "traffic_rate"
+  );
+  const [estimateNow, setEstimateNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    if (!open || !billingEstimateSupported) return;
+    setEstimateNow(Date.now());
+    const timer = window.setInterval(() => setEstimateNow(Date.now()), 30000);
+    return () => window.clearInterval(timer);
+  }, [open, billingEstimateSupported]);
+
+  const anchorTimestamp = node.first_agent_reported_at
+    ? new Date(node.first_agent_reported_at).getTime()
+    : Number.NaN;
+  const hasBillingAnchor = Number.isFinite(anchorTimestamp) && anchorTimestamp > 0;
+  const runtimeHours = hasBillingAnchor
+    ? Math.max(0, estimateNow - anchorTimestamp) / (60 * 60 * 1000)
+    : 0;
+  const trafficTiB = Math.max(0, Number(node.billing_traffic_bytes) || 0) / TIB_BYTES;
+  const trafficEstimate = trafficTiB * Math.max(0, Number(node.traffic_rate) || 0);
+  const runtimeEstimate = runtimeHours * Math.max(0, Number(node.time_rate) || 0);
+  const startupEstimate = hasBillingAnchor && node.billing_startup_fee_applied === true
+    ? Math.max(0, Number(node.startup_fee) || 0)
+    : 0;
+  const totalEstimate = trafficEstimate + runtimeEstimate + startupEstimate;
+  const formatEstimate = (value: number) =>
+    `${currency || "$"}${value.toLocaleString(undefined, {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 4,
+    })}`;
+
+  const nextMonthDate = (anchor?: string) => {
+    const source = anchor ? new Date(anchor) : new Date();
+    const date = Number.isNaN(source.getTime()) ? new Date() : source;
+    const originalDay = date.getDate();
+    date.setDate(1);
+    date.setMonth(date.getMonth() + 1);
+    const lastDay = new Date(date.getFullYear(), date.getMonth() + 1, 0).getDate();
+    date.setDate(Math.min(originalDay, lastDay));
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
+    return `${year}-${month}-${day}`;
+  };
+
+  const formatLocalDateTimeInput = (value?: string) => {
+    if (!value) return "";
+    const date = new Date(value);
+    if (Number.isNaN(date.getTime())) return "";
+    const offsetDate = new Date(date.getTime() - date.getTimezoneOffset() * 60000);
+    return offsetDate.toISOString().slice(0, 16);
+  };
+
+  const parseOptionalRate = (formData: FormData, name: string) => {
+    const rawValue = String(formData.get(name) ?? "").trim();
+    if (!rawValue) return 0;
+    const value = Number(rawValue);
+    if (!Number.isFinite(value) || value < 0 || value > MAX_BILLING_RATE) {
+      throw new Error(
+        t("admin.nodeTable.invalidRate", "费率必须是 0 到 1e12 之间的数字")
+      );
+    }
+    return value;
+  };
 
   const handleSave = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -2631,24 +2700,44 @@ function BillingButton({ node }: { node: NodeDetail }) {
       );
       const expiredAtValue = (formData.get("expiredAt") as string) || "";
       const currencyValue = (formData.get("currency") as string) || "$";
+      const payload: Record<string, string | number | boolean> = {
+        price,
+        billing_cycle: billingCycleValue,
+        expired_at: expiredAtValue,
+        currency: currencyValue,
+        auto_renewal: autoRenewal,
+      };
+      if (billingEstimateSupported) {
+        payload.traffic_rate = parseOptionalRate(formData, "trafficRate");
+        payload.time_rate = parseOptionalRate(formData, "timeRate");
+        payload.startup_fee = parseOptionalRate(formData, "startupFee");
+        const firstAgentReportedAt = String(
+          formData.get("firstAgentReportedAt") ?? ""
+        ).trim();
+        if (firstAgentReportedAt) {
+          payload.first_agent_reported_at = firstAgentReportedAt;
+        }
+      }
 
-      await fetch(`/api/admin/client/${node.uuid}/edit`, {
+      const response = await fetch(`/api/admin/client/${node.uuid}/edit`, {
         method: "POST",
-        body: JSON.stringify({
-          price,
-          billing_cycle: billingCycleValue,
-          expired_at: expiredAtValue,
-          currency: currencyValue,
-          auto_renewal: autoRenewal,
-        }),
+        body: JSON.stringify(payload),
         headers: {
           "Content-Type": "application/json",
         },
       });
+      if (!response.ok) {
+        const message = await response.text();
+        throw new Error(message || `HTTP ${response.status}`);
+      }
       refresh();
       setOpen(false);
     } catch (error) {
-      toast.error("Failed to save billing information:" + error);
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : t("admin.nodeTable.billingSaveFailed", "账单保存失败")
+      );
     } finally {
       setSaving(false);
     }
@@ -2716,9 +2805,9 @@ function BillingButton({ node }: { node: NodeDetail }) {
             <TextField.Root
               name="expiredAt"
               defaultValue={
-                node.expired_at
+                node.expired_at && new Date(node.expired_at).getFullYear() > 1
                   ? new Date(node.expired_at).toISOString().slice(0, 10)
-                  : "0001-01-01"
+                  : nextMonthDate(node.first_agent_reported_at)
               }
               type="date"
             >
@@ -2741,6 +2830,115 @@ function BillingButton({ node }: { node: NodeDetail }) {
                 </Button>
               </TextField.Slot>
             </TextField.Root>
+
+            {billingEstimateSupported && <>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              <label className="space-y-1">
+                <span className="font-bold block">
+                  {t("admin.nodeTable.trafficRate", "流量单价")}
+                </span>
+                <TextField.Root
+                  name="trafficRate"
+                  type="number"
+                  min="0"
+                  max={MAX_BILLING_RATE}
+                  step="any"
+                  defaultValue={node.traffic_rate || ""}
+                  placeholder="0"
+                >
+                  <TextField.Slot side="right">/ TiB</TextField.Slot>
+                </TextField.Root>
+              </label>
+              <label className="space-y-1">
+                <span className="font-bold block">
+                  {t("admin.nodeTable.timeRate", "时间单价")}
+                </span>
+                <TextField.Root
+                  name="timeRate"
+                  type="number"
+                  min="0"
+                  max={MAX_BILLING_RATE}
+                  step="any"
+                  defaultValue={node.time_rate || ""}
+                  placeholder="0"
+                >
+                  <TextField.Slot side="right">/ h</TextField.Slot>
+                </TextField.Root>
+              </label>
+              <label className="space-y-1">
+                <span className="font-bold block">
+                  {t("admin.nodeTable.startupFee", "首次开机费")}
+                </span>
+                <TextField.Root
+                  name="startupFee"
+                  type="number"
+                  min="0"
+                  max={MAX_BILLING_RATE}
+                  step="any"
+                  defaultValue={node.startup_fee || ""}
+                  placeholder="0"
+                />
+              </label>
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {t(
+                  "admin.nodeTable.estimateTips",
+                  "用于实时费用估算；流量按 TiB（1024^4 bytes）计费，空值按 0 处理。首次开机费只在 Agent 首次成功上报后计入一次。"
+                )}
+              </p>
+
+              <div className="grid grid-cols-2 gap-x-4 gap-y-2 border-y py-3 text-sm">
+                <div>
+                  <span className="text-muted-foreground block">
+                    {t("admin.nodeTable.trafficEstimate", "流量费用")}
+                  </span>
+                  <strong>{formatEstimate(trafficEstimate)}</strong>
+                  <span className="text-muted-foreground ml-1">({trafficTiB.toFixed(4)} TiB)</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground block">
+                    {t("admin.nodeTable.runtimeEstimate", "运行时间费用")}
+                  </span>
+                  <strong>{formatEstimate(runtimeEstimate)}</strong>
+                  <span className="text-muted-foreground ml-1">({runtimeHours.toFixed(2)} h)</span>
+                </div>
+                <div>
+                  <span className="text-muted-foreground block">
+                    {t("admin.nodeTable.startupEstimate", "首次开机费")}
+                  </span>
+                  <strong>{formatEstimate(startupEstimate)}</strong>
+                </div>
+                <div>
+                  <span className="text-muted-foreground block">
+                    {t("admin.nodeTable.totalEstimate", "当前总估算")}
+                  </span>
+                  <strong>{formatEstimate(totalEstimate)}</strong>
+                </div>
+              </div>
+
+              <label className="font-bold flex items-center gap-1">
+                {t("admin.nodeTable.firstAgentReportedAt", "首次 Agent 上报时间")}
+                {node.first_agent_reported_at_estimated && (
+                  <span className="text-xs font-normal text-amber-600">
+                    {t("admin.nodeTable.estimatedAnchor", "按节点创建时间推定")}
+                  </span>
+                )}
+              </label>
+              <TextField.Root
+                name="firstAgentReportedAt"
+                type="datetime-local"
+                required={Boolean(node.first_agent_reported_at)}
+                defaultValue={
+                  formatLocalDateTimeInput(node.first_agent_reported_at)
+                }
+              />
+              <p className="text-sm text-muted-foreground">
+                {t(
+                  "admin.nodeTable.billingAnchorTips",
+                  "计费锚点可以修正，但首次成功上报后不能清空。"
+                )}
+              </p>
+            </>}
             <Flex gap="2" align="center"></Flex>
             <SettingCardSwitch
               title={t("admin.nodeTable.autoRenewal")}

@@ -24,6 +24,13 @@ export type NodeDetail = {
   group: string | undefined;
   billing_cycle: number;
   expired_at: string;
+  traffic_rate?: number;
+  time_rate?: number;
+  startup_fee?: number;
+  first_agent_reported_at?: string;
+  first_agent_reported_at_estimated?: boolean;
+  billing_startup_fee_applied?: boolean;
+  billing_traffic_bytes?: number;
   created_at: string;
   updated_at: string;
   [key: string]: any; 
