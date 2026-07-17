@@ -27,6 +27,7 @@ import { Toaster } from "./components/ui/sonner";
 import { RPC2Provider } from "./contexts/RPC2Context";
 import { NodeListProvider } from "./contexts/NodeListContext";
 const App = () => {
+	const isUpgradeRoute = window.location.pathname.replace(/\/$/, "") === "/admin/update/1.2.7";
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const tempKey = params.get("temp_key");
@@ -81,17 +82,24 @@ const App = () => {
             minHeight: "100vh",
           }}
         >
-          <RPC2Provider>
-            <PublicInfoProvider>
-              <NodeListProvider>
-                <Toaster />
-                <OfflineIndicator />
-                {routing}
-                <PWAInstallPrompt />
-                <PWAUpdatePrompt />
-              </NodeListProvider>
-            </PublicInfoProvider>
-          </RPC2Provider>
+		  {isUpgradeRoute ? (
+			<>
+			  <Toaster />
+			  {routing}
+			</>
+		  ) : (
+			<RPC2Provider>
+			  <PublicInfoProvider>
+				<NodeListProvider>
+				  <Toaster />
+				  <OfflineIndicator />
+				  {routing}
+				  <PWAInstallPrompt />
+				  <PWAUpdatePrompt />
+				</NodeListProvider>
+			  </PublicInfoProvider>
+			</RPC2Provider>
+		  )}
         </Theme>
       </ThemeContext.Provider>
     </Suspense>

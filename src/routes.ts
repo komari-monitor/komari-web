@@ -21,6 +21,12 @@ export const routes: RouteObject[] = [
     ],
   },
   {
+    path: "/admin/update/1.2.7",
+    element: React.createElement(
+      lazy(() => import("./pages/admin/update_1_2_7"))
+    ),
+  },
+  {
     path: "/admin",
     element: React.createElement(AdminLayout),
     children: [
