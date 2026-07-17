@@ -2630,6 +2630,9 @@ function BillingButton({ node }: { node: NodeDetail }) {
         (formData.get("billingCycle") as string) || "30"
       );
       const expiredAtValue = (formData.get("expiredAt") as string) || "";
+      const expiredAt = expiredAtValue
+        ? new Date(`${expiredAtValue}T00:00:00`).toISOString()
+        : null;
       const currencyValue = (formData.get("currency") as string) || "$";
 
       await fetch(`/api/admin/client/${node.uuid}/edit`, {
@@ -2637,7 +2640,7 @@ function BillingButton({ node }: { node: NodeDetail }) {
         body: JSON.stringify({
           price,
           billing_cycle: billingCycleValue,
-          expired_at: expiredAtValue,
+          expired_at: expiredAt,
           currency: currencyValue,
           auto_renewal: autoRenewal,
         }),
