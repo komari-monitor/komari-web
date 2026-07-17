@@ -687,7 +687,7 @@
       "migration_target": "ターゲット",
       "migration_title": "移行",
       "no_metrics": "メトリクス定義がありません",
-      "retention_description": "データの保持日数。デフォルトは 90",
+      "retention_description": "データの保持日数。デフォルトは 1。0 に設定すると、このメトリクスの永続化を無効にします",
       "retention_days": "保持日数",
       "retention_invalid": "有効な保持日数を入力してください",
       "retention_save_failed": "保持日数の保存に失敗しました",

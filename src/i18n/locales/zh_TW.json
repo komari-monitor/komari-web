@@ -687,7 +687,7 @@
       "migration_target": "目標庫",
       "migration_title": "遷移",
       "no_metrics": "暫無指標定義",
-      "retention_description": "資料保留天數，預設 90",
+      "retention_description": "資料保留天數，預設 1；設定為 0 將停用該指標持久化",
       "retention_days": "保留天數",
       "retention_invalid": "請輸入有效的保留天數",
       "retention_save_failed": "儲存保留天數失敗",

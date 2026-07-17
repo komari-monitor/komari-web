@@ -687,7 +687,7 @@
       "migration_target": "Target",
       "migration_title": "Migrasi",
       "no_metrics": "Tidak ada definisi metrik",
-      "retention_description": "Jumlah hari penyimpanan data, default 90",
+      "retention_description": "Jumlah hari penyimpanan data, default 1; 0 menonaktifkan persistensi untuk metrik tersebut",
       "retention_days": "Hari penyimpanan",
       "retention_invalid": "Masukkan jumlah hari yang valid",
       "retention_save_failed": "Gagal menyimpan hari penyimpanan",

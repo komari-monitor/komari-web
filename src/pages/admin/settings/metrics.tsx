@@ -534,7 +534,7 @@ function MetricRetentionTable({
     for (const metric of metrics) {
       const value = drafts[metric.name] ?? String(metric.retention_days);
       const days = parseInt(value, 10);
-      if (isNaN(days) || days <= 0) {
+      if (isNaN(days) || days < 0) {
         toast.error(t("settings.metrics.retention_invalid"));
         return;
       }
@@ -553,7 +553,7 @@ function MetricRetentionTable({
       return;
     }
     const days = parseInt(batchRetentionDays, 10);
-    if (isNaN(days) || days <= 0) {
+    if (isNaN(days) || days < 0) {
       toast.error(t("settings.metrics.retention_invalid"));
       return;
     }
@@ -641,7 +641,7 @@ function MetricRetentionTable({
                   </Text>
                   <TextField.Root
                     type="number"
-                    min="1"
+                    min="0"
                     value={batchRetentionDays}
                     onChange={(event) => setBatchRetentionDays(event.target.value)}
                   />
@@ -744,7 +744,7 @@ function MetricRetentionTable({
                       <TableCell>
                         <TextField.Root
                           type="number"
-                          min="1"
+                          min="0"
                           value={drafts[metric.name] ?? ""}
                           disabled={saving}
                           onChange={(event) =>
