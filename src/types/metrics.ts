@@ -1,7 +1,6 @@
 export type MetricTags = Record<string, string>;
 
 export type MetricTagged = {
-  tag?: MetricTags;
   tags?: MetricTags;
 };
 
