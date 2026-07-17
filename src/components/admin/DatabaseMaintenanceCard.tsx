@@ -5,13 +5,11 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { z } from "zod";
+import { DatabaseCompressionSettings } from "./DatabaseCompressionSettings";
+import { requestAdminData } from "./databaseMaintenanceApi";
 import { SettingCard } from "./SettingCard";
 
-const maintenanceActionSchema = z.enum([
-  "vacuum",
-  "optimize",
-  "vacuum_full",
-]);
+const maintenanceActionSchema = z.enum(["vacuum", "optimize", "vacuum_full"]);
 const nullableSizeSchema = z.number().finite().nonnegative().nullable();
 const databaseInfoSchema = z.object({
   driver: z.string().trim().min(1),
@@ -39,45 +37,10 @@ const maintenanceResultSchema = z.object({
   main: maintenanceItemSchema,
   monitoring: maintenanceItemSchema,
 });
-
 type DatabaseInfo = z.infer<typeof databaseInfoSchema>;
 type DatabaseOverview = z.infer<typeof databaseOverviewSchema>;
 type DatabaseMaintenanceResult = z.infer<typeof maintenanceResultSchema>;
 type TranslationFunction = ReturnType<typeof useTranslation>["t"];
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-async function requestAdminData(
-  input: RequestInfo | URL,
-  fallbackMessage: string,
-  init?: RequestInit,
-): Promise<unknown> {
-  const response = await fetch(input, init);
-  let payload: unknown;
-
-  try {
-    payload = await response.json();
-  } catch {
-    throw new Error(fallbackMessage);
-  }
-
-  const message =
-    isRecord(payload) && typeof payload.message === "string"
-      ? payload.message
-      : fallbackMessage;
-  if (
-    !response.ok ||
-    !isRecord(payload) ||
-    payload.status !== "success" ||
-    !("data" in payload)
-  ) {
-    throw new Error(message);
-  }
-
-  return payload.data;
-}
 
 function driverLabel(driver: string): string {
   switch (driver.toLowerCase()) {
@@ -94,7 +57,13 @@ function driverLabel(driver: string): string {
   }
 }
 
-function DatabaseSummaryRow({ label, info }: { label: string; info: DatabaseInfo }) {
+function DatabaseSummaryRow({
+  label,
+  info,
+}: {
+  label: string;
+  info: DatabaseInfo;
+}) {
   const { t } = useTranslation();
 
   return (
@@ -104,7 +73,8 @@ function DatabaseSummaryRow({ label, info }: { label: string; info: DatabaseInfo
           {label}
         </Text>
         <Text as="div" size="1" color="gray">
-          {driverLabel(info.driver)} / {t(`settings.database.locations.${info.location}`)}
+          {driverLabel(info.driver)} /{" "}
+          {t(`settings.database.locations.${info.location}`)}
         </Text>
         {info.error ? (
           <Text as="div" size="1" color="red" className="break-words">
@@ -155,7 +125,8 @@ function MaintenanceActionRow({
           {label}
         </Text>
         <Text as="div" size="1" color="gray">
-          {driverLabel(info.driver)} / {t(`settings.database.locations.${info.location}`)}
+          {driverLabel(info.driver)} /{" "}
+          {t(`settings.database.locations.${info.location}`)}
         </Text>
       </div>
       <Text
@@ -184,7 +155,9 @@ function maintenanceFailureDescription(
     .map(
       ([label, item]) =>
         `${label}: ${
-          item.error || item.size_error || t("settings.database.operation_failed")
+          item.error ||
+          item.size_error ||
+          t("settings.database.operation_failed")
         }`,
     );
 
@@ -250,7 +223,8 @@ export function DatabaseMaintenanceCard() {
       }
 
       const result = parsed.data;
-      const allItemsSucceeded = result.main.success && result.monitoring.success;
+      const allItemsSucceeded =
+        result.main.success && result.monitoring.success;
       if (result.all_succeeded && allItemsSucceeded) {
         toast.success(t("settings.database.maintenance_success"));
       } else {
@@ -302,6 +276,10 @@ export function DatabaseMaintenanceCard() {
             {loadError}
           </Text>
         ) : null}
+
+        <DatabaseCompressionSettings
+          visible={overview?.monitoring.location === "external"}
+        />
 
         <Flex justify="end" className="pt-3">
           {!overview && loadError ? (
