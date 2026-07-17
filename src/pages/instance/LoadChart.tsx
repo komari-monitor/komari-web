@@ -72,6 +72,7 @@ import {
   formatRemainingTags,
   isPingMetric,
   metricChartBoundaryTicks,
+  trimMetricChartBoundaryRows,
   metricSeriesColor,
   metricSeriesDataKey,
   metricSeriesKey,
@@ -1556,7 +1557,10 @@ const LoadChart = ({ data = [], onRealtimeActiveChange }: LoadChartProps) => {
               )
             : metricBuilt;
           const built = prepareChartData(rawBuilt, chart.metrics);
-          const chartRows = applyMetricEwma(built.rows, built.series, ewmaEnabled);
+          const chartRows = trimMetricChartBoundaryRows(
+            applyMetricEwma(built.rows, built.series, ewmaEnabled),
+            built.series.map((item) => item.dataKey),
+          );
           const chartTicks = metricChartBoundaryTicks(chartRows);
           const chartConfig = toChartConfig(built.series);
           const latestText = getLatestText(chartRows, built.series);

@@ -125,6 +125,27 @@ export const pingMetricStatKey = (entityId: string, taskId: string) =>
 
 export type MetricChartRow = Record<string, string | number | null>;
 
+export const trimMetricChartBoundaryRows = (
+  rows: MetricChartRow[],
+  dataKeys: readonly string[],
+) => {
+  if (rows.length === 0 || dataKeys.length === 0) return rows;
+
+  const hasValue = (row: MetricChartRow) =>
+    dataKeys.some((dataKey) => {
+      const value = row[dataKey];
+      return typeof value === "number" && Number.isFinite(value);
+    });
+
+  let first = 0;
+  while (first < rows.length && !hasValue(rows[first])) first += 1;
+  if (first === rows.length) return [];
+
+  let last = rows.length - 1;
+  while (last > first && !hasValue(rows[last])) last -= 1;
+  return rows.slice(first, last + 1);
+};
+
 export const metricChartBoundaryTicks = (rows: MetricChartRow[]) => {
   if (rows.length === 0) return [];
   const first = String(rows[0].time);
