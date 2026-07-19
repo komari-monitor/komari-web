@@ -13,7 +13,7 @@ import {
 import { toast } from "sonner";
 import Loading from "@/components/loading";
 import { DownloadIcon } from "lucide-react";
-import { useState } from "react";
+import { useState, useRef } from "react";
 import UploadDialog from "@/components/UploadDialog";
 
 export default function SiteSettings() {
@@ -26,6 +26,49 @@ export default function SiteSettings() {
   const [restoring, setRestoring] = useState(false);
   const [restoreProgress, setRestoreProgress] = useState(0);
   const [restoreXhr, setRestoreXhr] = useState<XMLHttpRequest | null>(null);
+  const cancelledRef = useRef(false);
+
+  // 上传单个分块，返回 Promise，通过 onProgress 回调汇报块内进度
+  const uploadChunk = (
+    uploadID: string,
+    chunkIndex: number,
+    chunk: Blob,
+    onProgress: (pct: number) => void,
+  ): Promise<void> => {
+    return new Promise((resolve, reject) => {
+      const xhr = new XMLHttpRequest();
+      setRestoreXhr(xhr);
+
+      xhr.upload.addEventListener("progress", (e) => {
+        if (e.lengthComputable) {
+          onProgress((e.loaded / e.total) * 100);
+        }
+      });
+
+      xhr.addEventListener("load", () => {
+        if (xhr.status >= 200 && xhr.status < 300) {
+          resolve();
+        } else {
+          reject(new Error(`Chunk ${chunkIndex} upload failed: ${xhr.status}`));
+        }
+      });
+
+      xhr.addEventListener("error", () =>
+        reject(new Error(`Chunk ${chunkIndex} network error`)),
+      );
+      xhr.addEventListener("abort", () =>
+        reject(new Error("Upload cancelled")),
+      );
+
+      const form = new FormData();
+      form.append("upload_id", uploadID);
+      form.append("chunk_index", String(chunkIndex));
+      form.append("chunk_data", chunk, `chunk-${chunkIndex}`);
+
+      xhr.open("POST", "/api/admin/upload/backup/chunk");
+      xhr.send(form);
+    });
+  };
 
   const uploadBackup = async (file: File) => {
     if (!file.name.endsWith(".zip")) {
@@ -33,80 +76,67 @@ export default function SiteSettings() {
       return;
     }
 
+    cancelledRef.current = false;
     setRestoring(true);
     setRestoreProgress(0);
-    const formData = new FormData();
-    formData.append("backup", file);
 
-    return new Promise<void>((resolve, reject) => {
-      const xhr = new XMLHttpRequest();
-      setRestoreXhr(xhr);
-
-      xhr.upload.addEventListener("progress", (e) => {
-        if (e.lengthComputable) {
-          const percent = (e.loaded / e.total) * 100;
-          setRestoreProgress(Math.round(percent));
-        }
+    try {
+      // 1. 初始化分块上传
+      const initRes = await fetch("/api/admin/upload/backup/init", {
+        method: "POST",
       });
+      if (!initRes.ok) {
+        throw new Error("Failed to init chunk upload");
+      }
+      const { upload_id, chunk_size } = await initRes.json();
 
-      xhr.addEventListener("load", () => {
-        try {
-          const ok = xhr.status >= 200 && xhr.status < 300;
-          const data = xhr.responseText ? JSON.parse(xhr.responseText) : {};
-          if (ok) {
-            if (data && data.status && data.status !== "success") {
-              // 服务器返回了非 success 状态
-              const msg =
-                data.message ||
-                t("settings.site.backup_restore_error", "恢复备份失败");
-              toast.error(msg);
-              reject(new Error(msg));
-            } else {
-              toast.success(t("account_settings.upload_success", "上传成功"));
-              setRestoreOpen(false);
-              setRestoreProgress(0);
-              resolve();
-            }
-          } else {
-            const msg =
-              (data && data.message) ||
-              t("settings.site.backup_restore_error", "恢复备份失败");
-            toast.error(msg);
-            reject(new Error(msg));
-          }
-        } catch (err) {
-          toast.error(t("settings.site.backup_restore_error", "恢复备份失败"));
-          reject(err as Error);
-        } finally {
-          setRestoring(false);
-          setRestoreXhr(null);
-        }
+      // 2. 按序上传所有分块
+      const totalChunks = Math.ceil(file.size / chunk_size);
+      for (let i = 0; i < totalChunks; i++) {
+        if (cancelledRef.current) break;
+
+        const start = i * chunk_size;
+        const end = Math.min(start + chunk_size, file.size);
+        const chunk = file.slice(start, end);
+
+        await uploadChunk(upload_id, i, chunk, (chunkPct) => {
+          // 总进度 = 已完成块占比 + 当前块内进度
+          const base = (i / totalChunks) * 100;
+          const delta = chunkPct / totalChunks;
+          setRestoreProgress(Math.round(base + delta));
+        });
+      }
+
+      if (cancelledRef.current) return;
+
+      // 3. 合并分块并触发恢复
+      const mergeRes = await fetch("/api/admin/upload/backup/merge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ upload_id, filename: file.name }),
       });
+      const mergeData = await mergeRes.json();
+      if (!mergeRes.ok || (mergeData.status && mergeData.status !== "success")) {
+        throw new Error(mergeData.message || "Merge failed");
+      }
 
-      xhr.addEventListener("error", () => {
-        toast.error(t("settings.site.backup_restore_error", "恢复备份失败"));
-        setRestoring(false);
-        setRestoreProgress(0);
-        setRestoreXhr(null);
-        reject(new Error("Network error"));
-      });
-
-      xhr.addEventListener("abort", () => {
-        toast.error(
-          t("theme.upload_failed", "上传失败") + ": Upload cancelled",
-        );
-        setRestoring(false);
-        setRestoreProgress(0);
-        setRestoreXhr(null);
-        reject(new Error("Upload cancelled"));
-      });
-
-      xhr.open("POST", "/api/admin/upload/backup");
-      xhr.send(formData);
-    });
+      toast.success(t("account_settings.upload_success", "上传成功"));
+      setRestoreOpen(false);
+      setRestoreProgress(0);
+    } catch (err) {
+      const msg =
+        err instanceof Error
+          ? err.message
+          : t("settings.site.backup_restore_error", "恢复备份失败");
+      toast.error(msg);
+    } finally {
+      setRestoring(false);
+      setRestoreXhr(null);
+    }
   };
 
   const cancelRestore = () => {
+    cancelledRef.current = true;
     if (restoreXhr) restoreXhr.abort();
   };
 
