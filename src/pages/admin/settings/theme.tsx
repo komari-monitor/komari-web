@@ -924,11 +924,10 @@ const ThemePage = () => {
       <label className="text-muted-foreground text-sm">
         {t("theme.find_more")}
         <a
-          href="https://komari-document.pages.dev/community/theme.html"
-          target="_blank"
+          href="/admin/market/themes"
           className="text-accent-9"
         >
-          {t("theme.theme_link")}
+          {t("market.themes")}
         </a>
       </label>
     </Box>

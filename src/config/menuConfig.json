@@ -48,6 +48,18 @@
       ]
     },
     {
+      "labelKey": "market.title",
+      "path": "/admin/market",
+      "icon": "Store",
+      "children": [
+        {
+          "labelKey": "market.themes",
+          "path": "/admin/market/themes",
+          "icon": "Palette"
+        }
+      ]
+    },
+    {
       "labelKey": "notification.title",
       "path": "/admin/notification",
       "icon": "Bell",
