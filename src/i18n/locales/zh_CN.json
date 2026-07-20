@@ -284,9 +284,7 @@
     "name": "名称",
     "no_results": "没有结果",
     "none": "无",
-    "unknown": "未知",
     "once": "一次性",
-
     "private_site": "这是一个私有的Komari站点，请先登录。",
     "quarterly": "季",
     "quinquennial": "五年",
@@ -314,6 +312,7 @@
     "title": "标题",
     "triennial": "三年",
     "ungrouped": "未分组",
+    "unknown": "未知",
     "update": "更新",
     "update_available": "有新版本",
     "updated_successfully": "成功更新",
@@ -579,7 +578,6 @@
       "auto_discovery_key_description": "使用自动发现可以批量注册客户端，留空表示禁用自动发现。",
       "title": "通用"
     },
-
     "geoip": {
       "enable_description": "显示节点的地理位置信息",
       "enable_title": "启用地理位置信息",
