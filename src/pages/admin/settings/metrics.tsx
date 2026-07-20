@@ -285,6 +285,16 @@ export default function MetricsSettings() {
       </SettingCardLabel>
 
       <SettingCardSwitch
+        title={t("settings.metrics.low_resource_title")}
+        description={t("settings.metrics.low_resource_description")}
+        label={t("settings.metrics.low_resource_enabled")}
+        defaultChecked={settings.low_resource_mode === true}
+        onChange={async (checked) => {
+          await saveMetricSettings({ low_resource_mode: checked });
+        }}
+      />
+
+      <SettingCardSwitch
         title={t("settings.metrics.downsampling_title")}
         description={t("settings.metrics.downsampling_description")}
         label={t("settings.metrics.downsampling_enabled")}
