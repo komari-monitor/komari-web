@@ -645,7 +645,7 @@
     "invalid_number": "無効な数字",
     "metrics": {
       "advanced_title": "詳細オプション",
-      "low_resource_description": "有効にすると、同一ノードの 30 秒間のレポートを各メトリクスの P95 で 1 件に統合し、1 トランザクションあたり最大 128 ノードを書き込みます。SQLite は 8 MiB キャッシュ、mmap 無効、ファイル一時領域、単一接続を使用します。未設定の場合に限り、メモリ、シングルコア CPU、4K ランダム書き込み、IOPS、空きディスク容量から既定値を自動判定します。",
+      "low_resource_description": "有効にすると、Komari はデータのサンプリング頻度を下げ、リソース使用量を削減します。",
       "low_resource_enabled": "有効",
       "low_resource_title": "低リソースモード",
       "batch_description": "複数のメトリクスを選択し、同じ生データ保持日数を一括で設定します。",

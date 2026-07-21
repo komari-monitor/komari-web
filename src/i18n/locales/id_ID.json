@@ -645,7 +645,7 @@
     "invalid_number": "Angka tidak valid",
     "metrics": {
       "advanced_title": "Opsi Lanjutan",
-      "low_resource_description": "Menggabungkan laporan setiap node selama 30 detik menjadi satu sampel P95 dan menulis paling banyak 128 node per transaksi. SQLite juga memakai cache 8 MiB, tanpa mmap, penyimpanan sementara berbasis berkas, dan satu koneksi. Server hanya memilih nilai awal secara otomatis dari pemeriksaan memori, CPU satu inti, tulis acak 4K, IOPS, dan ruang disk jika pengaturan ini belum pernah disimpan.",
+      "low_resource_description": "Saat diaktifkan, Komari akan mengurangi frekuensi pengambilan sampel data untuk menghemat penggunaan sumber daya.",
       "low_resource_enabled": "Aktifkan",
       "low_resource_title": "Mode sumber daya rendah",
       "batch_description": "Pilih beberapa metrik dan terapkan masa penyimpanan data mentah yang sama.",

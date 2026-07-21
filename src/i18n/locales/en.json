@@ -645,7 +645,7 @@
     "invalid_number": "Invalid number",
     "metrics": {
       "advanced_title": "Advanced Options",
-      "low_resource_description": "Combines each node's reports over 30 seconds into one P95 sample and writes at most 128 nodes per transaction. SQLite also uses an 8 MiB cache, no mmap, file-backed temporary storage, and a single connection. The server only auto-selects this default from memory, single-core CPU, 4K random write, IOPS, and free disk checks when the setting has never been saved.",
+      "low_resource_description": "When enabled, Komari reduces the data sampling frequency to save resource usage.",
       "low_resource_enabled": "Enable",
       "low_resource_title": "Low resource mode",
       "batch_description": "Select metrics and apply one raw-data retention period to all of them.",

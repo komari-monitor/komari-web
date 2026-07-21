@@ -746,7 +746,7 @@
       "fetch_metrics_failed": "获取指标列表失败",
       "fetch_status_failed": "获取迁移状态失败",
       "loading_metrics": "正在加载指标...",
-      "low_resource_description": "开启后，同一节点 30 秒内的上报按各指标 P95 合并为一条，写入时每批最多处理 128 个节点；SQLite 同时使用 8 MiB 缓存、禁用 mmap、文件临时存储和单连接读取。仅在从未设置过时，服务器才会根据内存、单核 CPU、4K 随机写、IOPS 和磁盘可用空间自动选择默认值。",
+      "low_resource_description": "开启后，Komari 将降低数据的采样频率，节省资源占用。",
       "low_resource_enabled": "启用",
       "low_resource_title": "低资源模式",
       "max_idle_conns_description": "数据库最大空闲连接数，默认 5",
