@@ -24,7 +24,7 @@ import {
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
-import LanguageSwitch from "@/components/Language";
+import GuideHeader from "@/components/GuideHeader";
 import { SettingCard, SettingCardLabel } from "@/components/admin/SettingCard";
 
 const API_BASE = "/api/admin/update/1.2.7";
@@ -289,17 +289,7 @@ const Upgrade127 = () => {
         style={{ borderColor: "var(--gray-a5)" }}
       >
         <Container size="3" px={{ initial: "4", sm: "6" }} py="3">
-          <Flex align="center" justify="between" gap="4">
-            <div className="min-w-0">
-              <Text as="div" size="3" weight="bold" color="blue">
-                Komari 1.2.7
-              </Text>
-              <Text as="div" size="1" color="gray" className="truncate">
-                {t(`${I18N_PREFIX}.subtitle`)}
-              </Text>
-            </div>
-            <LanguageSwitch />
-          </Flex>
+          <GuideHeader />
         </Container>
       </header>
 

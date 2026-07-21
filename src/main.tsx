@@ -28,6 +28,7 @@ import { RPC2Provider } from "./contexts/RPC2Context";
 import { NodeListProvider } from "./contexts/NodeListContext";
 const App = () => {
 	const isUpgradeRoute = window.location.pathname.replace(/\/$/, "") === "/admin/update/1.2.7";
+	const isRestrictedGuideRoute = isUpgradeRoute || window.location.pathname.replace(/\/$/, "") === "/install";
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const tempKey = params.get("temp_key");
@@ -82,7 +83,7 @@ const App = () => {
             minHeight: "100vh",
           }}
         >
-		  {isUpgradeRoute ? (
+		  {isRestrictedGuideRoute ? (
 			<>
 			  <Toaster />
 			  {routing}

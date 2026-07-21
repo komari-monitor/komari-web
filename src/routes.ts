@@ -27,6 +27,10 @@ export const routes: RouteObject[] = [
     ),
   },
   {
+    path: "/install",
+    element: React.createElement(lazy(() => import("./pages/install"))),
+  },
+  {
     path: "/admin",
     element: React.createElement(AdminLayout),
     children: [
