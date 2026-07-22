@@ -1161,6 +1161,20 @@
   },
   "warn_https": "當前連接不是 HTTPS！您的敏感數據存在嚴重風險。請立即採取措施確保連接安全！複製操作可能無法使用！",
   "warn_websocket": "RPC2 請求失敗，請檢查網絡連接或伺服器狀態！",
+  "database_recovery": {
+    "title": "監控資料庫復原",
+    "subtitle": "目前無法連線到監控資料庫。請登入後更新連線字串。",
+    "history_note": "復原流程只會使用新的 DSN 重新連線，不會從原連線遷移任何資料。",
+    "failure_detail": "資料庫連線已連續失敗 {{count}}/{{max}} 次。此頁面只能修改監控資料庫 DSN。",
+    "dsn_required": "請輸入監控資料庫連線字串。",
+    "save": "儲存並重新連線",
+    "saving": "連線中...",
+    "completed_title": "資料庫連線已恢復",
+    "completed_description": "伺服器正在重新啟動一般控制台。",
+    "save_failed": "監控資料庫連線失敗，請檢查連線字串後重試。",
+    "network_error": "無法連線到復原服務。",
+    "request_failed": "要求失敗，請重試。"
+  },
   "install": {
     "title": "安裝精靈",
     "welcome": "歡迎",

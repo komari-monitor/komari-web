@@ -1161,6 +1161,20 @@
   },
   "warn_https": "Koneksi saat ini bukan HTTPS! Data sensitif Anda berisiko. Amankan koneksi sekarang! Fitur salin mungkin tidak tersedia!",
   "warn_websocket": "Permintaan RPC2 gagal, periksa koneksi jaringan atau status server!",
+  "database_recovery": {
+    "title": "Pemulihan basis data pemantauan",
+    "subtitle": "Basis data pemantauan tidak dapat dijangkau. Masuk untuk memperbarui string koneksi.",
+    "history_note": "Pemulihan hanya menyambungkan ulang dengan DSN baru; tidak ada data yang dimigrasikan dari koneksi sebelumnya.",
+    "failure_detail": "Koneksi basis data gagal {{count}} dari {{max}} kali berturut-turut. Halaman ini hanya dapat mengubah DSN basis data pemantauan.",
+    "dsn_required": "Masukkan string koneksi basis data pemantauan.",
+    "save": "Simpan dan sambungkan ulang",
+    "saving": "Menghubungkan...",
+    "completed_title": "Koneksi basis data pulih",
+    "completed_description": "Server sedang memulai kembali panel kontrol normal.",
+    "save_failed": "Koneksi basis data pemantauan gagal. Periksa DSN lalu coba lagi.",
+    "network_error": "Tidak dapat terhubung ke layanan pemulihan.",
+    "request_failed": "Permintaan gagal. Silakan coba lagi."
+  },
   "install": {
     "title": "Panduan instalasi",
     "welcome": "Selamat datang",

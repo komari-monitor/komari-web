@@ -23,6 +23,7 @@ import {
 import { useTranslation } from "react-i18next";
 import GuideHeader from "@/components/GuideHeader";
 import UploadDialog from "@/components/UploadDialog";
+import { isSQLiteDSN } from "@/utils/metric";
 
 type APIResponse<T> = {
   status: "success" | "error";
@@ -30,18 +31,6 @@ type APIResponse<T> = {
   data?: T;
 };
 type InstallStatus = { state: string; required: boolean };
-
-function isSQLiteDSN(dsn: string): boolean {
-  const normalized = dsn.trim().toLowerCase();
-  return (
-    !normalized.startsWith("mysql://") &&
-    !normalized.startsWith("postgres://") &&
-    !normalized.startsWith("postgresql://") &&
-    !normalized.includes("@tcp(") &&
-    !normalized.includes("@unix(") &&
-    !normalized.includes("dbname=")
-  );
-}
 
 async function request<T>(path: string, init?: RequestInit): Promise<T> {
   const response = await fetch(`/api/install${path}`, {

@@ -1161,6 +1161,20 @@
   },
   "warn_https": "The current connection is not HTTPS! Your sensitive data is at serious risk. Take immediate action to secure the connection! Copy may not available!",
   "warn_websocket": "RPC2 request failed, please check the network connection or server status!",
+  "database_recovery": {
+    "title": "Monitoring database recovery",
+    "subtitle": "The monitoring database could not be reached. Sign in to update its connection string.",
+    "history_note": "Recovery only reconnects with the new DSN; it does not migrate any data from the previous connection.",
+    "failure_detail": "The connection failed {{count}} of {{max}} times. Only the monitoring database DSN can be changed here.",
+    "dsn_required": "Enter a monitoring database DSN.",
+    "save": "Save and reconnect",
+    "saving": "Connecting...",
+    "completed_title": "Connection restored",
+    "completed_description": "The server is starting the normal control panel again.",
+    "save_failed": "The monitoring database connection failed. Check the DSN and try again.",
+    "network_error": "Unable to connect to the recovery service.",
+    "request_failed": "The request failed. Please try again."
+  },
   "install": {
     "title": "Installation guide",
     "welcome": "Welcome",
