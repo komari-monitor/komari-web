@@ -2,6 +2,14 @@ import Loading from "@/components/loading";
 import { useSettings } from "@/lib/api";
 import { resolveI18nText, type I18nText } from "@/utils/i18nText";
 import {
+  getThemeConfigurationType,
+  normalizeThemeRedirectTarget,
+  THEME_CONFIGURATION_MANAGED,
+  THEME_CONFIGURATION_RAW,
+  THEME_CONFIGURATION_REDIRECT,
+  type ThemeConfiguration,
+} from "@/utils/themeConfiguration";
+import {
   Badge,
   Box,
   Button,
@@ -101,6 +109,40 @@ async function request<T>(input: RequestInfo | URL, init?: RequestInit) {
   }
   return payload;
 }
+
+const hasThemeConfigurationMenu = (configuration?: ThemeConfiguration) => {
+  const type = getThemeConfigurationType(configuration);
+
+  if (type === THEME_CONFIGURATION_MANAGED) {
+    return (
+      Array.isArray(configuration?.data) && configuration.data.length > 0
+    );
+  }
+
+  if (type === THEME_CONFIGURATION_RAW) return true;
+
+  return (
+    type === THEME_CONFIGURATION_REDIRECT &&
+    Boolean(normalizeThemeRedirectTarget(configuration?.data))
+  );
+};
+
+const themeNeedsSidebarRefresh = async (themeShort: string) => {
+  try {
+    const response = await fetch(
+      `/themes/${encodeURIComponent(themeShort)}/komari-theme.json`,
+      { cache: "no-cache" },
+    );
+    if (!response.ok) return false;
+
+    const manifest = (await response.json()) as {
+      configuration?: ThemeConfiguration;
+    };
+    return hasThemeConfigurationMenu(manifest.configuration);
+  } catch {
+    return false;
+  }
+};
 
 export default function ThemeMarketPage() {
   const { t, i18n } = useTranslation();
@@ -202,6 +244,9 @@ export default function ThemeMarketPage() {
       await request(`/api/admin/theme/set?theme=${encodeURIComponent(theme.short)}`);
       await refetchSettings();
       toast.success(t("theme.set_success", "Theme activated"));
+      if (await themeNeedsSidebarRefresh(theme.short)) {
+        window.location.reload();
+      }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : String(error));
     } finally {
