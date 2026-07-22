@@ -1165,7 +1165,7 @@
     "title": "監控資料庫復原",
     "subtitle": "目前無法連線到監控資料庫。請登入後更新連線字串。",
     "history_note": "復原流程只會使用新的 DSN 重新連線，不會從原連線遷移任何資料。",
-    "failure_detail": "資料庫連線已連續失敗 {{count}}/{{max}} 次。此頁面只能修改監控資料庫 DSN。",
+    "failure_detail": "資料庫連線已連續失敗 {{count}}/{{max}} 次。",
     "dsn_required": "請輸入監控資料庫連線字串。",
     "save": "儲存並重新連線",
     "saving": "連線中...",

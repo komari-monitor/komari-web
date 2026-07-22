@@ -1165,7 +1165,7 @@
     "title": "Monitoring database recovery",
     "subtitle": "The monitoring database could not be reached. Sign in to update its connection string.",
     "history_note": "Recovery only reconnects with the new DSN; it does not migrate any data from the previous connection.",
-    "failure_detail": "The connection failed {{count}} of {{max}} times. Only the monitoring database DSN can be changed here.",
+    "failure_detail": "The connection failed {{count}} of {{max}} times.",
     "dsn_required": "Enter a monitoring database DSN.",
     "save": "Save and reconnect",
     "saving": "Connecting...",

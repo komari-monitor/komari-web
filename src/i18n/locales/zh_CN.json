@@ -360,7 +360,7 @@
     "completed_description": "服务器正在重新启动普通控制台。",
     "completed_title": "数据库连接已恢复",
     "dsn_required": "请输入监控数据库连接串。",
-    "failure_detail": "数据库连接已连续失败 {{count}}/{{max}} 次。此页面只能修改监控数据库 DSN。",
+    "failure_detail": "数据库连接已连续失败 {{count}}/{{max}} 次。",
     "history_note": "恢复流程只使用新 DSN 重新建立连接，不会从原连接迁移任何数据。",
     "network_error": "无法连接恢复服务。",
     "request_failed": "请求失败，请重试。",

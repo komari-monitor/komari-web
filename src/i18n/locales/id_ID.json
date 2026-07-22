@@ -1165,7 +1165,7 @@
     "title": "Pemulihan basis data pemantauan",
     "subtitle": "Basis data pemantauan tidak dapat dijangkau. Masuk untuk memperbarui string koneksi.",
     "history_note": "Pemulihan hanya menyambungkan ulang dengan DSN baru; tidak ada data yang dimigrasikan dari koneksi sebelumnya.",
-    "failure_detail": "Koneksi basis data gagal {{count}} dari {{max}} kali berturut-turut. Halaman ini hanya dapat mengubah DSN basis data pemantauan.",
+    "failure_detail": "Koneksi basis data gagal {{count}} dari {{max}} kali berturut-turut.",
     "dsn_required": "Masukkan string koneksi basis data pemantauan.",
     "save": "Simpan dan sambungkan ulang",
     "saving": "Menghubungkan...",
