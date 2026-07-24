@@ -86,9 +86,9 @@ const MiniPingChart = ({
     setError(null);
     setHiddenLines({});
 
-    const taskRequest = call<unknown, PublicPingTask[]>("public:getPublicPingTasks").catch(
-      () => [],
-    );
+    const taskRequest = call<unknown, PublicPingTask[]>(
+      "public:getPublicPingTasks",
+    ).catch(() => []);
     const metricRequest = call<unknown, QueryMetricsResponse>(
       "public:queryMetrics",
       {
@@ -118,7 +118,9 @@ const MiniPingChart = ({
       })
       .catch((requestError) => {
         if (!active) return;
-        setError(requestError instanceof Error ? requestError.message : "Error");
+        setError(
+          requestError instanceof Error ? requestError.message : "Error",
+        );
         setLoading(false);
       });
 
@@ -170,13 +172,17 @@ const MiniPingChart = ({
         const time = new Date(point.time).toISOString();
         const row = rows.get(time) ?? { time };
         row[dataKey] =
-          typeof point.value === "number" && point.value >= 0 ? point.value : null;
+          typeof point.value === "number" && point.value >= 0
+            ? point.value
+            : null;
         rows.set(time, row);
       }
     });
 
     const orderedSeries = renderSeries
-      .sort((left, right) => comparePingTaskOrder(left.tags, right.tags, taskMap))
+      .sort((left, right) =>
+        comparePingTaskOrder(left.tags, right.tags, taskMap),
+      )
       .map((series, index) => ({
         ...series,
         color: metricSeriesColor(index),
@@ -185,7 +191,8 @@ const MiniPingChart = ({
     return {
       rows: Array.from(rows.values()).sort(
         (left, right) =>
-          new Date(String(left.time)).getTime() - new Date(String(right.time)).getTime(),
+          new Date(String(left.time)).getTime() -
+          new Date(String(right.time)).getTime(),
       ),
       series: orderedSeries,
     };
@@ -207,7 +214,10 @@ const MiniPingChart = ({
     }
     return config;
   }, [built.series]);
-  const chartTicks = useMemo(() => metricChartBoundaryTicks(chartData), [chartData]);
+  const chartTicks = useMemo(
+    () => metricChartBoundaryTicks(chartData),
+    [chartData],
+  );
 
   const labelFormatter = (value: string | number) =>
     new Date(value).toLocaleString([], {
@@ -267,7 +277,9 @@ const MiniPingChart = ({
                   >
                     <span
                       className="size-2 shrink-0 rounded-[2px]"
-                      style={{ backgroundColor: hidden ? "var(--gray-8)" : item.color }}
+                      style={{
+                        backgroundColor: hidden ? "var(--gray-8)" : item.color,
+                      }}
                     />
                     <span className={cn("truncate", hidden && "line-through")}>
                       {item.name}
@@ -288,7 +300,10 @@ const MiniPingChart = ({
             })}
           </div>
 
-          <ChartContainer config={chartConfig} className="min-h-0 w-full flex-1">
+          <ChartContainer
+            config={chartConfig}
+            className="min-h-0 h-10/12 w-full flex-1"
+          >
             <LineChart
               data={chartData}
               accessibilityLayer
@@ -352,7 +367,9 @@ const MiniPingChart = ({
             />
             <span className="text-sm font-medium">EWMA</span>
             <Tips mode="auto" side="top">
-              <span dangerouslySetInnerHTML={{ __html: t("chart.cutPeak_tips") }} />
+              <span
+                dangerouslySetInnerHTML={{ __html: t("chart.cutPeak_tips") }}
+              />
             </Tips>
           </div>
         </>
