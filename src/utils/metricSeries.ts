@@ -117,6 +117,35 @@ export const pingTaskName = (
   fallback: (taskId: string) => string,
 ) => tasks.get(taskId)?.name?.trim() || fallback(taskId);
 
+// Keep ping metric series aligned with the backend's ORDER BY weight ASC, id ASC.
+export const comparePingTaskOrder = (
+  leftTags: MetricTags | undefined,
+  rightTags: MetricTags | undefined,
+  tasks: ReadonlyMap<string, PublicPingTask>,
+) => {
+  const leftId = pingTaskId(leftTags);
+  const rightId = pingTaskId(rightTags);
+  const leftTask = leftId ? tasks.get(leftId) : undefined;
+  const rightTask = rightId ? tasks.get(rightId) : undefined;
+
+  if (leftTask && rightTask) {
+    const weightDelta = leftTask.weight - rightTask.weight;
+    if (weightDelta !== 0) return weightDelta;
+
+    const idDelta = leftTask.id - rightTask.id;
+    if (idDelta !== 0) return idDelta;
+  } else if (leftTask) {
+    return -1;
+  } else if (rightTask) {
+    return 1;
+  }
+
+  if (leftId === rightId) return 0;
+  if (!leftId) return 1;
+  if (!rightId) return -1;
+  return leftId.localeCompare(rightId, undefined, { numeric: true });
+};
+
 export const pingMetricStatKey = (entityId: string, taskId: string) =>
   `${entityId}:${taskId}`;
 

@@ -69,6 +69,7 @@ import type {
 import {
   PING_LATENCY_METRIC,
   applyMetricEwma,
+  comparePingTaskOrder,
   formatRemainingTags,
   isPingMetric,
   metricChartBoundaryTicks,
@@ -807,6 +808,7 @@ const metricUnitKey = (series: RenderSeries) => {
 const prepareChartData = (
   built: BuiltChartData,
   metricOrder: string[],
+  pingTaskMap: ReadonlyMap<string, PublicPingTask>,
 ): PreparedChartData => {
   const metricPositions = new Map(
     metricOrder.map((metricKey, index) => [metricKey, index]),
@@ -816,6 +818,13 @@ const prepareChartData = (
       (metricPositions.get(left.metricKey) ?? Number.MAX_SAFE_INTEGER) -
       (metricPositions.get(right.metricKey) ?? Number.MAX_SAFE_INTEGER);
     if (positionDelta !== 0) return positionDelta;
+    if (
+      left.metricKey === right.metricKey &&
+      isPingMetric(left.metricKey)
+    ) {
+      const taskOrder = comparePingTaskOrder(left.tags, right.tags, pingTaskMap);
+      if (taskOrder !== 0) return taskOrder;
+    }
     if (left.stableKey === right.stableKey) return 0;
     return left.stableKey < right.stableKey ? -1 : 1;
   });
@@ -1614,7 +1623,7 @@ const LoadChart = ({ data = [], onRealtimeActiveChange }: LoadChartProps) => {
                 metricBuilt,
               )
             : metricBuilt;
-          const built = prepareChartData(rawBuilt, chart.metrics);
+          const built = prepareChartData(rawBuilt, chart.metrics, pingTaskMap);
           const chartRows = trimMetricChartBoundaryRows(
             applyMetricEwma(built.rows, built.series, ewmaEnabled),
             built.series.map((item) => item.dataKey),

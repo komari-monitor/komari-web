@@ -34,6 +34,7 @@ export type QueryMetricsResponse = {
 
 export type PublicPingTask = {
   id: number;
+  weight: number;
   name: string;
   type?: string;
   interval?: number;
