@@ -55,6 +55,10 @@ type UpgradeStatus = {
   source_rows_total: number;
   written_points: number;
   progress: number;
+  storage_current?: number;
+  storage_total?: number;
+  storage_preserved?: number;
+  storage_progress?: number;
   target_driver?: Driver;
   error?: string;
 };
@@ -204,6 +208,12 @@ const Upgrade127 = () => {
 
   const phaseText = useMemo(() => {
     if (!status) return "";
+    if (status.phase.startsWith("storage_")) {
+      const phase = status.phase.slice("storage_".length);
+      return t(`settings.update_storage_v4.phase_${phase}`, {
+        defaultValue: t("settings.update_storage_v4.phase_preparing"),
+      });
+    }
     switch (status.phase) {
       case "connecting":
       case "saving_target":
@@ -222,6 +232,20 @@ const Upgrade127 = () => {
         return t(`${I18N_PREFIX}.progress_title`);
     }
   }, [status, t]);
+
+  const storagePhase = status?.phase.startsWith("storage_") ?? false;
+  const displayedDone = storagePhase
+    ? status?.storage_current ?? 0
+    : status?.source_rows_done ?? 0;
+  const displayedTotal = storagePhase
+    ? status?.storage_total ?? 0
+    : status?.source_rows_total ?? 0;
+  const displayedWritten = storagePhase
+    ? status?.storage_preserved ?? 0
+    : status?.written_points ?? 0;
+  const displayedProgress = storagePhase
+    ? status?.storage_progress ?? 0
+    : status?.progress ?? 0;
 
   const handleDriver = (value: string) => {
     const next = value as Driver;
@@ -504,16 +528,16 @@ const Upgrade127 = () => {
                     <Flex justify="between" gap="3">
                       <Text size="2" color="gray">
                         {t(`${I18N_PREFIX}.progress_detail`, {
-                          done: formatNumber(status.source_rows_done),
-                          total: formatNumber(status.source_rows_total),
-                          points: formatNumber(status.written_points),
+                          done: formatNumber(displayedDone),
+                          total: formatNumber(displayedTotal),
+                          points: formatNumber(displayedWritten),
                         })}
                       </Text>
                       <Text weight="bold" className="tabular-nums">
-                        {Math.round(status.progress)}%
+                        {Math.round(displayedProgress)}%
                       </Text>
                     </Flex>
-                    <Progress value={status.progress} size="3" />
+                    <Progress value={displayedProgress} size="3" />
                   </Flex>
                 </SettingCard>
               )}

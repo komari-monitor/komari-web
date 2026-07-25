@@ -27,8 +27,14 @@ import { Toaster } from "./components/ui/sonner";
 import { RPC2Provider } from "./contexts/RPC2Context";
 import { NodeListProvider } from "./contexts/NodeListContext";
 const App = () => {
-	const isUpgradeRoute = window.location.pathname.replace(/\/$/, "") === "/admin/update/1.2.7";
-	const isRestrictedGuideRoute = isUpgradeRoute || window.location.pathname.replace(/\/$/, "") === "/install" || window.location.pathname.replace(/\/$/, "") === "/database-recovery";
+	const currentPath = window.location.pathname.replace(/\/$/, "");
+	const isUpgradeRoute =
+		currentPath === "/admin/update/1.2.7" ||
+		currentPath === "/admin/update/storage-v4";
+	const isRestrictedGuideRoute =
+		isUpgradeRoute ||
+		currentPath === "/install" ||
+		currentPath === "/database-recovery";
   React.useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     const tempKey = params.get("temp_key");
