@@ -1184,7 +1184,6 @@ const LoadChart = ({ data = [], onRealtimeActiveChange }: LoadChartProps) => {
             metric_keys: group.metricKeys,
             entity_id: uuid,
             ...group.rangeParams,
-            downsample: true,
             max_points: HISTORY_MAX_POINTS,
             aggregation,
             fill_empty: true,

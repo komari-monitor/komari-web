@@ -21,9 +21,9 @@ export const routes: RouteObject[] = [
     ],
   },
   {
-    path: "/admin/update/1.2.7",
+    path: "/admin/database-migration",
     element: React.createElement(
-      lazy(() => import("./pages/admin/update_1_2_7"))
+      lazy(() => import("./pages/database_migration")),
     ),
   },
   {
@@ -34,6 +34,18 @@ export const routes: RouteObject[] = [
     path: "/database-recovery",
     element: React.createElement(
       lazy(() => import("./pages/database_recovery")),
+    ),
+  },
+  {
+    path: "/admin/update/1.2.7",
+    element: React.createElement(
+      lazy(() => import("./pages/database_migration")),
+    ),
+  },
+  {
+    path: "/admin/metric-store/restructure",
+    element: React.createElement(
+      lazy(() => import("./pages/database_migration")),
     ),
   },
   {

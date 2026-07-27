@@ -93,7 +93,10 @@ export default defineConfig(({ mode }) => {
         },
         workbox: {
           globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
-          navigateFallbackDenylist: [/^\/database-recovery(?:\/|$)/],
+          navigateFallbackDenylist: [
+            /^\/database-recovery(?:\/|$)/,
+            /^\/admin\/(?:database-migration|update\/1\.2\.7|metric-store\/restructure)(?:\/|$)/,
+          ],
           runtimeCaching: [
             {
               urlPattern: /^https:\/\/api\./i,

@@ -95,7 +95,6 @@ const MiniPingChart = ({
         metric_keys: [PING_LATENCY_METRIC],
         entity_id: uuid,
         hours,
-        downsample: true,
         max_points: 240,
         aggregation: "avg",
         fill_empty: true,
