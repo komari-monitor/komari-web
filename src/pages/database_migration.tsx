@@ -21,6 +21,7 @@ import {
   LoaderCircle,
   Play,
   Server,
+  Trash2,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
@@ -50,7 +51,15 @@ type Summary = {
 
 type MigrationStatus = {
   mode: Mode;
-  state: "idle" | "ready" | "migrating" | "copying" | "reclaiming" | "completed" | "failed";
+  state:
+    | "idle"
+    | "ready"
+    | "migrating"
+    | "copying"
+    | "discarding"
+    | "reclaiming"
+    | "completed"
+    | "failed";
   phase: string;
   progress: number;
   error?: string;
@@ -77,7 +86,11 @@ type LoginMethods = Pick<
 > & { mode: Mode };
 type Me = Pick<RestrictedAuthStatus, "logged_in" | "username">;
 type AuthStatus = LoginMethods & Me;
-type APIResponse<T> = { status: "success" | "error"; message?: string; data?: T };
+type APIResponse<T> = {
+  status: "success" | "error";
+  message?: string;
+  data?: T;
+};
 
 class MigrationRequestError extends Error {
   readonly status: number;
@@ -104,7 +117,11 @@ async function request<T>(path: string, init?: RequestInit): Promise<T> {
     cache: "no-store",
   });
   const payload = (await response.json()) as APIResponse<T>;
-  if (!response.ok || payload.status !== "success" || payload.data === undefined) {
+  if (
+    !response.ok ||
+    payload.status !== "success" ||
+    payload.data === undefined
+  ) {
     throw new MigrationRequestError(
       response.status,
       payload.message || `HTTP ${response.status}`,
@@ -147,9 +164,11 @@ export default function DatabaseMigration() {
   const [driver, setDriver] = useState<Driver>("sqlite");
   const [dsn, setDSN] = useState(examples.sqlite);
   const [confirmOpen, setConfirmOpen] = useState(false);
+  const [discardOpen, setDiscardOpen] = useState(false);
   const [busy, setBusy] = useState(false);
   const [confirmSQLite, setConfirmSQLite] = useState(false);
   const [confirmLarge, setConfirmLarge] = useState(false);
+  const [confirmDiscard, setConfirmDiscard] = useState(false);
 
   const refresh = useCallback(async () => {
     try {
@@ -187,6 +206,7 @@ export default function DatabaseMigration() {
     if (
       status?.state !== "migrating" &&
       status?.state !== "copying" &&
+      status?.state !== "discarding" &&
       status?.state !== "reclaiming"
     ) {
       return;
@@ -216,19 +236,30 @@ export default function DatabaseMigration() {
   const active =
     status?.state === "migrating" ||
     status?.state === "copying" ||
+    status?.state === "discarding" ||
     status?.state === "reclaiming";
   const canStart =
     auth?.logged_in &&
     !!status &&
-    (status.state === "idle" || status.state === "ready" || status.state === "failed") &&
+    (status.state === "idle" ||
+      status.state === "ready" ||
+      status.state === "failed") &&
+    !busy;
+  const canDiscard =
+    auth?.logged_in &&
+    !legacy &&
+    !!status &&
+    (status.state === "ready" || status.state === "failed") &&
     !busy;
 
   const phaseText = useMemo(() => {
     if (!status) return "";
     if (!legacy) {
-      return status.state === "reclaiming"
-        ? t(`${STRUCTURE_I18N}.phase_reclaiming`)
-        : t(`${STRUCTURE_I18N}.phase_copying`);
+      if (status.state === "discarding")
+        return t(`${STRUCTURE_I18N}.phase_discarding`);
+      if (status.state === "reclaiming")
+        return t(`${STRUCTURE_I18N}.phase_reclaiming`);
+      return t(`${STRUCTURE_I18N}.phase_copying`);
     }
     switch (status.phase) {
       case "connecting":
@@ -283,6 +314,27 @@ export default function DatabaseMigration() {
     }
   };
 
+  const discard = async () => {
+    setBusy(true);
+    setPageError("");
+    try {
+      await request<Record<string, never>>("/discard", { method: "POST" });
+      setDiscardOpen(false);
+      setConfirmDiscard(false);
+      await refresh();
+    } catch (error) {
+      setDiscardOpen(false);
+      setConfirmDiscard(false);
+      setPageError(
+        error instanceof Error
+          ? error.message
+          : t(`${COMMON_I18N}.request_failed`),
+      );
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
     <main className="min-h-screen bg-[var(--color-background)] text-[var(--gray-12)]">
       <header
@@ -294,83 +346,107 @@ export default function DatabaseMigration() {
         </Container>
       </header>
 
-      <Container size="3" px={{ initial: "4", sm: "6" }} py={{ initial: "6", sm: "8" }}>
+      <Container
+        size="3"
+        px={{ initial: "4", sm: "6" }}
+        py={{ initial: "6", sm: "8" }}
+      >
         <Flex direction="column" gap="5">
           <div>
             <Heading size="7" weight="bold">
               {t(`${prefix}.title`)}
             </Heading>
-            <Text as="p" size="2" color="gray" mt="2">
-              {t(`${prefix}.subtitle`)}
-            </Text>
+            {legacy && (
+              <Text as="p" size="2" color="gray" mt="2">
+                {t(`${prefix}.subtitle`)}
+              </Text>
+            )}
           </div>
 
-          <Callout.Root color="blue" variant="surface">
-            <Callout.Icon>
-              <Database size={19} />
-            </Callout.Icon>
-            <Callout.Text>
-              {legacy
-                ? t(`${COMMON_I18N}.legacy_full_history`)
-                : t(`${STRUCTURE_I18N}.storage_note`)}
-            </Callout.Text>
-          </Callout.Root>
+          {legacy && (
+            <Callout.Root color="blue" variant="surface">
+              <Callout.Icon>
+                <Database size={19} />
+              </Callout.Icon>
+              <Callout.Text>
+                {t(`${COMMON_I18N}.legacy_full_history`)}
+              </Callout.Text>
+            </Callout.Root>
+          )}
 
           {pageError && (
             <Callout.Root color="red" variant="surface">
-              <Callout.Icon><AlertTriangle size={18} /></Callout.Icon>
+              <Callout.Icon>
+                <AlertTriangle size={18} />
+              </Callout.Icon>
               <Callout.Text>{pageError}</Callout.Text>
             </Callout.Root>
           )}
 
           {auth?.logged_in && status?.state === "failed" && status.error && (
             <Callout.Root color="red" variant="surface">
-              <Callout.Icon><AlertTriangle size={18} /></Callout.Icon>
+              <Callout.Icon>
+                <AlertTriangle size={18} />
+              </Callout.Icon>
               <Callout.Text>
-                <Text as="div" weight="bold">{t(`${COMMON_I18N}.failed_title`)}</Text>
-                <Text as="div" mt="1">{status.error}</Text>
+                <Text as="div" weight="bold">
+                  {t(`${COMMON_I18N}.failed_title`)}
+                </Text>
+                <Text as="div" mt="1">
+                  {status.error}
+                </Text>
               </Callout.Text>
             </Callout.Root>
           )}
 
-          {auth?.logged_in && legacy && status?.state !== "completed" && summary && (
-            <LegacySetup
-              summary={summary}
-              locale={locale}
-              driver={driver}
-              dsn={dsn}
-              active={active}
-              onDriverChange={handleDriver}
-              onDSNChange={setDSN}
-            />
-          )}
+          {auth?.logged_in &&
+            legacy &&
+            status?.state !== "completed" &&
+            summary && (
+              <LegacySetup
+                summary={summary}
+                locale={locale}
+                driver={driver}
+                dsn={dsn}
+                active={active}
+                onDriverChange={handleDriver}
+                onDSNChange={setDSN}
+              />
+            )}
 
           {auth?.logged_in && active && status && (
             <Flex direction="column" gap="3">
               <Flex justify="between" align="baseline" gap="3" wrap="wrap">
                 <Text weight="bold">{phaseText}</Text>
                 <Text size="2" color="gray" className="tabular-nums">
-                  {new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(status.progress)}%
+                  {new Intl.NumberFormat(locale, {
+                    maximumFractionDigits: 1,
+                  }).format(status.progress)}
+                  %
                 </Text>
               </Flex>
               <Progress value={status.progress} size="3" />
-              <Text size="2" color="gray">
-                {legacy
-                  ? t(`${LEGACY_I18N}.progress_detail`, {
-                      done: formatNumber(status.source_rows_done ?? 0),
-                      total: formatNumber(status.source_rows_total ?? 0),
-                      points: formatNumber(status.written_points ?? 0),
-                    })
-                  : status.state === "copying"
-                    ? t(`${STRUCTURE_I18N}.copy_detail`, {
-                        rows: formatNumber(status.rows_done ?? 0),
-                        total: formatNumber(status.rows_total ?? 0),
-                        metrics: formatNumber(status.metrics_done ?? 0),
-                        metricTotal: formatNumber(status.metrics_total ?? 0),
-                        metric: status.current_metric || "-",
+              {(legacy ||
+                status.state === "copying" ||
+                status.state === "discarding") && (
+                <Text size="2" color="gray">
+                  {legacy
+                    ? t(`${LEGACY_I18N}.progress_detail`, {
+                        done: formatNumber(status.source_rows_done ?? 0),
+                        total: formatNumber(status.source_rows_total ?? 0),
+                        points: formatNumber(status.written_points ?? 0),
                       })
-                    : t(`${STRUCTURE_I18N}.reclaim_detail`)}
-              </Text>
+                    : status.state === "copying"
+                      ? t(`${STRUCTURE_I18N}.copy_detail`, {
+                          rows: formatNumber(status.rows_done ?? 0),
+                          total: formatNumber(status.rows_total ?? 0),
+                          metrics: formatNumber(status.metrics_done ?? 0),
+                          metricTotal: formatNumber(status.metrics_total ?? 0),
+                          metric: status.current_metric || "-",
+                        })
+                      : t(`${STRUCTURE_I18N}.discard_detail`)}
+                </Text>
+              )}
             </Flex>
           )}
 
@@ -379,8 +455,24 @@ export default function DatabaseMigration() {
           )}
 
           {auth?.logged_in && !active && status?.state !== "completed" && (
-            <Flex justify="end">
-              <Button size="3" disabled={!canStart} onClick={() => setConfirmOpen(true)}>
+            <Flex justify="end" gap="3" wrap="wrap">
+              {!legacy && (
+                <Button
+                  size="3"
+                  variant="soft"
+                  color="red"
+                  disabled={!canDiscard}
+                  onClick={() => setDiscardOpen(true)}
+                >
+                  <Trash2 size={17} />
+                  {t(`${STRUCTURE_I18N}.discard`)}
+                </Button>
+              )}
+              <Button
+                size="3"
+                disabled={!canStart}
+                onClick={() => setConfirmOpen(true)}
+              >
                 {legacy ? <ArrowRight size={18} /> : <Play size={17} />}
                 {t(`${prefix}.start`)}
               </Button>
@@ -389,7 +481,9 @@ export default function DatabaseMigration() {
 
           {auth?.logged_in && !status && (
             <Callout.Root color="gray" variant="surface">
-              <Callout.Icon><LoaderCircle size={18} className="animate-spin" /></Callout.Icon>
+              <Callout.Icon>
+                <LoaderCircle size={18} className="animate-spin" />
+              </Callout.Icon>
               <Callout.Text>{t("loading")}</Callout.Text>
             </Callout.Root>
           )}
@@ -399,10 +493,18 @@ export default function DatabaseMigration() {
       <Dialog.Root open={confirmOpen} onOpenChange={setConfirmOpen}>
         <Dialog.Content maxWidth="520px">
           <Dialog.Title>
-            {t(legacy ? `${LEGACY_I18N}.start_title` : `${STRUCTURE_I18N}.confirm_title`)}
+            {t(
+              legacy
+                ? `${LEGACY_I18N}.start_title`
+                : `${STRUCTURE_I18N}.confirm_title`,
+            )}
           </Dialog.Title>
           <Dialog.Description>
-            {t(legacy ? `${LEGACY_I18N}.start_description` : `${STRUCTURE_I18N}.confirm_description`)}
+            {t(
+              legacy
+                ? `${LEGACY_I18N}.start_description`
+                : `${STRUCTURE_I18N}.confirm_description`,
+            )}
           </Dialog.Description>
           {legacy && (
             <Flex direction="column" gap="3" mt="4">
@@ -431,14 +533,64 @@ export default function DatabaseMigration() {
           )}
           <Flex justify="end" gap="3" mt="5" wrap="wrap">
             <Dialog.Close>
-              <Button variant="soft" color="gray" disabled={busy}>{t("cancel")}</Button>
+              <Button variant="soft" color="gray" disabled={busy}>
+                {t("cancel")}
+              </Button>
             </Dialog.Close>
             <Button
-              disabled={busy || (sqliteRisk && !confirmSQLite) || (largeRisk && !confirmLarge)}
+              disabled={
+                busy ||
+                (sqliteRisk && !confirmSQLite) ||
+                (largeRisk && !confirmLarge)
+              }
               onClick={() => void start()}
             >
               {busy && <LoaderCircle size={16} className="animate-spin" />}
-              {t(legacy ? `${LEGACY_I18N}.confirm_start` : `${STRUCTURE_I18N}.start`)}
+              {t(
+                legacy
+                  ? `${LEGACY_I18N}.confirm_start`
+                  : `${STRUCTURE_I18N}.start`,
+              )}
+            </Button>
+          </Flex>
+        </Dialog.Content>
+      </Dialog.Root>
+
+      <Dialog.Root
+        open={discardOpen}
+        onOpenChange={(open) => {
+          setDiscardOpen(open);
+          if (!open) setConfirmDiscard(false);
+        }}
+      >
+        <Dialog.Content maxWidth="520px">
+          <Dialog.Title>{t(`${STRUCTURE_I18N}.discard_title`)}</Dialog.Title>
+          <Dialog.Description>
+            {t(`${STRUCTURE_I18N}.discard_description`)}
+          </Dialog.Description>
+          <Flex direction="column" gap="3" mt="4">
+            <Confirmation
+              checked={confirmDiscard}
+              onCheckedChange={setConfirmDiscard}
+              color="red"
+              description={t(`${STRUCTURE_I18N}.discard_warning`)}
+              label={t(`${STRUCTURE_I18N}.discard_confirm`)}
+            />
+          </Flex>
+          <Flex justify="end" gap="3" mt="5">
+            <Dialog.Close>
+              <Button variant="soft" color="gray" disabled={busy}>
+                {t("cancel")}
+              </Button>
+            </Dialog.Close>
+            <Button
+              color="red"
+              disabled={busy || !confirmDiscard}
+              onClick={() => void discard()}
+            >
+              {busy && <LoaderCircle size={16} className="animate-spin" />}
+              <Trash2 size={16} />
+              {t(`${STRUCTURE_I18N}.discard_action`)}
             </Button>
           </Flex>
         </Dialog.Content>
@@ -463,7 +615,15 @@ type LegacySetupProps = {
   onDSNChange: (value: string) => void;
 };
 
-function LegacySetup({ summary, locale, driver, dsn, active, onDriverChange, onDSNChange }: LegacySetupProps) {
+function LegacySetup({
+  summary,
+  locale,
+  driver,
+  dsn,
+  active,
+  onDriverChange,
+  onDSNChange,
+}: LegacySetupProps) {
   const { t } = useTranslation();
   const number = (value: number) => new Intl.NumberFormat(locale).format(value);
   return (
@@ -474,14 +634,22 @@ function LegacySetup({ summary, locale, driver, dsn, active, onDriverChange, onD
           <SettingCard title={t(`${LEGACY_I18N}.load_rows`)}>
             <Flex direction="column" gap="1" className="mt-2 w-full">
               <Text size="7" weight="bold" className="tabular-nums">
-                {number(summary.load_rows)} <Text size="2" color="gray">{t(`${LEGACY_I18N}.rows`)}</Text>
+                {number(summary.load_rows)}{" "}
+                <Text size="2" color="gray">
+                  {t(`${LEGACY_I18N}.rows`)}
+                </Text>
               </Text>
-              <Text size="1" color="gray">{t(`${LEGACY_I18N}.gpu_rows`, { count: summary.gpu_rows })}</Text>
+              <Text size="1" color="gray">
+                {t(`${LEGACY_I18N}.gpu_rows`, { count: summary.gpu_rows })}
+              </Text>
             </Flex>
           </SettingCard>
           <SettingCard title={t(`${LEGACY_I18N}.latency_rows`)}>
             <Text size="7" weight="bold" className="mt-2 tabular-nums">
-              {number(summary.latency_rows)} <Text size="2" color="gray">{t(`${LEGACY_I18N}.rows`)}</Text>
+              {number(summary.latency_rows)}{" "}
+              <Text size="2" color="gray">
+                {t(`${LEGACY_I18N}.rows`)}
+              </Text>
             </Text>
           </SettingCard>
         </div>
@@ -496,15 +664,30 @@ function LegacySetup({ summary, locale, driver, dsn, active, onDriverChange, onD
 
       <Flex direction="column" gap="3">
         <SettingCardLabel>{t(`${LEGACY_I18N}.target`)}</SettingCardLabel>
-        <SettingCard title={t(`${LEGACY_I18N}.target`)} description={t(`${LEGACY_I18N}.target_description`)}>
+        <SettingCard
+          title={t(`${LEGACY_I18N}.target`)}
+          description={t(`${LEGACY_I18N}.target_description`)}
+        >
           <Flex direction="column" gap="3" className="mt-3 w-full">
-            <SegmentedControl.Root value={driver} onValueChange={onDriverChange} className="w-full">
-              <SegmentedControl.Item value="sqlite"><HardDrive size={15} /> SQLite</SegmentedControl.Item>
-              <SegmentedControl.Item value="mysql"><Server size={15} /> MySQL</SegmentedControl.Item>
-              <SegmentedControl.Item value="postgresql"><Server size={15} /> PostgreSQL</SegmentedControl.Item>
+            <SegmentedControl.Root
+              value={driver}
+              onValueChange={onDriverChange}
+              className="w-full"
+            >
+              <SegmentedControl.Item value="sqlite">
+                <HardDrive size={15} /> SQLite
+              </SegmentedControl.Item>
+              <SegmentedControl.Item value="mysql">
+                <Server size={15} /> MySQL
+              </SegmentedControl.Item>
+              <SegmentedControl.Item value="postgresql">
+                <Server size={15} /> PostgreSQL
+              </SegmentedControl.Item>
             </SegmentedControl.Root>
             <label>
-              <Text as="div" size="2" weight="bold" mb="2">{t(`${LEGACY_I18N}.dsn`)}</Text>
+              <Text as="div" size="2" weight="bold" mb="2">
+                {t(`${LEGACY_I18N}.dsn`)}
+              </Text>
               <TextField.Root
                 size="3"
                 value={dsn}
@@ -523,16 +706,30 @@ function LegacySetup({ summary, locale, driver, dsn, active, onDriverChange, onD
   );
 }
 
-function Completion({ status, locale, legacy }: { status: MigrationStatus; locale: string; legacy: boolean }) {
+function Completion({
+  status,
+  locale,
+  legacy,
+}: {
+  status: MigrationStatus;
+  locale: string;
+  legacy: boolean;
+}) {
   const { t } = useTranslation();
   const prefix = legacy ? LEGACY_I18N : STRUCTURE_I18N;
   return (
     <Flex direction="column" gap="4">
       <Callout.Root color="green" variant="surface" size="3">
-        <Callout.Icon><CheckCircle2 size={22} /></Callout.Icon>
+        <Callout.Icon>
+          <CheckCircle2 size={22} />
+        </Callout.Icon>
         <Callout.Text>
-          <Text as="div" weight="bold">{t(`${prefix}.completed_title`)}</Text>
-          <Text as="div" mt="1">{t(`${prefix}.completed_description`)}</Text>
+          <Text as="div" weight="bold">
+            {t(`${prefix}.completed_title`)}
+          </Text>
+          <Text as="div" mt="1">
+            {t(`${prefix}.completed_description`)}
+          </Text>
         </Callout.Text>
       </Callout.Root>
       <div className="grid gap-3 sm:grid-cols-3">
@@ -541,12 +738,25 @@ function Completion({ status, locale, legacy }: { status: MigrationStatus; local
           ["after", status.after_bytes ?? 0],
           ["saved", status.saved_bytes ?? 0],
         ].map(([key, value]) => (
-          <Flex key={key} direction="column" gap="1" className="border p-3" style={{ borderColor: "var(--gray-a5)" }}>
-            <Text size="1" color="gray">{t(`${COMMON_I18N}.${key}`)}</Text>
-            <Text size="5" weight="bold" className="tabular-nums">{formatBytes(Number(value), locale)}</Text>
+          <Flex
+            key={key}
+            direction="column"
+            gap="1"
+            className="border p-3"
+            style={{ borderColor: "var(--gray-a5)" }}
+          >
+            <Text size="1" color="gray">
+              {t(`${COMMON_I18N}.${key}`)}
+            </Text>
+            <Text size="5" weight="bold" className="tabular-nums">
+              {formatBytes(Number(value), locale)}
+            </Text>
             {key === "saved" && (
               <Text size="2" color="green" className="tabular-nums">
-                {new Intl.NumberFormat(locale, { maximumFractionDigits: 1 }).format(status.saved_percent ?? 0)}%
+                {new Intl.NumberFormat(locale, {
+                  maximumFractionDigits: 1,
+                }).format(status.saved_percent ?? 0)}
+                %
               </Text>
             )}
           </Flex>
@@ -556,7 +766,13 @@ function Completion({ status, locale, legacy }: { status: MigrationStatus; local
   );
 }
 
-function Confirmation({ checked, onCheckedChange, color, description, label }: {
+function Confirmation({
+  checked,
+  onCheckedChange,
+  color,
+  description,
+  label,
+}: {
   checked: boolean;
   onCheckedChange: (value: boolean) => void;
   color: "amber" | "red";
@@ -572,10 +788,18 @@ function Confirmation({ checked, onCheckedChange, color, description, label }: {
         borderRadius: "var(--radius-2)",
       }}
     >
-      <Checkbox checked={checked} onCheckedChange={(value) => onCheckedChange(value === true)} mt="1" />
+      <Checkbox
+        checked={checked}
+        onCheckedChange={(value) => onCheckedChange(value === true)}
+        mt="1"
+      />
       <span>
-        <Text as="div" size="2">{description}</Text>
-        <Text as="div" size="2" weight="bold" mt="1">{label}</Text>
+        <Text as="div" size="2">
+          {description}
+        </Text>
+        <Text as="div" size="2" weight="bold" mt="1">
+          {label}
+        </Text>
       </span>
     </label>
   );
