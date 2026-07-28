@@ -61,6 +61,7 @@ const UploadDialog: React.FC<UploadDialogProps> = ({
 
   const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
+    if (uploading) return;
     const files = Array.from(e.dataTransfer.files);
     const file = files.find((f) => matchesAccept(f, accept));
     if (file && onFileSelected) onFileSelected(file);
@@ -71,6 +72,7 @@ const UploadDialog: React.FC<UploadDialogProps> = ({
   };
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (uploading) return;
     const file = e.target.files?.[0];
     if (file && matchesAccept(file, accept) && onFileSelected)
       onFileSelected(file);
@@ -92,7 +94,9 @@ const UploadDialog: React.FC<UploadDialogProps> = ({
             className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-gray-400 transition-colors"
             onDrop={handleDrop}
             onDragOver={handleDragOver}
-            onClick={() => inputRef.current?.click()}
+            onClick={() => {
+              if (!uploading) inputRef.current?.click();
+            }}
           >
             <UploadIcon size={48} className="mx-auto text-gray-400 mb-4" />
             {dragDropText ? (
@@ -115,6 +119,7 @@ const UploadDialog: React.FC<UploadDialogProps> = ({
             type="file"
             accept={accept}
             onChange={handleFileSelect}
+            disabled={uploading}
             className="hidden"
           />
         </Box>
@@ -149,7 +154,6 @@ const UploadDialog: React.FC<UploadDialogProps> = ({
                   variant="soft"
                   color="gray"
                   onClick={onCancelUpload}
-                  disabled={progress >= 100}
                 >
                   {cancelUploadLabel ?? "Cancel"}
                 </Button>

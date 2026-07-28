@@ -86,6 +86,8 @@ export default function SiteSettings() {
   };
 
   const uploadBackup = async (file: File) => {
+    if (restoring) return;
+
     if (!file.name.toLowerCase().endsWith(".zip") || file.size === 0) {
       toast.error(t("theme.invalid_file_type", "仅支持 .zip 文件"));
       return;
@@ -101,6 +103,8 @@ export default function SiteSettings() {
       restoreAbortControllerRef.current = initAbortController;
       const initRes = await fetch("/api/admin/upload/backup/init", {
         method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ size: file.size }),
         signal: initAbortController.signal,
       });
       if (!initRes.ok) {
@@ -524,7 +528,13 @@ export default function SiteSettings() {
       {/* 上传备份对话框 */}
       <UploadDialog
         open={restoreOpen}
-        onOpenChange={setRestoreOpen}
+        onOpenChange={(open) => {
+          if (!open && restoring) {
+            cancelRestore();
+            return;
+          }
+          setRestoreOpen(open);
+        }}
         title={t("settings.site.backup_restore")}
         description={t("settings.site.backup_restore_description")}
         accept=".zip"
