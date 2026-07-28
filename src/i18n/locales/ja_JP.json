@@ -645,9 +645,6 @@
     "invalid_number": "無効な数字",
     "metrics": {
       "advanced_title": "詳細オプション",
-      "low_resource_description": "有効にすると、Komari はデータのサンプリング頻度を下げ、リソース使用量を削減します。",
-      "low_resource_enabled": "有効",
-      "low_resource_title": "低リソースモード",
       "batch_description": "複数のメトリクスを選択し、同じ生データ保持日数を一括で設定します。",
       "batch_edit": "一括設定",
       "batch_search_placeholder": "メトリクスを検索",

@@ -645,9 +645,6 @@
     "invalid_number": "Angka tidak valid",
     "metrics": {
       "advanced_title": "Opsi Lanjutan",
-      "low_resource_description": "Saat diaktifkan, Komari akan mengurangi frekuensi pengambilan sampel data untuk menghemat penggunaan sumber daya.",
-      "low_resource_enabled": "Aktifkan",
-      "low_resource_title": "Mode sumber daya rendah",
       "batch_description": "Pilih beberapa metrik dan terapkan masa penyimpanan data mentah yang sama.",
       "batch_edit": "Atur massal",
       "batch_search_placeholder": "Cari metrik",

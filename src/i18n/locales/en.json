@@ -645,9 +645,6 @@
     "invalid_number": "Invalid number",
     "metrics": {
       "advanced_title": "Advanced Options",
-      "low_resource_description": "When enabled, Komari reduces the data sampling frequency to save resource usage.",
-      "low_resource_enabled": "Enable",
-      "low_resource_title": "Low resource mode",
       "batch_description": "Select metrics and apply one raw-data retention period to all of them.",
       "batch_edit": "Batch set",
       "batch_search_placeholder": "Search metrics",

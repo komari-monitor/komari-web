@@ -645,9 +645,6 @@
     "invalid_number": "無效的數字",
     "metrics": {
       "advanced_title": "進階選項",
-      "low_resource_description": "啟用後，Komari 將降低資料的取樣頻率，節省資源佔用。",
-      "low_resource_enabled": "啟用",
-      "low_resource_title": "低資源模式",
       "batch_description": "選擇多個指標，並為它們統一設定原始資料保留天數。",
       "batch_edit": "批量設定",
       "batch_search_placeholder": "搜尋指標",
