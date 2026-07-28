@@ -633,6 +633,69 @@
     "title": "延迟监测",
     "type": "类型"
   },
+  "pprof": {
+    "capture_duration": "CPU 与 trace 采集时长",
+    "download": "下载",
+    "duration_option": "{{seconds}} 秒",
+    "goroutines": "Goroutine 数量",
+    "heap_alloc": "已分配堆内存",
+    "heap_inuse": "正在使用的堆内存",
+    "heap_objects": "堆对象数",
+    "heap_preview_description": "实时堆内存文本摘要，会随进程概览一起刷新。",
+    "heap_preview_title": "堆内存快照",
+    "invalid_summary": "服务端返回了无效的运行时性能数据",
+    "loading": "采集中...",
+    "preview_description": "所选 Go 运行时性能数据的文本输出。",
+    "preview_title": "{{profile}} 性能数据",
+    "preview_unavailable": "此运行时性能数据不提供文本预览。",
+    "profiles": {
+      "allocs": {
+        "description": "进程启动以来的累计内存分配采样。",
+        "title": "分配"
+      },
+      "block": {
+        "description": "同步阻塞事件。",
+        "title": "阻塞"
+      },
+      "cpu": {
+        "description": "按所选时长采集 CPU 执行采样。",
+        "title": "CPU"
+      },
+      "goroutine": {
+        "description": "当前 Goroutine 栈性能数据。",
+        "title": "Goroutine"
+      },
+      "heap": {
+        "description": "仍在使用的堆内存分配采样。",
+        "title": "堆内存"
+      },
+      "mutex": {
+        "description": "发生竞争的互斥锁事件。",
+        "title": "互斥锁"
+      },
+      "threadcreate": {
+        "description": "操作系统线程创建事件。",
+        "title": "线程"
+      },
+      "trace": {
+        "description": "按所选时长采集执行追踪数据。",
+        "title": "Trace"
+      }
+    },
+    "profiles_description": "可查看文本快照，或下载 pprof 文件进行离线分析。",
+    "profiles_title": "运行时性能数据",
+    "request_failed": "获取运行时性能数据失败",
+    "runtime_overview_description": "无需启动性能采集即可读取的运行时实时指标。",
+    "runtime_overview_title": "当前进程概览",
+    "runtime_sys": "运行时保留内存",
+    "sample_count": "{{samples}} 个样本",
+    "summary_load_failed": "读取运行时性能数据失败",
+    "summary_unavailable": "当前无法读取运行时概览",
+    "timed_profile": "按所选时长采集",
+    "title": "性能分析",
+    "view": "查看",
+    "warning": "采集期间可能短暂增加服务器负载。"
+  },
   "pwa": {
     "browser": "浏览器模式",
     "can_install": "可以安装",
@@ -1235,69 +1298,6 @@
     "uploda_413_content_too_large": "文件上传失败 (413)。请检查并增大您的反向代理服务器（如 Nginx/CDN）配置中的文件大小限制（client_max_body_size），确保该值大于您的目标文件大小。",
     "version": "版本",
     "zip_files_only": "仅支持 .zip 格式"
-  },
-  "pprof": {
-    "capture_duration": "CPU 与 trace 采集时长",
-    "download": "下载",
-    "duration_option": "{{seconds}} 秒",
-    "goroutines": "Goroutine 数量",
-    "heap_alloc": "已分配堆内存",
-    "heap_inuse": "正在使用的堆内存",
-    "heap_objects": "堆对象数",
-    "heap_preview_description": "实时堆内存文本摘要，会随进程概览一起刷新。",
-    "heap_preview_title": "堆内存快照",
-    "invalid_summary": "服务端返回了无效的运行时性能数据",
-    "loading": "采集中...",
-    "preview_description": "所选 Go 运行时性能数据的文本输出。",
-    "preview_title": "{{profile}} 性能数据",
-    "preview_unavailable": "此运行时性能数据不提供文本预览。",
-    "profiles": {
-      "allocs": {
-        "title": "分配",
-        "description": "进程启动以来的累计内存分配采样。"
-      },
-      "block": {
-        "title": "阻塞",
-        "description": "同步阻塞事件。"
-      },
-      "cpu": {
-        "title": "CPU",
-        "description": "按所选时长采集 CPU 执行采样。"
-      },
-      "trace": {
-        "title": "Trace",
-        "description": "按所选时长采集执行追踪数据。"
-      },
-      "goroutine": {
-        "title": "Goroutine",
-        "description": "当前 Goroutine 栈性能数据。"
-      },
-      "heap": {
-        "title": "堆内存",
-        "description": "仍在使用的堆内存分配采样。"
-      },
-      "mutex": {
-        "title": "互斥锁",
-        "description": "发生竞争的互斥锁事件。"
-      },
-      "threadcreate": {
-        "title": "线程",
-        "description": "操作系统线程创建事件。"
-      }
-    },
-    "profiles_description": "可查看文本快照，或下载 pprof 文件进行离线分析。",
-    "profiles_title": "运行时性能数据",
-    "request_failed": "获取运行时性能数据失败",
-    "runtime_overview_description": "无需启动性能采集即可读取的运行时实时指标。",
-    "runtime_overview_title": "当前进程概览",
-    "runtime_sys": "运行时保留内存",
-    "sample_count": "{{samples}} 个样本",
-    "summary_load_failed": "读取运行时性能数据失败",
-    "summary_unavailable": "当前无法读取运行时概览",
-    "timed_profile": "按所选时长采集",
-    "title": "性能分析",
-    "view": "查看",
-    "warning": "采集期间可能短暂增加服务器负载。"
   },
   "time": {
     "ago": "前",
