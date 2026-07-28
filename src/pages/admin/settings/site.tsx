@@ -13,7 +13,7 @@ import {
 import { toast } from "sonner";
 import Loading from "@/components/loading";
 import { DownloadIcon } from "lucide-react";
-import { useState, useRef } from "react";
+import { useRef, useState } from "react";
 import UploadDialog from "@/components/UploadDialog";
 
 export default function SiteSettings() {
@@ -25,8 +25,9 @@ export default function SiteSettings() {
   const [restoreOpen, setRestoreOpen] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [restoreProgress, setRestoreProgress] = useState(0);
-  const [restoreXhr, setRestoreXhr] = useState<XMLHttpRequest | null>(null);
   const cancelledRef = useRef(false);
+  const restoreXhrRef = useRef<XMLHttpRequest | null>(null);
+  const restoreAbortControllerRef = useRef<AbortController | null>(null);
 
   // 上传单个分块，返回 Promise，通过 onProgress 回调汇报块内进度
   const uploadChunk = (
@@ -37,7 +38,14 @@ export default function SiteSettings() {
   ): Promise<void> => {
     return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
-      setRestoreXhr(xhr);
+      restoreXhrRef.current = xhr;
+
+      const complete = (callback: () => void) => {
+        if (restoreXhrRef.current === xhr) {
+          restoreXhrRef.current = null;
+        }
+        callback();
+      };
 
       xhr.upload.addEventListener("progress", (e) => {
         if (e.lengthComputable) {
@@ -47,17 +55,24 @@ export default function SiteSettings() {
 
       xhr.addEventListener("load", () => {
         if (xhr.status >= 200 && xhr.status < 300) {
-          resolve();
+          complete(resolve);
         } else {
-          reject(new Error(`Chunk ${chunkIndex} upload failed: ${xhr.status}`));
+          let message = `Chunk ${chunkIndex} upload failed: ${xhr.status}`;
+          try {
+            const data = JSON.parse(xhr.responseText);
+            message = data.message || message;
+          } catch {
+            // Keep the HTTP status message when the response is not JSON.
+          }
+          complete(() => reject(new Error(message)));
         }
       });
 
       xhr.addEventListener("error", () =>
-        reject(new Error(`Chunk ${chunkIndex} network error`)),
+        complete(() => reject(new Error(`Chunk ${chunkIndex} network error`))),
       );
       xhr.addEventListener("abort", () =>
-        reject(new Error("Upload cancelled")),
+        complete(() => reject(new Error("Upload cancelled"))),
       );
 
       const form = new FormData();
@@ -71,7 +86,7 @@ export default function SiteSettings() {
   };
 
   const uploadBackup = async (file: File) => {
-    if (!file.name.endsWith(".zip")) {
+    if (!file.name.toLowerCase().endsWith(".zip") || file.size === 0) {
       toast.error(t("theme.invalid_file_type", "仅支持 .zip 文件"));
       return;
     }
@@ -82,13 +97,30 @@ export default function SiteSettings() {
 
     try {
       // 1. 初始化分块上传
+      const initAbortController = new AbortController();
+      restoreAbortControllerRef.current = initAbortController;
       const initRes = await fetch("/api/admin/upload/backup/init", {
         method: "POST",
+        signal: initAbortController.signal,
       });
       if (!initRes.ok) {
         throw new Error("Failed to init chunk upload");
       }
-      const { upload_id, chunk_size } = await initRes.json();
+      const initData: unknown = await initRes.json();
+      if (
+        !initData ||
+        typeof initData !== "object" ||
+        typeof (initData as { upload_id?: unknown }).upload_id !== "string" ||
+        typeof (initData as { chunk_size?: unknown }).chunk_size !== "number" ||
+        (initData as { chunk_size: number }).chunk_size <= 0
+      ) {
+        throw new Error("Invalid chunk upload configuration");
+      }
+      const { upload_id, chunk_size } = initData as {
+        upload_id: string;
+        chunk_size: number;
+      };
+      restoreAbortControllerRef.current = null;
 
       // 2. 按序上传所有分块
       const totalChunks = Math.ceil(file.size / chunk_size);
@@ -110,10 +142,13 @@ export default function SiteSettings() {
       if (cancelledRef.current) return;
 
       // 3. 合并分块并触发恢复
+      const mergeAbortController = new AbortController();
+      restoreAbortControllerRef.current = mergeAbortController;
       const mergeRes = await fetch("/api/admin/upload/backup/merge", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ upload_id, filename: file.name }),
+        body: JSON.stringify({ upload_id }),
+        signal: mergeAbortController.signal,
       });
       const mergeData = await mergeRes.json();
       if (!mergeRes.ok || (mergeData.status && mergeData.status !== "success")) {
@@ -124,6 +159,7 @@ export default function SiteSettings() {
       setRestoreOpen(false);
       setRestoreProgress(0);
     } catch (err) {
+      if (cancelledRef.current) return;
       const msg =
         err instanceof Error
           ? err.message
@@ -131,13 +167,18 @@ export default function SiteSettings() {
       toast.error(msg);
     } finally {
       setRestoring(false);
-      setRestoreXhr(null);
+      restoreXhrRef.current = null;
+      restoreAbortControllerRef.current = null;
+      if (cancelledRef.current) {
+        setRestoreProgress(0);
+      }
     }
   };
 
   const cancelRestore = () => {
     cancelledRef.current = true;
-    if (restoreXhr) restoreXhr.abort();
+    restoreXhrRef.current?.abort();
+    restoreAbortControllerRef.current?.abort();
   };
 
   if (loading) {
