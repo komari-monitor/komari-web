@@ -2,6 +2,8 @@
  * OS Image Helper - 根据字符串匹配返回操作系统图像路径
  */
 
+import { resolveAssetPath } from "./assetPath";
+
 // 操作系统匹配配置
 interface OSConfig {
   name: string;
@@ -13,167 +15,167 @@ interface OSConfig {
 const osConfigs: OSConfig[] = [
   {
     name: "AlmaLinux",
-    image: "/assets/logo/os-alma.svg",
+    image: "assets/logo/os-alma.svg",
     keywords: ["alma", "almalinux"],
   },
   {
     name: "Alpine Linux",
-    image: "/assets/logo/os-alpine.webp",
+    image: "assets/logo/os-alpine.webp",
     keywords: ["alpine", "alpine linux"],
   },
   {
     name: "AOSC OS",
-    image: "/assets/logo/os-aosc.svg",
+    image: "assets/logo/os-aosc.svg",
     keywords: ["aosc", "aosc os", "aosc-os"],
   },
   {
     name: "Armbian",
-    image: "/assets/logo/os-armbian.svg",
+    image: "assets/logo/os-armbian.svg",
     keywords: ["armbian"],
   },
   {
     name: "CentOS",
-    image: "/assets/logo/os-centos.svg",
+    image: "assets/logo/os-centos.svg",
     keywords: ["centos", "cent os"],
   },
   {
     name: "Debian",
-    image: "/assets/logo/os-debian.svg",
+    image: "assets/logo/os-debian.svg",
     keywords: ["debian", "deb"],
   },
   {
     name: "FreeBSD",
-    image: "/assets/logo/os-freebsd.svg",
+    image: "assets/logo/os-freebsd.svg",
     keywords: ["freebsd", "bsd"],
   },
   {
     name: "Ubuntu",
-    image: "/assets/logo/os-ubuntu.svg",
+    image: "assets/logo/os-ubuntu.svg",
     keywords: ["ubuntu", "elementary"],
   },
   {
     name: "Windows",
-    image: "/assets/logo/os-windows.svg",
+    image: "assets/logo/os-windows.svg",
     keywords: ["windows", "win", "microsoft", "ms"],
   },
   {
     name: "Arch Linux",
-    image: "/assets/logo/os-arch.svg",
+    image: "assets/logo/os-arch.svg",
     keywords: ["arch", "archlinux", "arch linux"],
   },
   {
     name: "Kali Linux",
-    image: "/assets/logo/os-kail.svg",
+    image: "assets/logo/os-kail.svg",
     keywords: ["kail", "kali", "kali linux"],
   },
   {
     name: "iStoreOS",
-    image: "/assets/logo/os-istore.png",
+    image: "assets/logo/os-istore.png",
     keywords: ["istore", "istoreos", "istore os"],
   },
   {
     name: "OpenWrt",
-    image: "/assets/logo/os-openwrt.svg",
+    image: "assets/logo/os-openwrt.svg",
     keywords: ["openwrt", "open wrt", "open-wrt", "qwrt"],
   },
   {
     name: "ImmortalWrt",
-    image: "/assets/logo/os-openwrt.svg",
+    image: "assets/logo/os-openwrt.svg",
     keywords: ["immortalwrt", "immortal", "emmortal"],
   },
   {
     name: "NixOS",
-    image: "/assets/logo/os-nix.svg",
+    image: "assets/logo/os-nix.svg",
     keywords: ["nixos", "nix os", "nix"],
   },
   {
     name: "Rocky Linux",
-    image: "/assets/logo/os-rocky.svg",
+    image: "assets/logo/os-rocky.svg",
     keywords: ["rocky", "rocky linux"],
   },
   {
     name: "Fedora",
-    image: "/assets/logo/os-fedora.svg",
+    image: "assets/logo/os-fedora.svg",
     keywords: ["fedora"],
   },
   {
     name: "openSUSE",
-    image: "/assets/logo/os-openSUSE.svg",
+    image: "assets/logo/os-openSUSE.svg",
     keywords: ["opensuse", "suse"],
   },
   {
     name: "Gentoo",
-    image: "/assets/logo/os-gentoo.svg",
+    image: "assets/logo/os-gentoo.svg",
     keywords: ["gentoo"],
   },
   {
     name: "Red Hat",
-    image: "/assets/logo/os-redhat.svg",
+    image: "assets/logo/os-redhat.svg",
     keywords: ["redhat", "rhel", "red hat"],
   },
   {
     name: "Linux Mint",
-    image: "/assets/logo/os-mint.svg",
+    image: "assets/logo/os-mint.svg",
     keywords: ["mint", "linux mint"],
   },
   {
     name: "Manjaro",
-    image: "/assets/logo/os-manjaro-.svg",
+    image: "assets/logo/os-manjaro-.svg",
     keywords: ["manjaro"],
   },
   {
     name: "Synology DSM",
-    image: "/assets/logo/os-synology.ico",
+    image: "assets/logo/os-synology.ico",
     keywords: ["synology", "dsm", "synology dsm"],
   },
   {
     name: "fnOS",
-    image: "/assets/logo/os-fnos.ico",
+    image: "assets/logo/os-fnos.ico",
     keywords: ["fnos", "fnnas"],
   },
   {
     name: "Proxmox VE",
-    image: "/assets/logo/os-proxmox.ico",
+    image: "assets/logo/os-proxmox.ico",
     keywords: ["proxmox", "proxmox ve"],
   },
   {
     name: "macOS",
-    image: "/assets/logo/os-macos.svg",
+    image: "assets/logo/os-macos.svg",
     keywords: ["macos"],
   },
   {
     name: "QTS",
-    image: "/assets/logo/os-qnap.svg",
+    image: "assets/logo/os-qnap.svg",
     keywords: ["qts", "quts hero", "qes", "qutscloud"],
   },
   {
     name: "Astra Linux",
-    image: "/assets/logo/os-astar.png",
+    image: "assets/logo/os-astar.png",
     keywords: ["astra", "astra linux"],
   },
   {
     name: "Orange Pi",
-    image: "/assets/logo/os-orange-pi.svg",
+    image: "assets/logo/os-orange-pi.svg",
     keywords: ["orange pi", "orangepi"],
   },
   {
     name: "Huawei",
-    image: "/assets/logo/os-huawei.svg",
+    image: "assets/logo/os-huawei.svg",
     keywords: ["huawei", "euleros", "euler os"],
   },
   {
     name: "Aliyun",
-    image: "/assets/logo/alibabacloud-color.svg",
+    image: "assets/logo/alibabacloud-color.svg",
     keywords: ["aliyun", "alibaba"],
   },
   {
     name: "OpenCloudOS",
-    image: "/assets/logo/os-OpenCloudOS.png",
+    image: "assets/logo/os-OpenCloudOS.png",
     keywords: ["opencloud"],
   },
   {
     name: "Unraid",
-    image: "/assets/logo/os-unraid.svg",
+    image: "assets/logo/os-unraid.svg",
     keywords: ["unraid"],
   },
 ];
@@ -181,7 +183,7 @@ const osConfigs: OSConfig[] = [
 // 默认配置
 const defaultOSConfig: OSConfig = {
   name: "Unknown",
-  image: "/assets/logo/linux.svg",
+  image: "assets/logo/linux.svg",
   keywords: ["unknown"],
 };
 
@@ -216,7 +218,7 @@ function findOSConfig(osString: string): OSConfig {
  * @returns 匹配的操作系统图像路径，如果没有匹配则返回默认图像
  */
 export function getOSImage(osString: string): string {
-  return findOSConfig(osString).image;
+  return resolveAssetPath(findOSConfig(osString).image);
 }
 
 /**
@@ -228,10 +230,10 @@ export function getAllOSImages(): Record<string, string> {
 
   osConfigs.forEach((config) => {
     const key = config.keywords[0]; // 使用第一个关键词作为键
-    imageMap[key] = config.image;
+    imageMap[key] = resolveAssetPath(config.image);
   });
 
-  imageMap.unknown = defaultOSConfig.image;
+  imageMap.unknown = resolveAssetPath(defaultOSConfig.image);
 
   return imageMap;
 }

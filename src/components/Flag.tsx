@@ -1,5 +1,6 @@
 import * as React from "react";
 import { Box } from "@radix-ui/themes";
+import { resolveAssetPath } from "@/utils/assetPath";
 
 interface FlagProps {
   flag: string; // 地区代码 (例如 "SG", "US") 或旗帜 emoji (例如 "🇸🇬", "🇺🇳")
@@ -71,7 +72,7 @@ const Flag = React.memo(({ flag, size }: FlagProps) => {
   }
 
   // 构建本地图片路径
-  imgSrc = `/assets/flags/${resolvedFlagFileName}.svg`;
+  imgSrc = resolveAssetPath(`assets/flags/${resolvedFlagFileName}.svg`);
   // 构建 alt 文本和 aria-label
   altText = `地区旗帜: ${resolvedFlagFileName}`;
 
