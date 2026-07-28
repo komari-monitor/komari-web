@@ -13,7 +13,7 @@ import {
 import { toast } from "sonner";
 import Loading from "@/components/loading";
 import { DownloadIcon } from "lucide-react";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import UploadDialog from "@/components/UploadDialog";
 
 export default function SiteSettings() {
@@ -25,89 +25,189 @@ export default function SiteSettings() {
   const [restoreOpen, setRestoreOpen] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [restoreProgress, setRestoreProgress] = useState(0);
-  const [restoreXhr, setRestoreXhr] = useState<XMLHttpRequest | null>(null);
+  const cancelledRef = useRef(false);
+  const restoreXhrsRef = useRef<Set<XMLHttpRequest>>(new Set());
+  const restoreAbortControllerRef = useRef<AbortController | null>(null);
 
-  const uploadBackup = async (file: File) => {
-    if (!file.name.endsWith(".zip")) {
-      toast.error(t("theme.invalid_file_type", "仅支持 .zip 文件"));
-      return;
-    }
-
-    setRestoring(true);
-    setRestoreProgress(0);
-    const formData = new FormData();
-    formData.append("backup", file);
-
-    return new Promise<void>((resolve, reject) => {
+  // 上传单个分块，返回 Promise，通过 onProgress 回调汇报块内进度
+  const uploadChunk = (
+    uploadID: string,
+    chunkIndex: number,
+    chunk: Blob,
+    onProgress: (pct: number) => void,
+  ): Promise<void> => {
+    return new Promise((resolve, reject) => {
       const xhr = new XMLHttpRequest();
-      setRestoreXhr(xhr);
+      restoreXhrsRef.current.add(xhr);
+
+      const complete = (callback: () => void) => {
+        restoreXhrsRef.current.delete(xhr);
+        callback();
+      };
 
       xhr.upload.addEventListener("progress", (e) => {
         if (e.lengthComputable) {
-          const percent = (e.loaded / e.total) * 100;
-          setRestoreProgress(Math.round(percent));
+          onProgress((e.loaded / e.total) * 100);
         }
       });
 
       xhr.addEventListener("load", () => {
-        try {
-          const ok = xhr.status >= 200 && xhr.status < 300;
-          const data = xhr.responseText ? JSON.parse(xhr.responseText) : {};
-          if (ok) {
-            if (data && data.status && data.status !== "success") {
-              // 服务器返回了非 success 状态
-              const msg =
-                data.message ||
-                t("settings.site.backup_restore_error", "恢复备份失败");
-              toast.error(msg);
-              reject(new Error(msg));
-            } else {
-              toast.success(t("account_settings.upload_success", "上传成功"));
-              setRestoreOpen(false);
-              setRestoreProgress(0);
-              resolve();
-            }
-          } else {
-            const msg =
-              (data && data.message) ||
-              t("settings.site.backup_restore_error", "恢复备份失败");
-            toast.error(msg);
-            reject(new Error(msg));
+        if (xhr.status >= 200 && xhr.status < 300) {
+          complete(resolve);
+        } else {
+          let message = `Chunk ${chunkIndex} upload failed: ${xhr.status}`;
+          try {
+            const data = JSON.parse(xhr.responseText);
+            message = data.message || message;
+          } catch {
+            // Keep the HTTP status message when the response is not JSON.
           }
-        } catch (err) {
-          toast.error(t("settings.site.backup_restore_error", "恢复备份失败"));
-          reject(err as Error);
-        } finally {
-          setRestoring(false);
-          setRestoreXhr(null);
+          complete(() => reject(new Error(message)));
         }
       });
 
-      xhr.addEventListener("error", () => {
-        toast.error(t("settings.site.backup_restore_error", "恢复备份失败"));
-        setRestoring(false);
-        setRestoreProgress(0);
-        setRestoreXhr(null);
-        reject(new Error("Network error"));
-      });
+      xhr.addEventListener("error", () =>
+        complete(() => reject(new Error(`Chunk ${chunkIndex} network error`))),
+      );
+      xhr.addEventListener("abort", () =>
+        complete(() => reject(new Error("Upload cancelled"))),
+      );
 
-      xhr.addEventListener("abort", () => {
-        toast.error(
-          t("theme.upload_failed", "上传失败") + ": Upload cancelled",
-        );
-        setRestoring(false);
-        setRestoreProgress(0);
-        setRestoreXhr(null);
-        reject(new Error("Upload cancelled"));
-      });
+      const form = new FormData();
+      form.append("upload_id", uploadID);
+      form.append("chunk_index", String(chunkIndex));
+      form.append("chunk_data", chunk, `chunk-${chunkIndex}`);
 
-      xhr.open("POST", "/api/admin/upload/backup");
-      xhr.send(formData);
+      xhr.open("POST", "/api/admin/upload/backup/chunk");
+      xhr.send(form);
     });
   };
 
+  const uploadChunkWithRetry = async (
+    uploadID: string,
+    chunkIndex: number,
+    chunk: Blob,
+    onProgress: (pct: number) => void,
+  ): Promise<void> => {
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        await uploadChunk(uploadID, chunkIndex, chunk, onProgress);
+        return;
+      } catch (error) {
+        if (cancelledRef.current || attempt === 1) throw error;
+      }
+    }
+  };
+
+  const uploadBackup = async (file: File) => {
+    if (restoring) return;
+
+    if (!file.name.toLowerCase().endsWith(".zip") || file.size === 0) {
+      toast.error(t("theme.invalid_file_type", "仅支持 .zip 文件"));
+      return;
+    }
+
+    cancelledRef.current = false;
+    setRestoring(true);
+    setRestoreProgress(0);
+    try {
+      // 1. 初始化分块上传
+      const initAbortController = new AbortController();
+      restoreAbortControllerRef.current = initAbortController;
+      const initRes = await fetch("/api/admin/upload/backup/init", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ size: file.size }),
+        signal: initAbortController.signal,
+      });
+      if (!initRes.ok) {
+        throw new Error("Failed to init chunk upload");
+      }
+      const initData: unknown = await initRes.json();
+      if (
+        !initData ||
+        typeof initData !== "object" ||
+        typeof (initData as { upload_id?: unknown }).upload_id !== "string" ||
+        typeof (initData as { chunk_size?: unknown }).chunk_size !== "number" ||
+        (initData as { chunk_size: number }).chunk_size <= 0
+      ) {
+        throw new Error("Invalid chunk upload configuration");
+      }
+      const { upload_id, chunk_size } = initData as {
+        upload_id: string;
+        chunk_size: number;
+      };
+      restoreAbortControllerRef.current = null;
+
+      // 2. 并行上传分块；单个分块最多自动重试一次
+      const totalChunks = Math.ceil(file.size / chunk_size);
+      const chunkProgress = new Map<number, number>();
+      let nextChunk = 0;
+      const worker = async () => {
+        while (!cancelledRef.current) {
+          const chunkIndex = nextChunk++;
+          if (chunkIndex >= totalChunks) return;
+
+          const start = chunkIndex * chunk_size;
+          const end = Math.min(start + chunk_size, file.size);
+          const chunk = file.slice(start, end);
+          await uploadChunkWithRetry(upload_id, chunkIndex, chunk, (chunkPct) => {
+            chunkProgress.set(chunkIndex, chunkPct);
+            let totalPct = 0;
+            for (const pct of chunkProgress.values()) totalPct += pct;
+            setRestoreProgress(Math.round(totalPct / totalChunks));
+          });
+        }
+      };
+      await Promise.all(
+        Array.from({ length: Math.min(3, totalChunks) }, () => worker()),
+      );
+
+      if (cancelledRef.current) return;
+
+      // 3. 合并分块并触发恢复
+      const mergeAbortController = new AbortController();
+      restoreAbortControllerRef.current = mergeAbortController;
+      const mergeRes = await fetch("/api/admin/upload/backup/merge", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ upload_id }),
+        signal: mergeAbortController.signal,
+      });
+      const mergeData = await mergeRes.json();
+      if (!mergeRes.ok || (mergeData.status && mergeData.status !== "success")) {
+        throw new Error(mergeData.message || "Merge failed");
+      }
+
+      toast.success(t("account_settings.upload_success", "上传成功"));
+      setRestoreOpen(false);
+      setRestoreProgress(0);
+    } catch (err) {
+      const userCancelled = cancelledRef.current;
+      if (!userCancelled) {
+        cancelledRef.current = true;
+        for (const xhr of restoreXhrsRef.current) xhr.abort();
+      }
+      if (userCancelled) return;
+      const msg =
+        err instanceof Error
+          ? err.message
+          : t("settings.site.backup_restore_error", "恢复备份失败");
+      toast.error(msg);
+    } finally {
+      setRestoring(false);
+      restoreXhrsRef.current.clear();
+      restoreAbortControllerRef.current = null;
+      if (cancelledRef.current) {
+        setRestoreProgress(0);
+      }
+    }
+  };
+
   const cancelRestore = () => {
-    if (restoreXhr) restoreXhr.abort();
+    cancelledRef.current = true;
+    for (const xhr of restoreXhrsRef.current) xhr.abort();
+    restoreAbortControllerRef.current?.abort();
   };
 
   if (loading) {
