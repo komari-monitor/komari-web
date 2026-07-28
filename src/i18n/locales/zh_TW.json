@@ -1238,7 +1238,7 @@
     "after": "遷移後",
     "before": "遷移前",
     "failed_title": "資料庫遷移未完成",
-    "legacy_full_history": "將完整讀取 records、records_long_term、gpu_records 與 ping_records，依序列和標籤計算每小時 P95 後寫入新的 Metric Store。完成後會回收一次空間。",
+    "legacy_full_history": "完整遷移資料庫，遷移完成後會回收一次空間。",
     "network_error": "無法連線資料庫遷移服務。",
     "request_failed": "請求失敗，請檢查服務日誌後重試。",
     "saved": "已節省"

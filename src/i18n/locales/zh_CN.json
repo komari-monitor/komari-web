@@ -360,7 +360,7 @@
     "after": "迁移后",
     "before": "迁移前",
     "failed_title": "数据库迁移未完成",
-    "legacy_full_history": "将全量读取 records、records_long_term、gpu_records 与 ping_records，并按系列和标签计算每小时 P95 后写入新的 Metric Store。迁移完成后会回收一次空间。",
+    "legacy_full_history": "全量迁移数据库，迁移完成后会回收一次空间。",
     "network_error": "无法连接数据库迁移服务。",
     "request_failed": "请求失败，请检查服务日志后重试。",
     "saved": "已节省"

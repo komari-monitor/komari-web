@@ -1238,7 +1238,7 @@
     "after": "移行後",
     "before": "移行前",
     "failed_title": "データベース移行が完了しませんでした",
-    "legacy_full_history": "records、records_long_term、gpu_records、ping_records の全行を読み取り、系列とタグごとの 1 時間 P95 に集約して新しい Metric Store に書き込みます。完了後に領域を一度回収します。",
+    "legacy_full_history": "データベース全体を移行します。移行完了後に領域を一度回収します。",
     "network_error": "データベース移行サービスに接続できません。",
     "request_failed": "リクエストに失敗しました。サーバーログを確認して再試行してください。",
     "saved": "節約量"

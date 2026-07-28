@@ -1238,7 +1238,7 @@
     "after": "Setelah migrasi",
     "before": "Sebelum migrasi",
     "failed_title": "Migrasi basis data tidak selesai",
-    "legacy_full_history": "Semua baris records, records_long_term, gpu_records, dan ping_records dibaca, dikelompokkan berdasarkan seri dan tag menjadi P95 per jam, lalu ditulis ke Metric Store baru. Ruang direklamasi satu kali setelah migrasi.",
+    "legacy_full_history": "Migrasikan seluruh basis data. Ruang direklamasi satu kali setelah migrasi.",
     "network_error": "Tidak dapat terhubung ke layanan migrasi basis data.",
     "request_failed": "Permintaan gagal. Periksa log server lalu coba lagi.",
     "saved": "Dihemat"

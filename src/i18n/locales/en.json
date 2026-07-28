@@ -1238,7 +1238,7 @@
     "after": "After migration",
     "before": "Before migration",
     "failed_title": "Database migration did not finish",
-    "legacy_full_history": "All records, records_long_term, gpu_records, and ping_records rows will be read, grouped by series and tags into hourly P95 values, and written to the new Metric Store. Space is reclaimed once after migration.",
+    "legacy_full_history": "Migrate the entire database. Space is reclaimed once after migration.",
     "network_error": "Unable to connect to the database migration service.",
     "request_failed": "The request failed. Check the server logs and try again.",
     "saved": "Saved"
