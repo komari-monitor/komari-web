@@ -553,7 +553,13 @@ export default function SiteSettings() {
       {/* 上传备份对话框 */}
       <UploadDialog
         open={restoreOpen}
-        onOpenChange={setRestoreOpen}
+        onOpenChange={(open) => {
+          if (!open && restoring) {
+            cancelRestore();
+            return;
+          }
+          setRestoreOpen(open);
+        }}
         title={t("settings.site.backup_restore")}
         description={t("settings.site.backup_restore_description")}
         accept=".zip"
