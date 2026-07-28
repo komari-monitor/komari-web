@@ -163,7 +163,10 @@ export default function MetricsSettings() {
   const saveMetricSettings = React.useCallback(
     async (changes: Partial<SettingsResponse>) => {
       try {
-        await updateMultipleSettings(changes);
+        const restart = await updateMultipleSettings(changes);
+        if (restart) {
+          return;
+        }
         toast.success(t("settings.settings_saved"));
         setSaveError(null);
       } catch (e) {
