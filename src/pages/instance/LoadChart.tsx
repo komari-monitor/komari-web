@@ -119,7 +119,6 @@ type DashboardChart = {
   title: string;
   metrics: string[];
   size: ChartSize;
-  rangeKey?: string;
 };
 
 type MetricCatalogItem = {
@@ -190,12 +189,6 @@ type CustomTimeRange = {
 type MetricRangeParams =
   | { hours: number }
   | { start: string; end: string };
-
-type ChartQueryGroup = {
-  chartIds: string[];
-  metricKeys: string[];
-  rangeParams: MetricRangeParams;
-};
 
 const MAX_REALTIME_POINTS = 30 * 5;
 const HISTORY_MAX_POINTS = 700;
@@ -913,10 +906,6 @@ const normalizeDashboard = (value: unknown): DashboardChart[] => {
         : [],
       size:
         chart.size === "medium" || chart.size === "large" ? chart.size : "small",
-      rangeKey:
-        typeof chart.rangeKey === "string" && chart.rangeKey
-          ? chart.rangeKey
-          : undefined,
     }));
 };
 
@@ -1016,8 +1005,8 @@ const LoadChart = ({ data = [], onRealtimeActiveChange }: LoadChartProps) => {
   const charts = useMemo(() => normalizeDashboard(dashboard), [dashboard]);
   const [savingGlobalTemplate, setSavingGlobalTemplate] = useState(false);
   const [pingTasks, setPingTasks] = useState<PublicPingTask[]>([]);
-  const [pingStatsByChart, setPingStatsByChart] = useState<Record<string, PingMetricStat[]>>({});
-  const [metricSeriesByChart, setMetricSeriesByChart] = useState<Record<string, MetricSeries[]>>({});
+  const [pingStats, setPingStats] = useState<PingMetricStat[]>([]);
+  const [metricSeries, setMetricSeries] = useState<MetricSeries[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const chartSensors = useSensors(
@@ -1113,59 +1102,31 @@ const LoadChart = ({ data = [], onRealtimeActiveChange }: LoadChartProps) => {
     queryStart && queryEnd
       ? `${queryStart}|${queryEnd}|${customQueryRevision}`
       : "";
-  const globalChartRangeHours =
+  const displayRangeHours =
     queryStart && queryEnd
       ? (new Date(queryEnd).getTime() - new Date(queryStart).getTime()) / 3_600_000
       : selectedView.hours;
-
-  const chartQueryGroups = useMemo(() => {
-    const inheritedRange: MetricRangeParams = queryRangeSignature
-      ? { start: queryStart!, end: queryEnd! }
-      : { hours: queryHours ?? 1 };
-    const groups = new Map<string, ChartQueryGroup>();
-
-    for (const chart of charts) {
-      const requestedView = chart.rangeKey
-        ? timeViews.find((view) => view.key === chart.rangeKey && view.hours)
-        : undefined;
-      const fixedView =
-        requestedView &&
-        globalChartRangeHours !== undefined &&
-        requestedView.hours! < globalChartRangeHours
-          ? requestedView
-          : undefined;
-      const rangeParams: MetricRangeParams = fixedView?.hours
-        ? { hours: fixedView.hours }
-        : inheritedRange;
-      const metricKeys = chart.metrics.filter((metricKey) => {
-        if (!isRealtime || fixedView) return true;
+  const metricRangeParams = useMemo<MetricRangeParams>(
+    () =>
+      queryRangeSignature
+        ? { start: queryStart!, end: queryEnd! }
+        : { hours: queryHours ?? 1 },
+    [queryEnd, queryHours, queryRangeSignature, queryStart],
+  );
+  const metricKeys = useMemo(() => {
+    const keys = charts.flatMap((chart) =>
+      chart.metrics.filter((metricKey) => {
+        if (!isRealtime) return true;
         const metric = fallbackCatalogMap.get(metricKey);
         return !metric?.realtimeValue && !metric?.realtimeTaggedValues;
-      });
-      if (metricKeys.length === 0) continue;
-
-      const key = "hours" in rangeParams
-        ? `hours:${rangeParams.hours}`
-        : `range:${rangeParams.start}:${rangeParams.end}`;
-      const group = groups.get(key) ?? {
-        chartIds: [],
-        metricKeys: [],
-        rangeParams,
-      };
-      group.chartIds.push(chart.id);
-      group.metricKeys.push(...metricKeys);
-      groups.set(key, group);
-    }
-
-    return Array.from(groups.values(), (group) => ({
-      ...group,
-      metricKeys: Array.from(new Set(group.metricKeys)).sort(),
-    }));
-  }, [charts, globalChartRangeHours, isRealtime, queryEnd, queryHours, queryRangeSignature, queryStart, timeViews]);
+      }),
+    );
+    return Array.from(new Set(keys)).sort();
+  }, [charts, isRealtime]);
 
   useEffect(() => {
-    if (!uuid || chartQueryGroups.length === 0) {
-      setMetricSeriesByChart({});
+    if (!uuid || metricKeys.length === 0) {
+      setMetricSeries([]);
       setLoading(false);
       setError(null);
       return;
@@ -1175,31 +1136,21 @@ const LoadChart = ({ data = [], onRealtimeActiveChange }: LoadChartProps) => {
     setLoading(true);
     setError(null);
 
-    Promise.all(
-      chartQueryGroups.map(async (group) => ({
-        group,
-        result: await call<any, QueryMetricsResponse>(
-          "public:queryMetrics",
-          {
-            metric_keys: group.metricKeys,
-            entity_id: uuid,
-            ...group.rangeParams,
-            max_points: HISTORY_MAX_POINTS,
-            aggregation,
-            fill_empty: true,
-          },
-          { timeout: 30000 },
-        ),
-      })),
+    call<any, QueryMetricsResponse>(
+      "public:queryMetrics",
+      {
+        metric_keys: metricKeys,
+        entity_id: uuid,
+        ...metricRangeParams,
+        max_points: HISTORY_MAX_POINTS,
+        aggregation,
+        fill_empty: true,
+      },
+      { timeout: 30000 },
     )
-      .then((results) => {
+      .then((result) => {
         if (!active) return;
-        const next: Record<string, MetricSeries[]> = {};
-        for (const { group, result } of results) {
-          const series = normalizeMetricSeriesList(result?.series);
-          for (const chartId of group.chartIds) next[chartId] = series;
-        }
-        setMetricSeriesByChart(next);
+        setMetricSeries(normalizeMetricSeriesList(result?.series));
         setLoading(false);
       })
       .catch((err) => {
@@ -1214,45 +1165,33 @@ const LoadChart = ({ data = [], onRealtimeActiveChange }: LoadChartProps) => {
   }, [
     aggregation,
     call,
-    chartQueryGroups,
+    metricKeys,
+    metricRangeParams,
     uuid,
   ]);
 
   useEffect(() => {
-    const pingGroups = chartQueryGroups.filter((group) =>
-      group.metricKeys.some(isPingMetric),
-    );
-    if (!uuid || pingGroups.length === 0) {
-      setPingStatsByChart({});
+    if (!uuid || !metricKeys.some(isPingMetric)) {
+      setPingStats([]);
       return;
     }
 
     let active = true;
-    Promise.all(
-      pingGroups.map(async (group) => ({
-        group,
-        result: await call<any, PingMetricStatsResponse>(
-          "public:getPingMetricStats",
-          {
-            entity_id: uuid,
-            ...group.rangeParams,
-            max_points: HISTORY_MAX_POINTS,
-          },
-          { timeout: 30000 },
-        ),
-      })),
+    call<any, PingMetricStatsResponse>(
+      "public:getPingMetricStats",
+      {
+        entity_id: uuid,
+        ...metricRangeParams,
+        max_points: HISTORY_MAX_POINTS,
+      },
+      { timeout: 30000 },
     )
-      .then((results) => {
+      .then((result) => {
         if (!active) return;
-        const next: Record<string, PingMetricStat[]> = {};
-        for (const { group, result } of results) {
-          const stats = Array.isArray(result?.stats) ? result.stats : [];
-          for (const chartId of group.chartIds) next[chartId] = stats;
-        }
-        setPingStatsByChart(next);
+        setPingStats(Array.isArray(result?.stats) ? result.stats : []);
       })
       .catch(() => {
-        if (active) setPingStatsByChart({});
+        if (active) setPingStats([]);
       });
 
     return () => {
@@ -1260,16 +1199,15 @@ const LoadChart = ({ data = [], onRealtimeActiveChange }: LoadChartProps) => {
     };
   }, [
     call,
-    chartQueryGroups,
+    metricKeys,
+    metricRangeParams,
     uuid,
   ]);
 
-  const pingStatsMapByChart = useMemo(() =>
-    new Map(Object.entries(pingStatsByChart).map(([chartId, stats]) => [
-      chartId,
-      new Map(stats.map((stat) => [pingMetricStatKey(stat.entity_id, stat.task_id), stat])),
-    ])),
-  [pingStatsByChart]);
+  const pingStatsMap = useMemo(
+    () => new Map(pingStats.map((stat) => [pingMetricStatKey(stat.entity_id, stat.task_id), stat])),
+    [pingStats],
+  );
 
   const hiddenKey = (chartId: string, series: RenderSeries) =>
     `${chartId}:${series.stableKey}`;
@@ -1398,13 +1336,6 @@ const LoadChart = ({ data = [], onRealtimeActiveChange }: LoadChartProps) => {
 
   const setChartSize = (chartId: string, size: ChartSize) => {
     updateChart(chartId, (chart) => ({ ...chart, size }));
-  };
-
-  const setChartRangeKey = (chartId: string, rangeKey: string) => {
-    updateChart(chartId, (chart) => ({
-      ...chart,
-      rangeKey,
-    }));
   };
 
   const handleChartDragEnd = ({ active, over }: DragEndEvent) => {
@@ -1593,24 +1524,9 @@ const LoadChart = ({ data = [], onRealtimeActiveChange }: LoadChartProps) => {
         >
           <div className="grid w-full max-w-[1100px] grid-cols-1 gap-3 lg:grid-cols-3">
             {charts.map((chart) => {
-          const chartTimeView = chart.rangeKey
-            ? timeViews.find((view) => view.key === chart.rangeKey && view.hours)
-            : undefined;
-          const chartRangeHours =
-            chartTimeView &&
-            globalChartRangeHours !== undefined &&
-            chartTimeView.hours! < globalChartRangeHours
-              ? chartTimeView.hours
-              : globalChartRangeHours;
-          const availableChartRanges = timeViews.filter(
-            (view) =>
-              view.hours &&
-              globalChartRangeHours !== undefined &&
-              view.hours < globalChartRangeHours,
-          );
-          const chartPingStatsMap = pingStatsMapByChart.get(chart.id);
+          const chartPingStatsMap = pingStatsMap;
           const metricBuilt = buildRowsFromMetricSeries(
-            metricSeriesByChart[chart.id] ?? [],
+            metricSeries,
             chart,
             definitionMap,
             pingTaskMap,
@@ -1659,25 +1575,6 @@ const LoadChart = ({ data = [], onRealtimeActiveChange }: LoadChartProps) => {
                     <SegmentedControl.Item value="medium">M</SegmentedControl.Item>
                     <SegmentedControl.Item value="large">L</SegmentedControl.Item>
                   </SegmentedControl.Root>
-                  {availableChartRanges.length > 0 && (
-                    <Select.Root
-                      value={chartRangeHours === globalChartRangeHours ? "" : chart.rangeKey ?? ""}
-                      onValueChange={(value) => setChartRangeKey(chart.id, value)}
-                    >
-                      <Select.Trigger
-                        placeholder={t("chart.range", "Chart range")}
-                        aria-label={t("chart.range", "Chart range")}
-                        className="h-8 max-w-28 text-xs"
-                      />
-                      <Select.Content>
-                        {availableChartRanges.map((view) => (
-                          <Select.Item key={view.key} value={view.key}>
-                            {view.label}
-                          </Select.Item>
-                        ))}
-                      </Select.Content>
-                    </Select.Root>
-                  )}
                   <button
                     type="button"
                     title={t("common.delete", "Delete")}
@@ -1837,7 +1734,7 @@ const LoadChart = ({ data = [], onRealtimeActiveChange }: LoadChartProps) => {
                       }}
                       content={
                         <ChartTooltipContent
-                          labelFormatter={labelFormatter(chartRangeHours)}
+                          labelFormatter={labelFormatter(displayRangeHours)}
                           indicator="dot"
                         />
                       }
