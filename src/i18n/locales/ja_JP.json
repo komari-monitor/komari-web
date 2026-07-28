@@ -1135,6 +1135,69 @@
     "version": "バージョン",
     "zip_files_only": ".zip形式のみサポート"
   },
+  "pprof": {
+    "capture_duration": "CPU とトレースの取得時間",
+    "download": "ダウンロード",
+    "duration_option": "{{seconds}} 秒",
+    "goroutines": "ゴルーチン数",
+    "heap_alloc": "割り当て済みヒープ",
+    "heap_inuse": "使用中のヒープ",
+    "heap_objects": "ヒープオブジェクト数",
+    "heap_preview_description": "プロセス概要とともに更新されるライブヒープのテキストサマリーです。",
+    "heap_preview_title": "ヒープスナップショット",
+    "invalid_summary": "サーバーから無効なランタイムプロファイル情報が返されました",
+    "loading": "収集中...",
+    "preview_description": "選択した Go ランタイムプロファイルのテキスト出力です。",
+    "preview_title": "{{profile}} プロファイル",
+    "preview_unavailable": "このランタイムプロファイルにはテキストプレビューがありません。",
+    "profiles": {
+      "allocs": {
+        "title": "割り当て",
+        "description": "プロセス開始以降の累積メモリ割り当てサンプルです。"
+      },
+      "block": {
+        "title": "ブロッキング",
+        "description": "同期処理のブロッキングイベントです。"
+      },
+      "cpu": {
+        "title": "CPU",
+        "description": "選択した時間にわたって CPU 実行サンプルを収集します。"
+      },
+      "trace": {
+        "title": "トレース",
+        "description": "選択した時間にわたって実行トレースを収集します。"
+      },
+      "goroutine": {
+        "title": "ゴルーチン",
+        "description": "現在のゴルーチンスタックプロファイルです。"
+      },
+      "heap": {
+        "title": "ヒープ",
+        "description": "使用中のヒープ割り当てサンプルです。"
+      },
+      "mutex": {
+        "title": "ミューテックス",
+        "description": "競合したミューテックスイベントです。"
+      },
+      "threadcreate": {
+        "title": "スレッド",
+        "description": "OS スレッドの作成イベントです。"
+      }
+    },
+    "profiles_description": "テキストスナップショットの確認、またはオフライン分析用 pprof データのダウンロードができます。",
+    "profiles_title": "ランタイムプロファイル",
+    "request_failed": "ランタイムプロファイルを取得できませんでした",
+    "runtime_overview_description": "プロファイルを開始せずに取得するライブランタイム指標です。",
+    "runtime_overview_title": "現在のプロセス",
+    "runtime_sys": "ランタイム予約済みメモリ",
+    "sample_count": "{{samples}} サンプル",
+    "summary_load_failed": "ランタイムプロファイル情報を読み込めませんでした",
+    "summary_unavailable": "ランタイム概要を取得できません",
+    "timed_profile": "選択した時間にわたって収集",
+    "title": "パフォーマンスプロファイル",
+    "view": "表示",
+    "warning": "短時間サーバー負荷が増加することがあります。"
+  },
   "time": {
     "ago": "前",
     "minute": "分",

@@ -1135,6 +1135,69 @@
     "version": "版本",
     "zip_files_only": "僅支持 .zip 格式"
   },
+  "pprof": {
+    "capture_duration": "CPU 與 trace 擷取時長",
+    "download": "下載",
+    "duration_option": "{{seconds}} 秒",
+    "goroutines": "Goroutine 數量",
+    "heap_alloc": "已配置堆積記憶體",
+    "heap_inuse": "正在使用的堆積記憶體",
+    "heap_objects": "堆積物件數",
+    "heap_preview_description": "即時堆積記憶體文字摘要，會隨程序概覽一起重新整理。",
+    "heap_preview_title": "堆積記憶體快照",
+    "invalid_summary": "伺服器返回了無效的執行期效能資料",
+    "loading": "正在擷取...",
+    "preview_description": "所選 Go 執行期效能資料的文字輸出。",
+    "preview_title": "{{profile}} 效能資料",
+    "preview_unavailable": "此執行期效能資料不提供文字預覽。",
+    "profiles": {
+      "allocs": {
+        "title": "配置",
+        "description": "程序啟動以來的累積記憶體配置取樣。"
+      },
+      "block": {
+        "title": "阻塞",
+        "description": "同步阻塞事件。"
+      },
+      "cpu": {
+        "title": "CPU",
+        "description": "依選定時長擷取 CPU 執行取樣。"
+      },
+      "trace": {
+        "title": "Trace",
+        "description": "依選定時長擷取執行追蹤資料。"
+      },
+      "goroutine": {
+        "title": "Goroutine",
+        "description": "目前 Goroutine 堆疊效能資料。"
+      },
+      "heap": {
+        "title": "堆積記憶體",
+        "description": "仍在使用的堆積記憶體配置取樣。"
+      },
+      "mutex": {
+        "title": "互斥鎖",
+        "description": "發生競爭的互斥鎖事件。"
+      },
+      "threadcreate": {
+        "title": "執行緒",
+        "description": "作業系統執行緒建立事件。"
+      }
+    },
+    "profiles_description": "可查看文字快照，或下載 pprof 檔案進行離線分析。",
+    "profiles_title": "執行期效能資料",
+    "request_failed": "取得執行期效能資料失敗",
+    "runtime_overview_description": "不需啟動效能擷取即可讀取的執行期即時指標。",
+    "runtime_overview_title": "目前程序概覽",
+    "runtime_sys": "執行期保留記憶體",
+    "sample_count": "{{samples}} 個樣本",
+    "summary_load_failed": "讀取執行期效能資料失敗",
+    "summary_unavailable": "目前無法讀取執行期概覽",
+    "timed_profile": "依選定時長擷取",
+    "title": "效能分析",
+    "view": "檢視",
+    "warning": "效能資料擷取期間可能短暫增加伺服器負載。"
+  },
   "time": {
     "ago": "前",
     "minute": "分鐘",

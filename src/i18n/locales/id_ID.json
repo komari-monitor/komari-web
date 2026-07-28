@@ -1135,6 +1135,69 @@
     "version": "Versi",
     "zip_files_only": "Hanya file .zip yang didukung"
   },
+  "pprof": {
+    "capture_duration": "Durasi pengambilan CPU dan trace",
+    "download": "Unduh",
+    "duration_option": "{{seconds}} dtk",
+    "goroutines": "Jumlah goroutine",
+    "heap_alloc": "Heap dialokasikan",
+    "heap_inuse": "Heap yang digunakan",
+    "heap_objects": "Objek heap",
+    "heap_preview_description": "Ringkasan heap teks langsung yang diperbarui bersama ringkasan proses.",
+    "heap_preview_title": "Snapshot heap",
+    "invalid_summary": "Server mengembalikan informasi profil runtime yang tidak valid",
+    "loading": "Mengumpulkan...",
+    "preview_description": "Keluaran teks dari profil runtime Go yang dipilih.",
+    "preview_title": "Profil {{profile}}",
+    "preview_unavailable": "Profil runtime ini tidak menyediakan pratinjau teks.",
+    "profiles": {
+      "allocs": {
+        "title": "Alokasi",
+        "description": "Sampel alokasi memori kumulatif sejak proses dimulai."
+      },
+      "block": {
+        "title": "Pemblokiran",
+        "description": "Peristiwa pemblokiran sinkronisasi."
+      },
+      "cpu": {
+        "title": "CPU",
+        "description": "Sampel eksekusi CPU yang dikumpulkan selama durasi terpilih."
+      },
+      "trace": {
+        "title": "Trace",
+        "description": "Jejak eksekusi yang dikumpulkan selama durasi terpilih."
+      },
+      "goroutine": {
+        "title": "Goroutine",
+        "description": "Profil tumpukan goroutine saat ini."
+      },
+      "heap": {
+        "title": "Heap",
+        "description": "Sampel alokasi heap yang masih aktif."
+      },
+      "mutex": {
+        "title": "Mutex",
+        "description": "Peristiwa mutex yang mengalami kontensi."
+      },
+      "threadcreate": {
+        "title": "Thread",
+        "description": "Peristiwa pembuatan thread sistem operasi."
+      }
+    },
+    "profiles_description": "Lihat snapshot teks atau unduh data pprof untuk analisis luring.",
+    "profiles_title": "Profil runtime",
+    "request_failed": "Gagal mengumpulkan profil runtime",
+    "runtime_overview_description": "Penghitung runtime langsung yang dikumpulkan tanpa memulai profil.",
+    "runtime_overview_title": "Proses saat ini",
+    "runtime_sys": "Memori yang dicadangkan runtime",
+    "sample_count": "{{samples}} sampel",
+    "summary_load_failed": "Gagal memuat informasi profil runtime",
+    "summary_unavailable": "Ringkasan runtime tidak tersedia",
+    "timed_profile": "Dikumpulkan selama durasi yang dipilih",
+    "title": "Profil performa",
+    "view": "Lihat",
+    "warning": "Pengumpulan profil dibatasi untuk administrator dan dapat meningkatkan beban server untuk sementara."
+  },
   "time": {
     "ago": "yang lalu",
     "minute": "Menit",

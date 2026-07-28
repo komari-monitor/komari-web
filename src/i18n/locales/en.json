@@ -1135,6 +1135,69 @@
     "version": "Version",
     "zip_files_only": "Only .zip files are supported"
   },
+  "pprof": {
+    "capture_duration": "CPU and trace capture duration",
+    "download": "Download",
+    "duration_option": "{{seconds}} s",
+    "goroutines": "Goroutines",
+    "heap_alloc": "Heap allocated",
+    "heap_inuse": "Heap in use",
+    "heap_objects": "Heap objects",
+    "heap_preview_description": "A live textual heap summary, refreshed with the process overview.",
+    "heap_preview_title": "Heap snapshot",
+    "invalid_summary": "The server returned invalid runtime profile information",
+    "loading": "Collecting...",
+    "preview_description": "Text output from the selected Go runtime profile.",
+    "preview_title": "{{profile}} profile",
+    "preview_unavailable": "This runtime profile does not provide a text preview.",
+    "profiles": {
+      "allocs": {
+        "title": "Allocations",
+        "description": "Cumulative allocation samples since the process started."
+      },
+      "block": {
+        "title": "Blocking",
+        "description": "Blocking synchronization events."
+      },
+      "cpu": {
+        "title": "CPU",
+        "description": "CPU execution samples collected over the selected duration."
+      },
+      "trace": {
+        "title": "Trace",
+        "description": "Execution trace collected over the selected duration."
+      },
+      "goroutine": {
+        "title": "Goroutines",
+        "description": "Current goroutine stack profiles."
+      },
+      "heap": {
+        "title": "Heap",
+        "description": "Live heap allocation samples."
+      },
+      "mutex": {
+        "title": "Mutex",
+        "description": "Contended mutex events."
+      },
+      "threadcreate": {
+        "title": "Threads",
+        "description": "Operating-system thread creation events."
+      }
+    },
+    "profiles_description": "Inspect text snapshots or download pprof data for offline analysis.",
+    "profiles_title": "Runtime profiles",
+    "request_failed": "Unable to collect the runtime profile",
+    "runtime_overview_description": "Live runtime counters collected without starting a profile.",
+    "runtime_overview_title": "Current process",
+    "runtime_sys": "Runtime reserved",
+    "sample_count": "{{samples}} samples",
+    "summary_load_failed": "Failed to load runtime profile information",
+    "summary_unavailable": "Runtime overview is unavailable",
+    "timed_profile": "Captured over the selected duration",
+    "title": "Performance profiles",
+    "view": "View",
+    "warning": "Profile may briefly increase server load."
+  },
   "time": {
     "ago": "Ago",
     "minute": "Minute",

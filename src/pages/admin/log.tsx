@@ -8,6 +8,8 @@ import {
   TableCell,
 } from "@/components/ui/table";
 import { Button, Dialog, Flex } from "@radix-ui/themes";
+import { Activity } from "lucide-react";
+import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import NumberPicker from "@/components/ui/number-picker";
 import Loading from "@/components/loading";
@@ -28,6 +30,7 @@ const LogPage = () => {
   const [total, setTotal] = React.useState<number>(1);
   const [limit, setLimit] = React.useState<number>(10);
   const [t] = useTranslation();
+  const navigate = useNavigate();
   React.useEffect(() => {
     const fetchLogs = async () => {
       setLoading(true);
@@ -91,8 +94,17 @@ const LogPage = () => {
       <div className="flex justify-between items-center">
         <h1 className="text-2xl font-bold">{t("logs.title")}</h1>
         <div className="flex items-center gap-2">
+          <Button variant="soft" onClick={() => navigate("/admin/pprof")}>
+            <Activity size={16} />
+            {t("pprof.title")}
+          </Button>
           Limit
-          <NumberPicker defaultValue={limit} onChange={setLimit} min={1} max={100} />
+          <NumberPicker
+            defaultValue={limit}
+            onChange={setLimit}
+            min={1}
+            max={100}
+          />
         </div>
       </div>
       <div className="rounded-lg overflow-hidden">
