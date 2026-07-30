@@ -37,18 +37,6 @@ export const routes: RouteObject[] = [
     ),
   },
   {
-    path: "/admin/update/1.2.7",
-    element: React.createElement(
-      lazy(() => import("./pages/database_migration")),
-    ),
-  },
-  {
-    path: "/admin/metric-store/restructure",
-    element: React.createElement(
-      lazy(() => import("./pages/database_migration")),
-    ),
-  },
-  {
     path: "/admin",
     element: React.createElement(AdminLayout),
     children: [
