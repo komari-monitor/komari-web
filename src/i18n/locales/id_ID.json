@@ -666,14 +666,15 @@
     "permission": {
       "allowAllFileAccess": "Akses file di luar direktori plugin",
       "allowExec": "Jalankan proses anak",
+      "allowHooks": "Ubah permintaan/respons HTTP",
       "allowListen": "Dengarkan port lokal",
-      "maxChildOutputBytes": "Batas ukuran output proses anak",
-      "maxHTTPBodyBytes": "Batas ukuran body HTTP",
-      "node": "Modul kompatibilitas Node.js",
-      "timeout": "Batas waktu eksekusi"
+      "allowRoutes": "Daftarkan rute HTTP",
+      "allowSystemRPC": "Panggil RPC sistem"
     },
     "permission_approve": "Setujui & Aktifkan",
+    "permission_default_note": "Diberikan secara default: baca konfigurasi plugin, daftarkan RPC plugin, baca/tulis file di dalam direktori plugin",
     "permission_description": "Plugin ini meminta izin berikut:",
+    "permission_none": "Plugin ini tidak meminta izin khusus",
     "permission_title": "Izin diperlukan",
     "running": "Berjalan",
     "saving": "Menyimpan...",

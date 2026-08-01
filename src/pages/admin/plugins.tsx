@@ -242,20 +242,19 @@ export default function PluginsPage() {
     }
   };
 
+  // 需要批准的权限列表（按能力拆分；超时/大小限制等运行时设置不在此列）。
+  // server.registerRPC、server.getConfig、插件目录内文件读写默认授予，不弹确认。
   const permissionLabels = (plugin: PluginInfo): string[] => {
     const labels: string[] = [];
     const p = plugin.permissions;
     if (!p) return labels;
-    if (p.node) labels.push(t("plugin.permission.node", "Node.js compatibility modules"));
+    if (p.allowSystemRPC) labels.push(t("plugin.permission.allowSystemRPC", "Call system RPC"));
+    if (p.allowRoutes) labels.push(t("plugin.permission.allowRoutes", "Register HTTP routes"));
+    if (p.allowHooks) labels.push(t("plugin.permission.allowHooks", "Modify HTTP requests/responses"));
     if (p.allowExec) labels.push(t("plugin.permission.allowExec", "Execute child processes"));
     if (p.allowListen) labels.push(t("plugin.permission.allowListen", "Listen on local ports"));
     if (p.allowAllFileAccess)
       labels.push(t("plugin.permission.allowAllFileAccess", "Access files outside the plugin directory"));
-    if (p.timeout) labels.push(`${t("plugin.permission.timeout", "Execution timeout")}: ${p.timeout}s`);
-    if (p.maxHTTPBodyBytes)
-      labels.push(`${t("plugin.permission.maxHTTPBodyBytes", "HTTP body limit")}: ${p.maxHTTPBodyBytes} B`);
-    if (p.maxChildOutputBytes)
-      labels.push(`${t("plugin.permission.maxChildOutputBytes", "Child output limit")}: ${p.maxChildOutputBytes} B`);
     return labels;
   };
 
@@ -391,6 +390,14 @@ export default function PluginsPage() {
             )}
           </Text>
           <Flex direction="column" gap="2" my="3">
+            {pendingApproval && permissionLabels(pendingApproval).length === 0 && (
+              <Text size="2" color="gray">
+                {t(
+                  "plugin.permission_none",
+                  "This plugin requests no special permissions",
+                )}
+              </Text>
+            )}
             {pendingApproval &&
               permissionLabels(pendingApproval).map((label) => (
                 <Badge key={label} color="orange" size="2" className="justify-start">
@@ -398,6 +405,12 @@ export default function PluginsPage() {
                 </Badge>
               ))}
           </Flex>
+          <Text size="1" color="gray" className="mb-4">
+            {t(
+              "plugin.permission_default_note",
+              "Default granted: read plugin configuration, register plugin RPC, read/write files inside the plugin directory",
+            )}
+          </Text>
           <Flex gap="2" justify="end">
             <Button variant="soft" onClick={() => setPendingApproval(null)}>
               {t("common.cancel", "Cancel")}

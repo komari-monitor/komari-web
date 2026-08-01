@@ -795,9 +795,15 @@ const SidebarItem = ({
 }) => {
   const location = useLocation();
   const isExternalLink = to.startsWith("http://") || to.startsWith("https://");
-  // 精确匹配（含 query）：避免前缀兄弟路由（如 /admin/plugins 与
-  // /admin/plugins/config、两个市场页）同时点亮
-  const isActive = !isExternalLink && to !== "/" && location.pathname + location.search === to;
+  // 带 query 的菜单项（如 /admin/plugin-page?short=x）做全匹配；不带 query
+  // 的菜单项只比 pathname（如 /admin/plugins/config?short=x 点亮“插件配置”），
+  // 同时避免前缀兄弟路由（/admin/plugins 与 /admin/plugins/config）同时点亮。
+  const isActive =
+    !isExternalLink &&
+    to !== "/" &&
+    (to.includes("?")
+      ? location.pathname + location.search === to
+      : location.pathname === to.split("?")[0]);
   const openInNewTab = newTab === true || (isExternalLink && newTab !== false);
 
   if (openInNewTab || reloadDocument) {

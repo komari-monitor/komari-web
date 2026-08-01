@@ -666,14 +666,15 @@
     "permission": {
       "allowAllFileAccess": "プラグインディレクトリ外のファイルへのアクセス",
       "allowExec": "子プロセスの実行",
+      "allowHooks": "HTTP リクエスト/レスポンスの変更",
       "allowListen": "ローカルポートのリッスン",
-      "maxChildOutputBytes": "子プロセス出力サイズ制限",
-      "maxHTTPBodyBytes": "HTTP ボディサイズ制限",
-      "node": "Node.js 互換モジュール",
-      "timeout": "実行タイムアウト"
+      "allowRoutes": "HTTP ルートの登録",
+      "allowSystemRPC": "システム RPC の呼び出し"
     },
     "permission_approve": "承認して有効化",
+    "permission_default_note": "デフォルトで許可：プラグイン設定の読み取り、プラグイン RPC の登録、プラグインディレクトリ内のファイルの読み書き",
     "permission_description": "このプラグインは次の権限を要求しています：",
+    "permission_none": "このプラグインは特別な権限を要求していません",
     "permission_title": "権限が必要です",
     "running": "実行中",
     "saving": "保存中...",

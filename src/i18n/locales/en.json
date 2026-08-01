@@ -666,14 +666,15 @@
     "permission": {
       "allowAllFileAccess": "Access files outside the plugin directory",
       "allowExec": "Execute child processes",
+      "allowHooks": "Modify HTTP requests/responses",
       "allowListen": "Listen on local ports",
-      "maxChildOutputBytes": "Child output size limit",
-      "maxHTTPBodyBytes": "HTTP body size limit",
-      "node": "Node.js compatibility modules",
-      "timeout": "Execution timeout"
+      "allowRoutes": "Register HTTP routes",
+      "allowSystemRPC": "Call system RPC"
     },
     "permission_approve": "Approve & Enable",
+    "permission_default_note": "Default granted: read plugin configuration, register plugin RPC, read/write files inside the plugin directory",
     "permission_description": "This plugin requests the following permissions:",
+    "permission_none": "This plugin requests no special permissions",
     "permission_title": "Permission required",
     "running": "Running",
     "saving": "Saving...",

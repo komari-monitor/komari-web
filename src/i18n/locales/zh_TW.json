@@ -666,14 +666,15 @@
     "permission": {
       "allowAllFileAccess": "存取外掛目錄之外的檔案",
       "allowExec": "執行子程式",
+      "allowHooks": "修改 HTTP 請求/回應",
       "allowListen": "監聽本機連接埠",
-      "maxChildOutputBytes": "子程式輸出大小限制",
-      "maxHTTPBodyBytes": "HTTP 請求主體大小限制",
-      "node": "Node.js 相容模組",
-      "timeout": "執行逾時"
+      "allowRoutes": "註冊 HTTP 路由",
+      "allowSystemRPC": "呼叫系統 RPC"
     },
     "permission_approve": "核准並啟用",
+    "permission_default_note": "預設授予：讀取外掛設定、註冊外掛 RPC、讀寫外掛目錄內的檔案",
     "permission_description": "此外掛請求下列權限：",
+    "permission_none": "此外掛不請求任何特殊權限",
     "permission_title": "需要權限",
     "running": "執行中",
     "saving": "儲存中...",

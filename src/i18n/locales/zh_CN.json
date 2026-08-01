@@ -666,14 +666,15 @@
     "permission": {
       "allowAllFileAccess": "访问插件目录之外的文件",
       "allowExec": "执行子进程",
+      "allowHooks": "修改 HTTP 请求/响应",
       "allowListen": "监听本地端口",
-      "maxChildOutputBytes": "子进程输出大小限制",
-      "maxHTTPBodyBytes": "HTTP 请求体大小限制",
-      "node": "Node.js 兼容模块",
-      "timeout": "执行超时"
+      "allowRoutes": "注册 HTTP 路由",
+      "allowSystemRPC": "调用系统 RPC"
     },
     "permission_approve": "批准并启用",
+    "permission_default_note": "默认授予：读取插件配置、注册插件 RPC、读写插件目录内的文件",
     "permission_description": "此插件请求以下权限：",
+    "permission_none": "此插件不请求任何特殊权限",
     "permission_title": "需要权限",
     "running": "运行中",
     "saving": "保存中...",

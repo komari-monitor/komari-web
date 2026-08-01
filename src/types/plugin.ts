@@ -2,6 +2,9 @@ import type { I18nText } from "@/utils/i18nText";
 
 export interface PluginPermissions {
   node?: boolean;
+  allowSystemRPC?: boolean; // server.call
+  allowRoutes?: boolean; // server.route
+  allowHooks?: boolean; // server.hook
   allowExec?: boolean;
   allowListen?: boolean;
   allowAllFileAccess?: boolean;
