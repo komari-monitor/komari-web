@@ -180,7 +180,7 @@ const ThemePage = () => {
       // 监听请求完成
       xhr.addEventListener("load", async () => {
         if (xhr.status === 413) {
-          toast.error(t("theme.uploda_413_content_too_large"));
+          toast.error(t("theme.upload_413_content_too_large"));
           setUploading(false);
           setUploadProgress(0);
           setUploadXhr(null);
@@ -462,7 +462,7 @@ const ThemePage = () => {
               onClick={() => navigate("/admin/theme_managed")}
             >
               <Settings size={16} />
-              {`${currentTheme}设置`}
+              {t("theme.settings_with_name", { name: currentTheme })}
             </Button>
           )}
           <Button onClick={() => setUploadDialogOpen(true)} className="gap-2">
@@ -595,7 +595,7 @@ const ThemePage = () => {
       <UploadDialog
         open={uploadDialogOpen}
         onOpenChange={setUploadDialogOpen}
-        title={t("theme.upload_theme")}
+        title={t("theme.upload")}
         description={t("theme.upload_description")}
         accept=".zip"
         dragDropText={t("theme.drag_drop")}
@@ -645,7 +645,7 @@ const ThemePage = () => {
               </Flex>
               <Flex gap="2" justify="start" align="center">
                 <Text size="2" weight="bold" color="gray" wrap="nowrap">
-                  {t("theme.description")}
+                  {t("common.description")}
                 </Text>
                 <Text size="3">{selectedTheme?.description}</Text>
               </Flex>
@@ -750,7 +750,7 @@ const ThemePage = () => {
       {/* 更新主题对话框 */}
       <Dialog.Root open={updateDialogOpen} onOpenChange={setUpdateDialogOpen}>
         <Dialog.Content maxWidth="500px">
-          <Dialog.Title>{t("theme.update_theme")}</Dialog.Title>
+          <Dialog.Title>{t("theme.update")}</Dialog.Title>
           <Dialog.Description>
             {t("theme.update_description")}
           </Dialog.Description>
@@ -883,7 +883,7 @@ const ThemePage = () => {
                           color="gray"
                           wrap="nowrap"
                         >
-                          {t("theme.description")}
+                          {t("common.description")}
                         </Text>
                         <Text size="3">
                           {importPreview.theme.description}

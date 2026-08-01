@@ -31,6 +31,9 @@ const resources = {
   "en-AU": {
     translation: en,
   },
+  "zh": {
+    translation: zh_CN,
+  },
   "zh-CN": {
     translation: zh_CN,
     name: "简体中文",
@@ -48,9 +51,15 @@ const resources = {
   "zh-MO": {
     translation: zh_TW,  // Macau uses Traditional Chinese
   },
+  "ja": {
+    translation: ja_JP,
+  },
   "ja-JP": {
     translation: ja_JP,
     name: "日本語",
+  },
+  "id": {
+    translation: id_ID,
   },
   "id-ID": {
     translation: id_ID,

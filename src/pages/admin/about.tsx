@@ -6,12 +6,13 @@ import Loading from "@/components/loading";
 import { useTranslation } from "react-i18next";
 import { SquareArrowOutUpRight } from "lucide-react";
 import { SegmentedControl } from "@radix-ui/themes";
-import { Apache2_LICENSE, Eula, MIT_LICENSE } from "@/utils/field";
+import { Apache2_LICENSE, MIT_LICENSE } from "@/utils/field";
+import { getEula } from "@/utils/eula";
 import { SettingCardCollapse } from "@/components/admin/SettingCard";
 
 export default function AboutPage() {
   const [markdown, setMarkdown] = useState("");
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [view, setView] = useState("open_source");
   useEffect(() => {
     fetch(
@@ -120,13 +121,13 @@ export default function AboutPage() {
 
   return (
     <div className="flex flex-col gap-4">
-      <h1 className="text-2xl font-bold text-foreground">{t("about.title")}</h1>
+      <h1 className="text-2xl font-bold text-foreground">{t("common.about")}</h1>
       <SegmentedControl.Root defaultValue={view} onValueChange={setView}>
         <SegmentedControl.Item value="open_source">
           {t("about.open_source_title")}
         </SegmentedControl.Item>
         <SegmentedControl.Item value="eula">
-          法律声明与合规指引
+          {t("eula.title")}
         </SegmentedControl.Item>
         <SegmentedControl.Item value="readme">Readme</SegmentedControl.Item>
       </SegmentedControl.Root>
@@ -136,7 +137,7 @@ export default function AboutPage() {
             return (
               <>
                 <div className="license-text mb-4 p-4 border rounded-md bg-accent-1 flex flex-col gap-2">
-                  <pre className="text-wrap">{Eula}</pre>
+                  <pre className="text-wrap">{getEula(i18n.language)}</pre>
                 </div>
               </>
             );

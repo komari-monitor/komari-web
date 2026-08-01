@@ -163,7 +163,7 @@ const Node = React.memo(
           </Flex>
           <Flex className="md:flex-col flex-row md:gap-1 gap-4">
             {/* CPU Usage */}
-            <UsageBar label={t("nodeCard.cpu")} value={liveData.cpu.usage} />
+            <UsageBar label={t("admin.nodeDetail.cpu")} value={liveData.cpu.usage} />
 
             {/* Memory Usage */}
             <UsageBar label={t("nodeCard.ram")} value={memoryUsagePercent} />

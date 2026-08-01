@@ -3,8 +3,7 @@
     "ai": "Komari プロジェクトの開発プロセスは、人工知能ツールの支援を受けています。これらのツールは、コード生成、リファクタリング、デバッグなどのタスクを実行するために使用され、開発効率とコード品質を向上させます。AI によって生成されたすべてのコードと提案は、人間の開発者によってレビューおよび検証されています。",
     "open_source": "Komari は MIT ライセンスに基づいてオープンソースであり、以下のオープンソースソフトウェアを使用して構築されています：",
     "open_source_title": "オープンソースソフトウェアライセンス",
-    "readme_open_in_new_tab": "新しいタブで開く",
-    "title": "について"
+    "readme_open_in_new_tab": "新しいタブで開く"
   },
   "account": {
     "2fa_disabled": "二要素認証は無効になっています",
@@ -30,33 +29,18 @@
     "title": "アカウント"
   },
   "account_settings": {
-    "bind_github": "GitHubアカウントをバインド",
     "bind_sso": "外部アカウントをバインド",
-    "cancel": "キャンセル",
     "confirm_unbind": "バインド解除を確認",
-    "download_backup": "サーバーデータバックアップをダウンロード",
-    "github_account": "GitHubアカウント",
-    "github_auth_failed": "GitHub認証の処理に失敗しました",
-    "github_bound": "バインド済み",
-    "github_not_bound": "GitHubアカウントが未バインド",
-    "github_unbound": "未バインド",
     "looking_for_backup": "バックアップを探していますか？現在は設定-サイト-バックアップに移行しました。",
     "sso_account": "外部アカウント",
+    "sso_account_bound": "{{name}}アカウント",
     "sso_auth_failed": "SSO認証の処理に失敗しました",
     "sso_bound": "外部アカウントがバインド済み",
     "sso_not_bound": "未バインド",
-    "sso_unbound": "未バインド",
-    "unbind_github": "GitHubアカウントのバインド解除",
-    "unbind_github_failed": "GitHubアカウントのバインド解除に失敗しました",
-    "unbind_github_success": "GitHubアカウントのバインド解除に成功しました",
-    "unbind_github_warning": "バインド解除後、GitHubアカウントでログインできなくなります。バインド解除しますか？",
     "unbind_sso": "外部アカウントのバインド解除",
     "unbind_sso_failed": "解除に失敗しました",
     "unbind_sso_success": "解除に成功しました",
     "unbind_sso_warning": "{{provider}} アカウントのバインド解除を確認しますか？",
-    "unknown_error": "未知のエラー",
-    "upload_backup": "サーバーデータバックアップをアップロード",
-    "upload_failed": "アップロードに失敗しました。`.zip`形式のみサポートされています",
     "upload_success": "アップロードに成功しました"
   },
   "admin": {
@@ -115,11 +99,7 @@
       "billing": "請求書",
       "billingCycle": "請求サイクル",
       "billingCycleTips": "<b>請求サイクルのルール</b><br/> <br/> <b>設定されたサイクルに従う（カレンダー更新）</b><br/> 入力された日数が設定プラン（例：月払い、四半期払い、年払い）の数値に近い場合、対応する <b>カレンダーサイクル</b> に従って更新されます。<br/> - よく使われる数値: 30（1ヶ月）、92（四半期）、365（1年）、730（2年）など。<br/> - 例：30を入力すると、サービスは3月15日に更新され、新しい期限日は4月15日になります。<br/> <br/> <b>カスタム日数に従う</b><br/> 他の日数（例：7、45、100）を入力すると、厳密に日数に従って更新されます。<br/> - 例：45を入力すると、サービスは3月15日に更新され、新しい期限日は4月29日（45日後）になります。<br/> <br/> <b>一括払い</b><br/> -1を入力すると、一括払いを意味します。",
-      "cancel": "キャンセル",
       "cannotUndo": "この操作は元に戻せません！",
-      "clientVersion": "クライアントバージョン",
-      "confirm": "確認",
-      "confirmDelete": "削除を確認",
       "currency": "通貨",
       "currencyTips": "¥-人民元、$-米ドル、€-ユーロ、£-ポンド、₽-ルーブル、₣-フラン、₹-ルピー、₫-ベトナムドン、฿-バーツ",
       "customColumns": "カスタム列",
@@ -150,8 +130,6 @@
       "installOptions": "インストールオプション",
       "interval": "収集間隔（秒）",
       "invalidPrice": "無効な価格",
-      "ipAddress": "IPアドレス",
-      "loading": "読み込み中...",
       "memoryModeAvailable": "バッファメモリを含む",
       "memoryModeAvailable_tip": "エージェントはデフォルトで使用中のメモリを監視して報告します。このオプションを選択すると、使用中のメモリ+バッファメモリが報告されます。",
       "monthRotate": "ネットワーク統計の月リセット日",
@@ -160,7 +138,6 @@
       "namePlaceholder": "名前",
       "noData": "データがありません",
       "nodeList": "ノードリスト",
-      "noResults": "結果がありません",
       "price": "価格",
       "priceTips": "0は表示しない、-1は無料を示す",
       "searchByName": "サーバーを検索",
@@ -182,10 +159,10 @@
       "traffic_description": "Komariは、サーバーが指定されたトラフィック使用率に達したときに通知を送信し、5%の間隔で継続的にリマインダーを表示します。サーバーにトラフィック閾値が設定されていない場合、通知は送信されません。0に設定するとトラフィックリマインダーが無効になります。"
     }
   },
-  "cancel": "キャンセル",
   "chart": {
     "addChart": "グラフを追加",
     "addMetric": "メトリックを追加",
+    "approximate": "概算",
     "avg": "平均値",
     "connections": "接続数",
     "cpu_usage": "CPU 使用率",
@@ -194,16 +171,18 @@
     "cutPeak_tips": "<h2 class=\"text-lg font-bold\">データスムージングに関するヒント</h2><p>スムージングを有効にすると、統計グラフで表示される曲線は<strong>指数加重移動平均 (EWMA)</strong>アルゴリズムによって処理されます。これは一般的なデータスムージング技術です。</p></br><p>注意が必要なのは、EWMAアルゴリズムでスムージングされた曲線が示す数値は、<strong>元の、実際の測定データではない</strong>ということです。これらはEWMAアルゴリズムによって計算された<strong>スムーズなトレンドライン</strong>であり、データの変動を減らし、データのパターンやトレンドを認識しやすくすることを目的としています。</p></br><p>したがって、あなたが見る数値は<strong>視覚的な表現</strong>に近く、データの全体的な動向や長期的なトレンドを理解するのに役立ちますが、各時間点の正確な実際の値ではありません。具体的で元のデータポイントを確認する必要がある場合は、スムージングされていないデータビューを参照してください。</p>",
     "dashboard": "グラフ",
     "days": "{{count}} 日",
-    "disk_used": "ディスク",
+    "days_one": "{{count}} 日",
+    "days_other": "{{count}} 日",
     "downsampleAlgorithm": "ダウンサンプル",
     "endTime": "終了時刻",
     "fillEmpty": "欠損を補完",
-    "globalTemplateSaveFailed": "グローバルグラフテンプレートを保存できませんでした",
     "globalTemplateSaved": "グローバルグラフテンプレートを保存しました",
+    "globalTemplateSaveFailed": "グローバルグラフテンプレートを保存できませんでした",
     "gpu_memory": "GPU メモリ使用率",
     "hideAll": "すべて隠す",
     "hours": "{{count}} 時間",
-    "minutes": "{{count}} 分",
+    "hours_one": "{{count}} 時間",
+    "hours_other": "{{count}} 時間",
     "interval": "検出間隔",
     "invalidTimeRange": "開始時刻は終了時刻より前にしてください",
     "latest": "最新",
@@ -212,17 +191,20 @@
     "max": "最大値",
     "mem_used": "メモリ",
     "min": "最小値",
-    "network_down": "ダウンロード",
+    "minutes": "{{count}} 分",
+    "minutes_one": "{{count}} 分",
+    "minutes_other": "{{count}} 分",
     "network_up": "アップロード",
     "process": "プロセス数",
     "query": "照会",
     "quickRange": "クイック選択",
     "recentDay": "直近 1 日",
     "recentDays": "直近 {{count}} 日",
+    "recentDays_one": "直近 {{count}} 日",
+    "recentDays_other": "直近 {{count}} 日",
     "recentWeek": "直近 1 週間",
     "removeMetric": "メトリックを削除",
     "sampling": {
-      "average": "平均",
       "first": "最初",
       "last": "最後",
       "max": "最大",
@@ -240,14 +222,11 @@
     "swap_used": "仮想メモリ",
     "tcp_connections": "TCP",
     "total": "サンプル数",
-    "type": "タイプ",
     "udp_connections": "UDP",
     "usage": "使用率",
     "valid": "有効サンプル",
-    "approximate": "概算",
     "volatility": "変動"
   },
-  "close": "閉じる",
   "color": {
     "amber": "アンバー",
     "blue": "青",
@@ -286,15 +265,22 @@
     "added_successfully": "成功しました",
     "all": "すべて",
     "annual": "年",
+    "appearance": "外観",
+    "batch_edit": "バッチ編集",
     "biennial": "2年",
     "cancel": "キャンセル",
+    "clear_search": "検索をクリア",
     "close": "閉じる",
+    "close_sidebar": "メニューを閉じる",
+    "color": "アクセントカラー",
     "confirm": "確認",
     "confirm_delete": "削除を確認",
     "content": "内容",
+    "copy": "コピー",
     "day": "日",
     "delete": "削除",
     "deleted_successfully": "削除されました",
+    "description": "説明",
     "deselect_all": "選択解除",
     "details": "詳細",
     "disabled": "無効",
@@ -313,17 +299,23 @@
     "have_been_omitted": "{{count}}が省略されました",
     "help": "ヘルプ",
     "home": "ホーム",
+    "language": "言語",
+    "logout": "ログアウト",
     "long_term": "長期",
+    "menu_sidebar": "メニュー",
     "monthly": "月",
     "name": "名前",
+    "next_page": "次のページ",
     "no_results": "結果がありません",
     "none": "なし",
     "once": "一回限り",
+    "previous_page": "前のページ",
     "private_site": "これはプライベートなKomariサイトです。ログインしてください。",
     "quarterly": "四半期",
     "quinquennial": "5年",
     "real_time": "リアルタイム",
     "refresh": "更新",
+    "region_flag_alt": "地域旗: {{name}}",
     "remark": "備考",
     "reset": "リセット",
     "retry": "再試行",
@@ -331,6 +323,8 @@
     "search": "検索",
     "select": "選択",
     "select_all": "すべて選択",
+    "select_clients": "クライアントを選択",
+    "select_tasks": "タスクを選択",
     "selected": "{{count}}選択",
     "selected_total": "{{count}} / {{total}} 選択中",
     "semi_annual": "半年",
@@ -341,22 +335,57 @@
     "success": "成功",
     "tags": "タグ",
     "tagsDescription": "複数のタグは';'で区切ります",
-    "tagsTips": "複数のタグは\";\"で区切ります。</br> 色を指定するには、タグの末尾に&ltcolor&gtを追加してください。例：1Gbps&ltgreen&gt。</br> 使用可能な色のリストは、<label class=\"bg-accent-a5 rounded-sm\"><a href=\"https://www.radix-ui.com/themes/docs/theme/color\" target=\"_blank\"> Color – Radix Themes</a></label>を参照してください。",
+    "tagsTips": "複数のタグは\";\"で区切ります。</br> 色を指定するには、タグの末尾に&lt;color&gt;を追加してください。例：1Gbps&lt;green&gt;。</br> 使用可能な色のリストは、<label class=\"bg-accent-a5 rounded-sm\"><a href=\"https://www.radix-ui.com/themes/docs/theme/color\" target=\"_blank\"> Color – Radix Themes</a></label>を参照してください。",
     "threshold": "閾値",
     "title": "タイトル",
     "triennial": "3年",
+    "type": "タイプ",
     "ungrouped": "未グループ化",
     "unknown": "不明",
+    "unknownError": "不明なエラー",
     "update": "更新",
     "update_available": "新しいバージョンがあります",
     "updated_successfully": "更新されました",
     "weight": "重み"
   },
-  "copy": "コピー",
   "copy_success": "クリップボードにコピーされました",
   "current_online": "現在オンライン",
   "current_time": "現在の時間",
-  "delete": "削除",
+  "database_migration": {
+    "after": "移行後",
+    "before": "移行前",
+    "failed_title": "データベース移行が完了しませんでした",
+    "legacy_full_history": "データベース全体を移行します。移行完了後に領域を一度回収します。",
+    "network_error": "データベース移行サービスに接続できません。",
+    "request_failed": "リクエストに失敗しました。サーバーログを確認して再試行してください。"
+  },
+  "database_recovery": {
+    "completed_description": "通常のコントロールパネルを再開しています。",
+    "completed_title": "データベース接続を復旧しました",
+    "dsn_required": "監視データベースの接続文字列を入力してください。",
+    "failure_detail": "データベース接続は {{count}}/{{max}} 回連続で失敗しました。",
+    "history_note": "復旧では新しい DSN で再接続するだけで、以前の接続元からデータを移行することはありません。",
+    "network_error": "復旧サービスに接続できません。",
+    "request_failed": "リクエストに失敗しました。もう一度お試しください。",
+    "save": "保存して再接続",
+    "save_failed": "監視データベースに接続できません。DSN を確認して再試行してください。",
+    "saving": "接続中...",
+    "subtitle": "監視データベースに接続できません。ログインして接続文字列を更新してください。",
+    "title": "監視データベースの復旧"
+  },
+  "errorBoundary": {
+    "go_to_home": "ホームへ戻る",
+    "no_stack_trace": "スタックトレースはありません。",
+    "reload_page": "ページを再読み込む",
+    "something_went_wrong": "問題が発生しました",
+    "unexpected_error": "予期せぬエラーが発生しました。",
+    "view_error_details": "エラー詳細を表示"
+  },
+  "eula": {
+    "accept": "よく読んで同意します",
+    "reject": "同意しません",
+    "title": "法的通知とコンプライアンスガイド"
+  },
   "exec": {
     "allCompleted": "すべてのタスクが完了しました",
     "command": "コマンドを実行",
@@ -374,17 +403,63 @@
     "selectedNodes": "選択されたノード",
     "selectNodes": "ターゲットノードを選択",
     "status": {
-      "failed": "失敗",
+      "polling": "最新の実行状態を取得しています...",
       "running": "実行中",
-      "success": "成功",
       "timeout": "タイムアウト"
     },
-    "success": "コマンドの実行が完了しました",
+    "stopPolling": "ポーリングを停止",
     "taskStarted": "タスクが開始されました",
     "title": "リモート実行"
   },
   "go_to_home": "ホームに戻る",
-  "home_title": "Komari Monitor",
+  "install": {
+    "admin_title": "管理者アカウントを作成",
+    "back": "戻る",
+    "color": "色",
+    "complete": "インストールを完了",
+    "completed": "インストールは完了しています。ログインに戻ってください。",
+    "confirm_title": "インストール設定を確認",
+    "connection_error": "サーバーに接続できません",
+    "database": "データベース",
+    "database_title": "監視データベース",
+    "description": "サイト説明",
+    "detected_database": "検出されたデータベース: {{driver}}",
+    "dsn_required": "監視データベースの DSN を入力してください。",
+    "failed": "インストールに失敗しました。もう一度お試しください。",
+    "next": "次へ",
+    "password": "パスワード",
+    "password_confirm": "パスワードを確認",
+    "restore": "バックアップから復元",
+    "restore_413": "バックアップのアップロードに失敗しました（413）。CDN または Nginx などのリバースプロキシのアップロード上限（例: client_max_body_size）を増やすか、バックアップを ./data/backup.zip に手動でアップロードしてサービスを再起動してください。",
+    "restore_description": "バックアップをアップロードすると、サービスを再起動してデータを復元します。",
+    "restore_failed": "バックアップの復元に失敗しました。もう一度お試しください。",
+    "restore_file_type": ".zip バックアップファイルを選択してください。",
+    "restore_restarting": "再起動してバックアップを復元しています...",
+    "site": "サイト",
+    "site_hint": "ブラウザーのタイトルと公開ページに表示されます。",
+    "site_title": "サイト情報",
+    "sitename": "サイト名",
+    "sitename_required": "サイト名を入力してください。",
+    "sqlite_warning": "SQLite は軽量な導入に適していますが、監視データの増加に伴い性能のボトルネックになる場合があります。大量のメトリクスを長期間保存する場合は、MariaDB、MySQL、または PostgreSQL を検討してください。",
+    "start": "インストールを開始",
+    "steps": {
+      "administrator": "管理者",
+      "confirm": "確認",
+      "database": "データベース",
+      "site": "サイト",
+      "welcome": "ようこそ"
+    },
+    "summary_admin": "管理者: ",
+    "summary_database": "データベース: ",
+    "summary_dsn": "DSN: ",
+    "summary_sitename": "サイト名: ",
+    "title": "インストールガイド",
+    "username": "ユーザー名",
+    "username_required": "ユーザー名を入力してください。",
+    "welcome_description": "管理者アカウント、サイト情報、監視データベースを設定します。",
+    "welcome_subtitle": "軽量なオープンソースのサーバー監視ツールです。",
+    "welcome_title": "Komari へようこそ"
+  },
   "just_now": "たった今",
   "loadAlert": {
     "metric": "監視項目",
@@ -409,14 +484,62 @@
   "logs": {
     "title": "ログ"
   },
+  "market": {
+    "add_source": "ソースを追加",
+    "delete_source_confirm": "ソース {{name}} を削除しますか？",
+    "description": "インターネットからテーマを探してインストールします。",
+    "edit_source": "ソースを編集",
+    "enabled": "有効",
+    "install": "インストール",
+    "install_success": "テーマをインストールしました",
+    "install_unavailable": "パッケージ未提供",
+    "installed": "インストール済み",
+    "installed_version": "インストール済み v{{version}}",
+    "manage_sources": "ソースを管理",
+    "no_sources": "ソースが設定されていません",
+    "no_themes": "テーマが見つかりません",
+    "project_page": "プロジェクトページ",
+    "refresh_success": "テーマソースを更新しました",
+    "search_placeholder": "テーマ、作者、ソースを検索",
+    "source": "ソース",
+    "source_created": "ソースを追加しました",
+    "source_deleted": "ソースを削除しました",
+    "source_name": "ソース名",
+    "source_updated": "ソースを更新しました",
+    "themes": "テーママーケット",
+    "uninstall": "アンインストール",
+    "uninstall_confirm": "{{name}} をアンインストールしますか？",
+    "uninstall_success": "テーマをアンインストールしました",
+    "update_available": "更新あり"
+  },
+  "metric_store_restructure": {
+    "after": "再構築後",
+    "before": "再構築前",
+    "completed_description": "サーバーは通常サービスを起動しています。",
+    "completed_title": "監視データベース構造の再構築が完了しました",
+    "confirm_description": "履歴メトリクスを正規化されたロールアップ構造へコピーし、完了後にデータベース領域を一度回収します。この操作中は通常サービスを利用できません。",
+    "confirm_title": "データベース構造の再構築を開始しますか？",
+    "copy_detail": "{{rows}} / {{total}} 件のレコードをコピーし、{{metrics}} / {{metricTotal}} 個のメトリクスが完了しました。現在のメトリクス：{{metric}}。",
+    "discard": "履歴監視データを削除",
+    "discard_action": "完全に削除",
+    "discard_confirm": "すべての履歴監視データを完全に削除することを確認します",
+    "discard_description": "履歴監視データが不要な場合は、コピーを省略して空のデータベース構造を作成できます。メトリクス定義と保持設定は維持されます。",
+    "discard_detail": "履歴監視データを削除し、空のデータベース構造を作成しています。",
+    "discard_title": "すべての履歴監視データを削除しますか？",
+    "discard_warning": "この操作は元に戻せません。既存の履歴グラフデータはすべて消去されます。",
+    "network_error": "構造再構築サービスに接続できません。",
+    "phase_copying": "メトリクス集計をコピーしています",
+    "phase_discarding": "履歴監視データを削除しています",
+    "phase_reclaiming": "データベースを最適化して領域を回収しています。",
+    "start": "再構築を開始",
+    "start_failed": "データベース構造の再構築を開始できません。",
+    "title": "監視データベース構造の再構築"
+  },
   "network_speed": "ネットワーク速度",
   "nodeCard": {
-    "actions": "アクション",
-    "arch": "アーキテクチャ",
     "basicInfo": "基本情報",
     "chart": "チャート",
     "clickToViewPing": "クリックして遅延チャートを表示",
-    "cpu": "CPU",
     "disk": "ディスク",
     "groupNodes": "{{group}} グループ: 合計 {{total}} 台のサーバー、{{online}} 台がオンライン",
     "kernelVersion": "カーネルバージョン",
@@ -432,11 +555,9 @@
     "online": "オンライン",
     "os": "オペレーティングシステム",
     "ping": "遅延",
-    "price": "価格",
     "ram": "メモリ",
     "resourceUsage": "リソース使用",
     "sortTooltip": "クリックしてソートを切り替え：昇順 → 降順 → デフォルト",
-    "status": "ステータス",
     "swap": "スワップ",
     "temperature": "温度",
     "time_day": "日",
@@ -458,7 +579,6 @@
       "title": "負荷通知"
     },
     "offline": {
-      "batch_edit": "バッチ編集",
       "cooldown": "クールダウン期間",
       "full_title": "オフライン通知設定",
       "grace_period": "猶予期間",
@@ -470,7 +590,6 @@
     },
     "title": "通知",
     "traffic_report": {
-      "batch_edit": "一括編集",
       "daily": "日次レポート",
       "errors": {
         "fetch_failed": "トラフィックレポート設定の取得に失敗しました",
@@ -498,8 +617,138 @@
     "target": "ターゲット",
     "task": "タスク",
     "task_view": "タスクビュー",
-    "title": "遅延監視",
-    "type": "タイプ"
+    "title": "遅延監視"
+  },
+  "plugin": {
+    "config": "設定",
+    "config_no_items": "このプラグインには設定項目がありません",
+    "config_save_failed": "設定の保存に失敗しました",
+    "config_saved": "設定を保存しました",
+    "config_select_hint": "設定するプラグインを選択してください",
+    "delete": "プラグインを削除",
+    "delete_confirm": "このプラグインを削除しますか？",
+    "delete_confirm_desc": "プラグインディレクトリとその設定が削除されます。",
+    "deleted": "プラグインを削除しました",
+    "deleting": "削除中...",
+    "disable": "プラグインを無効化",
+    "disable_success": "プラグインを無効化しました",
+    "drag_drop": "ファイルをここにドラッグ＆ドロップ",
+    "enable": "プラグインを有効化",
+    "enable_success": "プラグインを有効化しました",
+    "installed": "インストール済み",
+    "invalid_file_type": "無効なファイルタイプです。.zip ファイルのみ対応しています",
+    "last_error": "最終エラー",
+    "loading": "読み込み中...",
+    "logs_load_failed": "ログの読み込みに失敗しました",
+    "manage": "プラグイン管理",
+    "market": "プラグインマーケット",
+    "market_add_source": "ソースを追加",
+    "market_delete_source": "ソースを削除",
+    "market_delete_source_confirm": "このマーケットソースを削除しますか？",
+    "market_install": "インストール",
+    "market_install_success": "プラグインをインストールしました",
+    "market_installing": "インストール中...",
+    "market_no_plugins": "マーケットにプラグインがありません",
+    "market_no_sources": "マーケットソースが設定されていません",
+    "market_not_installable": "インストール不可",
+    "market_plugins": "プラグイン",
+    "market_refresh_success": "プラグインソースを更新しました",
+    "market_save": "保存",
+    "market_search": "プラグインを検索...",
+    "market_source_added": "ソースを追加しました",
+    "market_source_deleted": "ソースを削除しました",
+    "market_source_name": "名前",
+    "market_source_url": "カタログ URL",
+    "no_logs": "ログはありません",
+    "no_plugins": "プラグインはまだインストールされていません",
+    "or_click_to_browse": "またはクリックしてファイルを選択",
+    "page_missing_params": "プラグインページのパラメータがありません",
+    "permission": {
+      "allowAllFileAccess": "プラグインディレクトリ外のファイルへのアクセス",
+      "allowExec": "子プロセスの実行",
+      "allowListen": "ローカルポートのリッスン",
+      "maxChildOutputBytes": "子プロセス出力サイズ制限",
+      "maxHTTPBodyBytes": "HTTP ボディサイズ制限",
+      "node": "Node.js 互換モジュール",
+      "timeout": "実行タイムアウト"
+    },
+    "permission_approve": "承認して有効化",
+    "permission_description": "このプラグインは次の権限を要求しています：",
+    "permission_title": "権限が必要です",
+    "running": "実行中",
+    "saving": "保存中...",
+    "stopped": "停止済み",
+    "title": "プラグイン",
+    "upload": "プラグインをアップロード",
+    "upload_413_content_too_large": "ファイルのアップロードに失敗しました (413)。リバースプロキシサーバー（Nginx/CDN など）の設定でファイルサイズ制限（client_max_body_size）を確認・増やし、対象ファイルサイズより大きい値を設定してください。",
+    "upload_description": ".zip プラグインパッケージをアップロード",
+    "upload_failed": "プラグインのアップロードに失敗しました",
+    "uploaded": "プラグインをアップロードしました",
+    "uploading": "アップロード中...",
+    "zip_files_only": ".zip ファイルのみ対応しています"
+  },
+  "pprof": {
+    "capture_duration": "CPU とトレースの取得時間",
+    "download": "ダウンロード",
+    "duration_option": "{{seconds}} 秒",
+    "goroutines": "ゴルーチン数",
+    "heap_alloc": "割り当て済みヒープ",
+    "heap_inuse": "使用中のヒープ",
+    "heap_objects": "ヒープオブジェクト数",
+    "heap_preview_description": "プロセス概要とともに更新されるライブヒープのテキストサマリーです。",
+    "heap_preview_title": "ヒープスナップショット",
+    "invalid_summary": "サーバーから無効なランタイムプロファイル情報が返されました",
+    "loading": "収集中...",
+    "preview_description": "選択した Go ランタイムプロファイルのテキスト出力です。",
+    "preview_title": "{{profile}} プロファイル",
+    "preview_unavailable": "このランタイムプロファイルにはテキストプレビューがありません。",
+    "profiles": {
+      "allocs": {
+        "description": "プロセス開始以降の累積メモリ割り当てサンプルです。",
+        "title": "割り当て"
+      },
+      "block": {
+        "description": "同期処理のブロッキングイベントです。",
+        "title": "ブロッキング"
+      },
+      "cpu": {
+        "description": "選択した時間にわたって CPU 実行サンプルを収集します。",
+        "title": "CPU"
+      },
+      "goroutine": {
+        "description": "現在のゴルーチンスタックプロファイルです。",
+        "title": "ゴルーチン"
+      },
+      "heap": {
+        "description": "使用中のヒープ割り当てサンプルです。",
+        "title": "ヒープ"
+      },
+      "mutex": {
+        "description": "競合したミューテックスイベントです。",
+        "title": "ミューテックス"
+      },
+      "threadcreate": {
+        "description": "OS スレッドの作成イベントです。",
+        "title": "スレッド"
+      },
+      "trace": {
+        "description": "選択した時間にわたって実行トレースを収集します。",
+        "title": "トレース"
+      }
+    },
+    "profiles_description": "テキストスナップショットの確認、またはオフライン分析用 pprof データのダウンロードができます。",
+    "profiles_title": "ランタイムプロファイル",
+    "request_failed": "ランタイムプロファイルを取得できませんでした",
+    "runtime_overview_description": "プロファイルを開始せずに取得するライブランタイム指標です。",
+    "runtime_overview_title": "現在のプロセス",
+    "runtime_sys": "ランタイム予約済みメモリ",
+    "sample_count": "{{samples}} サンプル",
+    "summary_load_failed": "ランタイムプロファイル情報を読み込めませんでした",
+    "summary_unavailable": "ランタイム概要を取得できません",
+    "timed_profile": "選択した時間にわたって収集",
+    "title": "パフォーマンスプロファイル",
+    "view": "表示",
+    "warning": "短時間サーバー負荷が増加することがあります。"
   },
   "pwa": {
     "browser": "ブラウザモード",
@@ -540,19 +789,15 @@
     "websocket_error": "WebSocket エラー:",
     "websocket_not_connected": "WebSocket は接続されていません"
   },
-  "save": "保存",
   "search": {
     "no_results": "一致するサーバーが見つかりませんでした",
     "placeholder": "ノード名、地域、システムを検索...",
     "results": "{{count}} 台のサーバーが見つかりました。合計 {{total}} 台",
     "try_different": "異なる検索キーワードを試してください"
   },
-  "select": "選択",
   "sessions": {
     "actions": "操作",
     "active_sessions": "アクティブセッション",
-    "cancel": "キャンセル",
-    "confirm_delete": "削除を確認",
     "created_at": "作成日時",
     "current": "(現在)",
     "delete_all": "すべてのセッションを削除",
@@ -565,7 +810,6 @@
     "last_user_agent": "最後のアクティブ UA",
     "latest_ip": "最後のアクティブ IP",
     "latest_online": "最近オンライン",
-    "loading": "読み込み中...",
     "login_method": "ログイン方法",
     "session_id": "セッション ID",
     "title": "セッション管理"
@@ -581,7 +825,6 @@
       "body_description": "ページの下部にカスタムコンテンツを追加します",
       "favicon": "カスタムファビコン",
       "favicon_change": "ファビコンを更新",
-      "favicon_confirm": "確認",
       "favicon_current": "現在のファビコン",
       "favicon_default": "デフォルトに戻す",
       "favicon_default_description": "これによりデフォルトのファビコンアイコンが復元されます。続行しますか？",
@@ -654,25 +897,23 @@
       "canceling": "キャンセル中...",
       "conns_invalid": "有効な接続数を入力してください",
       "current_status": "現在の状態",
+      "downsampling_title": "データのダウンサンプリング",
       "dsn_description": "現在稼働中の監視データベースの接続文字列。接続文字列からデータベースの種類（SQLite / MariaDB / MySQL / PostgreSQL）を自動判別します。SQLite：./data/metrics.db；MariaDB / MySQL：user:password@tcp(host:3306)/metrics?charset=utf8mb4&parseTime=True；PostgreSQL：host=localhost user=komari password=secret dbname=metrics port=5432 sslmode=disable",
       "dsn_title": "接続文字列（DSN）",
-      "downsampling_enabled": "有効",
-      "downsampling_title": "データのダウンサンプリング",
       "fetch_metrics_failed": "メトリクス一覧の取得に失敗しました",
       "fetch_status_failed": "移行ステータスの取得に失敗しました",
+      "intro": "監視データベースと、各監視メトリクスの生データ保持期間を設定します。",
       "loading_metrics": "メトリクスを読み込み中...",
       "max_idle_conns_description": "データベースの最大アイドル接続数。デフォルトは 5",
       "max_idle_conns_title": "最大アイドル接続数",
       "max_open_conns_description": "データベースの最大接続数。デフォルトは 25",
       "max_open_conns_title": "最大接続数",
-      "metric_description": "説明",
       "metric_key": "メトリクスキー",
       "metric_name": "メトリクス名",
-      "metric_type": "タイプ",
       "metric_unit": "単位",
       "migrated_points": "移行済みサンプル点",
-      "migration_canceled": "移行をキャンセルしました",
       "migration_cancel_failed": "移行のキャンセルに失敗しました",
+      "migration_canceled": "移行をキャンセルしました",
       "migration_canceled_hint": "移行をキャンセルしました。書き込みは冪等なため、安全に移行を再開でき、重複データは発生しません。",
       "migration_card_description": "監視データのソースデータベース（デフォルトはローカル SQLite ./data/metrics.db、または前回使用したデータベース）の履歴データを、現在稼働中の監視ターゲットデータベースへ移します。",
       "migration_card_title": "データベース移行",
@@ -686,8 +927,9 @@
       "migration_target": "ターゲット",
       "migration_title": "移行",
       "no_metrics": "メトリクス定義がありません",
-      "retention_description": "データの保持日数。デフォルトは 1。0 に設定すると、このメトリクスの永続化を無効にします",
+      "restart_hint": "一部の変更はサービス再起動後に反映されます。",
       "retention_days": "保持日数",
+      "retention_description": "データの保持日数。デフォルトは 1。0 に設定すると、このメトリクスの永続化を無効にします",
       "retention_invalid": "有効な保持日数を入力してください",
       "retention_save_failed": "保持日数の保存に失敗しました",
       "retention_saved": "保持日数を保存しました",
@@ -710,139 +952,139 @@
         "idle": "アイドル",
         "running": "進行中"
       },
-      "table_prefix_description": "監視テーブルの接頭辞。デフォルトは metric_",
-      "table_prefix_title": "テーブル接頭辞",
-      "title": "監視データベース",
       "system": {
+        "connections": {
+          "tcp": {
+            "description": "TCP接続の数",
+            "name": "TCP接続数"
+          },
+          "udp": {
+            "description": "UDP接続の数",
+            "name": "UDP接続数"
+          }
+        },
         "cpu": {
           "usage": {
-            "name": "CPU使用率",
-            "description": "CPU使用率のパーセンテージ"
+            "description": "CPU使用率のパーセンテージ",
+            "name": "CPU使用率"
+          }
+        },
+        "disk": {
+          "total": {
+            "description": "ディスク総容量",
+            "name": "総ディスク"
+          },
+          "used": {
+            "description": "現在使用中のディスク容量",
+            "name": "使用ディスク"
           }
         },
         "gpu": {
-          "usage": {
-            "name": "GPU使用率",
-            "description": "ノード全体の平均GPU使用率"
-          },
           "device": {
             "usage": {
-              "name": "GPUデバイス使用率",
-              "description": "GPUデバイスごとの使用率"
+              "description": "GPUデバイスごとの使用率",
+              "name": "GPUデバイス使用率"
             }
           },
           "memory": {
-            "used": {
-              "name": "GPU使用メモリ",
-              "description": "現在使用中のGPUメモリ"
-            },
             "total": {
-              "name": "GPU総メモリ",
-              "description": "GPUメモリの総容量"
+              "description": "GPUメモリの総容量",
+              "name": "GPU総メモリ"
+            },
+            "used": {
+              "description": "現在使用中のGPUメモリ",
+              "name": "GPU使用メモリ"
             }
           },
           "temperature": {
-            "name": "GPU温度",
-            "description": "GPU温度"
-          }
-        },
-        "memory": {
-          "used": {
-            "name": "使用メモリ",
-            "description": "現在使用中のメモリ"
+            "description": "GPU コア温度",
+            "name": "GPU温度"
           },
-          "total": {
-            "name": "総メモリ",
-            "description": "メモリ総容量"
-          }
-        },
-        "swap": {
-          "used": {
-            "name": "使用スワップ",
-            "description": "現在使用中のスワップ領域"
-          },
-          "total": {
-            "name": "総スワップ",
-            "description": "スワップ領域の総容量"
+          "usage": {
+            "description": "ノード全体の平均GPU使用率",
+            "name": "GPU使用率"
           }
         },
         "load": {
           "average": {
-            "name": "ロードアベレージ",
-            "description": "システムのロードアベレージ"
+            "description": "システムのロードアベレージ",
+            "name": "ロードアベレージ"
           }
         },
-        "temperature": {
-          "name": "システム温度",
-          "description": "システム温度"
-        },
-        "disk": {
-          "used": {
-            "name": "使用ディスク",
-            "description": "現在使用中のディスク容量"
-          },
+        "memory": {
           "total": {
-            "name": "総ディスク",
-            "description": "ディスク総容量"
+            "description": "メモリ総容量",
+            "name": "総メモリ"
+          },
+          "used": {
+            "description": "現在使用中のメモリ",
+            "name": "使用メモリ"
           }
         },
         "net": {
           "in": {
             "rate": {
-              "name": "ネットワーク受信速度",
-              "description": "ネットワーク受信転送速度"
+              "description": "ネットワーク受信転送速度",
+              "name": "ネットワーク受信速度"
             }
           },
           "out": {
             "rate": {
-              "name": "ネットワーク送信速度",
-              "description": "ネットワーク送信転送速度"
+              "description": "ネットワーク送信転送速度",
+              "name": "ネットワーク送信速度"
             }
           },
           "total": {
-            "up": {
-              "name": "累計アップロード",
-              "description": "ネットワーク累計アップロード量"
-            },
             "down": {
-              "name": "累計ダウンロード",
-              "description": "ネットワーク累計ダウンロード量"
+              "description": "ネットワーク累計ダウンロード量",
+              "name": "累計ダウンロード"
+            },
+            "up": {
+              "description": "ネットワーク累計アップロード量",
+              "name": "累計アップロード"
             }
-          }
-        },
-        "traffic": {
-          "up": {
-            "name": "アップロード増分",
-            "description": "1回の報告間隔内のアップロード増分"
-          },
-          "down": {
-            "name": "ダウンロード増分",
-            "description": "1回の報告間隔内のダウンロード増分"
-          }
-        },
-        "process": {
-          "count": {
-            "name": "プロセス数",
-            "description": "実行中のプロセス数"
-          }
-        },
-        "connections": {
-          "tcp": {
-            "name": "TCP接続数",
-            "description": "TCP接続の数"
-          },
-          "udp": {
-            "name": "UDP接続数",
-            "description": "UDP接続の数"
           }
         },
         "ping": {
           "latency_ms": {
-            "name": "Ping遅延",
-            "description": "ミリ秒単位のPing遅延"
+            "description": "ミリ秒単位のPing遅延",
+            "name": "Ping遅延"
+          }
+        },
+        "process": {
+          "count": {
+            "description": "実行中のプロセス数",
+            "name": "プロセス数"
+          }
+        },
+        "swap": {
+          "total": {
+            "description": "スワップ領域の総容量",
+            "name": "総スワップ"
+          },
+          "used": {
+            "description": "現在使用中のスワップ領域",
+            "name": "使用スワップ"
+          }
+        },
+        "temperature": {
+          "description": "システムセンサー（CPU、マザーボードなど）が報告する温度",
+          "name": "システム温度"
+        },
+        "traffic": {
+          "down": {
+            "description": "1回の報告間隔内のダウンロード増分",
+            "name": "ダウンロード増分"
+          },
+          "up": {
+            "description": "1回の報告間隔内のアップロード増分",
+            "name": "アップロード増分"
           }
         }
-      }
+      },
+      "table_prefix_description": "監視テーブルの接頭辞。デフォルトは metric_",
+      "table_prefix_title": "テーブル接頭辞",
+      "title": "監視データベース"
     },
     "missing_required_fields": "必須フィールドを入力してください: {{fieldNames}}",
     "notification": {
@@ -868,27 +1110,12 @@
       "provider_fields": "送信設定",
       "provider_fields_description": "選択した情報送信チャネルの詳細設定",
       "provider_settings_fetch_failed": "通知設定の読み込みに失敗しました",
-      "smtp_description": "メール通知を送信するために SMTP メール情報を設定します。",
-      "smtp_host": "SMTP サーバー",
-      "smtp_password": "パスワード",
-      "smtp_port": "ポート",
-      "smtp_receiver": "受信者メールアドレス",
-      "smtp_sender": "送信者メールアドレス",
-      "smtp_ssl": "SSL を有効にする",
-      "smtp_tips": "まず、Komari のサーバー IP がメールを送信できるかテストしてください。\"{{command}}\" を使用してテストできます。",
-      "smtp_title": "SMTP 設定",
-      "smtp_username": "ユーザー名",
       "telegram": {
         "bot_token": "Telegramボットトークン",
         "chat_id": "チャットID",
         "endpoint": "リクエストエンドポイント",
         "endpoint_help": "Telegram ボット API のリクエストエンドポイント、通常は `https://api.telegram.org/bot`"
       },
-      "telegram_bot_token": "Telegram ボットトークン",
-      "telegram_chat_id_error": "チャット ID は空にできません",
-      "telegram_description": "チャットで直接通知を受け取るために、Telegram ボットを設定します。",
-      "telegram_endpoint": "リクエストエンドポイント",
-      "telegram_title": "Telegram 設定",
       "template": "メッセージ通知テンプレート",
       "template_description": "Komariはメッセージ通知テンプレートに従って通知を送信します",
       "test_description": "テストメッセージを送信",
@@ -909,7 +1136,6 @@
       "backup_restore_description": "ファイルからバックアップを復元し、現在のデータを上書きします。",
       "backup_restore_error": "バックアップの復元に失敗しました",
       "cors_allowed_origins": "API CORS 許可リスト",
-      "cors_allowed_origins_description": "各行またはカンマで区切って1つのオリジンを指定します。例: https://example.com",
       "cors_origin_check_enabled": "CORS オリジンチェック",
       "cors_origin_check_enabled_description": "有効にすると、API リクエストは同一オリジンまたは許可リスト内のオリジンのみ許可されます",
       "custom": "カスタム",
@@ -917,28 +1143,26 @@
       "description_description": "メタ情報やソーシャルメディアカード用のウェブサイトの説明を設定します。",
       "name": "サイト名",
       "name_description": "サイト名を設定します",
+      "origins_list_description": "1 行に 1 つ、またはカンマ区切りで Origin を指定してください。例：https://example.com",
       "private_site": "プライベートサイト",
       "private_site_description": "サイトをプライベートに設定し、オンにするとデータはログイン後にのみ取得できます。",
       "script_domain": "エージェント接続アドレス",
       "script_domain_description": "インストールスクリプトの接続アドレスを定義します。複数のドメインのユーザーに便利で、他のドメインのアクセスには影響しません。空白の場合は現在のドメインを使用します。",
       "send_ip_addr_to_guest": "ゲストに一部のIPアドレスを表示",
       "send_ip_addr_to_guest_description": "未ログインの場合、common:getNodesを通じて一部のIPアドレス情報を確認できます。形式は9.*.*.* / fe80:*:*:*:*:*:*:*です。特定のテーマでIPを表示するために使用されます。",
-      "tempory_share": "一時的な共有",
-      "tempory_share_current_link": "現在の一時的なアクセスリンク",
-      "tempory_share_description": "プライベートサイトを有効にすると、一時的な共有リンクを通じてサイトにアクセスできます。",
-      "tempory_share_hours": "共有時間（時間）",
-      "tempory_share_revoke": "アクセス許可を取り消す",
+      "temporary_share": "一時的な共有",
+      "temporary_share_current_link": "現在の一時的なアクセスリンク",
+      "temporary_share_description": "プライベートサイトを有効にすると、一時的な共有リンクを通じてサイトにアクセスできます。",
+      "temporary_share_hours": "共有時間（時間）",
+      "temporary_share_revoke": "アクセス許可を取り消す",
       "title": "サイト",
       "ws_allowed_origins": "WebSocket オリジン許可リスト",
-      "ws_allowed_origins_description": "各行またはカンマで区切って1つのオリジンを指定します。例: https://example.com",
       "ws_origin_check_enabled": "WebSocket オリジンチェック",
       "ws_origin_check_enabled_description": "有効にすると、WebSocket リクエストは同一オリジンまたは許可リストにあるオリジンのみを許可します"
     },
     "sso": {
       "callback_url_tips": "コールバックURL：{{url}}",
-      "client_id": "クライアントID",
       "client_id_description": "OAuthアプリのクライアントID",
-      "client_secret": "クライアントシークレット",
       "client_secret_description": "OAuthアプリのクライアントシークレット",
       "enable": "シングルサインオンを有効にする",
       "enable_description": "ユーザーが第三者のアカウント（例：GitHub）を使用してログインできるようにします",
@@ -955,6 +1179,7 @@
         "client_id": "GitHubクライアントID",
         "client_secret": "GitHubクライアントシークレット"
       },
+      "not_implemented_suffix": " [未実装]",
       "provider": "シングルサインオンプロバイダー",
       "provider_description": "シングルサインオンに使用する認証プロバイダーを選択",
       "provider_fetch_failed": "サインオンプロバイダー情報の読み込みに失敗しました",
@@ -1040,37 +1265,6 @@
     "no_active_connection": "アクティブな接続はありません",
     "title": "ターミナル"
   },
-  "market": {
-    "add_source": "ソースを追加",
-    "delete_source_confirm": "ソース {{name}} を削除しますか？",
-    "description": "インターネットからテーマを探してインストールします。",
-    "edit_source": "ソースを編集",
-    "enabled": "有効",
-    "install": "インストール",
-    "install_unavailable": "パッケージ未提供",
-    "install_success": "テーマをインストールしました",
-    "installed": "インストール済み",
-    "installed_version": "インストール済み v{{version}}",
-    "manage_sources": "ソースを管理",
-    "no_sources": "ソースが設定されていません",
-    "no_themes": "テーマが見つかりません",
-    "project_page": "プロジェクトページ",
-    "refresh": "更新",
-    "refresh_success": "テーマソースを更新しました",
-    "search_placeholder": "テーマ、作者、ソースを検索",
-    "source": "ソース",
-    "source_created": "ソースを追加しました",
-    "source_deleted": "ソースを削除しました",
-    "source_name": "ソース名",
-    "source_updated": "ソースを更新しました",
-    "themes": "テーママーケット",
-    "title": "マーケット",
-    "update": "更新",
-    "update_available": "更新あり",
-    "uninstall": "アンインストール",
-    "uninstall_confirm": "{{name}} をアンインストールしますか？",
-    "uninstall_success": "テーマをアンインストールしました"
-  },
   "theme": {
     "active": "現在使用中",
     "author": "著者",
@@ -1083,7 +1277,6 @@
     "delete_failed": "テーマの削除に失敗しました",
     "delete_success": "テーマの削除に成功しました",
     "delete_warning": "テーマ \"{{themeName}}\" を削除してもよろしいですか？この操作は取り消せません。",
-    "description": "説明",
     "drag_drop": "ここにファイルをドラッグ＆ドロップ",
     "find_more": "他のテーマを探しますか？",
     "github_description": "システムはこのGitHubリポジトリから最新のリリースバージョンをダウンロードします。",
@@ -1102,8 +1295,8 @@
     "invalid_file_type": "無効なファイルタイプです。.zip形式のみサポート",
     "light": "ライトテーマ",
     "load_config_failed": "テーマ設定の読み込みに失敗しました",
-    "manage": "テーマ管理",
     "manage_with_name": "{{name}} テーマ管理",
+    "menu": "テーマ",
     "name": "名前",
     "no_config": "このテーマには設定項目が宣言されていません。",
     "no_themes": "テーマはありません",
@@ -1111,6 +1304,7 @@
     "set_active": "現在のテーマに設定",
     "set_failed": "テーマの設定に失敗しました",
     "set_success": "テーマの設定に成功しました",
+    "settings_with_name": "{{name}}の設定",
     "system": "システムに従う",
     "theme_url": "テーマURL",
     "title": "テーマ管理",
@@ -1123,80 +1317,15 @@
     "update_mode_github": "GitHubリリース",
     "update_mode_url": "直接URL",
     "update_success": "テーマの更新に成功しました",
-    "update_theme": "テーマを更新",
     "upload": "テーマをアップロード",
+    "upload_413_content_too_large": "ファイルのアップロードに失敗しました (413)。Nginx/CDNなどのリバースプロキシサーバーの設定でファイルサイズ制限（client_max_body_size）を確認し、ターゲットファイルサイズよりも大きい値に増やしてください。",
     "upload_description": ".zip形式のテーマファイルをアップロードします",
     "upload_failed": "テーマのアップロードに失敗しました",
     "upload_first_theme": "最初のテーマをアップロードしてください",
     "upload_success": "テーマのアップロードに成功しました",
-    "upload_theme": "テーマをアップロード",
     "uploading": "テーマをアップロード中...",
-    "uploda_413_content_too_large": "ファイルのアップロードに失敗しました (413)。Nginx/CDNなどのリバースプロキシサーバーの設定でファイルサイズ制限（client_max_body_size）を確認し、ターゲットファイルサイズよりも大きい値に増やしてください。",
     "version": "バージョン",
     "zip_files_only": ".zip形式のみサポート"
-  },
-  "pprof": {
-    "capture_duration": "CPU とトレースの取得時間",
-    "download": "ダウンロード",
-    "duration_option": "{{seconds}} 秒",
-    "goroutines": "ゴルーチン数",
-    "heap_alloc": "割り当て済みヒープ",
-    "heap_inuse": "使用中のヒープ",
-    "heap_objects": "ヒープオブジェクト数",
-    "heap_preview_description": "プロセス概要とともに更新されるライブヒープのテキストサマリーです。",
-    "heap_preview_title": "ヒープスナップショット",
-    "invalid_summary": "サーバーから無効なランタイムプロファイル情報が返されました",
-    "loading": "収集中...",
-    "preview_description": "選択した Go ランタイムプロファイルのテキスト出力です。",
-    "preview_title": "{{profile}} プロファイル",
-    "preview_unavailable": "このランタイムプロファイルにはテキストプレビューがありません。",
-    "profiles": {
-      "allocs": {
-        "title": "割り当て",
-        "description": "プロセス開始以降の累積メモリ割り当てサンプルです。"
-      },
-      "block": {
-        "title": "ブロッキング",
-        "description": "同期処理のブロッキングイベントです。"
-      },
-      "cpu": {
-        "title": "CPU",
-        "description": "選択した時間にわたって CPU 実行サンプルを収集します。"
-      },
-      "trace": {
-        "title": "トレース",
-        "description": "選択した時間にわたって実行トレースを収集します。"
-      },
-      "goroutine": {
-        "title": "ゴルーチン",
-        "description": "現在のゴルーチンスタックプロファイルです。"
-      },
-      "heap": {
-        "title": "ヒープ",
-        "description": "使用中のヒープ割り当てサンプルです。"
-      },
-      "mutex": {
-        "title": "ミューテックス",
-        "description": "競合したミューテックスイベントです。"
-      },
-      "threadcreate": {
-        "title": "スレッド",
-        "description": "OS スレッドの作成イベントです。"
-      }
-    },
-    "profiles_description": "テキストスナップショットの確認、またはオフライン分析用 pprof データのダウンロードができます。",
-    "profiles_title": "ランタイムプロファイル",
-    "request_failed": "ランタイムプロファイルを取得できませんでした",
-    "runtime_overview_description": "プロファイルを開始せずに取得するライブランタイム指標です。",
-    "runtime_overview_title": "現在のプロセス",
-    "runtime_sys": "ランタイム予約済みメモリ",
-    "sample_count": "{{samples}} サンプル",
-    "summary_load_failed": "ランタイムプロファイル情報を読み込めませんでした",
-    "summary_unavailable": "ランタイム概要を取得できません",
-    "timed_profile": "選択した時間にわたって収集",
-    "title": "パフォーマンスプロファイル",
-    "view": "表示",
-    "warning": "短時間サーバー負荷が増加することがあります。"
   },
   "time": {
     "ago": "前",
@@ -1219,114 +1348,5 @@
     "mode": "表示モード"
   },
   "warn_https": "現在の接続は HTTPS ではありません！あなたの敏感なデータには重大なリスクがあります。接続を安全にするために直ちに対策を講じてください！コピー操作は使用できない可能性があります！",
-  "warn_websocket": "RPC2 リクエストに失敗しました。ネットワーク接続またはサーバーの状態を確認してください！",
-  "database_recovery": {
-    "title": "監視データベースの復旧",
-    "subtitle": "監視データベースに接続できません。ログインして接続文字列を更新してください。",
-    "history_note": "復旧では新しい DSN で再接続するだけで、以前の接続元からデータを移行することはありません。",
-    "failure_detail": "データベース接続は {{count}}/{{max}} 回連続で失敗しました。",
-    "dsn_required": "監視データベースの接続文字列を入力してください。",
-    "save": "保存して再接続",
-    "saving": "接続中...",
-    "completed_title": "データベース接続を復旧しました",
-    "completed_description": "通常のコントロールパネルを再開しています。",
-    "save_failed": "監視データベースに接続できません。DSN を確認して再試行してください。",
-    "network_error": "復旧サービスに接続できません。",
-    "request_failed": "リクエストに失敗しました。もう一度お試しください。"
-  },
-  "database_migration": {
-    "after": "移行後",
-    "before": "移行前",
-    "failed_title": "データベース移行が完了しませんでした",
-    "legacy_full_history": "データベース全体を移行します。移行完了後に領域を一度回収します。",
-    "network_error": "データベース移行サービスに接続できません。",
-    "request_failed": "リクエストに失敗しました。サーバーログを確認して再試行してください。",
-    "saved": "節約量"
-  },
-  "metric_store_restructure": {
-    "after": "再構築後",
-    "before": "再構築前",
-    "completed_description": "サーバーは通常サービスを起動しています。",
-    "completed_title": "監視データベース構造の再構築が完了しました",
-    "confirm_description": "履歴メトリクスを正規化されたロールアップ構造へコピーし、完了後にデータベース領域を一度回収します。この操作中は通常サービスを利用できません。",
-    "confirm_title": "データベース構造の再構築を開始しますか？",
-    "copy_detail": "{{rows}} / {{total}} 件のレコードをコピーし、{{metrics}} / {{metricTotal}} 個のメトリクスが完了しました。現在のメトリクス：{{metric}}。",
-    "discard": "履歴監視データを削除",
-    "discard_action": "完全に削除",
-    "discard_confirm": "すべての履歴監視データを完全に削除することを確認します",
-    "discard_description": "履歴監視データが不要な場合は、コピーを省略して空のデータベース構造を作成できます。メトリクス定義と保持設定は維持されます。",
-    "discard_detail": "履歴監視データを削除し、空のデータベース構造を作成しています。",
-    "discard_title": "すべての履歴監視データを削除しますか？",
-    "discard_warning": "この操作は元に戻せません。既存の履歴グラフデータはすべて消去されます。",
-    "network_error": "構造再構築サービスに接続できません。",
-    "phase_copying": "メトリクス集計をコピーしています",
-    "phase_discarding": "履歴監視データを削除しています",
-    "phase_reclaiming": "データベースを最適化して領域を回収しています。",
-    "request_failed": "リクエストに失敗しました。もう一度お試しください。",
-    "saved": "節約量",
-    "start": "再構築を開始",
-    "start_failed": "データベース構造の再構築を開始できません。",
-    "title": "監視データベース構造の再構築"
-  },
-  "install": {
-    "title": "インストールガイド",
-    "welcome": "ようこそ",
-    "administrator": "管理者",
-    "site": "サイト",
-    "database": "データベース",
-    "confirm": "確認",
-    "welcome_title": "Komari へようこそ",
-    "welcome_subtitle": "軽量なオープンソースのサーバー監視ツールです。",
-    "welcome_description": "管理者アカウント、サイト情報、監視データベースを設定します。",
-    "admin_title": "管理者アカウントを作成",
-    "username": "ユーザー名",
-    "password": "パスワード",
-    "password_confirm": "パスワードを確認",
-    "site_title": "サイト情報",
-    "site_hint": "ブラウザーのタイトルと公開ページに表示されます。",
-    "sitename": "サイト名",
-    "description": "サイト説明",
-    "database_title": "監視データベース",
-    "confirm_title": "インストール設定を確認",
-    "summary_admin": "管理者: ",
-    "summary_sitename": "サイト名: ",
-    "summary_database": "データベース: ",
-    "summary_dsn": "DSN: ",
-    "back": "戻る",
-    "next": "次へ",
-    "start": "インストールを開始",
-    "restore": "バックアップから復元",
-    "restore_description": "バックアップをアップロードすると、サービスを再起動してデータを復元します。",
-    "restore_restarting": "再起動してバックアップを復元しています...",
-    "restore_file_type": ".zip バックアップファイルを選択してください。",
-    "restore_failed": "バックアップの復元に失敗しました。もう一度お試しください。",
-    "restore_413": "バックアップのアップロードに失敗しました（413）。CDN または Nginx などのリバースプロキシのアップロード上限（例: client_max_body_size）を増やすか、バックアップを ./data/backup.zip に手動でアップロードしてサービスを再起動してください。",
-    "complete": "インストールを完了",
-    "completed": "インストールは完了しています。ログインに戻ってください。",
-    "failed": "インストールに失敗しました。もう一度お試しください。",
-    "connection_error": "サーバーに接続できません",
-    "username_required": "ユーザー名を入力してください。",
-    "sitename_required": "サイト名を入力してください。",
-    "dsn_required": "監視データベースの DSN を入力してください。",
-    "detected_database": "検出されたデータベース: {{driver}}",
-    "sqlite_warning": "SQLite は軽量な導入に適していますが、監視データの増加に伴い性能のボトルネックになる場合があります。大量のメトリクスを長期間保存する場合は、MariaDB、MySQL、または PostgreSQL を検討してください。",
-    "language": "言語",
-    "appearance": "表示",
-    "color": "色",
-    "steps": {
-      "welcome": "ようこそ",
-      "administrator": "管理者",
-      "site": "サイト",
-      "database": "データベース",
-      "confirm": "確認"
-    }
-  },
-  "errorBoundary": {
-    "something_went_wrong": "問題が発生しました",
-    "unexpected_error": "予期せぬエラーが発生しました。",
-    "view_error_details": "エラー詳細を表示",
-    "no_stack_trace": "スタックトレースはありません。",
-    "reload_page": "ページを再読み込む",
-    "go_to_home": "ホームへ戻る"
-  }
+  "warn_websocket": "RPC2 リクエストに失敗しました。ネットワーク接続またはサーバーの状態を確認してください！"
 }

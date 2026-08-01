@@ -247,8 +247,7 @@ export default function SiteSettings() {
       />
       <SettingCardLongTextInput
         title={t("settings.site.cors_allowed_origins", "API CORS 允许列表")}
-        description={t(
-          "settings.site.cors_allowed_origins_description",
+        description={t("settings.site.origins_list_description",
           "每行或用逗号分隔一个 Origin，例如 https://example.com",
         )}
         defaultValue={settings.cors_allowed_origins || ""}
@@ -272,8 +271,7 @@ export default function SiteSettings() {
       />
       <SettingCardLongTextInput
         title={t("settings.site.ws_allowed_origins", "WebSocket Origin 允许列表")}
-        description={t(
-          "settings.site.ws_allowed_origins_description",
+        description={t("settings.site.origins_list_description",
           "每行或用逗号分隔一个 Origin，例如 https://example.com",
         )}
         defaultValue={settings.ws_allowed_origins || ""}
@@ -308,12 +306,12 @@ export default function SiteSettings() {
         }}
       />
       <SettingCardCollapse
-        title={t("settings.site.tempory_share")}
-        description={t("settings.site.tempory_share_description")}
+        title={t("settings.site.temporary_share")}
+        description={t("settings.site.temporary_share_description")}
       >
         <div className="flex w-full flex-col gap-4">
           <SettingCardShortTextInput
-            title={t("settings.site.tempory_share_current_link")}
+            title={t("settings.site.temporary_share_current_link")}
             value={
               settings.tempory_share_token
                 ? `${window.location.origin}/?temp_key=${settings.tempory_share_token}`
@@ -330,14 +328,14 @@ export default function SiteSettings() {
                 navigator.clipboard.writeText(
                   `${window.location.origin}/?temp_key=${settings.tempory_share_token}`,
                 );
-                toast.success(t("copy"));
+                toast.success(t("common.copy"));
               }}
             >
-              {t("copy")}
+              {t("common.copy")}
             </Button>
           </SettingCardShortTextInput>
           <SettingCardShortTextInput
-            title={t("settings.site.tempory_share_hours")}
+            title={t("settings.site.temporary_share_hours")}
             bordless
             showSaveButton={false}
             value={shareHours}
@@ -382,7 +380,7 @@ export default function SiteSettings() {
                 await refetch();
               }}
             >
-              {t("settings.site.tempory_share_revoke")}
+              {t("settings.site.temporary_share_revoke")}
             </Button>
           </div>
         </div>
@@ -484,7 +482,7 @@ export default function SiteSettings() {
                           });
                       }}
                     >
-                      {t("settings.custom.favicon_confirm")}
+                      {t("common.confirm")}
                     </Button>
                   </Dialog.Trigger>
                 </Flex>

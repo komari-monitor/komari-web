@@ -3,8 +3,7 @@
     "ai": "The development process of the Komari project has been assisted by artificial intelligence tools. These tools are used for tasks such as code generation, refactoring, and debugging to improve development efficiency and code quality. All AI-generated code and suggestions have been reviewed and validated by human developers.",
     "open_source": "Komari is open source under the MIT license and is built using the following open source software:",
     "open_source_title": "Open Source Software License",
-    "readme_open_in_new_tab": "Open in new tab",
-    "title": "About"
+    "readme_open_in_new_tab": "Open in new tab"
   },
   "account": {
     "2fa_disabled": "Two-factor authentication is disabled",
@@ -30,33 +29,18 @@
     "title": "Account"
   },
   "account_settings": {
-    "bind_github": "Bind GitHub Account",
     "bind_sso": "Bind External Account",
-    "cancel": "Cancel",
     "confirm_unbind": "Confirm Unbind",
-    "download_backup": "Download backup",
-    "github_account": "GitHub Account",
-    "github_auth_failed": "Failed to process GitHub authentication",
-    "github_bound": "Bound",
-    "github_not_bound": "GitHub account not bound",
-    "github_unbound": "Unbound",
     "looking_for_backup": "Looking for backup? It has now been moved to Settings - Site - Backup.",
     "sso_account": "External Account",
+    "sso_account_bound": "{{name}} account",
     "sso_auth_failed": "SSO authentication failed",
     "sso_bound": "Bound External Account",
     "sso_not_bound": "Unbound",
-    "sso_unbound": "Unbound",
-    "unbind_github": "Unbind GitHub Account",
-    "unbind_github_failed": "Failed to unbind GitHub account",
-    "unbind_github_success": "Successfully unbound GitHub account",
-    "unbind_github_warning": "After unbinding, you will not be able to log in with your GitHub account. Are you sure you want to unbind?",
     "unbind_sso": "Unbind External Account",
     "unbind_sso_failed": "Unbinding failed",
     "unbind_sso_success": "Successfully unbound",
     "unbind_sso_warning": "Are you sure you want to unbind the {{provider}} account?",
-    "unknown_error": "Unknown error",
-    "upload_backup": "Upload backup",
-    "upload_failed": "Failed to upload, only `.zip` are allowed",
     "upload_success": "Upload success"
   },
   "admin": {
@@ -115,11 +99,7 @@
       "billing": "Billing",
       "billingCycle": "Billing cycle",
       "billingCycleTips": "<b>Billing Cycle Rules</b><br/> <br/> <b>By Preset Cycle (Calendar Renewal)</b><br/> When the number of days entered is close to the preset plan (such as monthly, quarterly, annually), it will renew according to the corresponding <b>calendar cycle</b>.<br/> - Common values: 30 (monthly), 92 (quarterly), 365 (annually), 730 (biennially), etc.<br/> - Example: Entering 30, the service renews on March 15, and the new expiration date will be April 15.<br/> <br/> <b>By Custom Days</b><br/> When other numbers of days are entered (such as 7, 45, 100), it will strictly renew according to the number of days.<br/> - Example: Entering 45, the service renews on March 15, and the new expiration date will be April 29 (45 days later).<br/> <br/> <b>One-time Payment</b><br/> Entering -1 indicates a one-time payment.",
-      "cancel": "Cancel",
       "cannotUndo": "This operation will not be restored!",
-      "clientVersion": "Client version",
-      "confirm": "confirm",
-      "confirmDelete": "Confirm deletion",
       "currency": "Currency",
       "currencyTips": "¥-RMB,$-Dollar,€-Euro,£-Pound,₽-Ruble,₣-Franc,₹-Rupee,₫-VND,฿-THB",
       "customColumns": "Custom columns",
@@ -150,8 +130,6 @@
       "installOptions": "Install options",
       "interval": "Collection interval (seconds)",
       "invalidPrice": "Invalid price",
-      "ipAddress": "IP address",
-      "loading": "loading...",
       "memoryModeAvailable": "Include cache memory",
       "memoryModeAvailable_tip": "The Agent monitors and reports used memory by default. Selecting this option will monitor and report used memory + cache memory.",
       "monthRotate": "Month reset for network statistics",
@@ -160,7 +138,6 @@
       "namePlaceholder": "Name",
       "noData": "No data",
       "nodeList": "Node list",
-      "noResults": "No results",
       "price": "Price",
       "priceTips": "0 is not displayed, -1 means free",
       "searchByName": "Find the server",
@@ -182,10 +159,10 @@
       "traffic_description": "Komari will send notifications when the server reaches the specified percentage of traffic usage, with reminders at 5% increments. If no traffic threshold is set, no notifications will be sent. Set to 0 to disable traffic reminders."
     }
   },
-  "cancel": "Cancel",
   "chart": {
     "addChart": "Add chart",
     "addMetric": "Add metric",
+    "approximate": "approx.",
     "avg": "Average",
     "connections": "Connections",
     "cpu_usage": "CPU Usage",
@@ -193,17 +170,19 @@
     "cutPeak": "Smooth",
     "cutPeak_tips": "<h2 class=\"text-lg font-bold\">Tips on Data Smoothing</h2><p>When you enable smoothing, the curves you see in the statistical charts are processed using the <strong>Exponentially Weighted Moving Average (EWMA)</strong> algorithm, a commonly used data smoothing technique.</p></br><p>It's important to note that the values displayed by the EWMA algorithm's smoothed curves, <strong>are not the original, raw measured data</strong>. They represent a <strong>smoothed trend line</strong> calculated based on the EWMA algorithm, designed to reduce data fluctuations and make data patterns and trends easier to identify.</p></br><p>Therefore, the values you see are more of a <strong>visual presentation</strong>, helping you better understand the overall direction and long-term trends of the data, rather than the precise true value at each point in time. If you need to view specific, raw data points, please refer to the unsmoothed data view.</p>",
     "dashboard": "Charts",
-    "days": "{{count}} Day",
-    "disk_used": "Disk",
+    "days": "{{count}} days",
+    "days_one": "{{count}} day",
+    "days_other": "{{count}} days",
     "downsampleAlgorithm": "Downsample",
     "endTime": "End time",
     "fillEmpty": "Fill gaps",
-    "globalTemplateSaveFailed": "Failed to save global chart template",
     "globalTemplateSaved": "Global chart template saved",
+    "globalTemplateSaveFailed": "Failed to save global chart template",
     "gpu_memory": "GPU Memory Usage",
     "hideAll": "Hide All",
     "hours": "{{count}} Hours",
-    "minutes": "{{count}} Minutes",
+    "hours_one": "{{count}} Hour",
+    "hours_other": "{{count}} Hours",
     "interval": "Detection Interval",
     "invalidTimeRange": "Start time must be earlier than end time",
     "latest": "Latest",
@@ -212,17 +191,20 @@
     "max": "Maximum",
     "mem_used": "Ram",
     "min": "Minimum",
-    "network_down": "Download",
+    "minutes": "{{count}} Minutes",
+    "minutes_one": "{{count}} Minute",
+    "minutes_other": "{{count}} Minutes",
     "network_up": "Upload",
     "process": "Processes",
     "query": "Query",
     "quickRange": "Quick select",
     "recentDay": "Last 1 day",
     "recentDays": "Last {{count}} days",
+    "recentDays_one": "Last {{count}} day",
+    "recentDays_other": "Last {{count}} days",
     "recentWeek": "Last 1 week",
     "removeMetric": "Remove metric",
     "sampling": {
-      "average": "Average",
       "first": "First",
       "last": "Last",
       "max": "Max",
@@ -240,14 +222,11 @@
     "swap_used": "Swap Used",
     "tcp_connections": "TCP",
     "total": "Sample Count",
-    "type": "Type",
     "udp_connections": "UDP",
     "usage": "Usage",
     "valid": "Valid",
-    "approximate": "approx.",
     "volatility": "Vol"
   },
-  "close": "Close",
   "color": {
     "amber": "Amber",
     "blue": "Blue",
@@ -283,18 +262,25 @@
     "about": "About",
     "action": "Action",
     "add": "Add",
-    "added_successfully": "Added successfully ",
+    "added_successfully": "Added successfully",
     "all": "All",
     "annual": "Annual",
+    "appearance": "Appearance",
+    "batch_edit": "Batch Edit",
     "biennial": "Biennial",
     "cancel": "Cancel",
+    "clear_search": "Clear search",
     "close": "Close",
+    "close_sidebar": "Close menu",
+    "color": "Accent color",
     "confirm": "Confirm",
     "confirm_delete": "Confirm delete",
     "content": "Content",
+    "copy": "Copy",
     "day": "Day",
     "delete": "Delete",
     "deleted_successfully": "Deleted",
+    "description": "Description",
     "deselect_all": "Deselect all",
     "details": "Details",
     "disabled": "Disabled",
@@ -310,20 +296,26 @@
     "free": "Free",
     "generate": "Generate",
     "group": "Group",
-    "have_been_omitted": "{{count}} has been omitted",
+    "have_been_omitted": "{{count}} omitted",
     "help": "Help",
     "home": "Home",
+    "language": "Language",
+    "logout": "Logout",
     "long_term": "Long term",
+    "menu_sidebar": "Menu",
     "monthly": "Monthly",
     "name": "Name",
+    "next_page": "Next page",
     "no_results": "No results",
     "none": "None",
     "once": "Once",
+    "previous_page": "Previous page",
     "private_site": "This is a private Komari site. Please log in first.",
     "quarterly": "Quarterly",
     "quinquennial": "Quinquennial",
     "real_time": "RealTime",
     "refresh": "Refresh",
+    "region_flag_alt": "Region flag: {{name}}",
     "remark": "Remark",
     "reset": "Reset",
     "retry": "Retry",
@@ -331,6 +323,8 @@
     "search": "Search",
     "select": "Select",
     "select_all": "Select all",
+    "select_clients": "Select clients",
+    "select_tasks": "Select tasks",
     "selected": "{{count}} selected",
     "selected_total": "{{count}} / {{total}} selected",
     "semi_annual": "Semi annual",
@@ -341,22 +335,57 @@
     "success": "Success",
     "tags": "Tags",
     "tagsDescription": "Multiple tags separated by ';'",
-    "tagsTips": "Multiple tags are separated by “;”. </br>  To specify a color, add &ltcolor&gt to the end of the label, e.g. 1Gbps&ltgreen&gt.</br>  A list of available colors can be found at <label class=\"bg-accent-a5 rounded-sm\"><a href=\"https://www.radix-ui.com/themes/docs/theme/color\" target=\"_blank\"> Color - Radix Themes</a></label>",
+    "tagsTips": "Multiple tags are separated by “;”. </br>  To specify a color, add &lt;color&gt; to the end of the label, e.g. 1Gbps&lt;green&gt;.</br>  A list of available colors can be found at <label class=\"bg-accent-a5 rounded-sm\"><a href=\"https://www.radix-ui.com/themes/docs/theme/color\" target=\"_blank\"> Color - Radix Themes</a></label>",
     "threshold": "Threshold",
     "title": "Title",
     "triennial": "Triennial",
+    "type": "Type",
     "ungrouped": "Ungrouped",
     "unknown": "Unknown",
+    "unknownError": "Unknown error",
     "update": "Update",
     "update_available": "New version available",
     "updated_successfully": "Updated successfully",
     "weight": "Weight"
   },
-  "copy": "Copy",
   "copy_success": "Copied!",
   "current_online": "Current Online",
   "current_time": "Current Time",
-  "delete": "Delete",
+  "database_migration": {
+    "after": "After migration",
+    "before": "Before migration",
+    "failed_title": "Database migration did not finish",
+    "legacy_full_history": "Migrate the entire database. Space is reclaimed once after migration.",
+    "network_error": "Unable to connect to the database migration service.",
+    "request_failed": "The request failed. Check the server logs and try again."
+  },
+  "database_recovery": {
+    "completed_description": "The server is starting the normal control panel again.",
+    "completed_title": "Connection restored",
+    "dsn_required": "Enter a monitoring database DSN.",
+    "failure_detail": "The connection failed {{count}} of {{max}} times.",
+    "history_note": "Recovery only reconnects with the new DSN; it does not migrate any data from the previous connection.",
+    "network_error": "Unable to connect to the recovery service.",
+    "request_failed": "The request failed. Please try again.",
+    "save": "Save and reconnect",
+    "save_failed": "The monitoring database connection failed. Check the DSN and try again.",
+    "saving": "Connecting...",
+    "subtitle": "The monitoring database could not be reached. Sign in to update its connection string.",
+    "title": "Monitoring database recovery"
+  },
+  "errorBoundary": {
+    "go_to_home": "Go to Home",
+    "no_stack_trace": "No stack trace available.",
+    "reload_page": "Reload Page",
+    "something_went_wrong": "Something Went Wrong",
+    "unexpected_error": "An unexpected error occurred.",
+    "view_error_details": "View Error Details"
+  },
+  "eula": {
+    "accept": "I have read and accept",
+    "reject": "I do not accept",
+    "title": "Legal Notice and Compliance Guide"
+  },
   "exec": {
     "allCompleted": "All tasks executed successfully",
     "command": "Execute command",
@@ -374,17 +403,63 @@
     "selectedNodes": "Selected node",
     "selectNodes": "Select target node",
     "status": {
-      "failed": "Failed",
+      "polling": "Fetching the latest execution status...",
       "running": "Running",
-      "success": "Success",
       "timeout": "Timeout"
     },
-    "success": "Command execution completed",
+    "stopPolling": "Stop polling",
     "taskStarted": "The task has been initiated.",
     "title": "Remote Exec"
   },
   "go_to_home": "Go to home",
-  "home_title": "Komari Monitor",
+  "install": {
+    "admin_title": "Create administrator account",
+    "back": "Back",
+    "color": "Color",
+    "complete": "Complete installation",
+    "completed": "Installation has already been completed. Please return to sign in.",
+    "confirm_title": "Confirm installation",
+    "connection_error": "Unable to connect to the server",
+    "database": "Database",
+    "database_title": "Monitoring database",
+    "description": "Site description",
+    "detected_database": "Detected database: {{driver}}",
+    "dsn_required": "Enter a monitoring database DSN.",
+    "failed": "Installation failed. Please try again.",
+    "next": "Next",
+    "password": "Password",
+    "password_confirm": "Confirm password",
+    "restore": "Restore from backup",
+    "restore_413": "Backup upload failed (413). Increase the upload size limit in your CDN or reverse proxy such as Nginx (for example, client_max_body_size), or manually upload the backup to ./data/backup.zip and restart the service.",
+    "restore_description": "Uploading a backup restarts the service and restores its data.",
+    "restore_failed": "Failed to restore the backup. Please try again.",
+    "restore_file_type": "Select a .zip backup file.",
+    "restore_restarting": "Restarting to restore backup...",
+    "site": "Site",
+    "site_hint": "This appears in the browser title and public pages.",
+    "site_title": "Site information",
+    "sitename": "Site name",
+    "sitename_required": "Enter a site name.",
+    "sqlite_warning": "SQLite is suitable for lightweight deployments, but may become a performance bottleneck as monitoring data grows. Consider MariaDB, MySQL, or PostgreSQL for long-term storage of large metric volumes.",
+    "start": "Start installation",
+    "steps": {
+      "administrator": "Administrator",
+      "confirm": "Confirm",
+      "database": "Database",
+      "site": "Site",
+      "welcome": "Welcome"
+    },
+    "summary_admin": "Administrator: ",
+    "summary_database": "Database: ",
+    "summary_dsn": "DSN: ",
+    "summary_sitename": "Site name: ",
+    "title": "Installation guide",
+    "username": "Username",
+    "username_required": "Enter a username.",
+    "welcome_description": "Configure your administrator account, site metadata, and monitoring database.",
+    "welcome_subtitle": "A lightweight, open-source server monitor.",
+    "welcome_title": "Welcome to Komari"
+  },
   "just_now": "Just now",
   "loadAlert": {
     "metric": "Metric",
@@ -409,14 +484,62 @@
   "logs": {
     "title": "Logs"
   },
+  "market": {
+    "add_source": "Add source",
+    "delete_source_confirm": "Delete source {{name}}?",
+    "description": "Find and install themes from the internet.",
+    "edit_source": "Edit source",
+    "enabled": "Enabled",
+    "install": "Install",
+    "install_success": "Theme installed",
+    "install_unavailable": "Package unavailable",
+    "installed": "Installed",
+    "installed_version": "Installed v{{version}}",
+    "manage_sources": "Manage sources",
+    "no_sources": "No sources configured",
+    "no_themes": "No themes found",
+    "project_page": "Project page",
+    "refresh_success": "Theme sources refreshed",
+    "search_placeholder": "Search themes, authors or sources",
+    "source": "Source",
+    "source_created": "Source created",
+    "source_deleted": "Source deleted",
+    "source_name": "Source name",
+    "source_updated": "Source updated",
+    "themes": "Theme Market",
+    "uninstall": "Uninstall",
+    "uninstall_confirm": "Uninstall {{name}}?",
+    "uninstall_success": "Theme uninstalled",
+    "update_available": "Update available"
+  },
+  "metric_store_restructure": {
+    "after": "After rebuild",
+    "before": "Before rebuild",
+    "completed_description": "The server is starting normal services.",
+    "completed_title": "Metric store structure rebuilt",
+    "confirm_description": "Historical metrics will be copied to the normalized rollup schema, then database space will be reclaimed once. Normal services are unavailable during this operation.",
+    "confirm_title": "Rebuild the database structure?",
+    "copy_detail": "Copied {{rows}} / {{total}} records across {{metrics}} / {{metricTotal}} metrics. Current metric: {{metric}}.",
+    "discard": "Delete historical monitoring data",
+    "discard_action": "Delete permanently",
+    "discard_confirm": "I confirm that all historical monitoring data may be permanently deleted",
+    "discard_description": "If historical monitoring data is not needed, skip copying it and create an empty database structure. Metric definitions and retention settings are preserved.",
+    "discard_detail": "Deleting historical monitoring data and creating the empty database structure.",
+    "discard_title": "Delete all historical monitoring data?",
+    "discard_warning": "This cannot be undone. All existing historical chart data will be cleared.",
+    "network_error": "Unable to connect to the structure-upgrade service.",
+    "phase_copying": "Copying metric rollups",
+    "phase_discarding": "Deleting historical monitoring data",
+    "phase_reclaiming": "Optimizing the database and reclaiming space.",
+    "start": "Start rebuild",
+    "start_failed": "Unable to start the database structure rebuild.",
+    "title": "Metric store structure rebuild"
+  },
   "network_speed": "Network Speed",
   "nodeCard": {
-    "actions": "Actions",
-    "arch": "Architecture",
     "basicInfo": "Basic Info",
     "chart": "Chart",
     "clickToViewPing": "Click to view ping chart",
-    "cpu": "CPU",
     "disk": "Disk",
     "groupNodes": "{{group}} group: total {{total}} servers, {{online}} servers online",
     "kernelVersion": "Kernel Version",
@@ -432,11 +555,9 @@
     "online": "Online",
     "os": "OS",
     "ping": "Ping",
-    "price": "Price",
     "ram": "RAM",
     "resourceUsage": "Resource Usage",
     "sortTooltip": "Click to toggle sort: Asc → Desc → Default",
-    "status": "Status",
     "swap": "Swap",
     "temperature": "Temperature",
     "time_day": "day",
@@ -458,7 +579,6 @@
       "title": "Load"
     },
     "offline": {
-      "batch_edit": "Batch Edit",
       "cooldown": "Cooldown Period",
       "full_title": "Offline Alerts Configuration",
       "grace_period": "Grace Period",
@@ -470,7 +590,6 @@
     },
     "title": "Notification",
     "traffic_report": {
-      "batch_edit": "Batch Edit",
       "daily": "Daily",
       "errors": {
         "fetch_failed": "Failed to fetch traffic report notifications",
@@ -498,8 +617,138 @@
     "target": "Target",
     "task": "Task",
     "task_view": "Task View",
-    "title": "Latency",
-    "type": "Type"
+    "title": "Latency"
+  },
+  "plugin": {
+    "config": "Configuration",
+    "config_no_items": "This plugin has no configuration items",
+    "config_save_failed": "Failed to save configuration",
+    "config_saved": "Configuration saved",
+    "config_select_hint": "Select a plugin to configure",
+    "delete": "Delete plugin",
+    "delete_confirm": "Delete this plugin?",
+    "delete_confirm_desc": "The plugin directory and its configuration will be removed.",
+    "deleted": "Plugin deleted",
+    "deleting": "Deleting...",
+    "disable": "Disable plugin",
+    "disable_success": "Plugin disabled",
+    "drag_drop": "Drag and drop files here",
+    "enable": "Enable plugin",
+    "enable_success": "Plugin enabled",
+    "installed": "Installed",
+    "invalid_file_type": "Invalid file type, only .zip files are supported",
+    "last_error": "Last error",
+    "loading": "Loading...",
+    "logs_load_failed": "Failed to load logs",
+    "manage": "Manage plugins",
+    "market": "Plugin Market",
+    "market_add_source": "Add Source",
+    "market_delete_source": "Delete source",
+    "market_delete_source_confirm": "Delete this market source?",
+    "market_install": "Install",
+    "market_install_success": "Plugin installed",
+    "market_installing": "Installing...",
+    "market_no_plugins": "No plugins in the market",
+    "market_no_sources": "No market sources configured",
+    "market_not_installable": "Not installable",
+    "market_plugins": "plugins",
+    "market_refresh_success": "Plugin sources refreshed",
+    "market_save": "Save",
+    "market_search": "Search plugins...",
+    "market_source_added": "Source added",
+    "market_source_deleted": "Source deleted",
+    "market_source_name": "Name",
+    "market_source_url": "Catalog URL",
+    "no_logs": "No logs",
+    "no_plugins": "No plugins installed yet",
+    "or_click_to_browse": "Or click to browse files",
+    "page_missing_params": "Missing plugin page parameters",
+    "permission": {
+      "allowAllFileAccess": "Access files outside the plugin directory",
+      "allowExec": "Execute child processes",
+      "allowListen": "Listen on local ports",
+      "maxChildOutputBytes": "Child output size limit",
+      "maxHTTPBodyBytes": "HTTP body size limit",
+      "node": "Node.js compatibility modules",
+      "timeout": "Execution timeout"
+    },
+    "permission_approve": "Approve & Enable",
+    "permission_description": "This plugin requests the following permissions:",
+    "permission_title": "Permission required",
+    "running": "Running",
+    "saving": "Saving...",
+    "stopped": "Stopped",
+    "title": "Plugins",
+    "upload": "Upload Plugin",
+    "upload_413_content_too_large": "File upload failed (413). Please check and increase the file size limit in your reverse proxy server (such as Nginx/CDN) configuration (client_max_body_size) to ensure that this value is greater than your target file size.",
+    "upload_description": "Upload a .zip plugin package",
+    "upload_failed": "Plugin upload failed",
+    "uploaded": "Plugin uploaded",
+    "uploading": "Uploading...",
+    "zip_files_only": "Only .zip files are supported"
+  },
+  "pprof": {
+    "capture_duration": "CPU and trace capture duration",
+    "download": "Download",
+    "duration_option": "{{seconds}} s",
+    "goroutines": "Goroutines",
+    "heap_alloc": "Heap allocated",
+    "heap_inuse": "Heap in use",
+    "heap_objects": "Heap objects",
+    "heap_preview_description": "A live textual heap summary, refreshed with the process overview.",
+    "heap_preview_title": "Heap snapshot",
+    "invalid_summary": "The server returned invalid runtime profile information",
+    "loading": "Collecting...",
+    "preview_description": "Text output from the selected Go runtime profile.",
+    "preview_title": "{{profile}} profile",
+    "preview_unavailable": "This runtime profile does not provide a text preview.",
+    "profiles": {
+      "allocs": {
+        "description": "Cumulative allocation samples since the process started.",
+        "title": "Allocations"
+      },
+      "block": {
+        "description": "Blocking synchronization events.",
+        "title": "Blocking"
+      },
+      "cpu": {
+        "description": "CPU execution samples collected over the selected duration.",
+        "title": "CPU"
+      },
+      "goroutine": {
+        "description": "Current goroutine stack profiles.",
+        "title": "Goroutines"
+      },
+      "heap": {
+        "description": "Live heap allocation samples.",
+        "title": "Heap"
+      },
+      "mutex": {
+        "description": "Contended mutex events.",
+        "title": "Mutex"
+      },
+      "threadcreate": {
+        "description": "Operating-system thread creation events.",
+        "title": "Threads"
+      },
+      "trace": {
+        "description": "Execution trace collected over the selected duration.",
+        "title": "Trace"
+      }
+    },
+    "profiles_description": "Inspect text snapshots or download pprof data for offline analysis.",
+    "profiles_title": "Runtime profiles",
+    "request_failed": "Unable to collect the runtime profile",
+    "runtime_overview_description": "Live runtime counters collected without starting a profile.",
+    "runtime_overview_title": "Current process",
+    "runtime_sys": "Runtime reserved",
+    "sample_count": "{{samples}} samples",
+    "summary_load_failed": "Failed to load runtime profile information",
+    "summary_unavailable": "Runtime overview is unavailable",
+    "timed_profile": "Captured over the selected duration",
+    "title": "Performance profiles",
+    "view": "View",
+    "warning": "Profile may briefly increase server load."
   },
   "pwa": {
     "browser": "Browser Mode",
@@ -540,19 +789,15 @@
     "websocket_error": "WebSocket error:",
     "websocket_not_connected": "WebSocket is not connected"
   },
-  "save": "Save",
   "search": {
     "no_results": "No matching servers found",
     "placeholder": "Search nodes by name, region, OS...",
     "results": "Found {{count}} server out of {{total}}",
     "try_different": "Try different search keywords"
   },
-  "select": "Select",
   "sessions": {
     "actions": "Actions",
     "active_sessions": "Active Sessions",
-    "cancel": "Cancel",
-    "confirm_delete": "Confirm Deletion",
     "created_at": "Created At",
     "current": "(Current)",
     "delete_all": "Delete All Sessions",
@@ -565,7 +810,6 @@
     "last_user_agent": "Latest User Agent",
     "latest_ip": "Latest IP",
     "latest_online": "Latest Online",
-    "loading": "Loading...",
     "login_method": "Login Method",
     "session_id": "Session ID",
     "title": "Sessions"
@@ -581,7 +825,6 @@
       "body_description": "Add custom content to the bottom of the page",
       "favicon": "Customize Favicon",
       "favicon_change": "update favicon",
-      "favicon_confirm": "Confirm",
       "favicon_current": "Current Favicon",
       "favicon_default": "Restore Default",
       "favicon_default_description": "This will restore the default Favicon icon, do you want to continue?",
@@ -654,25 +897,23 @@
       "canceling": "Canceling...",
       "conns_invalid": "Please enter a valid number of connections",
       "current_status": "Current status",
+      "downsampling_title": "Data downsampling",
       "dsn_description": "Connection string of the currently running monitoring database. The database type is detected automatically from the connection string (SQLite / MariaDB / MySQL / PostgreSQL). SQLite: ./data/metrics.db; MariaDB / MySQL: user:password@tcp(host:3306)/metrics?charset=utf8mb4&parseTime=True; PostgreSQL: host=localhost user=komari password=secret dbname=metrics port=5432 sslmode=disable",
       "dsn_title": "Connection string (DSN)",
-      "downsampling_enabled": "Enabled",
-      "downsampling_title": "Data downsampling",
       "fetch_metrics_failed": "Failed to fetch metrics",
       "fetch_status_failed": "Failed to fetch migration status",
+      "intro": "Configure the monitoring database and the retention policy for each monitored metric's raw data.",
       "loading_metrics": "Loading metrics...",
       "max_idle_conns_description": "Maximum number of idle database connections, default 5",
       "max_idle_conns_title": "Max idle connections",
       "max_open_conns_description": "Maximum number of open database connections, default 25",
       "max_open_conns_title": "Max open connections",
-      "metric_description": "Description",
       "metric_key": "Metric key",
       "metric_name": "Metric name",
-      "metric_type": "Type",
       "metric_unit": "Unit",
       "migrated_points": "Migrated points",
-      "migration_canceled": "Migration canceled",
       "migration_cancel_failed": "Failed to cancel migration",
+      "migration_canceled": "Migration canceled",
       "migration_canceled_hint": "Migration canceled. Since writes are idempotent, you can safely restart the migration without producing duplicate data.",
       "migration_card_description": "Move historical data from a monitoring data source database (the default local SQLite ./data/metrics.db, or the previously used database) into the currently running monitoring target database.",
       "migration_card_title": "Database migration",
@@ -686,8 +927,9 @@
       "migration_target": "Target",
       "migration_title": "Migration",
       "no_metrics": "No metric definitions",
-      "retention_description": "Number of days to keep data, default 1; 0 disables persistence for the metric",
+      "restart_hint": "Some changes only take effect after the service is restarted.",
       "retention_days": "Retention days",
+      "retention_description": "Number of days to keep data, default 1; 0 disables persistence for the metric",
       "retention_invalid": "Please enter a valid number of days",
       "retention_save_failed": "Failed to save retention days",
       "retention_saved": "Retention days saved",
@@ -710,139 +952,139 @@
         "idle": "Idle",
         "running": "Running"
       },
-      "table_prefix_description": "Prefix for monitoring tables, default metric_",
-      "table_prefix_title": "Table prefix",
-      "title": "Monitoring Database",
       "system": {
+        "connections": {
+          "tcp": {
+            "description": "Number of TCP connections",
+            "name": "TCP connections"
+          },
+          "udp": {
+            "description": "Number of UDP connections",
+            "name": "UDP connections"
+          }
+        },
         "cpu": {
           "usage": {
-            "name": "CPU usage",
-            "description": "CPU usage percentage"
+            "description": "CPU usage percentage",
+            "name": "CPU usage"
+          }
+        },
+        "disk": {
+          "total": {
+            "description": "Total disk space",
+            "name": "Disk total"
+          },
+          "used": {
+            "description": "Disk space currently used",
+            "name": "Disk used"
           }
         },
         "gpu": {
-          "usage": {
-            "name": "GPU usage",
-            "description": "Average GPU usage percentage for the node"
-          },
           "device": {
             "usage": {
-              "name": "GPU device usage",
-              "description": "Per-device GPU utilization"
+              "description": "Per-device GPU utilization",
+              "name": "GPU device usage"
             }
           },
           "memory": {
-            "used": {
-              "name": "GPU memory used",
-              "description": "GPU memory currently used"
-            },
             "total": {
-              "name": "GPU memory total",
-              "description": "Total GPU memory"
+              "description": "Total GPU memory",
+              "name": "GPU memory total"
+            },
+            "used": {
+              "description": "GPU memory currently used",
+              "name": "GPU memory used"
             }
           },
           "temperature": {
-            "name": "GPU temperature",
-            "description": "GPU temperature"
-          }
-        },
-        "memory": {
-          "used": {
-            "name": "RAM used",
-            "description": "RAM currently used"
+            "description": "GPU core temperature",
+            "name": "GPU temperature"
           },
-          "total": {
-            "name": "RAM total",
-            "description": "Total RAM"
-          }
-        },
-        "swap": {
-          "used": {
-            "name": "Swap used",
-            "description": "Swap space currently used"
-          },
-          "total": {
-            "name": "Swap total",
-            "description": "Total swap space"
+          "usage": {
+            "description": "Average GPU usage percentage for the node",
+            "name": "GPU usage"
           }
         },
         "load": {
           "average": {
-            "name": "Load average",
-            "description": "System load average"
+            "description": "System load average",
+            "name": "Load average"
           }
         },
-        "temperature": {
-          "name": "System temperature",
-          "description": "System temperature"
-        },
-        "disk": {
-          "used": {
-            "name": "Disk used",
-            "description": "Disk space currently used"
-          },
+        "memory": {
           "total": {
-            "name": "Disk total",
-            "description": "Total disk space"
+            "description": "Total RAM",
+            "name": "RAM total"
+          },
+          "used": {
+            "description": "RAM currently used",
+            "name": "RAM used"
           }
         },
         "net": {
           "in": {
             "rate": {
-              "name": "Network inbound rate",
-              "description": "Network inbound rate"
+              "description": "Network inbound rate",
+              "name": "Network inbound rate"
             }
           },
           "out": {
             "rate": {
-              "name": "Network outbound rate",
-              "description": "Network outbound rate"
+              "description": "Network outbound rate",
+              "name": "Network outbound rate"
             }
           },
           "total": {
-            "up": {
-              "name": "Total upload",
-              "description": "Cumulative network upload"
-            },
             "down": {
-              "name": "Total download",
-              "description": "Cumulative network download"
+              "description": "Cumulative network download",
+              "name": "Total download"
+            },
+            "up": {
+              "description": "Cumulative network upload",
+              "name": "Total upload"
             }
-          }
-        },
-        "traffic": {
-          "up": {
-            "name": "Upload traffic delta",
-            "description": "Upload traffic delta in one report interval"
-          },
-          "down": {
-            "name": "Download traffic delta",
-            "description": "Download traffic delta in one report interval"
-          }
-        },
-        "process": {
-          "count": {
-            "name": "Process count",
-            "description": "Number of running processes"
-          }
-        },
-        "connections": {
-          "tcp": {
-            "name": "TCP connections",
-            "description": "Number of TCP connections"
-          },
-          "udp": {
-            "name": "UDP connections",
-            "description": "Number of UDP connections"
           }
         },
         "ping": {
           "latency_ms": {
-            "name": "Ping latency",
-            "description": "Ping latency in milliseconds"
+            "description": "Ping latency in milliseconds",
+            "name": "Ping latency"
+          }
+        },
+        "process": {
+          "count": {
+            "description": "Number of running processes",
+            "name": "Process count"
+          }
+        },
+        "swap": {
+          "total": {
+            "description": "Total swap space",
+            "name": "Swap total"
+          },
+          "used": {
+            "description": "Swap space currently used",
+            "name": "Swap used"
+          }
+        },
+        "temperature": {
+          "description": "Temperature reported by system sensors (e.g., CPU, motherboard)",
+          "name": "System temperature"
+        },
+        "traffic": {
+          "down": {
+            "description": "Download traffic delta in one report interval",
+            "name": "Download traffic delta"
+          },
+          "up": {
+            "description": "Upload traffic delta in one report interval",
+            "name": "Upload traffic delta"
           }
         }
-      }
+      },
+      "table_prefix_description": "Prefix for monitoring tables, default metric_",
+      "table_prefix_title": "Table prefix",
+      "title": "Monitoring Database"
     },
     "missing_required_fields": "Please fill in the required fields: {{fieldNames}}",
     "notification": {
@@ -868,27 +1110,12 @@
       "provider_fields": "Send Settings",
       "provider_fields_description": "Detailed settings for the information sending channel you choose",
       "provider_settings_fetch_failed": "Failed to load notification settings",
-      "smtp_description": "Configure SMTP mail info to send email notifications.",
-      "smtp_host": "SMTP Host",
-      "smtp_password": "Password",
-      "smtp_port": "Port",
-      "smtp_receiver": "Receiver Email",
-      "smtp_sender": "Sender Email",
-      "smtp_ssl": "Enable SSL",
-      "smtp_tips": "Please test whether the server running Komari can send emails first. You can use '{{command}}' to test.",
-      "smtp_title": "SMTP Configuration",
-      "smtp_username": "Username",
       "telegram": {
         "bot_token": "Telegram Bot Token",
         "chat_id": "Chat ID",
         "endpoint": "Request Endpoint",
         "endpoint_help": "Request endpoint for the Telegram Bot API, usually `https://api.telegram.org/bot`"
       },
-      "telegram_bot_token": "Telegram Bot Token",
-      "telegram_chat_id_error": "Chat ID must be a number",
-      "telegram_description": "Configure your Telegram bot to get alerts directly in your chat.",
-      "telegram_endpoint": "Endpoint",
-      "telegram_title": "Telegram Configuration",
       "template": "Notification template",
       "template_description": "Komari will send notifications according to the notification template",
       "test_description": "Send a test message",
@@ -909,7 +1136,6 @@
       "backup_restore_description": "Restoring a backup from a file will overwrite the current data.",
       "backup_restore_error": "Restore backup failed",
       "cors_allowed_origins": "API CORS allowed origins",
-      "cors_allowed_origins_description": "One origin per line or separated by commas, e.g., https://example.com",
       "cors_origin_check_enabled": "CORS origin check",
       "cors_origin_check_enabled_description": "When enabled, API requests are only allowed from the same origin or origins in the allowed list",
       "custom": "Customize",
@@ -917,28 +1143,26 @@
       "description_description": "Set your site's description for meta info and social media cards.",
       "name": "Site Name",
       "name_description": "Set the name of the site",
+      "origins_list_description": "One origin per line or separated by commas, e.g., https://example.com",
       "private_site": "Private site",
       "private_site_description": "Set the site to private. Once enabled, data can only be accessed after logging in.",
       "script_domain": "Agent connection address",
       "script_domain_description": "Define the connection address for the installation script panel, convenient for users with multiple domains, and will not affect access to other domains. Leave empty to use the current domain.",
       "send_ip_addr_to_guest": "Show partial IP address to guests",
       "send_ip_addr_to_guest_description": "Under non-logged-in conditions, partial IP address information can be viewed through common:getNodes, in the form of 9.*.*.* / fe80:*:*:*:*:*:*:*. Used for displaying IP in some themes.",
-      "tempory_share": "Temporary Share",
-      "tempory_share_current_link": "Current Temporary Access Link",
-      "tempory_share_description": "After enabling the private site, you can access the site through a temporary share link.",
-      "tempory_share_hours": "Share Duration (Hours)",
-      "tempory_share_revoke": "Revoke Access Permission",
+      "temporary_share": "Temporary Share",
+      "temporary_share_current_link": "Current Temporary Access Link",
+      "temporary_share_description": "After enabling the private site, you can access the site through a temporary share link.",
+      "temporary_share_hours": "Share Duration (Hours)",
+      "temporary_share_revoke": "Revoke Access Permission",
       "title": "Site",
       "ws_allowed_origins": "WebSocket allowed origins",
-      "ws_allowed_origins_description": "One origin per line or separated by commas, e.g., https://example.com",
       "ws_origin_check_enabled": "WebSocket origin check",
       "ws_origin_check_enabled_description": "When enabled, WebSocket requests are only allowed from the same origin or origins in the allowed list"
     },
     "sso": {
       "callback_url_tips": "Configure your SSO provider with this callback URL: {{url}}",
-      "client_id": "Client ID",
       "client_id_description": "OAuth application client ID",
-      "client_secret": "Client Secret",
       "client_secret_description": "OAuth application client secret",
       "enable": "Enable Single Sign-On",
       "enable_description": "Allow users to login with third-party accounts (like GitHub)",
@@ -955,6 +1179,7 @@
         "client_id": "GitHub Client ID",
         "client_secret": "GitHub Client Secret"
       },
+      "not_implemented_suffix": " [Not implemented yet]",
       "provider": "Single Sign-On Provider",
       "provider_description": "Choose the authentication provider for single sign-on",
       "provider_fetch_failed": "Failed to load sign-on provider information",
@@ -1040,37 +1265,6 @@
     "no_active_connection": "No active connection",
     "title": "Terminal"
   },
-  "market": {
-    "add_source": "Add source",
-    "delete_source_confirm": "Delete source {{name}}?",
-    "description": "Find and install themes from the internet.",
-    "edit_source": "Edit source",
-    "enabled": "Enabled",
-    "install": "Install",
-    "install_unavailable": "Package unavailable",
-    "install_success": "Theme installed",
-    "installed": "Installed",
-    "installed_version": "Installed v{{version}}",
-    "manage_sources": "Manage sources",
-    "no_sources": "No sources configured",
-    "no_themes": "No themes found",
-    "project_page": "Project page",
-    "refresh": "Refresh",
-    "refresh_success": "Theme sources refreshed",
-    "search_placeholder": "Search themes, authors or sources",
-    "source": "Source",
-    "source_created": "Source created",
-    "source_deleted": "Source deleted",
-    "source_name": "Source name",
-    "source_updated": "Source updated",
-    "themes": "Theme Market",
-    "title": "Market",
-    "update": "Update",
-    "update_available": "Update available",
-    "uninstall": "Uninstall",
-    "uninstall_confirm": "Uninstall {{name}}?",
-    "uninstall_success": "Theme uninstalled"
-  },
   "theme": {
     "active": "Active",
     "author": "Author",
@@ -1083,7 +1277,6 @@
     "delete_failed": "Theme deletion failed",
     "delete_success": "Theme deleted successfully",
     "delete_warning": "Are you sure you want to delete the theme \"{{themeName}}\"? This action cannot be undone.",
-    "description": "Description",
     "drag_drop": "Drag and drop files here",
     "find_more": "Find more themes?",
     "github_description": "The system will download the latest release from this GitHub repository.",
@@ -1102,8 +1295,8 @@
     "invalid_file_type": "Invalid file type, only .zip files are supported",
     "light": "Light",
     "load_config_failed": "Failed to load theme configuration",
-    "manage": "Theme Management",
     "manage_with_name": "{{name}} Theme Management",
+    "menu": "Theme",
     "name": "Name",
     "no_config": "This theme has no declared configuration items.",
     "no_themes": "No themes available",
@@ -1111,6 +1304,7 @@
     "set_active": "Set as Active Theme",
     "set_failed": "Theme set failed",
     "set_success": "Theme set successfully",
+    "settings_with_name": "{{name}} settings",
     "system": "System",
     "theme_url": "Theme URL",
     "title": "Theme Management",
@@ -1123,80 +1317,15 @@
     "update_mode_github": "GitHub Release",
     "update_mode_url": "Direct URL",
     "update_success": "Theme updated successfully",
-    "update_theme": "Update Theme",
     "upload": "Upload Theme",
+    "upload_413_content_too_large": "File upload failed (413). Please check and increase the file size limit in your reverse proxy server (such as Nginx/CDN) configuration (client_max_body_size) to ensure that this value is greater than your target file size.",
     "upload_description": "Upload a .zip theme file",
     "upload_failed": "Theme upload failed",
     "upload_first_theme": "Upload your first theme",
     "upload_success": "Theme uploaded successfully",
-    "upload_theme": "Upload Theme",
     "uploading": "Uploading theme...",
-    "uploda_413_content_too_large": "File upload failed (413). Please check and increase the file size limit in your reverse proxy server (such as Nginx/CDN) configuration (client_max_body_size) to ensure that this value is greater than your target file size.",
     "version": "Version",
     "zip_files_only": "Only .zip files are supported"
-  },
-  "pprof": {
-    "capture_duration": "CPU and trace capture duration",
-    "download": "Download",
-    "duration_option": "{{seconds}} s",
-    "goroutines": "Goroutines",
-    "heap_alloc": "Heap allocated",
-    "heap_inuse": "Heap in use",
-    "heap_objects": "Heap objects",
-    "heap_preview_description": "A live textual heap summary, refreshed with the process overview.",
-    "heap_preview_title": "Heap snapshot",
-    "invalid_summary": "The server returned invalid runtime profile information",
-    "loading": "Collecting...",
-    "preview_description": "Text output from the selected Go runtime profile.",
-    "preview_title": "{{profile}} profile",
-    "preview_unavailable": "This runtime profile does not provide a text preview.",
-    "profiles": {
-      "allocs": {
-        "title": "Allocations",
-        "description": "Cumulative allocation samples since the process started."
-      },
-      "block": {
-        "title": "Blocking",
-        "description": "Blocking synchronization events."
-      },
-      "cpu": {
-        "title": "CPU",
-        "description": "CPU execution samples collected over the selected duration."
-      },
-      "trace": {
-        "title": "Trace",
-        "description": "Execution trace collected over the selected duration."
-      },
-      "goroutine": {
-        "title": "Goroutines",
-        "description": "Current goroutine stack profiles."
-      },
-      "heap": {
-        "title": "Heap",
-        "description": "Live heap allocation samples."
-      },
-      "mutex": {
-        "title": "Mutex",
-        "description": "Contended mutex events."
-      },
-      "threadcreate": {
-        "title": "Threads",
-        "description": "Operating-system thread creation events."
-      }
-    },
-    "profiles_description": "Inspect text snapshots or download pprof data for offline analysis.",
-    "profiles_title": "Runtime profiles",
-    "request_failed": "Unable to collect the runtime profile",
-    "runtime_overview_description": "Live runtime counters collected without starting a profile.",
-    "runtime_overview_title": "Current process",
-    "runtime_sys": "Runtime reserved",
-    "sample_count": "{{samples}} samples",
-    "summary_load_failed": "Failed to load runtime profile information",
-    "summary_unavailable": "Runtime overview is unavailable",
-    "timed_profile": "Captured over the selected duration",
-    "title": "Performance profiles",
-    "view": "View",
-    "warning": "Profile may briefly increase server load."
   },
   "time": {
     "ago": "Ago",
@@ -1219,114 +1348,5 @@
     "mode": "View Mode"
   },
   "warn_https": "The current connection is not HTTPS! Your sensitive data is at serious risk. Take immediate action to secure the connection! Copy may not available!",
-  "warn_websocket": "RPC2 request failed, please check the network connection or server status!",
-  "database_recovery": {
-    "title": "Monitoring database recovery",
-    "subtitle": "The monitoring database could not be reached. Sign in to update its connection string.",
-    "history_note": "Recovery only reconnects with the new DSN; it does not migrate any data from the previous connection.",
-    "failure_detail": "The connection failed {{count}} of {{max}} times.",
-    "dsn_required": "Enter a monitoring database DSN.",
-    "save": "Save and reconnect",
-    "saving": "Connecting...",
-    "completed_title": "Connection restored",
-    "completed_description": "The server is starting the normal control panel again.",
-    "save_failed": "The monitoring database connection failed. Check the DSN and try again.",
-    "network_error": "Unable to connect to the recovery service.",
-    "request_failed": "The request failed. Please try again."
-  },
-  "database_migration": {
-    "after": "After migration",
-    "before": "Before migration",
-    "failed_title": "Database migration did not finish",
-    "legacy_full_history": "Migrate the entire database. Space is reclaimed once after migration.",
-    "network_error": "Unable to connect to the database migration service.",
-    "request_failed": "The request failed. Check the server logs and try again.",
-    "saved": "Saved"
-  },
-  "metric_store_restructure": {
-    "after": "After rebuild",
-    "before": "Before rebuild",
-    "completed_description": "The server is starting normal services.",
-    "completed_title": "Metric store structure rebuilt",
-    "confirm_description": "Historical metrics will be copied to the normalized rollup schema, then database space will be reclaimed once. Normal services are unavailable during this operation.",
-    "confirm_title": "Rebuild the database structure?",
-    "copy_detail": "Copied {{rows}} / {{total}} records across {{metrics}} / {{metricTotal}} metrics. Current metric: {{metric}}.",
-    "discard": "Delete historical monitoring data",
-    "discard_action": "Delete permanently",
-    "discard_confirm": "I confirm that all historical monitoring data may be permanently deleted",
-    "discard_description": "If historical monitoring data is not needed, skip copying it and create an empty database structure. Metric definitions and retention settings are preserved.",
-    "discard_detail": "Deleting historical monitoring data and creating the empty database structure.",
-    "discard_title": "Delete all historical monitoring data?",
-    "discard_warning": "This cannot be undone. All existing historical chart data will be cleared.",
-    "network_error": "Unable to connect to the structure-upgrade service.",
-    "phase_copying": "Copying metric rollups",
-    "phase_discarding": "Deleting historical monitoring data",
-    "phase_reclaiming": "Optimizing the database and reclaiming space.",
-    "request_failed": "The request failed. Please try again.",
-    "saved": "Saved",
-    "start": "Start rebuild",
-    "start_failed": "Unable to start the database structure rebuild.",
-    "title": "Metric store structure rebuild"
-  },
-  "install": {
-    "title": "Installation guide",
-    "welcome": "Welcome",
-    "administrator": "Administrator",
-    "site": "Site",
-    "database": "Database",
-    "confirm": "Confirm",
-    "welcome_title": "Welcome to Komari",
-    "welcome_subtitle": "A lightweight, open-source server monitor.",
-    "welcome_description": "Configure your administrator account, site metadata, and monitoring database.",
-    "admin_title": "Create administrator account",
-    "username": "Username",
-    "password": "Password",
-    "password_confirm": "Confirm password",
-    "site_title": "Site information",
-    "site_hint": "This appears in the browser title and public pages.",
-    "sitename": "Site name",
-    "description": "Site description",
-    "database_title": "Monitoring database",
-    "confirm_title": "Confirm installation",
-    "summary_admin": "Administrator: ",
-    "summary_sitename": "Site name: ",
-    "summary_database": "Database: ",
-    "summary_dsn": "DSN: ",
-    "back": "Back",
-    "next": "Next",
-    "start": "Start installation",
-    "restore": "Restore from backup",
-    "restore_description": "Uploading a backup restarts the service and restores its data.",
-    "restore_restarting": "Restarting to restore backup...",
-    "restore_file_type": "Select a .zip backup file.",
-    "restore_failed": "Failed to restore the backup. Please try again.",
-    "restore_413": "Backup upload failed (413). Increase the upload size limit in your CDN or reverse proxy such as Nginx (for example, client_max_body_size), or manually upload the backup to ./data/backup.zip and restart the service.",
-    "complete": "Complete installation",
-    "completed": "Installation has already been completed. Please return to sign in.",
-    "failed": "Installation failed. Please try again.",
-    "connection_error": "Unable to connect to the server",
-    "username_required": "Enter a username.",
-    "sitename_required": "Enter a site name.",
-    "dsn_required": "Enter a monitoring database DSN.",
-    "detected_database": "Detected database: {{driver}}",
-    "sqlite_warning": "SQLite is suitable for lightweight deployments, but may become a performance bottleneck as monitoring data grows. Consider MariaDB, MySQL, or PostgreSQL for long-term storage of large metric volumes.",
-    "language": "Language",
-    "appearance": "Appearance",
-    "color": "Color",
-    "steps": {
-      "welcome": "Welcome",
-      "administrator": "Administrator",
-      "site": "Site",
-      "database": "Database",
-      "confirm": "Confirm"
-    }
-  },
-  "errorBoundary": {
-    "something_went_wrong": "Something Went Wrong",
-    "unexpected_error": "An unexpected error occurred.",
-    "view_error_details": "View Error Details",
-    "no_stack_trace": "No stack trace available.",
-    "reload_page": "Reload Page",
-    "go_to_home": "Go to Home"
-  }
+  "warn_websocket": "RPC2 request failed, please check the network connection or server status!"
 }

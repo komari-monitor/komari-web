@@ -207,7 +207,7 @@ export const renderProviderInputs = ({
                         bordless
                         onClick={handleSaveAll}
                     >
-                        {t("save")}
+                        {t("common.save")}
                     </SettingCardButton>
                 </div>
             </SettingCardCollapse>

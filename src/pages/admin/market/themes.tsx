@@ -357,7 +357,7 @@ export default function ThemeMarketPage() {
             <Settings2 size={16} />
             {t("market.manage_sources", "Manage sources")}
           </Button>
-          <IconButton variant="soft" onClick={refresh} disabled={refreshing} title={t("market.refresh", "Refresh")}>
+          <IconButton variant="soft" onClick={refresh} disabled={refreshing} title={t("common.refresh", "Refresh")}>
             <RefreshCw size={17} className={refreshing ? "animate-spin" : ""} />
           </IconButton>
         </Flex>
@@ -452,7 +452,7 @@ export default function ThemeMarketPage() {
                       {hasUpdate && isInstallable && (
                         <Button size="1" onClick={() => installTheme(theme)} disabled={installing === key}>
                           {installing === key ? <RefreshCw size={14} className="animate-spin" /> : <RefreshCw size={14} />}
-                          {t("market.update", "Update")}
+                          {t("common.update", "Update")}
                         </Button>
                       )}
                       {isInstalled && !isActive && (
@@ -516,7 +516,7 @@ export default function ThemeMarketPage() {
                   )}
                   {hasUpdate && isInstallable && (
                     <Button onClick={() => installTheme(selectedTheme)} disabled={installing === key}>
-                      <RefreshCw size={15} />{t("market.update", "Update")}
+                      <RefreshCw size={15} />{t("common.update", "Update")}
                     </Button>
                   )}
                   {isInstalled && !isActive && (

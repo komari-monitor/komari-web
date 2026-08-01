@@ -141,7 +141,7 @@ const AddButton: React.FC = () => {
           <Flex direction="column" justify="end" gap="2" className="font-bold">
             <label htmlFor="ping_name">{t("common.name")}</label>
             <TextField.Root id="ping_name" name="ping_name" />
-            <label htmlFor="type">{t("ping.type")}</label>
+            <label htmlFor="type">{t("common.type")}</label>
             <Select.Root
               value={selectedType}
               onValueChange={(value) =>

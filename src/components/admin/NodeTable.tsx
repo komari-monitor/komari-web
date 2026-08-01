@@ -102,7 +102,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
   },
   {
     accessorKey: "ipv4",
-    header: t("admin.nodeTable.ipAddress"),
+    header: t("admin.nodeDetail.ipAddress"),
     cell: ({ row }) => {
       const ipv4 = row.original.ipv4;
       const ipv6 = row.original.ipv6;
@@ -143,7 +143,7 @@ const columns: ColumnDef<z.infer<typeof schema>>[] = [
   },
   {
     accessorKey: "version",
-    header: t("admin.nodeTable.clientVersion"),
+    header: t("admin.nodeDetail.clientVersion"),
     cell: ({ row }) => <div className="w-32">{row.getValue("version")}</div>,
   },
   {
@@ -418,7 +418,7 @@ export function DataTable() {
                         >
                           {data.length === 0 && !isLoading
                             ? t("admin.nodeTable.noData")
-                            : t("admin.nodeTable.noResults")}
+                            : t("common.no_results")}
                         </TableCell>
                       </TableRow>
                     )}

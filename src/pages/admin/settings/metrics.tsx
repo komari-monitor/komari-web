@@ -536,14 +536,14 @@ function MetricRetentionTable({
                     disabled={saving}
                     onClick={() => setBatchDialogOpen(false)}
                   >
-                    {t("cancel")}
+                    {t("common.cancel")}
                   </Button>
                   <Button
                     disabled={saving || batchMetricNames.length === 0}
                     onClick={() => void handleBatchSave()}
                   >
                     <Save size={14} />
-                    {t("save")}
+                    {t("common.save")}
                   </Button>
                 </Flex>
               </Flex>
@@ -580,9 +580,9 @@ function MetricRetentionTable({
                   {t("settings.metrics.metric_key")}
                 </TableHead>
                 <TableHead className="min-w-64">
-                  {t("settings.metrics.metric_description")}
+                  {t("common.description")}
                 </TableHead>
-                <TableHead>{t("settings.metrics.metric_type")}</TableHead>
+                <TableHead>{t("common.type")}</TableHead>
                 <TableHead>{t("settings.metrics.metric_unit")}</TableHead>
                 <TableHead>{t("settings.metrics.retention_days")}</TableHead>
               </TableRow>

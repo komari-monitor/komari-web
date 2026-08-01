@@ -243,7 +243,7 @@ const NodeTable: React.FC<NodeTableProps> = ({ nodes, liveData, onlineSet }) => 
               title={t("nodeCard.sortTooltip")}
             >
               <Flex align="center" gap="1">
-                {t("nodeCard.status")}
+                {t("common.status")}
                 {getSortIcon("status")}
               </Flex>
             </TableHead>
@@ -253,7 +253,7 @@ const NodeTable: React.FC<NodeTableProps> = ({ nodes, liveData, onlineSet }) => 
               title={t("nodeCard.sortTooltip")}
             >
               <Flex align="center" gap="1">
-                {t("nodeCard.cpu")}
+                {t("admin.nodeDetail.cpu")}
                 {getSortIcon("cpu")}
               </Flex>
             </TableHead>
@@ -283,7 +283,7 @@ const NodeTable: React.FC<NodeTableProps> = ({ nodes, liveData, onlineSet }) => 
               title={t("nodeCard.sortTooltip")}
             >
               <Flex align="center" gap="1">
-                {t("nodeCard.price")}
+                {t("admin.nodeTable.price")}
                 {getSortIcon("price")}
               </Flex>
             </TableHead>

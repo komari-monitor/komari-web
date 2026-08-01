@@ -120,7 +120,7 @@ export function SettingCardMultiInputCollapse({
         })}
         <div>
           <Button variant="solid" className="mt-2" onClick={handleSave} disabled={savingState}>
-            {t("save")}
+            {t("common.save")}
           </Button>
         </div>
       </Flex>

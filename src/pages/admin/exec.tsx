@@ -57,6 +57,8 @@ const COMMAND_EDITOR_LINE_HEIGHT_VAR = "--command-editor-line-height";
 const COMMAND_EDITOR_VERTICAL_PADDING_VAR = "--command-editor-vertical-padding";
 const COMMAND_EDITOR_COLLAPSED_HEIGHT = `calc(${COMMAND_EDITOR_COLLAPSED_LINES} * var(${COMMAND_EDITOR_LINE_HEIGHT_VAR}) + var(${COMMAND_EDITOR_VERTICAL_PADDING_VAR}))`;
 const COMMAND_EDITOR_LINE_NUMBER_LIMIT = 500;
+// 客户端标记“执行超时”的内部结果（避免在 UI 中展示硬编码中文）
+const TIMEOUT_RESULT_MARKER = "__komari_exec_timeout__";
 
 const parsePixelValue = (value: string) => {
     const parsedValue = Number.parseFloat(value);
@@ -262,7 +264,7 @@ const ExecContent = () => {
             setResults(prevResults =>
                 prevResults.map(result =>
                     result.finished_at === null
-                        ? { ...result, finished_at: new Date().toISOString(), exit_code: -1, result: "执行超时" }
+                        ? { ...result, finished_at: new Date().toISOString(), exit_code: -1, result: TIMEOUT_RESULT_MARKER }
                         : result
                 )
             );
@@ -329,7 +331,7 @@ const ExecContent = () => {
                 throw new Error(data.message);
             }
         } catch (err) {
-            const errorMessage = err instanceof Error ? err.message : "未知错误";
+            const errorMessage = err instanceof Error ? err.message : t("common.unknownError");
             toast.error(errorMessage);
         } finally {
             setExecuting(false);
@@ -359,11 +361,15 @@ const ExecContent = () => {
         }).join(", ");
     };
 
+    // 超时标记结果展示为本地化文案
+    const displayResultText = (result: TaskResult) =>
+        result.result === TIMEOUT_RESULT_MARKER ? t("exec.status.timeout") : result.result;
+
     const getTaskStatus = (result: TaskResult) => {
         if (result.finished_at === null) {
             return { status: "running", color: "blue" as const, text: t("exec.status.running") };
         }
-        if (result.result === "执行超时") {
+        if (result.result === TIMEOUT_RESULT_MARKER) {
             return { status: "timeout", color: "orange" as const, text: t("exec.status.timeout", "超时") };
         }
         if (result.exit_code === 0) {
@@ -548,7 +554,7 @@ const ExecContent = () => {
                                                     <Button
                                                         variant="ghost"
                                                         size="1"
-                                                        onClick={() => copyOutput(result.result)}
+                                                        onClick={() => copyOutput(displayResultText(result))}
                                                         title={t("common.copy", "Copy")}
                                                         aria-label={t("common.copy", "Copy")}
                                                     >
@@ -572,7 +578,7 @@ const ExecContent = () => {
                                             {/* 输出内容 */}
                                             {result.result && (
                                                 <div className="bg-[var(--gray-2)] rounded-md p-3 font-mono text-sm overflow-x-auto">
-                                                    <pre className="whitespace-pre-wrap">{result.result}</pre>
+                                                    <pre className="whitespace-pre-wrap">{displayResultText(result)}</pre>
                                                 </div>
                                             )}
                                         </Flex>
@@ -587,7 +593,7 @@ const ExecContent = () => {
                                 <Flex align="center" gap="2">
                                     <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent" />
                                     <Text size="2" color="gray">
-                                        正在获取最新执行状态...
+                                        {t("exec.status.polling")}
                                     </Text>
                                 </Flex>
                                 <Button
@@ -595,7 +601,7 @@ const ExecContent = () => {
                                     size="1"
                                     onClick={clearPolling}
                                 >
-                                    停止轮询
+                                    {t("exec.stopPolling")}
                                 </Button>
                             </Flex>
                         )}

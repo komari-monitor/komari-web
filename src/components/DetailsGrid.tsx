@@ -48,7 +48,7 @@ export const DetailsGrid = ({
           down={`${node?.cpu_name} (x${node?.cpu_cores})`}
         />
         <label className={`flex flex-wrap gap-2 gap-x-8 flex-[0_0_calc(50%-0.5rem)] ${align === "center" ? "justify-end" : ""}`}>
-          <UpDownStack up={t("nodeCard.arch")} down={node?.arch ?? "Unknown"} />
+          <UpDownStack up={t("admin.nodeDetail.arch")} down={node?.arch ?? "Unknown"} />
 
           <UpDownStack
             up={t("nodeCard.virtualization")}

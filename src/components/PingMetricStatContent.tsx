@@ -33,7 +33,7 @@ const PingMetricStatContent = ({ stat, t }: PingMetricStatContentProps) => {
   rows.push([t("chart.total"), String(stat.total)]);
   rows.push([t("chart.valid"), String(stat.valid)]);
   if (stat.interval) rows.push([t("chart.interval"), `${stat.interval}s`]);
-  if (stat.type) rows.push([t("chart.type"), stat.type.toUpperCase()]);
+  if (stat.type) rows.push([t("common.type"), stat.type.toUpperCase()]);
 
   return (
     <div className="grid grid-cols-[max-content_1fr] gap-x-3 gap-y-1">

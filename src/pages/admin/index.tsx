@@ -954,7 +954,7 @@ const AutoDiscoverySection = ({
         onClick={() => copyToClipboard(generateCommand())}
       >
         <Copy size={16} />
-        {t("copy")}
+        {t("common.copy")}
       </Button>
     </Flex>
   );
@@ -1298,8 +1298,8 @@ const NodeTable = ({
                 />
               </TableHead>
               <TableHead>{t("admin.nodeTable.name")}</TableHead>
-              <TableHead>{t("admin.nodeTable.ipAddress")}</TableHead>
-              <TableHead>{t("admin.nodeTable.clientVersion")}</TableHead>
+              <TableHead>{t("admin.nodeDetail.ipAddress")}</TableHead>
+              <TableHead>{t("admin.nodeDetail.clientVersion")}</TableHead>
               <TableHead>{t("common.group")}</TableHead>
               <TableHead>{t("admin.nodeEdit.remark")}</TableHead>
               <TableHead>{t("admin.nodeTable.billing")}</TableHead>
@@ -1376,21 +1376,21 @@ function DeleteButton({ node }: { node: NodeDetail }) {
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
       <Dialog.Trigger>
-        <IconButton variant="ghost" color="red" title={t("delete")}>
+        <IconButton variant="ghost" color="red" title={t("common.delete")}>
           <Trash2Icon size="18" />
         </IconButton>
       </Dialog.Trigger>
       <Dialog.Content>
-        <Dialog.Title>{t("delete")}</Dialog.Title>
+        <Dialog.Title>{t("common.delete")}</Dialog.Title>
         <Dialog.Description>
-          {t("admin.nodeTable.confirmDelete")}
+          {t("common.confirm_delete")}
         </Dialog.Description>
         <Flex justify="end" gap="2" mt="4">
           <Dialog.Trigger>
-            <Button variant="soft">{t("admin.nodeTable.cancel")}</Button>
+            <Button variant="soft">{t("common.cancel")}</Button>
           </Dialog.Trigger>
           <Button disabled={deleting} color="red" onClick={handleDelete}>
-            {t("admin.nodeTable.confirmDelete")}
+            {t("common.confirm_delete")}
           </Button>
         </Flex>
       </Dialog.Content>
@@ -2156,7 +2156,7 @@ function GenerateCommandButton({ node, settings }: { node: NodeDetail, settings:
               onClick={() => copyToClipboard(generateCommand())}
             >
               <Copy size={16} />
-              {t("copy")}
+              {t("common.copy")}
             </Button>
           </Flex>
         </div>
@@ -2357,7 +2357,7 @@ function EditButton({ node }: { node: NodeDetail }) {
           >
             {saving
               ? t("admin.nodeEdit.waiting", "等待...")
-              : t("save", "保存")}
+              : t("common.save", "保存")}
           </Button>
         </Flex>
       </Dialog.Content>
@@ -2752,7 +2752,7 @@ function BillingButton({ node }: { node: NodeDetail }) {
               onChange={setAutoRenewal}
             />
             <Button type="submit" disabled={saving}>
-              {t("save")}
+              {t("common.save")}
             </Button>
           </Flex>
         </form>

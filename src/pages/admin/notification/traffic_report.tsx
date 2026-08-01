@@ -293,11 +293,11 @@ const InnerLayout = () => {
               }}
               disabled={batchLoading || selected.length === 0}
             >
-              {t("notification.traffic_report.batch_edit")}
+              {t("common.batch_edit")}
             </Button>
           </Dialog.Trigger>
           <Dialog.Content>
-            <Dialog.Title>{t("notification.traffic_report.batch_edit")}</Dialog.Title>
+            <Dialog.Title>{t("common.batch_edit")}</Dialog.Title>
             <TrafficReportEditForm
               initialValues={batchForm}
               loading={batchLoading}

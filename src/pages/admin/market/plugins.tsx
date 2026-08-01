@@ -211,7 +211,7 @@ export default function PluginMarketPage() {
         <Flex gap="2">
           <Button variant="soft" onClick={refresh} disabled={refreshing}>
             <RefreshCw size={14} />
-            {t("plugin.market_refresh", "Refresh")}
+            {t("common.refresh", "Refresh")}
           </Button>
           <Button onClick={() => setSourcesOpen(true)}>
             <Plus size={14} />
@@ -240,7 +240,7 @@ export default function PluginMarketPage() {
                 <Flex align="center" gap="2">
                   <Badge color={status.error ? "red" : "green"}>
                     {status.error
-                      ? t("plugin.market_source_error", "Error")
+                      ? t("common.error", "Error")
                       : `${status.count} ${t("plugin.market_plugins", "plugins")}`}
                   </Badge>
                   <Button
@@ -352,11 +352,11 @@ export default function PluginMarketPage() {
           </Flex>
           <Flex gap="2" justify="end">
             <Button variant="soft" onClick={() => setSourcesOpen(false)}>
-              {t("plugin.permission_cancel", "Cancel")}
+              {t("common.cancel", "Cancel")}
             </Button>
             <Button onClick={saveSource} disabled={savingSource}>
               {savingSource
-                ? t("plugin.market_saving", "Saving...")
+                ? t("plugin.saving", "Saving...")
                 : t("plugin.market_save", "Save")}
             </Button>
           </Flex>
@@ -378,13 +378,13 @@ export default function PluginMarketPage() {
           </Text>
           <Flex gap="2" justify="end">
             <Button variant="soft" onClick={() => setSourceToDelete(null)}>
-              {t("plugin.permission_cancel", "Cancel")}
+              {t("common.cancel", "Cancel")}
             </Button>
             <Button
               color="red"
               onClick={() => sourceToDelete && deleteSource(sourceToDelete)}
             >
-              {t("plugin.market_delete", "Delete")}
+              {t("common.delete", "Delete")}
             </Button>
           </Flex>
         </Dialog.Content>

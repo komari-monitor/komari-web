@@ -233,7 +233,7 @@ export default function PluginConfigPage() {
                   {displayText(selected.name) || selected.short}
                 </Text>
                 <Button onClick={saveAll} disabled={saving}>
-                  {saving ? t("plugin.config_saving", "Saving...") : t("common.save")}
+                  {saving ? t("plugin.saving", "Saving...") : t("common.save")}
                 </Button>
               </Flex>
               <Flex direction="column" gap="3">

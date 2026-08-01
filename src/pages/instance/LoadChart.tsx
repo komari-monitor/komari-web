@@ -196,7 +196,7 @@ const DASHBOARD_TEMPLATE_KEY = "chartDashboardTemplate";
 const CUSTOM_RANGE_DEFAULT_DAYS = 24;
 
 const AGGREGATIONS: Array<{ value: Aggregation; labelKey: string }> = [
-  { value: "avg", labelKey: "chart.sampling.average" },
+  { value: "avg", labelKey: "chart.avg" },
   { value: "min", labelKey: "chart.sampling.min" },
   { value: "max", labelKey: "chart.sampling.max" },
   { value: "first", labelKey: "chart.sampling.first" },

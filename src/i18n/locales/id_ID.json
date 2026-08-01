@@ -3,8 +3,7 @@
     "ai": "Proses pengembangan proyek Komari didukung oleh alat kecerdasan buatan. Alat-alat ini digunakan untuk menjalankan tugas seperti pembuatan kode, refactoring, dan debugging, untuk meningkatkan efisiensi pengembangan dan kualitas kode. Semua kode dan saran yang dihasilkan oleh AI telah diperiksa dan divalidasi oleh pengembang manusia.",
     "open_source": "Komari bersifat open source berdasarkan lisensi MIT dan dibangun menggunakan perangkat lunak open source berikut:",
     "open_source_title": "Lisensi Perangkat Lunak Open Source",
-    "readme_open_in_new_tab": "Buka di tab baru",
-    "title": "Tentang"
+    "readme_open_in_new_tab": "Buka di tab baru"
   },
   "account": {
     "2fa_disabled": "Autentikasi dua faktor dinonaktifkan",
@@ -30,33 +29,18 @@
     "title": "Akun"
   },
   "account_settings": {
-    "bind_github": "Hubungkan Akun GitHub",
     "bind_sso": "Hubungkan Akun Eksternal",
-    "cancel": "Batal",
     "confirm_unbind": "Konfirmasi Pemutusan Tautan",
-    "download_backup": "Unduh Cadangan",
-    "github_account": "Akun GitHub",
-    "github_auth_failed": "Gagal memproses autentikasi GitHub",
-    "github_bound": "Sudah Terhubung",
-    "github_not_bound": "Akun GitHub belum terhubung",
-    "github_unbound": "Belum Terhubung",
     "looking_for_backup": "Mencari cadangan? Sekarang telah dipindahkan ke menu Pengaturan - Situs - Cadangan.",
     "sso_account": "Akun Eksternal",
+    "sso_account_bound": "Akun {{name}}",
     "sso_auth_failed": "Gagal memproses otentikasi SSO",
     "sso_bound": "Akun Eksternal Terhubung",
     "sso_not_bound": "Belum Terhubung",
-    "sso_unbound": "Belum Terhubung",
-    "unbind_github": "Putuskan Tautan Akun GitHub",
-    "unbind_github_failed": "Gagal memutuskan tautan akun GitHub",
-    "unbind_github_success": "Berhasil memutuskan tautan akun GitHub",
-    "unbind_github_warning": "Setelah diputuskan, Anda tidak dapat masuk menggunakan GitHub. Apakah Anda yakin ingin memutuskan tautan?",
     "unbind_sso": "Putuskan Tautan Akun Eksternal",
     "unbind_sso_failed": "Gagal membatalkan ikatan",
     "unbind_sso_success": "Berhasil membatalkan ikatan",
     "unbind_sso_warning": "Apakah Anda yakin ingin memutuskan tautan akun {{provider}}?",
-    "unknown_error": "Kesalahan tidak diketahui",
-    "upload_backup": "Unggah Cadangan",
-    "upload_failed": "Gagal mengunggah, hanya berkas `.zip` yang diperbolehkan",
     "upload_success": "Unggah berhasil"
   },
   "admin": {
@@ -115,11 +99,7 @@
       "billing": "Penagihan",
       "billingCycle": "Siklus Penagihan",
       "billingCycleTips": "<b>Aturan Siklus Penagihan</b><br/> <br/> <b>Menurut Siklus yang Ditetapkan (Perpanjangan Kalender)</b><br/> Ketika jumlah hari yang dimasukkan mendekati nilai dari rencana yang ditetapkan (seperti pembayaran bulanan, triwulanan, tahunan), perpanjangan akan dilakukan sesuai dengan <b>Siklus Kalender</b> yang sesuai.<br/> - Nilai umum: 30 (bulanan), 92 (triwulanan), 365 (tahunan), 730 (dua tahun) dan sebagainya.<br/> - Contoh: Masukkan 30, layanan diperpanjang dari 15 Maret, tanggal kedaluwarsa baru adalah 15 April.<br/> <br/> <b>Menurut Jumlah Hari Kustom</b><br/> Ketika jumlah hari lain dimasukkan (seperti 7, 45, 100), perpanjangan akan dilakukan secara ketat sesuai dengan jumlah hari.<br/> - Contoh: Masukkan 45, layanan diperpanjang dari 15 Maret, tanggal kedaluwarsa baru adalah 29 April (setelah 45 hari).<br/> <br/> <b>Pembayaran Sekali</b><br/> Masukkan -1 untuk menunjukkan pembayaran sekali.",
-      "cancel": "Batal",
       "cannotUndo": "Tindakan ini tidak dapat dibatalkan!",
-      "clientVersion": "Versi Klien",
-      "confirm": "Konfirmasi",
-      "confirmDelete": "Konfirmasi Penghapusan",
       "currency": "Mata Uang",
       "currencyTips": "¥-RMB, $-Dolar, €-Euro, £-Pound, ₽-Rubel, ₣-Franc, ₹-Rupee, ₫-VND, ฿-THB",
       "customColumns": "Kolom Kustom",
@@ -150,8 +130,6 @@
       "installOptions": "Opsi Instalasi",
       "interval": "Interval pengumpulan (detik)",
       "invalidPrice": "Harga tidak valid",
-      "ipAddress": "Alamat IP",
-      "loading": "memuat...",
       "memoryModeAvailable": "Sertakan Memori Cache",
       "memoryModeAvailable_tip": "Agen secara default memantau dan melaporkan penggunaan memori. Pilih opsi ini untuk memantau dan melaporkan penggunaan memori + cache.",
       "monthRotate": "Reset bulanan untuk statistik jaringan",
@@ -160,7 +138,6 @@
       "namePlaceholder": "Nama",
       "noData": "Tidak ada data",
       "nodeList": "Daftar Node",
-      "noResults": "Tidak ada hasil",
       "price": "Harga",
       "priceTips": "0 tidak ditampilkan, -1 berarti gratis",
       "searchByName": "Cari server",
@@ -182,10 +159,10 @@
       "traffic_description": "Komari akan mengirim notifikasi ketika penggunaan trafik server mencapai persentase tertentu, dengan pengingat setiap kenaikan 5%. Jika tidak ada batas trafik yang ditetapkan, maka tidak ada notifikasi yang dikirim. Atur ke 0 untuk menonaktifkan pengingat trafik."
     }
   },
-  "cancel": "Batal",
   "chart": {
     "addChart": "Tambah grafik",
     "addMetric": "Tambah metrik",
+    "approximate": "perkiraan",
     "avg": "Rata-rata",
     "connections": "Koneksi",
     "cpu_usage": "Penggunaan CPU",
@@ -194,16 +171,18 @@
     "cutPeak_tips": "<h2 class=\"text-lg font-bold\">Tips Penghalusan Data</h2><p>Jika Anda mengaktifkan penghalusan, kurva yang Anda lihat pada grafik statistik akan diproses menggunakan algoritma <strong>Exponentially Weighted Moving Average (EWMA)</strong>, yaitu teknik penghalusan data yang umum digunakan.</p></br><p>Penting untuk diketahui bahwa nilai yang ditampilkan pada kurva hasil penghalusan EWMA <strong>bukanlah data mentah asli</strong>. Nilai tersebut merupakan <strong>garis tren yang dihaluskan</strong> berdasarkan perhitungan algoritma EWMA, yang bertujuan untuk mengurangi fluktuasi data dan memudahkan Anda dalam mengidentifikasi pola serta tren data.</p></br><p>Oleh karena itu, nilai yang Anda lihat lebih merupakan <strong>presentasi visual</strong> untuk membantu memahami arah dan tren data secara keseluruhan, bukan nilai pasti pada setiap titik waktu. Jika Anda ingin melihat data mentah secara spesifik, silakan lihat tampilan data tanpa penghalusan.</p>",
     "dashboard": "Grafik",
     "days": "{{count}} Hari",
-    "disk_used": "Disk",
+    "days_one": "{{count}} Hari",
+    "days_other": "{{count}} Hari",
     "downsampleAlgorithm": "Downsample",
     "endTime": "Waktu selesai",
     "fillEmpty": "Isi celah",
-    "globalTemplateSaveFailed": "Gagal menyimpan templat grafik global",
     "globalTemplateSaved": "Templat grafik global disimpan",
+    "globalTemplateSaveFailed": "Gagal menyimpan templat grafik global",
     "gpu_memory": "Penggunaan Memori GPU",
     "hideAll": "Sembunyikan Semua",
     "hours": "{{count}} Jam",
-    "minutes": "{{count}} Menit",
+    "hours_one": "{{count}} Jam",
+    "hours_other": "{{count}} Jam",
     "interval": "Interval Deteksi",
     "invalidTimeRange": "Waktu mulai harus lebih awal dari waktu selesai",
     "latest": "Terbaru",
@@ -212,17 +191,20 @@
     "max": "Maksimum",
     "mem_used": "RAM",
     "min": "Minimum",
-    "network_down": "Unduh",
+    "minutes": "{{count}} Menit",
+    "minutes_one": "{{count}} Menit",
+    "minutes_other": "{{count}} Menit",
     "network_up": "Unggah",
     "process": "Proses",
     "query": "Kueri",
     "quickRange": "Pilihan cepat",
     "recentDay": "1 hari terakhir",
     "recentDays": "{{count}} hari terakhir",
+    "recentDays_one": "{{count}} hari terakhir",
+    "recentDays_other": "{{count}} hari terakhir",
     "recentWeek": "1 minggu terakhir",
     "removeMetric": "Hapus metrik",
     "sampling": {
-      "average": "Rata-rata",
       "first": "Pertama",
       "last": "Terakhir",
       "max": "Maks",
@@ -240,14 +222,11 @@
     "swap_used": "Swap Terpakai",
     "tcp_connections": "TCP",
     "total": "Jumlah Sampel",
-    "type": "Tipe",
     "udp_connections": "UDP",
     "usage": "Penggunaan",
     "valid": "Sampel valid",
-    "approximate": "perkiraan",
     "volatility": "Volatilitas"
   },
-  "close": "Tutup",
   "color": {
     "amber": "Kuning Muda",
     "blue": "Biru",
@@ -286,15 +265,22 @@
     "added_successfully": "Berhasil ditambahkan",
     "all": "Semua",
     "annual": "Tahunan",
+    "appearance": "Tampilan",
+    "batch_edit": "Edit Massal",
     "biennial": "Dua Tahunan",
     "cancel": "Batal",
+    "clear_search": "Bersihkan pencarian",
     "close": "Tutup",
+    "close_sidebar": "Tutup menu",
+    "color": "Warna aksen",
     "confirm": "Konfirmasi",
     "confirm_delete": "Konfirmasi Penghapusan",
     "content": "Isi",
+    "copy": "Salin",
     "day": "Hari",
     "delete": "Hapus",
     "deleted_successfully": "Berhasil dihapus",
+    "description": "Deskripsi",
     "deselect_all": "Batal pilih semua",
     "details": "Detail",
     "disabled": "Dinonaktifkan",
@@ -313,17 +299,23 @@
     "have_been_omitted": "{{count}} diabaikan",
     "help": "Bantuan",
     "home": "Beranda",
+    "language": "Bahasa",
+    "logout": "Keluar",
     "long_term": "Jangka Panjang",
+    "menu_sidebar": "Menu",
     "monthly": "Bulanan",
     "name": "Nama",
+    "next_page": "Halaman berikutnya",
     "no_results": "Tidak ada hasil",
     "none": "Tidak ada",
     "once": "Sekali",
+    "previous_page": "Halaman sebelumnya",
     "private_site": "Ini adalah situs Komari privat. Silakan masuk terlebih dahulu.",
     "quarterly": "Triwulanan",
     "quinquennial": "Lima Tahunan",
     "real_time": "Waktu Nyata",
     "refresh": "Segarkan",
+    "region_flag_alt": "Bendera wilayah: {{name}}",
     "remark": "Catatan",
     "reset": "Atur ulang",
     "retry": "Coba lagi",
@@ -331,6 +323,8 @@
     "search": "Cari",
     "select": "Pilih",
     "select_all": "Pilih semua",
+    "select_clients": "Pilih klien",
+    "select_tasks": "Pilih tugas",
     "selected": "{{count}} dipilih",
     "selected_total": "{{count}} / {{total}} dipilih",
     "semi_annual": "Semesteran",
@@ -341,22 +335,57 @@
     "success": "Berhasil",
     "tags": "Tag",
     "tagsDescription": "Beberapa tag dipisahkan dengan ';'",
-    "tagsTips": "Beberapa tag dipisahkan dengan “;”. </br> Untuk menentukan warna, tambahkan &ltcolor&gt di akhir label, misal 1Gbps&ltgreen&gt.</br> Daftar warna tersedia di <label class=\"bg-accent-a5 rounded-sm\"><a href=\"https://www.radix-ui.com/themes/docs/theme/color\" target=\"_blank\"> Color - Radix Themes</a></label>",
+    "tagsTips": "Beberapa tag dipisahkan dengan “;”. </br> Untuk menentukan warna, tambahkan &lt;color&gt; di akhir label, misal 1Gbps&lt;green&gt;.</br> Daftar warna tersedia di <label class=\"bg-accent-a5 rounded-sm\"><a href=\"https://www.radix-ui.com/themes/docs/theme/color\" target=\"_blank\"> Color - Radix Themes</a></label>",
     "threshold": "Ambang Batas",
     "title": "Judul",
     "triennial": "Tiga Tahunan",
+    "type": "Tipe",
     "ungrouped": "Belum Dikelompokkan",
     "unknown": "Tidak diketahui",
+    "unknownError": "Kesalahan tidak diketahui",
     "update": "Perbarui",
     "update_available": "Versi baru tersedia",
     "updated_successfully": "Berhasil diperbarui",
     "weight": "Bobot"
   },
-  "copy": "Salin",
   "copy_success": "Berhasil disalin!",
   "current_online": "Sedang online",
   "current_time": "Waktu saat ini",
-  "delete": "Hapus",
+  "database_migration": {
+    "after": "Setelah migrasi",
+    "before": "Sebelum migrasi",
+    "failed_title": "Migrasi basis data tidak selesai",
+    "legacy_full_history": "Migrasikan seluruh basis data. Ruang direklamasi satu kali setelah migrasi.",
+    "network_error": "Tidak dapat terhubung ke layanan migrasi basis data.",
+    "request_failed": "Permintaan gagal. Periksa log server lalu coba lagi."
+  },
+  "database_recovery": {
+    "completed_description": "Server sedang memulai kembali panel kontrol normal.",
+    "completed_title": "Koneksi basis data pulih",
+    "dsn_required": "Masukkan string koneksi basis data pemantauan.",
+    "failure_detail": "Koneksi basis data gagal {{count}} dari {{max}} kali berturut-turut.",
+    "history_note": "Pemulihan hanya menyambungkan ulang dengan DSN baru; tidak ada data yang dimigrasikan dari koneksi sebelumnya.",
+    "network_error": "Tidak dapat terhubung ke layanan pemulihan.",
+    "request_failed": "Permintaan gagal. Silakan coba lagi.",
+    "save": "Simpan dan sambungkan ulang",
+    "save_failed": "Koneksi basis data pemantauan gagal. Periksa DSN lalu coba lagi.",
+    "saving": "Menghubungkan...",
+    "subtitle": "Basis data pemantauan tidak dapat dijangkau. Masuk untuk memperbarui string koneksi.",
+    "title": "Pemulihan basis data pemantauan"
+  },
+  "errorBoundary": {
+    "go_to_home": "Kembali ke Beranda",
+    "no_stack_trace": "Tidak ada jejak tumpukan.",
+    "reload_page": "Muat Ulang Halaman",
+    "something_went_wrong": "Terjadi Kesalahan",
+    "unexpected_error": "Terjadi kesalahan yang tidak terduga.",
+    "view_error_details": "Lihat Detail Kesalahan"
+  },
+  "eula": {
+    "accept": "Saya telah membaca dan menyetujui",
+    "reject": "Saya tidak menerima",
+    "title": "Pemberitahuan Hukum dan Panduan Kepatuhan"
+  },
   "exec": {
     "allCompleted": "Semua tugas telah selesai dieksekusi",
     "command": "Perintah",
@@ -374,17 +403,63 @@
     "selectedNodes": "Node terpilih",
     "selectNodes": "Pilih node tujuan",
     "status": {
-      "failed": "Gagal",
+      "polling": "Mengambil status eksekusi terbaru...",
       "running": "Sedang berjalan",
-      "success": "Berhasil",
       "timeout": "Waktu habis"
     },
-    "success": "Eksekusi perintah selesai",
+    "stopPolling": "Hentikan pemantauan",
     "taskStarted": "Tugas telah dimulai.",
     "title": "Eksekusi Jarak Jauh"
   },
   "go_to_home": "Kembali ke Beranda",
-  "home_title": "Pemantau Komari",
+  "install": {
+    "admin_title": "Buat akun administrator",
+    "back": "Kembali",
+    "color": "Warna",
+    "complete": "Selesaikan instalasi",
+    "completed": "Instalasi sudah selesai. Kembali ke halaman masuk.",
+    "confirm_title": "Konfirmasi instalasi",
+    "connection_error": "Tidak dapat terhubung ke server",
+    "database": "Database",
+    "database_title": "Database pemantauan",
+    "description": "Deskripsi situs",
+    "detected_database": "Database terdeteksi: {{driver}}",
+    "dsn_required": "Masukkan DSN database pemantauan.",
+    "failed": "Instalasi gagal. Silakan coba lagi.",
+    "next": "Berikutnya",
+    "password": "Kata sandi",
+    "password_confirm": "Konfirmasi kata sandi",
+    "restore": "Pulihkan dari cadangan",
+    "restore_413": "Unggahan cadangan gagal (413). Tingkatkan batas ukuran unggahan pada CDN atau proksi balik seperti Nginx (misalnya client_max_body_size), atau unggah cadangan secara manual ke ./data/backup.zip lalu mulai ulang layanan.",
+    "restore_description": "Mengunggah cadangan akan memulai ulang layanan dan memulihkan datanya.",
+    "restore_failed": "Gagal memulihkan cadangan. Silakan coba lagi.",
+    "restore_file_type": "Pilih file cadangan .zip.",
+    "restore_restarting": "Memulai ulang untuk memulihkan cadangan...",
+    "site": "Situs",
+    "site_hint": "Ditampilkan pada judul browser dan halaman publik.",
+    "site_title": "Informasi situs",
+    "sitename": "Nama situs",
+    "sitename_required": "Masukkan nama situs.",
+    "sqlite_warning": "SQLite cocok untuk deployment ringan, tetapi dapat menjadi hambatan kinerja saat data pemantauan bertambah. Pertimbangkan MariaDB, MySQL, atau PostgreSQL untuk penyimpanan metrik besar dalam jangka panjang.",
+    "start": "Mulai instalasi",
+    "steps": {
+      "administrator": "Administrator",
+      "confirm": "Konfirmasi",
+      "database": "Database",
+      "site": "Situs",
+      "welcome": "Selamat datang"
+    },
+    "summary_admin": "Administrator: ",
+    "summary_database": "Database: ",
+    "summary_dsn": "DSN: ",
+    "summary_sitename": "Nama situs: ",
+    "title": "Panduan instalasi",
+    "username": "Nama pengguna",
+    "username_required": "Masukkan nama pengguna.",
+    "welcome_description": "Konfigurasikan akun administrator, metadata situs, dan database pemantauan.",
+    "welcome_subtitle": "Pemantau server sumber terbuka yang ringan.",
+    "welcome_title": "Selamat datang di Komari"
+  },
   "just_now": "Baru saja",
   "loadAlert": {
     "metric": "Metrik",
@@ -409,14 +484,62 @@
   "logs": {
     "title": "Log"
   },
+  "market": {
+    "add_source": "Tambah sumber",
+    "delete_source_confirm": "Hapus sumber {{name}}?",
+    "description": "Temukan dan instal tema dari internet.",
+    "edit_source": "Edit sumber",
+    "enabled": "Aktif",
+    "install": "Instal",
+    "install_success": "Tema berhasil diinstal",
+    "install_unavailable": "Paket tidak tersedia",
+    "installed": "Terinstal",
+    "installed_version": "Terinstal v{{version}}",
+    "manage_sources": "Kelola sumber",
+    "no_sources": "Belum ada sumber yang dikonfigurasi",
+    "no_themes": "Tema tidak ditemukan",
+    "project_page": "Halaman proyek",
+    "refresh_success": "Sumber tema berhasil disegarkan",
+    "search_placeholder": "Cari tema, pembuat, atau sumber",
+    "source": "Sumber",
+    "source_created": "Sumber berhasil ditambahkan",
+    "source_deleted": "Sumber berhasil dihapus",
+    "source_name": "Nama sumber",
+    "source_updated": "Sumber berhasil diperbarui",
+    "themes": "Pasar Tema",
+    "uninstall": "Copot pemasangan",
+    "uninstall_confirm": "Copot pemasangan {{name}}?",
+    "uninstall_success": "Tema berhasil dicopot",
+    "update_available": "Pembaruan tersedia"
+  },
+  "metric_store_restructure": {
+    "after": "Setelah restrukturisasi",
+    "before": "Sebelum restrukturisasi",
+    "completed_description": "Server sedang memulai layanan normal.",
+    "completed_title": "Restrukturisasi penyimpanan metrik selesai",
+    "confirm_description": "Metrik historis akan disalin ke skema rollup ternormalisasi, lalu ruang basis data akan direklamasi satu kali. Layanan normal tidak tersedia selama operasi ini.",
+    "confirm_title": "Mulai restrukturisasi basis data?",
+    "copy_detail": "Telah menyalin {{rows}} / {{total}} catatan, menyelesaikan {{metrics}} / {{metricTotal}} metrik. Metrik saat ini: {{metric}}.",
+    "discard": "Hapus data pemantauan historis",
+    "discard_action": "Hapus permanen",
+    "discard_confirm": "Saya mengonfirmasi bahwa semua data pemantauan historis boleh dihapus permanen",
+    "discard_description": "Jika data pemantauan historis tidak diperlukan, lewati penyalinan dan buat struktur database kosong. Definisi metrik dan pengaturan retensi tetap dipertahankan.",
+    "discard_detail": "Menghapus data pemantauan historis dan membuat struktur database kosong.",
+    "discard_title": "Hapus semua data pemantauan historis?",
+    "discard_warning": "Tindakan ini tidak dapat dibatalkan. Semua data grafik historis akan dihapus.",
+    "network_error": "Tidak dapat terhubung ke layanan restrukturisasi.",
+    "phase_copying": "Menyalin ringkasan metrik",
+    "phase_discarding": "Menghapus data pemantauan historis",
+    "phase_reclaiming": "Mengoptimalkan database dan mengosongkan ruang.",
+    "start": "Mulai restrukturisasi",
+    "start_failed": "Tidak dapat memulai restrukturisasi basis data.",
+    "title": "Restrukturisasi basis data pemantauan"
+  },
   "network_speed": "Kecepatan Jaringan",
   "nodeCard": {
-    "actions": "Aksi",
-    "arch": "Arsitektur",
     "basicInfo": "Informasi Dasar",
     "chart": "Grafik",
     "clickToViewPing": "Klik untuk melihat grafik ping",
-    "cpu": "CPU",
     "disk": "Disk",
     "groupNodes": "Grup {{group}}: total {{total}} server, {{online}} server online",
     "kernelVersion": "Versi Kernel",
@@ -432,11 +555,9 @@
     "online": "Hidup",
     "os": "Sistem Operasi",
     "ping": "Ping",
-    "price": "Harga",
     "ram": "RAM",
     "resourceUsage": "Penggunaan Sumber Daya",
     "sortTooltip": "Klik untuk mengubah urutan: Naik → Turun → Default",
-    "status": "Status",
     "swap": "Swap",
     "temperature": "Suhu",
     "time_day": "hari",
@@ -458,7 +579,6 @@
       "title": "Beban"
     },
     "offline": {
-      "batch_edit": "Edit Massal",
       "cooldown": "Masa Tunda",
       "full_title": "Konfigurasi Peringatan Offline",
       "grace_period": "Masa Tenggang",
@@ -470,7 +590,6 @@
     },
     "title": "Notifikasi",
     "traffic_report": {
-      "batch_edit": "Edit Massal",
       "daily": "Harian",
       "errors": {
         "fetch_failed": "Gagal memuat pengaturan laporan trafik",
@@ -498,8 +617,138 @@
     "target": "Target",
     "task": "Tugas",
     "task_view": "Tampilan Tugas",
-    "title": "Latensi",
-    "type": "Tipe"
+    "title": "Latensi"
+  },
+  "plugin": {
+    "config": "Konfigurasi",
+    "config_no_items": "Plugin ini tidak memiliki item konfigurasi",
+    "config_save_failed": "Gagal menyimpan konfigurasi",
+    "config_saved": "Konfigurasi disimpan",
+    "config_select_hint": "Pilih plugin untuk dikonfigurasi",
+    "delete": "Hapus plugin",
+    "delete_confirm": "Hapus plugin ini?",
+    "delete_confirm_desc": "Direktori plugin dan konfigurasinya akan dihapus.",
+    "deleted": "Plugin dihapus",
+    "deleting": "Menghapus...",
+    "disable": "Nonaktifkan plugin",
+    "disable_success": "Plugin dinonaktifkan",
+    "drag_drop": "Seret dan lepas file di sini",
+    "enable": "Aktifkan plugin",
+    "enable_success": "Plugin diaktifkan",
+    "installed": "Terpasang",
+    "invalid_file_type": "Tipe file tidak valid, hanya file .zip yang didukung",
+    "last_error": "Kesalahan terakhir",
+    "loading": "Memuat...",
+    "logs_load_failed": "Gagal memuat log",
+    "manage": "Kelola plugin",
+    "market": "Pasar Plugin",
+    "market_add_source": "Tambah Sumber",
+    "market_delete_source": "Hapus sumber",
+    "market_delete_source_confirm": "Hapus sumber pasar ini?",
+    "market_install": "Pasang",
+    "market_install_success": "Plugin terpasang",
+    "market_installing": "Memasang...",
+    "market_no_plugins": "Tidak ada plugin di pasar",
+    "market_no_sources": "Belum ada sumber pasar",
+    "market_not_installable": "Tidak dapat dipasang",
+    "market_plugins": "plugin",
+    "market_refresh_success": "Sumber plugin disegarkan",
+    "market_save": "Simpan",
+    "market_search": "Cari plugin...",
+    "market_source_added": "Sumber ditambahkan",
+    "market_source_deleted": "Sumber dihapus",
+    "market_source_name": "Nama",
+    "market_source_url": "URL Katalog",
+    "no_logs": "Tidak ada log",
+    "no_plugins": "Belum ada plugin terpasang",
+    "or_click_to_browse": "Atau klik untuk memilih file",
+    "page_missing_params": "Parameter halaman plugin tidak lengkap",
+    "permission": {
+      "allowAllFileAccess": "Akses file di luar direktori plugin",
+      "allowExec": "Jalankan proses anak",
+      "allowListen": "Dengarkan port lokal",
+      "maxChildOutputBytes": "Batas ukuran output proses anak",
+      "maxHTTPBodyBytes": "Batas ukuran body HTTP",
+      "node": "Modul kompatibilitas Node.js",
+      "timeout": "Batas waktu eksekusi"
+    },
+    "permission_approve": "Setujui & Aktifkan",
+    "permission_description": "Plugin ini meminta izin berikut:",
+    "permission_title": "Izin diperlukan",
+    "running": "Berjalan",
+    "saving": "Menyimpan...",
+    "stopped": "Dihentikan",
+    "title": "Plugin",
+    "upload": "Unggah Plugin",
+    "upload_413_content_too_large": "Unggahan file gagal (413). Periksa dan perbesar batas ukuran file pada konfigurasi server proxy balik (seperti Nginx/CDN) (client_max_body_size) agar nilainya lebih besar dari ukuran file target.",
+    "upload_description": "Unggah paket plugin .zip",
+    "upload_failed": "Unggahan plugin gagal",
+    "uploaded": "Plugin diunggah",
+    "uploading": "Mengunggah...",
+    "zip_files_only": "Hanya file .zip yang didukung"
+  },
+  "pprof": {
+    "capture_duration": "Durasi pengambilan CPU dan trace",
+    "download": "Unduh",
+    "duration_option": "{{seconds}} dtk",
+    "goroutines": "Jumlah goroutine",
+    "heap_alloc": "Heap dialokasikan",
+    "heap_inuse": "Heap yang digunakan",
+    "heap_objects": "Objek heap",
+    "heap_preview_description": "Ringkasan heap teks langsung yang diperbarui bersama ringkasan proses.",
+    "heap_preview_title": "Snapshot heap",
+    "invalid_summary": "Server mengembalikan informasi profil runtime yang tidak valid",
+    "loading": "Mengumpulkan...",
+    "preview_description": "Keluaran teks dari profil runtime Go yang dipilih.",
+    "preview_title": "Profil {{profile}}",
+    "preview_unavailable": "Profil runtime ini tidak menyediakan pratinjau teks.",
+    "profiles": {
+      "allocs": {
+        "description": "Sampel alokasi memori kumulatif sejak proses dimulai.",
+        "title": "Alokasi"
+      },
+      "block": {
+        "description": "Peristiwa pemblokiran sinkronisasi.",
+        "title": "Pemblokiran"
+      },
+      "cpu": {
+        "description": "Sampel eksekusi CPU yang dikumpulkan selama durasi terpilih.",
+        "title": "CPU"
+      },
+      "goroutine": {
+        "description": "Profil tumpukan goroutine saat ini.",
+        "title": "Goroutine"
+      },
+      "heap": {
+        "description": "Sampel alokasi heap yang masih aktif.",
+        "title": "Heap"
+      },
+      "mutex": {
+        "description": "Peristiwa mutex yang mengalami kontensi.",
+        "title": "Mutex"
+      },
+      "threadcreate": {
+        "description": "Peristiwa pembuatan thread sistem operasi.",
+        "title": "Thread"
+      },
+      "trace": {
+        "description": "Jejak eksekusi yang dikumpulkan selama durasi terpilih.",
+        "title": "Trace"
+      }
+    },
+    "profiles_description": "Lihat snapshot teks atau unduh data pprof untuk analisis luring.",
+    "profiles_title": "Profil runtime",
+    "request_failed": "Gagal mengumpulkan profil runtime",
+    "runtime_overview_description": "Penghitung runtime langsung yang dikumpulkan tanpa memulai profil.",
+    "runtime_overview_title": "Proses saat ini",
+    "runtime_sys": "Memori yang dicadangkan runtime",
+    "sample_count": "{{samples}} sampel",
+    "summary_load_failed": "Gagal memuat informasi profil runtime",
+    "summary_unavailable": "Ringkasan runtime tidak tersedia",
+    "timed_profile": "Dikumpulkan selama durasi yang dipilih",
+    "title": "Profil performa",
+    "view": "Lihat",
+    "warning": "Pengumpulan profil dibatasi untuk administrator dan dapat meningkatkan beban server untuk sementara."
   },
   "pwa": {
     "browser": "Mode Peramban",
@@ -540,19 +789,15 @@
     "websocket_error": "Kesalahan WebSocket:",
     "websocket_not_connected": "WebSocket tidak terhubung"
   },
-  "save": "Simpan",
   "search": {
     "no_results": "Tidak ditemukan server yang cocok",
     "placeholder": "Cari node berdasarkan nama, wilayah, OS...",
     "results": "Ditemukan {{count}} server dari {{total}}",
     "try_different": "Coba kata kunci lain"
   },
-  "select": "Pilih",
   "sessions": {
     "actions": "Aksi",
     "active_sessions": "Sesi Aktif",
-    "cancel": "Batal",
-    "confirm_delete": "Konfirmasi Hapus",
     "created_at": "Dibuat Pada",
     "current": "(Saat ini)",
     "delete_all": "Hapus Semua Sesi",
@@ -565,7 +810,6 @@
     "last_user_agent": "User Agent Terbaru",
     "latest_ip": "IP Terbaru",
     "latest_online": "Terakhir Online",
-    "loading": "Memuat...",
     "login_method": "Metode Masuk",
     "session_id": "ID Sesi",
     "title": "Sesi"
@@ -581,7 +825,6 @@
       "body_description": "Tambahkan konten kustom di bagian bawah halaman",
       "favicon": "Kustomisasi Favicon",
       "favicon_change": "perbarui favicon",
-      "favicon_confirm": "Konfirmasi",
       "favicon_current": "Favicon Saat Ini",
       "favicon_default": "Pulihkan Default",
       "favicon_default_description": "Ini akan mengembalikan ikon Favicon ke default, lanjutkan?",
@@ -654,25 +897,23 @@
       "canceling": "Membatalkan...",
       "conns_invalid": "Masukkan jumlah koneksi yang valid",
       "current_status": "Status saat ini",
+      "downsampling_title": "Downsampling data",
       "dsn_description": "String koneksi basis data pemantauan yang sedang berjalan. Jenis basis data dideteksi otomatis dari string koneksi (SQLite / MariaDB / MySQL / PostgreSQL). SQLite: ./data/metrics.db; MariaDB / MySQL: user:password@tcp(host:3306)/metrics?charset=utf8mb4&parseTime=True; PostgreSQL: host=localhost user=komari password=secret dbname=metrics port=5432 sslmode=disable",
       "dsn_title": "String koneksi (DSN)",
-      "downsampling_enabled": "Aktif",
-      "downsampling_title": "Downsampling data",
       "fetch_metrics_failed": "Gagal mengambil daftar metrik",
       "fetch_status_failed": "Gagal mengambil status migrasi",
+      "intro": "Konfigurasikan database pemantauan dan kebijakan penyimpanan data mentah untuk setiap metrik yang dipantau.",
       "loading_metrics": "Memuat metrik...",
       "max_idle_conns_description": "Jumlah maksimum koneksi idle basis data, default 5",
       "max_idle_conns_title": "Koneksi idle maksimum",
       "max_open_conns_description": "Jumlah maksimum koneksi terbuka basis data, default 25",
       "max_open_conns_title": "Koneksi terbuka maksimum",
-      "metric_description": "Deskripsi",
       "metric_key": "Key metrik",
       "metric_name": "Nama metrik",
-      "metric_type": "Tipe",
       "metric_unit": "Unit",
       "migrated_points": "Titik sampel yang dipindahkan",
-      "migration_canceled": "Migrasi dibatalkan",
       "migration_cancel_failed": "Gagal membatalkan migrasi",
+      "migration_canceled": "Migrasi dibatalkan",
       "migration_canceled_hint": "Migrasi dibatalkan. Karena penulisan bersifat idempoten, Anda dapat memulai ulang migrasi dengan aman tanpa menghasilkan data duplikat.",
       "migration_card_description": "Pindahkan data historis dari basis data sumber pemantauan (default SQLite lokal ./data/metrics.db, atau basis data yang digunakan sebelumnya) ke basis data target pemantauan yang sedang berjalan.",
       "migration_card_title": "Migrasi basis data",
@@ -686,8 +927,9 @@
       "migration_target": "Target",
       "migration_title": "Migrasi",
       "no_metrics": "Tidak ada definisi metrik",
-      "retention_description": "Jumlah hari penyimpanan data, default 1; 0 menonaktifkan persistensi untuk metrik tersebut",
+      "restart_hint": "Beberapa perubahan baru berlaku setelah layanan dimulai ulang.",
       "retention_days": "Hari penyimpanan",
+      "retention_description": "Jumlah hari penyimpanan data, default 1; 0 menonaktifkan persistensi untuk metrik tersebut",
       "retention_invalid": "Masukkan jumlah hari yang valid",
       "retention_save_failed": "Gagal menyimpan hari penyimpanan",
       "retention_saved": "Hari penyimpanan disimpan",
@@ -710,139 +952,139 @@
         "idle": "Diam",
         "running": "Sedang berlangsung"
       },
-      "table_prefix_description": "Prefiks untuk tabel pemantauan, default metric_",
-      "table_prefix_title": "Prefiks tabel",
-      "title": "Basis Data Pemantauan",
       "system": {
+        "connections": {
+          "tcp": {
+            "description": "Jumlah koneksi TCP",
+            "name": "Koneksi TCP"
+          },
+          "udp": {
+            "description": "Jumlah koneksi UDP",
+            "name": "Koneksi UDP"
+          }
+        },
         "cpu": {
           "usage": {
-            "name": "Penggunaan CPU",
-            "description": "Persentase penggunaan CPU"
+            "description": "Persentase penggunaan CPU",
+            "name": "Penggunaan CPU"
+          }
+        },
+        "disk": {
+          "total": {
+            "description": "Total kapasitas disk",
+            "name": "Total disk"
+          },
+          "used": {
+            "description": "Ruang disk yang sedang digunakan",
+            "name": "Disk terpakai"
           }
         },
         "gpu": {
-          "usage": {
-            "name": "Penggunaan GPU",
-            "description": "Persentase rata-rata penggunaan GPU pada node"
-          },
           "device": {
             "usage": {
-              "name": "Penggunaan perangkat GPU",
-              "description": "Utilisasi tiap perangkat GPU"
+              "description": "Utilisasi tiap perangkat GPU",
+              "name": "Penggunaan perangkat GPU"
             }
           },
           "memory": {
-            "used": {
-              "name": "Memori GPU terpakai",
-              "description": "Memori GPU yang sedang digunakan"
-            },
             "total": {
-              "name": "Total memori GPU",
-              "description": "Total kapasitas memori GPU"
+              "description": "Total kapasitas memori GPU",
+              "name": "Total memori GPU"
+            },
+            "used": {
+              "description": "Memori GPU yang sedang digunakan",
+              "name": "Memori GPU terpakai"
             }
           },
           "temperature": {
-            "name": "Suhu GPU",
-            "description": "Suhu GPU"
-          }
-        },
-        "memory": {
-          "used": {
-            "name": "RAM terpakai",
-            "description": "RAM yang sedang digunakan"
+            "description": "Suhu inti GPU",
+            "name": "Suhu GPU"
           },
-          "total": {
-            "name": "Total RAM",
-            "description": "Total kapasitas RAM"
-          }
-        },
-        "swap": {
-          "used": {
-            "name": "Swap terpakai",
-            "description": "Ruang swap yang sedang digunakan"
-          },
-          "total": {
-            "name": "Total swap",
-            "description": "Total kapasitas swap"
+          "usage": {
+            "description": "Persentase rata-rata penggunaan GPU pada node",
+            "name": "Penggunaan GPU"
           }
         },
         "load": {
           "average": {
-            "name": "Rata-rata beban",
-            "description": "Rata-rata beban sistem"
+            "description": "Rata-rata beban sistem",
+            "name": "Rata-rata beban"
           }
         },
-        "temperature": {
-          "name": "Suhu sistem",
-          "description": "Suhu sistem"
-        },
-        "disk": {
-          "used": {
-            "name": "Disk terpakai",
-            "description": "Ruang disk yang sedang digunakan"
-          },
+        "memory": {
           "total": {
-            "name": "Total disk",
-            "description": "Total kapasitas disk"
+            "description": "Total kapasitas RAM",
+            "name": "Total RAM"
+          },
+          "used": {
+            "description": "RAM yang sedang digunakan",
+            "name": "RAM terpakai"
           }
         },
         "net": {
           "in": {
             "rate": {
-              "name": "Laju jaringan masuk",
-              "description": "Laju transfer jaringan masuk"
+              "description": "Laju transfer jaringan masuk",
+              "name": "Laju jaringan masuk"
             }
           },
           "out": {
             "rate": {
-              "name": "Laju jaringan keluar",
-              "description": "Laju transfer jaringan keluar"
+              "description": "Laju transfer jaringan keluar",
+              "name": "Laju jaringan keluar"
             }
           },
           "total": {
-            "up": {
-              "name": "Total unggah",
-              "description": "Unggahan jaringan kumulatif"
-            },
             "down": {
-              "name": "Total unduh",
-              "description": "Unduhan jaringan kumulatif"
+              "description": "Unduhan jaringan kumulatif",
+              "name": "Total unduh"
+            },
+            "up": {
+              "description": "Unggahan jaringan kumulatif",
+              "name": "Total unggah"
             }
-          }
-        },
-        "traffic": {
-          "up": {
-            "name": "Delta trafik unggah",
-            "description": "Delta trafik unggah dalam satu interval laporan"
-          },
-          "down": {
-            "name": "Delta trafik unduh",
-            "description": "Delta trafik unduh dalam satu interval laporan"
-          }
-        },
-        "process": {
-          "count": {
-            "name": "Jumlah proses",
-            "description": "Jumlah proses yang berjalan"
-          }
-        },
-        "connections": {
-          "tcp": {
-            "name": "Koneksi TCP",
-            "description": "Jumlah koneksi TCP"
-          },
-          "udp": {
-            "name": "Koneksi UDP",
-            "description": "Jumlah koneksi UDP"
           }
         },
         "ping": {
           "latency_ms": {
-            "name": "Latensi ping",
-            "description": "Latensi ping dalam milidetik"
+            "description": "Latensi ping dalam milidetik",
+            "name": "Latensi ping"
+          }
+        },
+        "process": {
+          "count": {
+            "description": "Jumlah proses yang berjalan",
+            "name": "Jumlah proses"
+          }
+        },
+        "swap": {
+          "total": {
+            "description": "Total kapasitas swap",
+            "name": "Total swap"
+          },
+          "used": {
+            "description": "Ruang swap yang sedang digunakan",
+            "name": "Swap terpakai"
+          }
+        },
+        "temperature": {
+          "description": "Suhu yang dilaporkan sensor sistem (misalnya CPU, motherboard)",
+          "name": "Suhu sistem"
+        },
+        "traffic": {
+          "down": {
+            "description": "Delta trafik unduh dalam satu interval laporan",
+            "name": "Delta trafik unduh"
+          },
+          "up": {
+            "description": "Delta trafik unggah dalam satu interval laporan",
+            "name": "Delta trafik unggah"
           }
         }
-      }
+      },
+      "table_prefix_description": "Prefiks untuk tabel pemantauan, default metric_",
+      "table_prefix_title": "Prefiks tabel",
+      "title": "Basis Data Pemantauan"
     },
     "missing_required_fields": "Silakan isi kolom yang wajib: {{fieldNames}}",
     "notification": {
@@ -868,27 +1110,12 @@
       "provider_fields": "Pengaturan Pengiriman",
       "provider_fields_description": "Pengaturan detail untuk saluran pengiriman informasi yang Anda pilih",
       "provider_settings_fetch_failed": "Gagal memuat pengaturan notifikasi",
-      "smtp_description": "Konfigurasikan info email SMTP untuk mengirim notifikasi email.",
-      "smtp_host": "Host SMTP",
-      "smtp_password": "Kata Sandi",
-      "smtp_port": "Port",
-      "smtp_receiver": "Email Penerima",
-      "smtp_sender": "Email Pengirim",
-      "smtp_ssl": "Aktifkan SSL",
-      "smtp_tips": "Silakan uji terlebih dahulu apakah server yang menjalankan Komari dapat mengirim email. Anda dapat menggunakan '{{command}}' untuk menguji.",
-      "smtp_title": "Konfigurasi SMTP",
-      "smtp_username": "Nama Pengguna",
       "telegram": {
         "bot_token": "Token Bot Telegram",
         "chat_id": "ID Chat",
         "endpoint": "Endpoint Permintaan",
         "endpoint_help": "Endpoint permintaan untuk API Bot Telegram, biasanya `https://api.telegram.org/bot`"
       },
-      "telegram_bot_token": "Token Bot Telegram",
-      "telegram_chat_id_error": "ID Chat harus berupa angka",
-      "telegram_description": "Konfigurasikan bot Telegram Anda untuk mendapatkan peringatan langsung di chat.",
-      "telegram_endpoint": "Endpoint",
-      "telegram_title": "Konfigurasi Telegram",
       "template": "Template pemberitahuan pesan",
       "template_description": "Komari akan mengirim pemberitahuan sesuai dengan template pemberitahuan pesan",
       "test_description": "Kirim pesan uji coba",
@@ -909,7 +1136,6 @@
       "backup_restore_description": "Memulihkan cadangan dari file akan menimpa data saat ini.",
       "backup_restore_error": "Gagal memulihkan cadangan",
       "cors_allowed_origins": "Daftar izin CORS API",
-      "cors_allowed_origins_description": "Satu Origin per baris atau dipisahkan dengan koma, misalnya https://example.com",
       "cors_origin_check_enabled": "Pemeriksaan Origin CORS",
       "cors_origin_check_enabled_description": "Jika diaktifkan, permintaan API hanya diizinkan dari origin yang sama atau daftar izin",
       "custom": "Kustomisasi",
@@ -917,28 +1143,26 @@
       "description_description": "Atur deskripsi situs Anda untuk meta info dan kartu media sosial.",
       "name": "Nama Situs",
       "name_description": "Atur nama situs",
+      "origins_list_description": "Satu origin per baris atau dipisahkan koma, misalnya https://example.com",
       "private_site": "Situs Privat",
       "private_site_description": "Jadikan situs privat. Setelah diaktifkan, data hanya dapat diakses setelah login.",
       "script_domain": "Alamat koneksi Agen",
       "script_domain_description": "Tentukan alamat koneksi panel untuk skrip instalasi, memudahkan pengguna dengan beberapa domain, dan tidak akan mempengaruhi akses domain lain. Biarkan kosong untuk menggunakan domain saat ini.",
       "send_ip_addr_to_guest": "Tampilkan sebagian alamat IP kepada pengunjung",
       "send_ip_addr_to_guest_description": "Dalam keadaan tidak login, sebagian informasi alamat IP dapat dilihat melalui common:getNodes, berbentuk 9.*.*.* / fe80:*:*:*:*:*:*:*. Digunakan untuk menampilkan IP pada beberapa tema.",
-      "tempory_share": "Berbagi sementara",
-      "tempory_share_current_link": "Tautan akses sementara saat ini",
-      "tempory_share_description": "Setelah mengaktifkan situs pribadi, Anda dapat mengakses situs melalui tautan berbagi sementara.",
-      "tempory_share_hours": "Durasi berbagi (jam)",
-      "tempory_share_revoke": "Mencabut izin akses",
+      "temporary_share": "Berbagi sementara",
+      "temporary_share_current_link": "Tautan akses sementara saat ini",
+      "temporary_share_description": "Setelah mengaktifkan situs pribadi, Anda dapat mengakses situs melalui tautan berbagi sementara.",
+      "temporary_share_hours": "Durasi berbagi (jam)",
+      "temporary_share_revoke": "Mencabut izin akses",
       "title": "Situs",
       "ws_allowed_origins": "Daftar izin Origin WebSocket",
-      "ws_allowed_origins_description": "Satu Origin per baris atau dipisahkan dengan koma, misalnya https://example.com",
       "ws_origin_check_enabled": "Pemeriksaan Origin WebSocket",
       "ws_origin_check_enabled_description": "Jika diaktifkan, permintaan WebSocket hanya diizinkan dari Origin yang sama atau dalam daftar izin"
     },
     "sso": {
       "callback_url_tips": "Konfigurasikan penyedia SSO Anda dengan URL callback berikut: {{url}}",
-      "client_id": "Client ID",
       "client_id_description": "ID klien aplikasi OAuth",
-      "client_secret": "Client Secret",
       "client_secret_description": "Rahasia klien aplikasi OAuth",
       "enable": "Aktifkan Single Sign-On",
       "enable_description": "Izinkan pengguna login dengan akun pihak ketiga (seperti GitHub)",
@@ -955,6 +1179,7 @@
         "client_id": "GitHub Client ID",
         "client_secret": "GitHub Client Secret"
       },
+      "not_implemented_suffix": " [Belum diimplementasikan]",
       "provider": "Penyedia Single Sign-On",
       "provider_description": "Pilih penyedia autentikasi untuk single sign-on",
       "provider_fetch_failed": "Gagal memuat informasi penyedia masuk",
@@ -1040,37 +1265,6 @@
     "no_active_connection": "Tidak ada koneksi aktif",
     "title": "Terminal"
   },
-  "market": {
-    "add_source": "Tambah sumber",
-    "delete_source_confirm": "Hapus sumber {{name}}?",
-    "description": "Temukan dan instal tema dari internet.",
-    "edit_source": "Edit sumber",
-    "enabled": "Aktif",
-    "install": "Instal",
-    "install_unavailable": "Paket tidak tersedia",
-    "install_success": "Tema berhasil diinstal",
-    "installed": "Terinstal",
-    "installed_version": "Terinstal v{{version}}",
-    "manage_sources": "Kelola sumber",
-    "no_sources": "Belum ada sumber yang dikonfigurasi",
-    "no_themes": "Tema tidak ditemukan",
-    "project_page": "Halaman proyek",
-    "refresh": "Segarkan",
-    "refresh_success": "Sumber tema berhasil disegarkan",
-    "search_placeholder": "Cari tema, pembuat, atau sumber",
-    "source": "Sumber",
-    "source_created": "Sumber berhasil ditambahkan",
-    "source_deleted": "Sumber berhasil dihapus",
-    "source_name": "Nama sumber",
-    "source_updated": "Sumber berhasil diperbarui",
-    "themes": "Pasar Tema",
-    "title": "Pasar",
-    "update": "Perbarui",
-    "update_available": "Pembaruan tersedia",
-    "uninstall": "Copot pemasangan",
-    "uninstall_confirm": "Copot pemasangan {{name}}?",
-    "uninstall_success": "Tema berhasil dicopot"
-  },
   "theme": {
     "active": "Aktif",
     "author": "Penulis",
@@ -1083,7 +1277,6 @@
     "delete_failed": "Gagal menghapus tema",
     "delete_success": "Tema berhasil dihapus",
     "delete_warning": "Apakah Anda yakin ingin menghapus tema \"{{themeName}}\"? Tindakan ini tidak dapat dibatalkan.",
-    "description": "Deskripsi",
     "drag_drop": "Seret dan jatuhkan file di sini",
     "find_more": "Cari tema lainnya?",
     "github_description": "Sistem akan mengunduh rilis terbaru dari repositori GitHub ini.",
@@ -1102,8 +1295,8 @@
     "invalid_file_type": "Tipe file tidak valid, hanya file .zip yang didukung",
     "light": "Terang",
     "load_config_failed": "Gagal memuat konfigurasi tema",
-    "manage": "Manajemen Tema",
     "manage_with_name": "Manajemen Tema {{name}}",
+    "menu": "Tema",
     "name": "Nama",
     "no_config": "Tema ini tidak memiliki item konfigurasi.",
     "no_themes": "Tidak ada tema tersedia",
@@ -1111,6 +1304,7 @@
     "set_active": "Jadikan Tema Aktif",
     "set_failed": "Gagal mengatur tema",
     "set_success": "Tema berhasil diatur",
+    "settings_with_name": "Pengaturan {{name}}",
     "system": "Sistem",
     "theme_url": "URL Tema",
     "title": "Manajemen Tema",
@@ -1123,80 +1317,15 @@
     "update_mode_github": "Rilis GitHub",
     "update_mode_url": "URL Langsung",
     "update_success": "Tema berhasil diperbarui",
-    "update_theme": "Perbarui Tema",
     "upload": "Unggah Tema",
+    "upload_413_content_too_large": "Unggahan file gagal (413). Silakan periksa dan tingkatkan batas ukuran file dalam konfigurasi server proxy terbalik Anda (seperti Nginx/CDN) (client_max_body_size), pastikan nilai tersebut lebih besar dari ukuran file yang Anda tuju.",
     "upload_description": "Unggah file tema .zip",
     "upload_failed": "Gagal mengunggah tema",
     "upload_first_theme": "Unggah tema pertama Anda",
     "upload_success": "Tema berhasil diunggah",
-    "upload_theme": "Unggah Tema",
     "uploading": "Mengunggah tema...",
-    "uploda_413_content_too_large": "Unggahan file gagal (413). Silakan periksa dan tingkatkan batas ukuran file dalam konfigurasi server proxy terbalik Anda (seperti Nginx/CDN) (client_max_body_size), pastikan nilai tersebut lebih besar dari ukuran file yang Anda tuju.",
     "version": "Versi",
     "zip_files_only": "Hanya file .zip yang didukung"
-  },
-  "pprof": {
-    "capture_duration": "Durasi pengambilan CPU dan trace",
-    "download": "Unduh",
-    "duration_option": "{{seconds}} dtk",
-    "goroutines": "Jumlah goroutine",
-    "heap_alloc": "Heap dialokasikan",
-    "heap_inuse": "Heap yang digunakan",
-    "heap_objects": "Objek heap",
-    "heap_preview_description": "Ringkasan heap teks langsung yang diperbarui bersama ringkasan proses.",
-    "heap_preview_title": "Snapshot heap",
-    "invalid_summary": "Server mengembalikan informasi profil runtime yang tidak valid",
-    "loading": "Mengumpulkan...",
-    "preview_description": "Keluaran teks dari profil runtime Go yang dipilih.",
-    "preview_title": "Profil {{profile}}",
-    "preview_unavailable": "Profil runtime ini tidak menyediakan pratinjau teks.",
-    "profiles": {
-      "allocs": {
-        "title": "Alokasi",
-        "description": "Sampel alokasi memori kumulatif sejak proses dimulai."
-      },
-      "block": {
-        "title": "Pemblokiran",
-        "description": "Peristiwa pemblokiran sinkronisasi."
-      },
-      "cpu": {
-        "title": "CPU",
-        "description": "Sampel eksekusi CPU yang dikumpulkan selama durasi terpilih."
-      },
-      "trace": {
-        "title": "Trace",
-        "description": "Jejak eksekusi yang dikumpulkan selama durasi terpilih."
-      },
-      "goroutine": {
-        "title": "Goroutine",
-        "description": "Profil tumpukan goroutine saat ini."
-      },
-      "heap": {
-        "title": "Heap",
-        "description": "Sampel alokasi heap yang masih aktif."
-      },
-      "mutex": {
-        "title": "Mutex",
-        "description": "Peristiwa mutex yang mengalami kontensi."
-      },
-      "threadcreate": {
-        "title": "Thread",
-        "description": "Peristiwa pembuatan thread sistem operasi."
-      }
-    },
-    "profiles_description": "Lihat snapshot teks atau unduh data pprof untuk analisis luring.",
-    "profiles_title": "Profil runtime",
-    "request_failed": "Gagal mengumpulkan profil runtime",
-    "runtime_overview_description": "Penghitung runtime langsung yang dikumpulkan tanpa memulai profil.",
-    "runtime_overview_title": "Proses saat ini",
-    "runtime_sys": "Memori yang dicadangkan runtime",
-    "sample_count": "{{samples}} sampel",
-    "summary_load_failed": "Gagal memuat informasi profil runtime",
-    "summary_unavailable": "Ringkasan runtime tidak tersedia",
-    "timed_profile": "Dikumpulkan selama durasi yang dipilih",
-    "title": "Profil performa",
-    "view": "Lihat",
-    "warning": "Pengumpulan profil dibatasi untuk administrator dan dapat meningkatkan beban server untuk sementara."
   },
   "time": {
     "ago": "yang lalu",
@@ -1219,114 +1348,5 @@
     "mode": "Mode Tampilan"
   },
   "warn_https": "Koneksi saat ini bukan HTTPS! Data sensitif Anda berisiko. Amankan koneksi sekarang! Fitur salin mungkin tidak tersedia!",
-  "warn_websocket": "Permintaan RPC2 gagal, periksa koneksi jaringan atau status server!",
-  "database_recovery": {
-    "title": "Pemulihan basis data pemantauan",
-    "subtitle": "Basis data pemantauan tidak dapat dijangkau. Masuk untuk memperbarui string koneksi.",
-    "history_note": "Pemulihan hanya menyambungkan ulang dengan DSN baru; tidak ada data yang dimigrasikan dari koneksi sebelumnya.",
-    "failure_detail": "Koneksi basis data gagal {{count}} dari {{max}} kali berturut-turut.",
-    "dsn_required": "Masukkan string koneksi basis data pemantauan.",
-    "save": "Simpan dan sambungkan ulang",
-    "saving": "Menghubungkan...",
-    "completed_title": "Koneksi basis data pulih",
-    "completed_description": "Server sedang memulai kembali panel kontrol normal.",
-    "save_failed": "Koneksi basis data pemantauan gagal. Periksa DSN lalu coba lagi.",
-    "network_error": "Tidak dapat terhubung ke layanan pemulihan.",
-    "request_failed": "Permintaan gagal. Silakan coba lagi."
-  },
-  "database_migration": {
-    "after": "Setelah migrasi",
-    "before": "Sebelum migrasi",
-    "failed_title": "Migrasi basis data tidak selesai",
-    "legacy_full_history": "Migrasikan seluruh basis data. Ruang direklamasi satu kali setelah migrasi.",
-    "network_error": "Tidak dapat terhubung ke layanan migrasi basis data.",
-    "request_failed": "Permintaan gagal. Periksa log server lalu coba lagi.",
-    "saved": "Dihemat"
-  },
-  "metric_store_restructure": {
-    "after": "Setelah restrukturisasi",
-    "before": "Sebelum restrukturisasi",
-    "completed_description": "Server sedang memulai layanan normal.",
-    "completed_title": "Restrukturisasi penyimpanan metrik selesai",
-    "confirm_description": "Metrik historis akan disalin ke skema rollup ternormalisasi, lalu ruang basis data akan direklamasi satu kali. Layanan normal tidak tersedia selama operasi ini.",
-    "confirm_title": "Mulai restrukturisasi basis data?",
-    "copy_detail": "Telah menyalin {{rows}} / {{total}} catatan, menyelesaikan {{metrics}} / {{metricTotal}} metrik. Metrik saat ini: {{metric}}.",
-    "discard": "Hapus data pemantauan historis",
-    "discard_action": "Hapus permanen",
-    "discard_confirm": "Saya mengonfirmasi bahwa semua data pemantauan historis boleh dihapus permanen",
-    "discard_description": "Jika data pemantauan historis tidak diperlukan, lewati penyalinan dan buat struktur database kosong. Definisi metrik dan pengaturan retensi tetap dipertahankan.",
-    "discard_detail": "Menghapus data pemantauan historis dan membuat struktur database kosong.",
-    "discard_title": "Hapus semua data pemantauan historis?",
-    "discard_warning": "Tindakan ini tidak dapat dibatalkan. Semua data grafik historis akan dihapus.",
-    "network_error": "Tidak dapat terhubung ke layanan restrukturisasi.",
-    "phase_copying": "Menyalin ringkasan metrik",
-    "phase_discarding": "Menghapus data pemantauan historis",
-    "phase_reclaiming": "Mengoptimalkan database dan mengosongkan ruang.",
-    "request_failed": "Permintaan gagal. Silakan coba lagi.",
-    "saved": "Dihemat",
-    "start": "Mulai restrukturisasi",
-    "start_failed": "Tidak dapat memulai restrukturisasi basis data.",
-    "title": "Restrukturisasi basis data pemantauan"
-  },
-  "install": {
-    "title": "Panduan instalasi",
-    "welcome": "Selamat datang",
-    "administrator": "Administrator",
-    "site": "Situs",
-    "database": "Database",
-    "confirm": "Konfirmasi",
-    "welcome_title": "Selamat datang di Komari",
-    "welcome_subtitle": "Pemantau server sumber terbuka yang ringan.",
-    "welcome_description": "Konfigurasikan akun administrator, metadata situs, dan database pemantauan.",
-    "admin_title": "Buat akun administrator",
-    "username": "Nama pengguna",
-    "password": "Kata sandi",
-    "password_confirm": "Konfirmasi kata sandi",
-    "site_title": "Informasi situs",
-    "site_hint": "Ditampilkan pada judul browser dan halaman publik.",
-    "sitename": "Nama situs",
-    "description": "Deskripsi situs",
-    "database_title": "Database pemantauan",
-    "confirm_title": "Konfirmasi instalasi",
-    "summary_admin": "Administrator: ",
-    "summary_sitename": "Nama situs: ",
-    "summary_database": "Database: ",
-    "summary_dsn": "DSN: ",
-    "back": "Kembali",
-    "next": "Berikutnya",
-    "start": "Mulai instalasi",
-    "restore": "Pulihkan dari cadangan",
-    "restore_description": "Mengunggah cadangan akan memulai ulang layanan dan memulihkan datanya.",
-    "restore_restarting": "Memulai ulang untuk memulihkan cadangan...",
-    "restore_file_type": "Pilih file cadangan .zip.",
-    "restore_failed": "Gagal memulihkan cadangan. Silakan coba lagi.",
-    "restore_413": "Unggahan cadangan gagal (413). Tingkatkan batas ukuran unggahan pada CDN atau proksi balik seperti Nginx (misalnya client_max_body_size), atau unggah cadangan secara manual ke ./data/backup.zip lalu mulai ulang layanan.",
-    "complete": "Selesaikan instalasi",
-    "completed": "Instalasi sudah selesai. Kembali ke halaman masuk.",
-    "failed": "Instalasi gagal. Silakan coba lagi.",
-    "connection_error": "Tidak dapat terhubung ke server",
-    "username_required": "Masukkan nama pengguna.",
-    "sitename_required": "Masukkan nama situs.",
-    "dsn_required": "Masukkan DSN database pemantauan.",
-    "detected_database": "Database terdeteksi: {{driver}}",
-    "sqlite_warning": "SQLite cocok untuk deployment ringan, tetapi dapat menjadi hambatan kinerja saat data pemantauan bertambah. Pertimbangkan MariaDB, MySQL, atau PostgreSQL untuk penyimpanan metrik besar dalam jangka panjang.",
-    "language": "Bahasa",
-    "appearance": "Tampilan",
-    "color": "Warna",
-    "steps": {
-      "welcome": "Selamat datang",
-      "administrator": "Administrator",
-      "site": "Situs",
-      "database": "Database",
-      "confirm": "Konfirmasi"
-    }
-  },
-  "errorBoundary": {
-    "something_went_wrong": "Terjadi Kesalahan",
-    "unexpected_error": "Terjadi kesalahan yang tidak terduga.",
-    "view_error_details": "Lihat Detail Kesalahan",
-    "no_stack_trace": "Tidak ada jejak tumpukan.",
-    "reload_page": "Muat Ulang Halaman",
-    "go_to_home": "Kembali ke Beranda"
-  }
+  "warn_websocket": "Permintaan RPC2 gagal, periksa koneksi jaringan atau status server!"
 }

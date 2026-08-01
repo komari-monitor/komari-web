@@ -120,11 +120,11 @@ export default function Sessions() {
             </Dialog.Description>
             <Flex gap="2" justify={"end"}>
               <Dialog.Trigger>
-                <Button variant="soft">{t("sessions.cancel")}</Button>
+                <Button variant="soft">{t("common.cancel")}</Button>
               </Dialog.Trigger>
               <Dialog.Trigger>
                 <Button color="red" onClick={deleteAllSessions}>
-                  {t("delete")}
+                  {t("common.delete")}
                 </Button>
               </Dialog.Trigger>
             </Flex>
@@ -218,7 +218,7 @@ export default function Sessions() {
                           </label>
                           <Flex justify={"end"}>
                             <Dialog.Trigger>
-                              <Button variant="soft">{t("close")}</Button>
+                              <Button variant="soft">{t("common.close")}</Button>
                             </Dialog.Trigger>
                           </Flex>
                         </Flex>
@@ -237,13 +237,13 @@ export default function Sessions() {
                       {!isCurrent && (
                         <Dialog.Trigger>
                           <Button color="red" variant="ghost">
-                            {t("delete")}
+                            {t("common.delete")}
                           </Button>
                         </Dialog.Trigger>
                       )}
                       <Dialog.Content>
                         <Dialog.Title>
-                          {t("sessions.confirm_delete")}
+                          {t("common.confirm_delete")}
                         </Dialog.Title>
                         <Dialog.Description>
                           {t("sessions.delete_one_desc")}
@@ -251,7 +251,7 @@ export default function Sessions() {
                         <Flex gap="2" justify={"end"}>
                           <Dialog.Trigger>
                             <Button variant="soft">
-                              {t("sessions.cancel")}
+                              {t("common.cancel")}
                             </Button>
                           </Dialog.Trigger>
                           <Dialog.Trigger>
@@ -259,7 +259,7 @@ export default function Sessions() {
                               color="red"
                               onClick={() => deleteSession(s.session)}
                             >
-                              {t("delete")}
+                              {t("common.delete")}
                             </Button>
                           </Dialog.Trigger>
                         </Flex>

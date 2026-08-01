@@ -157,7 +157,7 @@ const ThemeManaged: React.FC = () => {
             ? t("theme.manage_with_name", {
                 name: theme === "default" ? "" : theme,
               })
-            : t("theme.manage")}
+            : t("theme.title")}
         </Heading>
         {fields.length > 0 && (
           <Button onClick={saveAll} disabled={saving}>

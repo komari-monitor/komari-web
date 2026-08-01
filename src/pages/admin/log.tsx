@@ -148,7 +148,7 @@ const LogPage = () => {
                       </Flex>
                       <Flex justify={"end"}>
                         <Dialog.Close>
-                          <Button variant="soft">{t("close")}</Button>
+                          <Button variant="soft">{t("common.close")}</Button>
                         </Dialog.Close>
                       </Flex>
                     </Dialog.Content>

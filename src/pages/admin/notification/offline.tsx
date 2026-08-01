@@ -229,11 +229,11 @@ const InnerLayout = () => {
               }}
               disabled={batchLoading || selected.length === 0}
             >
-              {t("notification.offline.batch_edit")}
+              {t("common.batch_edit")}
             </Button>
           </Dialog.Trigger>
           <Dialog.Content>
-            <Dialog.Title>{t("notification.offline.batch_edit")}</Dialog.Title>
+            <Dialog.Title>{t("common.batch_edit")}</Dialog.Title>
             <NotificationEditForm
               initialValues={batchForm}
               loading={batchLoading}

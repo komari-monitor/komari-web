@@ -275,7 +275,7 @@ export default function PluginsPage() {
           </Button>
           <Button variant="soft" onClick={loadList}>
             <RefreshCw size={14} />
-            {t("plugin.refresh", "Refresh")}
+            {t("common.refresh", "Refresh")}
           </Button>
         </Flex>
       </Flex>
@@ -333,7 +333,7 @@ export default function PluginsPage() {
                     )}
                     <Button size="1" variant="soft" onClick={() => openLogs(plugin)}>
                       <FileText size={14} />
-                      {t("plugin.logs", "Logs")}
+                      {t("logs.title", "Logs")}
                     </Button>
                     <Button
                       size="1"
@@ -400,7 +400,7 @@ export default function PluginsPage() {
           </Flex>
           <Flex gap="2" justify="end">
             <Button variant="soft" onClick={() => setPendingApproval(null)}>
-              {t("plugin.permission_cancel", "Cancel")}
+              {t("common.cancel", "Cancel")}
             </Button>
             <Button onClick={approveAndEnable}>
               {t("plugin.permission_approve", "Approve & Enable")}
@@ -418,7 +418,7 @@ export default function PluginsPage() {
       >
         <Dialog.Content>
           <Dialog.Title>
-            {t("plugin.logs", "Logs")} · {logPlugin?.short}
+            {t("logs.title", "Logs")} · {logPlugin?.short}
           </Dialog.Title>
           <pre className="max-h-[60vh] overflow-auto whitespace-pre-wrap rounded-md bg-gray-1 p-3 text-xs">
             {logsLoading ? t("plugin.loading", "Loading...") : logContent || t("plugin.no_logs", "No logs")}
@@ -430,7 +430,7 @@ export default function PluginsPage() {
       <UploadDialog
         open={uploadDialogOpen}
         onOpenChange={setUploadDialogOpen}
-        title={t("plugin.upload_plugin", "Upload Plugin")}
+        title={t("plugin.upload", "Upload Plugin")}
         description={t("plugin.upload_description", "Upload a .zip plugin package")}
         accept=".zip"
         dragDropText={t("plugin.drag_drop", "Drag and drop files here")}
@@ -439,10 +439,10 @@ export default function PluginsPage() {
         uploading={uploading}
         progress={uploadProgress}
         uploadingText={t("plugin.uploading", "Uploading...")}
-        cancelUploadLabel={t("plugin.permission_cancel", "Cancel")}
+        cancelUploadLabel={t("common.cancel", "Cancel")}
         onCancelUpload={cancelUpload}
         onFileSelected={uploadPlugin}
-        closeLabel={t("plugin.permission_cancel", "Cancel")}
+        closeLabel={t("common.cancel", "Cancel")}
       />
 
       {/* 删除确认 */}
@@ -462,7 +462,7 @@ export default function PluginsPage() {
           </Text>
           <Flex gap="2" justify="end">
             <Button variant="soft" onClick={() => setPluginToDelete(null)}>
-              {t("plugin.permission_cancel", "Cancel")}
+              {t("common.cancel", "Cancel")}
             </Button>
             <Button
               color="red"

@@ -534,7 +534,7 @@ export default function DatabaseMigration() {
           <Flex justify="end" gap="3" mt="5" wrap="wrap">
             <Dialog.Close>
               <Button variant="soft" color="gray" disabled={busy}>
-                {t("cancel")}
+                {t("common.cancel")}
               </Button>
             </Dialog.Close>
             <Button
@@ -580,7 +580,7 @@ export default function DatabaseMigration() {
           <Flex justify="end" gap="3" mt="5">
             <Dialog.Close>
               <Button variant="soft" color="gray" disabled={busy}>
-                {t("cancel")}
+                {t("common.cancel")}
               </Button>
             </Dialog.Close>
             <Button

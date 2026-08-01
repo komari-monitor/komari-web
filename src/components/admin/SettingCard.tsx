@@ -328,7 +328,7 @@ export function SettingCardShortTextInput({
   const currentValue = value !== undefined ? normalizedValue : internalValue;
   const inputRef = React.useRef<HTMLInputElement>(null);
   const buttonRef = React.useRef<HTMLButtonElement>(null);
-  const resolvedLabel = label || t("save");
+  const resolvedLabel = label || t("common.save");
 
   // 当外部value改变时，同步内部状态
   React.useEffect(() => {
@@ -520,7 +520,7 @@ export function SettingCardLongTextInput({
   const [value, setValue] = React.useState(defaultValue);
   const textAreaRef = React.useRef<HTMLTextAreaElement>(null);
   const buttonRef = React.useRef<HTMLButtonElement>(null);
-  const resolvedLabel = label || t("save");
+  const resolvedLabel = label || t("common.save");
 
   React.useEffect(() => {
     setValue(defaultValue);
@@ -640,7 +640,7 @@ export function SettingCardSelect({
     value !== undefined ? value : defaultValue
   );
   const buttonRef = React.useRef<HTMLButtonElement>(null);
-  const resolvedLabel = label || t("select");
+  const resolvedLabel = label || t("common.select");
 
   React.useEffect(() => {
     if (value !== undefined) {

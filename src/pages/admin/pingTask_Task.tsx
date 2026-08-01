@@ -144,7 +144,7 @@ export const TaskView = ({ pingTasks }: { pingTasks: PingTask[] }) => {
             <TableHead>{t("common.name")}</TableHead>
             <TableHead>{t("common.server")}</TableHead>
             <TableHead>{t("ping.target")}</TableHead>
-            <TableHead>{t("ping.type")}</TableHead>
+            <TableHead>{t("common.type")}</TableHead>
             <TableHead>{t("ping.interval")}</TableHead>
             <TableHead>{t("common.action")}</TableHead>
           </TableRow>
@@ -362,7 +362,7 @@ const Row = ({
                 }
                 required
               />
-              <label>{t("ping.type")}</label>
+              <label>{t("common.type")}</label>
               <Select.Root
                 value={form.type}
                 onValueChange={(v) =>

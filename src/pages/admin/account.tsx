@@ -177,7 +177,7 @@ const InnerLayout = () => {
           const error = await response.json();
           toast.error(t("account_settings.unbind_sso_failed", { 
             provider: getSSODisplayName(ssoInfo.platform),
-            error: error.message || t("account_settings.unknown_error")
+            error: error.message || t("common.unknownError")
           }));
         }
       } else {
@@ -284,7 +284,7 @@ const InnerLayout = () => {
                 <>
                   <label className="text-xl font-semibold flex items-center gap-2">
                     {ssoInfo?.isBound ? icon : <User className="size-5" />}
-                    {ssoInfo?.isBound ? `${displayName}账户` : t("account_settings.sso_account")}
+                    {ssoInfo?.isBound ? t("account_settings.sso_account_bound", { name: displayName }) : t("account_settings.sso_account")}
                   </label>
                   <div className="p-4 bg-[var(--accent-2)] rounded-lg">
                     <p>
@@ -298,7 +298,7 @@ const InnerLayout = () => {
                       ) : (
                         <div className="flex items-center gap-2">
                           <Badge color="gray">
-                            {t("account_settings.sso_unbound")}
+                            {t("account_settings.sso_not_bound")}
                           </Badge>
                           {t("account_settings.sso_not_bound")}
                         </div>
@@ -321,7 +321,7 @@ const InnerLayout = () => {
                           <Flex gap="2" justify="end" className="mt-4">
                             <Dialog.Close>
                               <Button variant="soft">
-                                {t("account_settings.cancel")}
+                                {t("common.cancel")}
                               </Button>
                             </Dialog.Close>
                             <Button color="red" onClick={handleSSOAuth}>
