@@ -200,7 +200,11 @@ const Row = ({ alert }: { alert: LoadAlert }) => {
               submitEdit({ ...form, clients: uuids });
             }}
           >
-            <IconButton variant="ghost">
+            <IconButton
+              variant="ghost"
+              title={t("common.select_clients", "Select clients")}
+              aria-label={t("common.select_clients", "Select clients")}
+            >
               <MoreHorizontal size="16" />
             </IconButton>
           </NodeSelectorDialog>
@@ -216,7 +220,11 @@ const Row = ({ alert }: { alert: LoadAlert }) => {
         {/* 编辑按钮 */}
         <Dialog.Root open={editOpen} onOpenChange={setEditOpen}>
           <Dialog.Trigger>
-            <IconButton variant="soft">
+            <IconButton
+              variant="soft"
+              title={t("common.edit", "Edit")}
+              aria-label={t("common.edit", "Edit")}
+            >
               <Pencil size="16" />
             </IconButton>
           </Dialog.Trigger>
@@ -308,7 +316,12 @@ const Row = ({ alert }: { alert: LoadAlert }) => {
         {/* 删除按钮 */}
         <Dialog.Root open={deleteOpen} onOpenChange={setDeleteOpen}>
           <Dialog.Trigger>
-            <IconButton variant="soft" color="red">
+            <IconButton
+              variant="soft"
+              color="red"
+              title={t("common.delete", "Delete")}
+              aria-label={t("common.delete", "Delete")}
+            >
               <Trash size="16" />
             </IconButton>
           </Dialog.Trigger>

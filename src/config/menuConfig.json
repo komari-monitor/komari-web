@@ -16,11 +16,6 @@
           "icon": "Home"
         },
         {
-          "labelKey": "theme.title",
-          "path": "/admin/settings/theme",
-          "icon": "Palette"
-        },
-        {
           "labelKey": "settings.sign_on.title",
           "path": "/admin/settings/sign-on",
           "icon": "CircleArrowRight"
@@ -48,14 +43,41 @@
       ]
     },
     {
-      "labelKey": "market.title",
-      "path": "/admin/market",
-      "icon": "Store",
+      "labelKey": "theme.menu",
+      "path": "/admin/theme",
+      "icon": "Palette",
       "children": [
+        {
+          "labelKey": "theme.title",
+          "path": "/admin/settings/theme",
+          "icon": "Palette"
+        },
         {
           "labelKey": "market.themes",
           "path": "/admin/market/themes",
-          "icon": "Palette"
+          "icon": "Store"
+        }
+      ]
+    },
+    {
+      "labelKey": "plugin.title",
+      "path": "/admin/plugins",
+      "icon": "Blocks",
+      "children": [
+        {
+          "labelKey": "plugin.manage",
+          "path": "/admin/plugins",
+          "icon": "Blocks"
+        },
+        {
+          "labelKey": "plugin.market",
+          "path": "/admin/market/plugins",
+          "icon": "Store"
+        },
+        {
+          "labelKey": "plugin.config",
+          "path": "/admin/plugins/config",
+          "icon": "Settings2"
         }
       ]
     },

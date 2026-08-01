@@ -6,25 +6,23 @@ import { useTranslation } from "react-i18next";
 
 interface ThemeSwitchProps {
   icon?: ReactNode;
-  content?: {
-    light?: ReactNode;
-    dark?: ReactNode;
-    system?: ReactNode;
-  };
 }
 
-const ThemeSwitch = ({
-  icon = (
-    <IconButton variant="soft">
+const ThemeSwitch = ({ icon }: ThemeSwitchProps = {}) => {
+  const { setAppearance } = useContext(ThemeContext);
+  const { t } = useTranslation();
+  const trigger = icon ?? (
+    <IconButton
+      variant="soft"
+      title={t("common.appearance", "Appearance")}
+      aria-label={t("common.appearance", "Appearance")}
+    >
       <SunIcon />
     </IconButton>
-  ),
-}: ThemeSwitchProps = {}) => {
-  const { setAppearance } = useContext(ThemeContext);
-  const [t] = useTranslation();
+  );
   return (
     <DropdownMenu.Root>
-      <DropdownMenu.Trigger>{icon}</DropdownMenu.Trigger>
+      <DropdownMenu.Trigger>{trigger}</DropdownMenu.Trigger>
       <DropdownMenu.Content>
         <DropdownMenu.Item onSelect={() => setAppearance("light")}>
           {t("theme.light", "Light")}

@@ -51,7 +51,11 @@ export function EditDialog({ item }: { item: z.infer<typeof schema> }) {
   return (
     <Dialog.Root open={open} onOpenChange={setOpen}>
       <Dialog.Trigger>
-        <IconButton variant="ghost">
+        <IconButton
+          variant="ghost"
+          title={t("common.edit", "Edit")}
+          aria-label={t("common.edit", "Edit")}
+        >
           <Pencil className="p-1" />
         </IconButton>
       </Dialog.Trigger>

@@ -573,6 +573,8 @@ const ThemePage = () => {
                     variant="ghost"
                     onClick={() => setActiveTheme(theme.short)}
                     disabled={settingTheme === theme.short}
+                    title={t("theme.set_active", "Set as Active Theme")}
+                    aria-label={t("theme.set_active", "Set as Active Theme")}
                   >
                     {settingTheme === theme.short ? (
                       <Box className="animate-spin">
@@ -655,7 +657,13 @@ const ThemePage = () => {
                   <Text size="1" className="overflow-hidden text-ellipsis">
                     {selectedTheme?.url}
                   </Text>
-                  <a href={selectedTheme.url} target="_blank">
+                  <a
+                    href={selectedTheme.url}
+                    target="_blank"
+                    rel="noreferrer"
+                    title={t("theme.theme_url", "Theme URL")}
+                    aria-label={t("theme.theme_url", "Theme URL")}
+                  >
                     <SquareArrowOutUpRight size={12} />
                   </a>
                 </Flex>

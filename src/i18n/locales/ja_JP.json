@@ -1320,5 +1320,13 @@
       "database": "データベース",
       "confirm": "確認"
     }
+  },
+  "errorBoundary": {
+    "something_went_wrong": "問題が発生しました",
+    "unexpected_error": "予期せぬエラーが発生しました。",
+    "view_error_details": "エラー詳細を表示",
+    "no_stack_trace": "スタックトレースはありません。",
+    "reload_page": "ページを再読み込む",
+    "go_to_home": "ホームへ戻る"
   }
 }

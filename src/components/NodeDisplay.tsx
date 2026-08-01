@@ -144,6 +144,8 @@ const NodeDisplay: React.FC<NodeDisplayProps> = ({ nodes, liveData }) => {
                 setSearchTerm("");
                 searchRef.current?.focus();
               }}
+              title={t("common.clear_search", "Clear search")}
+              aria-label={t("common.clear_search", "Clear search")}
             >
               <X size={12} />
             </IconButton>

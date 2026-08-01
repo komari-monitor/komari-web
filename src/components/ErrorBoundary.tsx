@@ -1,5 +1,6 @@
 import React from "react";
 import type { ErrorInfo, ReactNode } from "react";
+import i18n from "@/i18n/config";
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -49,21 +50,21 @@ class ErrorBoundary extends React.Component<
 
           {/* Title */}
           <h2 className="text-3xl font-semibold text-red-700 mb-3 tracking-tight">
-            Something Went Wrong
+            {i18n.t("errorBoundary.something_went_wrong", "Something Went Wrong")}
           </h2>
 
           {/* Error Message */}
           <p className="text-red-600 text-lg mb-6 font-medium text-center">
-            {this.state.error?.message || "An unexpected error occurred."}
+            {this.state.error?.message || i18n.t("errorBoundary.unexpected_error", "An unexpected error occurred.")}
           </p>
 
           {/* Error Details */}
           <details className="w-full max-w-xl">
             <summary className="cursor-pointer text-sm font-medium text-red-500 hover:text-red-700 transition-colors duration-200">
-              View Error Details
+              {i18n.t("errorBoundary.view_error_details", "View Error Details")}
             </summary>
             <pre className="mt-3 p-4 bg-red-100 text-sm text-red-900 border border-red-200 rounded-lg shadow-sm overflow-x-auto">
-              {this.state.error?.stack || "No stack trace available."}
+              {this.state.error?.stack || i18n.t("errorBoundary.no_stack_trace", "No stack trace available.")}
             </pre>
           </details>
 
@@ -73,13 +74,13 @@ class ErrorBoundary extends React.Component<
               onClick={() => window.location.reload()}
               className="px-6 py-2 bg-red-600 text-white rounded-lg shadow hover:bg-red-700 transition-all duration-200 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50"
             >
-              Reload Page
+              {i18n.t("errorBoundary.reload_page", "Reload Page")}
             </button>
             <button
               onClick={() => (window.location.href = "/")}
               className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg shadow hover:bg-gray-300 transition-all duration-200 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50"
             >
-              Go to Home
+              {i18n.t("errorBoundary.go_to_home", "Go to Home")}
             </button>
           </div>
         </div>

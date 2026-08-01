@@ -1320,5 +1320,13 @@
       "database": "資料庫",
       "confirm": "確認"
     }
+  },
+  "errorBoundary": {
+    "something_went_wrong": "出現了一些問題",
+    "unexpected_error": "發生了意外錯誤。",
+    "view_error_details": "查看錯誤詳情",
+    "no_stack_trace": "無可用的堆畸追蹤。",
+    "reload_page": "重新加載頁面",
+    "go_to_home": "返回首頁"
   }
 }

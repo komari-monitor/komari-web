@@ -8,20 +8,23 @@ interface ColorSwitchProps {
   icon?: ReactNode;
 }
 
-const ColorSwitch = ({ 
-  icon = (
-    <IconButton variant="soft">
-      <BlendingModeIcon />
-    </IconButton>
-  ),
-}: ColorSwitchProps = {}) => {
+const ColorSwitch = ({ icon }: ColorSwitchProps = {}) => {
   const { setColor } = useContext(ThemeContext);
   const { t } = useTranslation();
+  const trigger = icon ?? (
+    <IconButton
+      variant="soft"
+      title={t("common.color", "Accent color")}
+      aria-label={t("common.color", "Accent color")}
+    >
+      <BlendingModeIcon />
+    </IconButton>
+  );
 
   return (
     <DropdownMenu.Root>
       <DropdownMenu.Trigger>
-          {icon}
+          {trigger}
       </DropdownMenu.Trigger>
       <DropdownMenu.Content>
         <DropdownMenu.Item onSelect={() => setColor("gray")}><Text color="gray">{t('color.gray')}</Text></DropdownMenu.Item>

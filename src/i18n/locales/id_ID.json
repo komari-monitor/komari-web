@@ -1320,5 +1320,13 @@
       "database": "Database",
       "confirm": "Konfirmasi"
     }
+  },
+  "errorBoundary": {
+    "something_went_wrong": "Terjadi Kesalahan",
+    "unexpected_error": "Terjadi kesalahan yang tidak terduga.",
+    "view_error_details": "Lihat Detail Kesalahan",
+    "no_stack_trace": "Tidak ada jejak tumpukan.",
+    "reload_page": "Muat Ulang Halaman",
+    "go_to_home": "Kembali ke Beranda"
   }
 }

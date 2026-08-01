@@ -549,6 +549,8 @@ const ExecContent = () => {
                                                         variant="ghost"
                                                         size="1"
                                                         onClick={() => copyOutput(result.result)}
+                                                        title={t("common.copy", "Copy")}
+                                                        aria-label={t("common.copy", "Copy")}
                                                     >
                                                         <Copy size={14} />
                                                     </Button>

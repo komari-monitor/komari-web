@@ -180,7 +180,12 @@ const Index = () => {
         <div className="absolute top-2 right-2">
           <Popover.Root>
             <Popover.Trigger>
-              <IconButton variant="ghost" size="1">
+              <IconButton
+                variant="ghost"
+                size="1"
+                title={t("status_settings", "Status Settings")}
+                aria-label={t("status_settings", "Status Settings")}
+              >
                 <Settings size={16} />
               </IconButton>
             </Popover.Trigger>

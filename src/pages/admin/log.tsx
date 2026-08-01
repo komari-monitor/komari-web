@@ -172,6 +172,8 @@ const LogPage = () => {
         <Button
           disabled={page === 1}
           onClick={() => setPage((p) => Math.max(1, p - 1))}
+          title={t("common.previous_page", "Previous page")}
+          aria-label={t("common.previous_page", "Previous page")}
         >
           {"<"}
         </Button>
@@ -193,6 +195,8 @@ const LogPage = () => {
         <Button
           disabled={page === totalPages}
           onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+          title={t("common.next_page", "Next page")}
+          aria-label={t("common.next_page", "Next page")}
         >
           {">"}
         </Button>

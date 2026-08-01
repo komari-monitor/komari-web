@@ -127,7 +127,12 @@ const Node = React.memo(
               uuid={basic.uuid}
               hours={24}
               trigger={
-                <IconButton variant="ghost" size="1">
+                <IconButton
+                  variant="ghost"
+                  size="1"
+                  title={t("nodeCard.chart", "Chart")}
+                  aria-label={t("nodeCard.chart", "Chart")}
+                >
                   <TrendingUp size="14" />
                 </IconButton>
               }

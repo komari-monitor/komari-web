@@ -18,6 +18,10 @@ export const routes: RouteObject[] = [
         path: "instance/:uuid",
         element: React.createElement(lazy(() => import("./pages/instance"))),
       },
+      {
+        path: "plugin/:short/*filepath",
+        element: React.createElement(lazy(() => import("./pages/plugin_page"))),
+      },
     ],
   },
   {
@@ -54,9 +58,33 @@ export const routes: RouteObject[] = [
         ),
       },
       {
+        path: "plugins",
+        element: React.createElement(
+          lazy(() => import("./pages/admin/plugins"))
+        ),
+      },
+      {
+        path: "plugins/config",
+        element: React.createElement(
+          lazy(() => import("./pages/admin/plugin_config"))
+        ),
+      },
+      {
+        path: "plugin-page",
+        element: React.createElement(
+          lazy(() => import("./pages/admin/plugin_page"))
+        ),
+      },
+      {
         path: "market/themes",
         element: React.createElement(
           lazy(() => import("./pages/admin/market/themes"))
+        ),
+      },
+      {
+        path: "market/plugins",
+        element: React.createElement(
+          lazy(() => import("./pages/admin/market/plugins"))
         ),
       },
       {

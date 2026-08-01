@@ -183,6 +183,8 @@ export default function InstancePage() {
                       {group.nodes.map((node) => (
                         <div
                           key={node.uuid}
+                          role="link"
+                          tabIndex={0}
                           onClick={() => navigate(`/instance/${node.uuid}`)}
                           className={`mx-1 my-0.5 px-2 py-0 cursor-pointer transition-colors text-sm rounded-md border-l-[4px] flex items-center gap-2 ${
                             node.uuid === uuid

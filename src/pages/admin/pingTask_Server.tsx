@@ -146,7 +146,11 @@ const ServerRow: React.FC<{
           {ownedTasks.length > 0 ? display : t("common.none")}
           <Dialog.Root open={open} onOpenChange={setOpen}>
             <Dialog.Trigger>
-              <IconButton variant="ghost">
+              <IconButton
+                variant="ghost"
+                title={t("common.select_tasks", "Select tasks")}
+                aria-label={t("common.select_tasks", "Select tasks")}
+              >
                 <MoreHorizontal size={16} />
               </IconButton>
             </Dialog.Trigger>

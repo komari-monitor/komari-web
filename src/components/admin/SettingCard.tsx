@@ -231,6 +231,7 @@ export function SettingCardIconButton({
               onClick={handleClick}
               variant={variant}
               disabled={disabled}
+              aria-label={resolvedLabel || undefined}
             >
               {children}
             </IconButton>

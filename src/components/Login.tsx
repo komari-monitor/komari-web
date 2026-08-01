@@ -113,7 +113,10 @@ const LoginDialog = ({ trigger, autoOpen = false, showSettings = true, info, onL
       }
       return (
         <a href="/admin" target="_blank">
-          <IconButton>
+          <IconButton
+            title={t("settings.title", "Settings")}
+            aria-label={t("settings.title", "Settings")}
+          >
             <TablerSettings></TablerSettings>
           </IconButton>
         </a>
@@ -133,7 +136,12 @@ const LoginDialog = ({ trigger, autoOpen = false, showSettings = true, info, onL
           );
         }
         return (
-          <span onClick={redirect} style={{ cursor: "pointer", display: "inline-flex" }}>
+          <span
+            onClick={redirect}
+            role="button"
+            tabIndex={0}
+            style={{ cursor: "pointer", display: "inline-flex" }}
+          >
             {trigger}
           </span>
         );

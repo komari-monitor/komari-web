@@ -378,7 +378,11 @@ const ActionButtons = ({
     <Flex gap="2" align="center">
       <Dialog.Root open={editOpen} onOpenChange={setEditOpen}>
         <Dialog.Trigger>
-          <IconButton variant="ghost">
+          <IconButton
+            variant="ghost"
+            title={t("common.edit", "Edit")}
+            aria-label={t("common.edit", "Edit")}
+          >
             <Pencil size={16} />
           </IconButton>
         </Dialog.Trigger>

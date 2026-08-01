@@ -1320,5 +1320,13 @@
       "database": "Database",
       "confirm": "Confirm"
     }
+  },
+  "errorBoundary": {
+    "something_went_wrong": "Something Went Wrong",
+    "unexpected_error": "An unexpected error occurred.",
+    "view_error_details": "View Error Details",
+    "no_stack_trace": "No stack trace available.",
+    "reload_page": "Reload Page",
+    "go_to_home": "Go to Home"
   }
 }
