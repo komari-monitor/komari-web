@@ -380,6 +380,14 @@
     "title": "监控数据库恢复"
   },
   "delete": "删除",
+  "errorBoundary": {
+    "go_to_home": "返回首页",
+    "no_stack_trace": "无可用的栈跟踪。",
+    "reload_page": "重新加载页面",
+    "something_went_wrong": "出现了一些问题",
+    "unexpected_error": "发生了意外错误。",
+    "view_error_details": "查看错误详情"
+  },
   "exec": {
     "allCompleted": "所有任务执行完成",
     "command": "执行命令",
@@ -1320,13 +1328,5 @@
     "mode": "显示模式"
   },
   "warn_https": "当前连接不是 HTTPS！您的敏感数据存在严重风险。请立即采取措施确保连接安全！复制操作可能无法使用！",
-  "warn_websocket": "RPC2 请求失败，请检查网络连接或服务器状态！",
-  "errorBoundary": {
-    "something_went_wrong": "出现了一些问题",
-    "unexpected_error": "发生了意外错误。",
-    "view_error_details": "查看错误详情",
-    "no_stack_trace": "无可用的栈跟踪。",
-    "reload_page": "重新加载页面",
-    "go_to_home": "返回首页"
-  }
+  "warn_websocket": "RPC2 请求失败，请检查网络连接或服务器状态！"
 }
