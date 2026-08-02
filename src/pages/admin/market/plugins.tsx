@@ -24,6 +24,7 @@ import {
   RefreshCw,
   Search,
   Settings2,
+  ShieldAlert,
   Trash2,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -282,6 +283,11 @@ export default function PluginMarketPage() {
       </Flex>
 
       <Separator size="4" />
+
+      <Callout.Root color="amber" size="1">
+        <Callout.Icon><ShieldAlert size={16} /></Callout.Icon>
+        <Callout.Text>{t("plugin.market_warning")}</Callout.Text>
+      </Callout.Root>
 
       {sourceStatuses.filter((source) => source.error).map((source) => (
         <Callout.Root key={source.id} color="red" size="1">

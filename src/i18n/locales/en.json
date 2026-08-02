@@ -650,6 +650,7 @@
     "market_plugins": "plugins",
     "market_refresh_success": "Plugin sources refreshed",
     "market_search": "Search plugins...",
+    "market_warning": "Third-party plugins in the market are not vetted by the project and may contain harmful code. Please review carefully before installing.",
     "no_logs": "No logs",
     "no_plugins": "No plugins installed yet",
     "or_click_to_browse": "Or click to browse files",

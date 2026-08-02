@@ -650,6 +650,7 @@
     "market_plugins": "plugin",
     "market_refresh_success": "Sumber plugin disegarkan",
     "market_search": "Cari plugin...",
+    "market_warning": "Plugin pihak ketiga di pasar tidak diverifikasi oleh proyek ini dan mungkin berisi kode berbahaya. Harap periksa dengan cermat sebelum memasang.",
     "no_logs": "Tidak ada log",
     "no_plugins": "Belum ada plugin terpasang",
     "or_click_to_browse": "Atau klik untuk memilih file",

@@ -650,6 +650,7 @@
     "market_plugins": "外掛",
     "market_refresh_success": "外掛來源已重新整理",
     "market_search": "搜尋外掛...",
+    "market_warning": "外掛市集中的第三方外掛未經官方審查，可能包含有害程式碼，請仔細甄別後再安裝。",
     "no_logs": "暫無日誌",
     "no_plugins": "尚未安裝外掛",
     "or_click_to_browse": "或點選瀏覽檔案",
