@@ -9,16 +9,35 @@ import {
   Flex,
   Grid,
   Heading,
+  IconButton,
   Separator,
+  Switch,
   Text,
   TextField,
 } from "@radix-ui/themes";
-import { Blocks, Download, Plus, RefreshCw, Search, Trash2 } from "lucide-react";
+import {
+  AlertTriangle,
+  Blocks,
+  Download,
+  Pencil,
+  Plus,
+  RefreshCw,
+  Search,
+  Settings2,
+  Trash2,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import Loading from "@/components/loading";
 import { useRPC2Call } from "@/contexts/RPC2Context";
 import { resolveI18nText, type I18nText } from "@/utils/i18nText";
+
+interface MarketSource {
+  id: string;
+  name: string;
+  url: string;
+  enabled: boolean;
+}
 
 interface SourceStatus {
   id: string;
@@ -54,6 +73,12 @@ interface APIResponse<T> {
   data: T;
 }
 
+const emptySource = (): Omit<MarketSource, "id"> => ({
+  name: "",
+  url: "",
+  enabled: true,
+});
+
 async function request<T>(input: RequestInfo | URL, init?: RequestInit) {
   const response = await fetch(input, init);
   const payload = (await response.json().catch(() => null)) as APIResponse<T> | null;
@@ -63,13 +88,7 @@ async function request<T>(input: RequestInfo | URL, init?: RequestInit) {
   return payload;
 }
 
-const emptySource = () => ({
-  name: "",
-  url: "",
-  enabled: true,
-});
-
-// 插件市场：对齐主题市场的 source/catalog/install 机制。
+// 插件市场：源管理与主题市场一致（增/改/删/启停 + 目录刷新）。
 export default function PluginMarketPage() {
   const { call } = useRPC2Call();
   const { t, i18n } = useTranslation();
@@ -81,15 +100,22 @@ export default function PluginMarketPage() {
 
   const [plugins, setPlugins] = useState<MarketPlugin[]>([]);
   const [sourceStatuses, setSourceStatuses] = useState<SourceStatus[]>([]);
+  const [sources, setSources] = useState<MarketSource[]>([]);
   const [installed, setInstalled] = useState<Map<string, string>>(new Map());
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [installing, setInstalling] = useState<string | null>(null);
   const [sourcesOpen, setSourcesOpen] = useState(false);
+  const [editingID, setEditingID] = useState<string | null>(null);
   const [sourceForm, setSourceForm] = useState(emptySource());
   const [savingSource, setSavingSource] = useState(false);
-  const [sourceToDelete, setSourceToDelete] = useState<SourceStatus | null>(null);
+  const [sourceToDelete, setSourceToDelete] = useState<MarketSource | null>(null);
+
+  const loadSources = useCallback(async () => {
+    const payload = await request<MarketSource[]>("/api/admin/plugin/market/sources");
+    setSources(payload.data || []);
+  }, []);
 
   const loadCatalog = useCallback(async (force = false) => {
     const suffix = force ? "?refresh=true" : "";
@@ -112,12 +138,12 @@ export default function PluginMarketPage() {
   }, [call]);
 
   useEffect(() => {
-    loadCatalog()
+    Promise.all([loadCatalog(), loadSources()])
       .catch((error) =>
         toast.error(error instanceof Error ? error.message : String(error)),
       )
       .finally(() => setLoading(false));
-  }, [loadCatalog]);
+  }, [loadCatalog, loadSources]);
 
   const filteredPlugins = useMemo(() => {
     const term = search.trim().toLocaleLowerCase();
@@ -166,18 +192,37 @@ export default function PluginMarketPage() {
     }
   };
 
+  const startCreateSource = () => {
+    setEditingID(null);
+    setSourceForm(emptySource());
+  };
+
+  const startEditSource = (source: MarketSource) => {
+    setEditingID(source.id);
+    setSourceForm({ name: source.name, url: source.url, enabled: source.enabled });
+  };
+
   const saveSource = async () => {
+    if (!sourceForm.name.trim() || !sourceForm.url.trim()) return;
     setSavingSource(true);
     try {
-      const payload = await request("/api/admin/plugin/market/sources", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(sourceForm),
-      });
-      toast.success(payload.message || t("plugin.market_source_added", "Source added"));
-      setSourcesOpen(false);
-      setSourceForm(emptySource());
-      await loadCatalog(true);
+      await request(
+        editingID
+          ? `/api/admin/plugin/market/sources/${encodeURIComponent(editingID)}`
+          : "/api/admin/plugin/market/sources",
+        {
+          method: editingID ? "PUT" : "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(sourceForm),
+        },
+      );
+      toast.success(
+        editingID
+          ? t("market.source_updated", "Source updated")
+          : t("market.source_created", "Source created"),
+      );
+      startCreateSource();
+      await Promise.all([loadSources(), loadCatalog(true)]);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : String(error));
     } finally {
@@ -185,14 +230,27 @@ export default function PluginMarketPage() {
     }
   };
 
-  const deleteSource = async (source: SourceStatus) => {
+  const updateSourceEnabled = async (source: MarketSource, enabled: boolean) => {
+    try {
+      await request(`/api/admin/plugin/market/sources/${encodeURIComponent(source.id)}`, {
+        method: "PUT",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ ...source, enabled }),
+      });
+      await Promise.all([loadSources(), loadCatalog(true)]);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : String(error));
+    }
+  };
+
+  const deleteSource = async (source: MarketSource) => {
     try {
       await request(`/api/admin/plugin/market/sources/${encodeURIComponent(source.id)}`, {
         method: "DELETE",
       });
-      setSourceToDelete(null);
-      await loadCatalog(true);
-      toast.success(t("plugin.market_source_deleted", "Source deleted"));
+      if (editingID === source.id) startCreateSource();
+      toast.success(t("market.source_deleted", "Source deleted"));
+      await Promise.all([loadSources(), loadCatalog(true)]);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : String(error));
     }
@@ -208,64 +266,29 @@ export default function PluginMarketPage() {
           <Heading size="4">{t("plugin.market", "Plugin Market")}</Heading>
         </Flex>
         <Flex gap="2">
-          <Button variant="soft" onClick={refresh} disabled={refreshing}>
-            <RefreshCw size={14} />
-            {t("common.refresh", "Refresh")}
+          <Button variant="soft" onClick={() => setSourcesOpen(true)}>
+            <Settings2 size={14} />
+            {t("market.manage_sources", "Manage sources")}
           </Button>
-          <Button onClick={() => setSourcesOpen(true)}>
-            <Plus size={14} />
-            {t("plugin.market_add_source", "Add Source")}
-          </Button>
+          <IconButton
+            variant="soft"
+            onClick={refresh}
+            disabled={refreshing}
+            title={t("common.refresh", "Refresh")}
+          >
+            <RefreshCw size={16} className={refreshing ? "animate-spin" : ""} />
+          </IconButton>
         </Flex>
       </Flex>
 
       <Separator size="4" />
 
-      {/* 源状态：无源时提示全宽显示 */}
-      {sourceStatuses.length === 0 ? (
-        <Callout.Root>
-          <Callout.Text>
-            {t("plugin.market_no_sources", "No market sources configured")}
-          </Callout.Text>
+      {sourceStatuses.filter((source) => source.error).map((source) => (
+        <Callout.Root key={source.id} color="red" size="1">
+          <Callout.Icon><AlertTriangle size={16} /></Callout.Icon>
+          <Callout.Text>{source.name}: {source.error}</Callout.Text>
         </Callout.Root>
-      ) : (
-        <Grid columns={{ initial: "1", sm: "2", lg: "3" }} gap="2">
-          {sourceStatuses.map((status) => (
-            <Card key={status.id} size="1">
-              <Flex align="center" justify="between">
-                <Text size="2" weight="bold">
-                  {status.name}
-                </Text>
-                <Flex align="center" gap="2">
-                  <Badge color={status.error ? "red" : "green"}>
-                    {status.error
-                      ? t("common.error", "Error")
-                      : `${status.count} ${t("plugin.market_plugins", "plugins")}`}
-                  </Badge>
-                  <Button
-                    size="1"
-                    variant="ghost"
-                    color="red"
-                    onClick={() => setSourceToDelete(status)}
-                    title={t("plugin.market_delete_source", "Delete source")}
-                    aria-label={t("plugin.market_delete_source", "Delete source")}
-                  >
-                    <Trash2 size={14} />
-                  </Button>
-                </Flex>
-              </Flex>
-              <Text size="1" color="gray" className="break-all">
-                {status.url}
-              </Text>
-              {status.error && (
-                <Text size="1" color="red">
-                  {status.error}
-                </Text>
-              )}
-            </Card>
-          ))}
-        </Grid>
-      )}
+      ))}
 
       <TextField.Root
         value={search}
@@ -329,59 +352,130 @@ export default function PluginMarketPage() {
         </Grid>
       )}
 
-      {/* 添加源弹窗 */}
+      {/* 源管理弹窗：与主题市场一致 */}
       <Dialog.Root open={sourcesOpen} onOpenChange={setSourcesOpen}>
-        <Dialog.Content>
-          <Dialog.Title>{t("plugin.market_add_source", "Add Source")}</Dialog.Title>
-          <Flex direction="column" gap="3" my="3">
+        <Dialog.Content maxWidth="760px">
+          <Dialog.Title>{t("market.manage_sources", "Manage sources")}</Dialog.Title>
+          <Dialog.Description className="sr-only">
+            {t("market.manage_sources", "Manage sources")}
+          </Dialog.Description>
+          <Flex direction="column" gap="3" mt="4">
+            {sources.length === 0 ? (
+              <Text color="gray">{t("market.no_sources", "No sources configured")}</Text>
+            ) : sources.map((source, index) => (
+              <Box key={source.id}>
+                {index > 0 && <Separator size="4" mb="3" />}
+                <Flex justify="between" align="center" gap="3">
+                  <Box className="min-w-0">
+                    <Text as="div" weight="medium">{source.name}</Text>
+                    <Text as="div" size="1" color="gray" className="truncate">{source.url}</Text>
+                  </Box>
+                  <Flex align="center" gap="2" className="shrink-0">
+                    <Switch
+                      checked={source.enabled}
+                      onCheckedChange={(checked) => updateSourceEnabled(source, checked)}
+                    />
+                    <IconButton
+                      variant="ghost"
+                      onClick={() => startEditSource(source)}
+                      title={t("common.edit", "Edit")}
+                    >
+                      <Pencil size={16} />
+                    </IconButton>
+                    <IconButton
+                      variant="ghost"
+                      color="red"
+                      onClick={() => setSourceToDelete(source)}
+                      title={t("common.delete", "Delete")}
+                    >
+                      <Trash2 size={16} />
+                    </IconButton>
+                  </Flex>
+                </Flex>
+              </Box>
+            ))}
+          </Flex>
+
+          <Separator size="4" my="5" />
+          <Flex justify="between" align="center" mb="3">
+            <Text weight="bold">
+              {editingID ? t("market.edit_source", "Edit source") : t("market.add_source", "Add source")}
+            </Text>
+            {editingID && (
+              <Button size="1" variant="ghost" onClick={startCreateSource}>
+                <Plus size={14} />
+                {t("market.add_source", "Add source")}
+              </Button>
+            )}
+          </Flex>
+          <Flex direction="column" gap="3">
             <TextField.Root
               value={sourceForm.name}
               onChange={(event) =>
-                setSourceForm((form) => ({ ...form, name: event.target.value }))
+                setSourceForm((current) => ({ ...current, name: event.target.value }))
               }
-              placeholder={t("plugin.market_source_name", "Name")}
+              placeholder={t("market.source_name", "Source name")}
             />
             <TextField.Root
               value={sourceForm.url}
               onChange={(event) =>
-                setSourceForm((form) => ({ ...form, url: event.target.value }))
+                setSourceForm((current) => ({ ...current, url: event.target.value }))
               }
-              placeholder={t("plugin.market_source_url", "Catalog URL")}
+              placeholder="https://raw.githubusercontent.com/owner/repo/main/v1.json"
             />
+            <Flex justify="between" align="center">
+              <Flex align="center" gap="2">
+                <Switch
+                  checked={sourceForm.enabled}
+                  onCheckedChange={(enabled) =>
+                    setSourceForm((current) => ({ ...current, enabled }))
+                  }
+                />
+                <Text size="2">{t("market.enabled", "Enabled")}</Text>
+              </Flex>
+              <Button
+                onClick={saveSource}
+                disabled={savingSource || !sourceForm.name.trim() || !sourceForm.url.trim()}
+              >
+                {savingSource && <RefreshCw size={15} className="animate-spin" />}
+                {editingID ? t("common.save", "Save") : t("common.add", "Add")}
+              </Button>
+            </Flex>
           </Flex>
-          <Flex gap="2" justify="end">
-            <Button variant="soft" onClick={() => setSourcesOpen(false)}>
-              {t("common.cancel", "Cancel")}
-            </Button>
-            <Button onClick={saveSource} disabled={savingSource}>
-              {savingSource
-                ? t("plugin.saving", "Saving...")
-                : t("plugin.market_save", "Save")}
-            </Button>
+          <Flex justify="end" mt="5">
+            <Dialog.Close>
+              <Button variant="soft">{t("common.close", "Close")}</Button>
+            </Dialog.Close>
           </Flex>
         </Dialog.Content>
       </Dialog.Root>
 
       {/* 删除源确认 */}
       <Dialog.Root
-        open={sourceToDelete !== null}
+        open={Boolean(sourceToDelete)}
         onOpenChange={(open) => {
           if (!open) setSourceToDelete(null);
         }}
       >
-        <Dialog.Content>
-          <Dialog.Title>{t("plugin.market_delete_source", "Delete source")}</Dialog.Title>
-          <Text as="p" size="2" my="3">
-            {t("plugin.market_delete_source_confirm", "Delete this market source?")}{" "}
-            {sourceToDelete?.name}
-          </Text>
-          <Flex gap="2" justify="end">
-            <Button variant="soft" onClick={() => setSourceToDelete(null)}>
-              {t("common.cancel", "Cancel")}
-            </Button>
+        <Dialog.Content maxWidth="420px">
+          <Dialog.Title>{t("common.delete", "Delete")}</Dialog.Title>
+          <Dialog.Description>
+            {t("market.delete_source_confirm", "Delete source {{name}}?", {
+              name: sourceToDelete?.name,
+            })}
+          </Dialog.Description>
+          <Flex justify="end" gap="2" mt="4">
+            <Dialog.Close>
+              <Button variant="soft" color="gray">{t("common.cancel", "Cancel")}</Button>
+            </Dialog.Close>
             <Button
               color="red"
-              onClick={() => sourceToDelete && deleteSource(sourceToDelete)}
+              disabled={!sourceToDelete}
+              onClick={async () => {
+                if (!sourceToDelete) return;
+                await deleteSource(sourceToDelete);
+                setSourceToDelete(null);
+              }}
             >
               {t("common.delete", "Delete")}
             </Button>
