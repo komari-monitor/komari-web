@@ -5,6 +5,7 @@ export interface PluginPermissions {
   allowSystemRPC?: boolean; // server.call
   allowRoutes?: boolean; // server.route
   allowHooks?: boolean; // server.hook
+  allowHTMLInject?: boolean; // server.injectHTML
   allowExec?: boolean;
   allowListen?: boolean;
   allowAllFileAccess?: boolean;

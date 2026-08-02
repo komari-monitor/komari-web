@@ -667,6 +667,7 @@
       "allowAllFileAccess": "存取外掛目錄之外的檔案",
       "allowExec": "執行子程式",
       "allowHooks": "修改 HTTP 請求/回應",
+      "allowHTMLInject": "向每個 HTML 頁面注入 CSS/JS",
       "allowListen": "監聽本機連接埠",
       "allowRoutes": "註冊 HTTP 路由",
       "allowSystemRPC": "呼叫系統 RPC"

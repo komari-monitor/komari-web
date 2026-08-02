@@ -667,6 +667,7 @@
       "allowAllFileAccess": "プラグインディレクトリ外のファイルへのアクセス",
       "allowExec": "子プロセスの実行",
       "allowHooks": "HTTP リクエスト/レスポンスの変更",
+      "allowHTMLInject": "すべての HTML ページに CSS/JS を埋め込む",
       "allowListen": "ローカルポートのリッスン",
       "allowRoutes": "HTTP ルートの登録",
       "allowSystemRPC": "システム RPC の呼び出し"

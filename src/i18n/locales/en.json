@@ -667,6 +667,7 @@
       "allowAllFileAccess": "Access files outside the plugin directory",
       "allowExec": "Execute child processes",
       "allowHooks": "Modify HTTP requests/responses",
+      "allowHTMLInject": "Embed CSS/JS into every HTML page",
       "allowListen": "Listen on local ports",
       "allowRoutes": "Register HTTP routes",
       "allowSystemRPC": "Call system RPC"

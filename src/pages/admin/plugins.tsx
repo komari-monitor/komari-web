@@ -251,6 +251,8 @@ export default function PluginsPage() {
     if (p.allowSystemRPC) labels.push(t("plugin.permission.allowSystemRPC", "Call system RPC"));
     if (p.allowRoutes) labels.push(t("plugin.permission.allowRoutes", "Register HTTP routes"));
     if (p.allowHooks) labels.push(t("plugin.permission.allowHooks", "Modify HTTP requests/responses"));
+    if (p.allowHTMLInject)
+      labels.push(t("plugin.permission.allowHTMLInject", "Embed CSS/JS into every HTML page"));
     if (p.allowExec) labels.push(t("plugin.permission.allowExec", "Execute child processes"));
     if (p.allowListen) labels.push(t("plugin.permission.allowListen", "Listen on local ports"));
     if (p.allowAllFileAccess)

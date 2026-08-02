@@ -667,6 +667,7 @@
       "allowAllFileAccess": "Akses file di luar direktori plugin",
       "allowExec": "Jalankan proses anak",
       "allowHooks": "Ubah permintaan/respons HTTP",
+      "allowHTMLInject": "Sisipkan CSS/JS ke setiap halaman HTML",
       "allowListen": "Dengarkan port lokal",
       "allowRoutes": "Daftarkan rute HTTP",
       "allowSystemRPC": "Panggil RPC sistem"
