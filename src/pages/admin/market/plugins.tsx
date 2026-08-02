@@ -35,7 +35,6 @@ interface MarketPlugin {
   version: string;
   author: I18nText;
   url?: string;
-  preview?: string;
   download: string;
   sha256: string;
   komari?: string;
