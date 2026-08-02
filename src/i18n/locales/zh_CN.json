@@ -650,6 +650,7 @@
     "market_plugins": "插件",
     "market_refresh_success": "插件源已刷新",
     "market_search": "搜索插件...",
+    "market_uninstall_success": "插件已卸载",
     "market_warning": "插件市场中的第三方插件未经官方审查，可能包含有害代码，请仔细甄别后再安装。",
     "no_logs": "暂无日志",
     "no_plugins": "尚未安装插件",

@@ -28,10 +28,12 @@ import {
   Trash2,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import Loading from "@/components/loading";
 import { useRPC2Call } from "@/contexts/RPC2Context";
 import { resolveI18nText, type I18nText } from "@/utils/i18nText";
+import type { PluginInfo } from "@/types/plugin";
 
 interface MarketSource {
   id: string;
@@ -63,11 +65,6 @@ interface MarketPlugin {
   source_name: string;
 }
 
-interface InstalledPlugin {
-  short: string;
-  version: string;
-}
-
 interface APIResponse<T> {
   status: string;
   message?: string;
@@ -79,6 +76,25 @@ const emptySource = (): Omit<MarketSource, "id"> => ({
   url: "",
   enabled: true,
 });
+
+function isVersionNewer(candidate: string, installed: string) {
+  const parse = (value: string) => {
+    const match = value.trim().replace(/^v/i, "").match(/^(\d+)(?:\.(\d+))?(?:\.(\d+))?/);
+    return match ? [Number(match[1]), Number(match[2] || 0), Number(match[3] || 0)] : null;
+  };
+  const next = parse(candidate);
+  const current = parse(installed);
+  if (!next || !current) return candidate !== installed;
+  for (let index = 0; index < next.length; index += 1) {
+    if (next[index] !== current[index]) return next[index] > current[index];
+  }
+  return false;
+}
+
+// 插件是否声明了可编辑配置项（忽略 title 分组项）。
+const hasConfiguration = (plugin: PluginInfo | undefined) =>
+  Array.isArray(plugin?.configuration?.data) &&
+  plugin!.configuration!.data!.some((item) => item.type !== "title");
 
 async function request<T>(input: RequestInfo | URL, init?: RequestInit) {
   const response = await fetch(input, init);
@@ -93,6 +109,7 @@ async function request<T>(input: RequestInfo | URL, init?: RequestInit) {
 export default function PluginMarketPage() {
   const { call } = useRPC2Call();
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
   const language = i18n.resolvedLanguage || i18n.language || "";
   const displayText = useCallback(
     (value: I18nText | undefined) => resolveI18nText(value, language) || "",
@@ -103,10 +120,13 @@ export default function PluginMarketPage() {
   const [sourceStatuses, setSourceStatuses] = useState<SourceStatus[]>([]);
   const [sources, setSources] = useState<MarketSource[]>([]);
   const [installed, setInstalled] = useState<Map<string, string>>(new Map());
+  const [installedInfo, setInstalledInfo] = useState<Map<string, PluginInfo>>(new Map());
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [installing, setInstalling] = useState<string | null>(null);
+  const [pluginToUninstall, setPluginToUninstall] = useState<MarketPlugin | null>(null);
+  const [deletingPlugin, setDeletingPlugin] = useState<string | null>(null);
   const [sourcesOpen, setSourcesOpen] = useState(false);
   const [editingID, setEditingID] = useState<string | null>(null);
   const [sourceForm, setSourceForm] = useState(emptySource());
@@ -124,18 +144,13 @@ export default function PluginMarketPage() {
       request<{ plugins: MarketPlugin[]; sources: SourceStatus[] }>(
         `/api/admin/plugin/market/catalog${suffix}`,
       ),
-      call<any, InstalledPlugin[]>("admin:listPlugins").catch(() => []),
+      call<any, PluginInfo[]>("admin:listPlugins").catch(() => []),
     ]);
     setPlugins(catalogPayload.data?.plugins || []);
     setSourceStatuses(catalogPayload.data?.sources || []);
-    setInstalled(
-      new Map(
-        (Array.isArray(installedResult) ? installedResult : []).map((plugin) => [
-          plugin.short,
-          plugin.version,
-        ]),
-      ),
-    );
+    const list = Array.isArray(installedResult) ? installedResult : [];
+    setInstalled(new Map(list.map((plugin) => [plugin.short, plugin.version])));
+    setInstalledInfo(new Map(list.map((plugin) => [plugin.short, plugin])));
   }, [call]);
 
   useEffect(() => {
@@ -190,6 +205,19 @@ export default function PluginMarketPage() {
       toast.error(error instanceof Error ? error.message : String(error));
     } finally {
       setInstalling(null);
+    }
+  };
+
+  const uninstallPlugin = async (plugin: MarketPlugin) => {
+    setDeletingPlugin(plugin.short);
+    try {
+      await call("admin:deletePlugin", { short: plugin.short });
+      toast.success(t("plugin.market_uninstall_success", "Plugin uninstalled"));
+      await loadCatalog();
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : String(error));
+    } finally {
+      setDeletingPlugin(null);
     }
   };
 
@@ -315,19 +343,30 @@ export default function PluginMarketPage() {
           {filteredPlugins.map((plugin) => {
             const installedVersion = installed.get(plugin.short);
             const isInstalled = installedVersion !== undefined;
+            const hasUpdate = Boolean(
+              installedVersion && isVersionNewer(plugin.version, installedVersion),
+            );
+            const canConfigure = isInstalled && hasConfiguration(installedInfo.get(plugin.short));
             const key = `${plugin.source_id}:${plugin.short}`;
             return (
               <Card key={key}>
                 <Flex direction="column" gap="2">
                   <Flex align="center" justify="between">
                     <Text weight="bold">{displayText(plugin.name) || plugin.short}</Text>
-                    <Badge color={plugin.installable ? "green" : "gray"}>
-                      {isInstalled
-                        ? `${t("plugin.installed", "Installed")} v${installedVersion}`
-                        : plugin.installable
-                          ? `v${plugin.version}`
-                          : t("plugin.market_not_installable", "Not installable")}
-                    </Badge>
+                    <Box>
+                      {isInstalled && (
+                        <Badge color={hasUpdate ? "orange" : "green"} variant="soft">
+                          {hasUpdate
+                            ? t("market.update_available", "Update available")
+                            : t("market.installed", "Installed")}
+                        </Badge>
+                      )}
+                      {!isInstalled && !plugin.installable && (
+                        <Badge color="gray" variant="soft">
+                          {t("market.install_unavailable", "Package unavailable")}
+                        </Badge>
+                      )}
+                    </Box>
                   </Flex>
                   <Text size="2" color="gray">
                     {plugin.short} · {displayText(plugin.author)}
@@ -336,20 +375,64 @@ export default function PluginMarketPage() {
                   {displayText(plugin.description) && (
                     <Text size="2">{displayText(plugin.description)}</Text>
                   )}
-                  <Flex align="center" justify="between">
+                  <Flex align="center" justify="between" gap="2" wrap="wrap">
                     <Text size="1" color="gray">
                       {plugin.source_name}
                     </Text>
-                    <Button
-                      size="1"
-                      disabled={!plugin.installable || installing === key}
-                      onClick={() => installPlugin(plugin)}
-                    >
-                      <Download size={14} />
-                      {installing === key
-                        ? t("plugin.market_installing", "Installing...")
-                        : t("plugin.market_install", "Install")}
-                    </Button>
+                    <Flex gap="1" wrap="wrap" justify="end">
+                      {!isInstalled && plugin.installable && (
+                        <Button
+                          size="1"
+                          disabled={installing === key}
+                          onClick={() => installPlugin(plugin)}
+                        >
+                          <Download size={14} />
+                          {installing === key
+                            ? t("plugin.market_installing", "Installing...")
+                            : t("plugin.market_install", "Install")}
+                        </Button>
+                      )}
+                      {hasUpdate && plugin.installable && (
+                        <Button
+                          size="1"
+                          disabled={installing === key}
+                          onClick={() => installPlugin(plugin)}
+                        >
+                          {installing === key ? (
+                            <RefreshCw size={14} className="animate-spin" />
+                          ) : (
+                            <RefreshCw size={14} />
+                          )}
+                          {t("common.update", "Update")}
+                        </Button>
+                      )}
+                      {canConfigure && (
+                        <Button
+                          size="1"
+                          variant="soft"
+                          onClick={() =>
+                            navigate(
+                              `/admin/plugins/config?short=${encodeURIComponent(plugin.short)}`,
+                            )
+                          }
+                        >
+                          <Settings2 size={14} />
+                          {t("plugin.config", "Configuration")}
+                        </Button>
+                      )}
+                      {isInstalled && (
+                        <Button
+                          size="1"
+                          variant="soft"
+                          color="red"
+                          disabled={deletingPlugin === plugin.short}
+                          onClick={() => setPluginToUninstall(plugin)}
+                        >
+                          <Trash2 size={14} />
+                          {t("market.uninstall", "Uninstall")}
+                        </Button>
+                      )}
+                    </Flex>
                   </Flex>
                 </Flex>
               </Card>
@@ -452,6 +535,42 @@ export default function PluginMarketPage() {
             <Dialog.Close>
               <Button variant="soft">{t("common.close", "Close")}</Button>
             </Dialog.Close>
+          </Flex>
+        </Dialog.Content>
+      </Dialog.Root>
+
+      {/* 卸载确认 */}
+      <Dialog.Root
+        open={Boolean(pluginToUninstall)}
+        onOpenChange={(open) => {
+          if (!open) setPluginToUninstall(null);
+        }}
+      >
+        <Dialog.Content maxWidth="420px">
+          <Dialog.Title>{t("market.uninstall", "Uninstall")}</Dialog.Title>
+          <Dialog.Description>
+            {t("market.uninstall_confirm", "Uninstall {{name}}?", {
+              name: pluginToUninstall
+                ? displayText(pluginToUninstall.name) || pluginToUninstall.short
+                : "",
+            })}
+          </Dialog.Description>
+          <Flex justify="end" gap="2" mt="4">
+            <Dialog.Close>
+              <Button variant="soft" color="gray">{t("common.cancel", "Cancel")}</Button>
+            </Dialog.Close>
+            <Button
+              color="red"
+              disabled={!pluginToUninstall || deletingPlugin === pluginToUninstall.short}
+              onClick={async () => {
+                if (!pluginToUninstall) return;
+                await uninstallPlugin(pluginToUninstall);
+                setPluginToUninstall(null);
+              }}
+            >
+              {deletingPlugin && <RefreshCw size={15} className="animate-spin" />}
+              {t("market.uninstall", "Uninstall")}
+            </Button>
           </Flex>
         </Dialog.Content>
       </Dialog.Root>
