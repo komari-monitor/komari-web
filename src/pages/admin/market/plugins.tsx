@@ -392,7 +392,7 @@ export default function PluginMarketPage() {
                             : t("plugin.market_install", "Install")}
                         </Button>
                       )}
-                      {hasUpdate && plugin.installable && (
+                      {isInstalled && plugin.installable && (
                         <Button
                           size="1"
                           disabled={installing === key}
@@ -403,7 +403,7 @@ export default function PluginMarketPage() {
                           ) : (
                             <RefreshCw size={14} />
                           )}
-                          {t("common.update", "Update")}
+                          {t("plugin.market_reinstall", "Reinstall")}
                         </Button>
                       )}
                       {canConfigure && (
@@ -417,7 +417,7 @@ export default function PluginMarketPage() {
                           }
                         >
                           <Settings2 size={14} />
-                          {t("plugin.config", "Configuration")}
+                          {t("plugin.market_modify", "Modify")}
                         </Button>
                       )}
                       {isInstalled && (

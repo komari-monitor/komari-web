@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Blocks } from "lucide-react";
 import { useSearchParams } from "react-router-dom";
 import {
@@ -78,7 +78,15 @@ export default function PluginConfigPage() {
     [language],
   );
 
+  // 插件是否声明了可编辑配置项（忽略 title 分组项），无配置项的插件不显示在列表中。
+  const hasConfiguration = (plugin: PluginInfo) =>
+    Array.isArray(plugin?.configuration?.data) &&
+    plugin!.configuration!.data!.some((item) => item.type !== "title");
 
+  const configurablePlugins = useMemo(
+    () => plugins.filter(hasConfiguration),
+    [plugins],
+  );
 
   const loadList = useCallback(async () => {
     try {
@@ -124,13 +132,13 @@ export default function PluginConfigPage() {
   useEffect(() => {
     if (loading || autoSelectDone) return;
     const target = searchParams.get("short");
-    if (!target || plugins.length === 0) return;
-    const plugin = plugins.find((item) => item.short === target);
+    if (!target || configurablePlugins.length === 0) return;
+    const plugin = configurablePlugins.find((item) => item.short === target);
     if (plugin) {
       setAutoSelectDone(true);
       selectPlugin(plugin);
     }
-  }, [loading, autoSelectDone, searchParams, plugins, selectPlugin]);
+  }, [loading, autoSelectDone, searchParams, configurablePlugins, selectPlugin]);
 
   const handleValueChange = (key: string, value: any) => {
     setValues((current) => ({ ...current, [key]: value }));
@@ -174,12 +182,14 @@ export default function PluginConfigPage() {
         {/* 左侧：插件列表 */}
         <Card className="w-full md:w-64 shrink-0">
           <Flex direction="column" gap="1">
-            {plugins.length === 0 && (
+            {configurablePlugins.length === 0 && (
               <Text size="2" color="gray">
-                {t("plugin.no_plugins", "No plugins installed yet")}
+                {plugins.length === 0
+                  ? t("plugin.no_plugins", "No plugins installed yet")
+                  : t("plugin.config_no_configurable_plugins", "No plugins with configuration items")}
               </Text>
             )}
-            {plugins.map((plugin) => {
+            {configurablePlugins.map((plugin) => {
               const isActive = selected?.short === plugin.short;
               return (
                 <button
