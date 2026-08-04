@@ -157,34 +157,67 @@ const DashboardContent = () => {
     const start = new Date(now.getTime() - 24 * 3600 * 1000);
     try {
       const res = await call<any, QueryMetricsResponse>("public:queryMetrics", {
-        metric_keys: ["net.in.rate", "net.out.rate"],
+        metric_keys: [
+          "net.in.rate",
+          "net.out.rate",
+          "traffic.up",
+          "traffic.down",
+        ],
         start: start.toISOString(),
         end: now.toISOString(),
-        max_points: 96,
-        aggregation: "avg",
+        aggregation: "max",
+        aggregation_by_metric: {
+          "traffic.up": "sum",
+          "traffic.down": "sum",
+        },
         fill_empty: true,
       });
-      const byTime = new Map<number, { up: number; down: number }>();
+      const byTime = new Map<
+        number,
+        {
+          upRate: number;
+          downRate: number;
+          upDelta: number;
+          downDelta: number;
+        }
+      >();
       const byEntity = new Map<string, { up: number; down: number }>();
       for (const series of res?.series ?? []) {
-        const isUp = series.metric_key === "net.out.rate";
+        const isRate =
+          series.metric_key === "net.in.rate" ||
+          series.metric_key === "net.out.rate";
+        const isUp =
+          series.metric_key === "net.out.rate" ||
+          series.metric_key === "traffic.up";
+        if (
+          !isRate &&
+          series.metric_key !== "traffic.up" &&
+          series.metric_key !== "traffic.down"
+        ) {
+          continue;
+        }
         const entity = series.entity_id;
-        let prevTs: number | null = null;
         for (const point of series.points ?? []) {
           if (point.value == null) continue;
           const ts = new Date(point.time).getTime();
-          const entry = byTime.get(ts) ?? { up: 0, down: 0 };
-          if (isUp) entry.up += point.value;
-          else entry.down += point.value;
+          const entry =
+            byTime.get(ts) ??
+            { upRate: 0, downRate: 0, upDelta: 0, downDelta: 0 };
+          if (isRate) {
+            if (isUp) entry.upRate += point.value;
+            else entry.downRate += point.value;
+          } else if (isUp) {
+            entry.upDelta += point.value;
+          } else {
+            entry.downDelta += point.value;
+          }
           byTime.set(ts, entry);
-          if (prevTs !== null) {
-            const dt = (ts - prevTs) / 1000;
+          if (!isRate) {
             const entityEntry = byEntity.get(entity) ?? { up: 0, down: 0 };
-            if (isUp) entityEntry.up += point.value * dt;
-            else entityEntry.down += point.value * dt;
+            if (isUp) entityEntry.up += point.value;
+            else entityEntry.down += point.value;
             byEntity.set(entity, entityEntry);
           }
-          prevTs = ts;
         }
       }
       const rate = Array.from(byTime.entries())
@@ -199,18 +232,13 @@ const DashboardContent = () => {
       }[] = [];
       let totalUp = 0;
       let totalDown = 0;
-      let prev: number | null = null;
       for (const point of rate) {
-        if (prev !== null) {
-          const dt = (point.time - prev) / 1000;
-          totalUp += point.up * dt;
-          totalDown += point.down * dt;
-        }
-        prev = point.time;
+        totalUp += point.upDelta;
+        totalDown += point.downDelta;
         points.push({
           time: point.time,
-          upRate: point.up,
-          downRate: point.down,
+          upRate: point.upRate,
+          downRate: point.downRate,
           upCum: totalUp,
           downCum: totalDown,
         });

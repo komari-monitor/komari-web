@@ -34,6 +34,7 @@ import {
   ListChecks,
   RefreshCw,
   Save,
+  Timer,
   X,
 } from "lucide-react";
 import React from "react";
@@ -75,6 +76,18 @@ type MetricRetentionChange = {
 };
 
 const SAFE_RAW_RETENTION_DAYS = 1;
+
+const DEFAULT_ROLLUP_RETENTION = {
+  minute: 600,
+  fiveMinute: 3000,
+  hour: 600,
+};
+
+const ROLLUP_RETENTION_KEYS = {
+  minute: "metric_rollup_minute_retention_minutes",
+  fiveMinute: "metric_rollup_five_minute_retention_minutes",
+  hour: "metric_rollup_hour_retention_hours",
+} as const;
 
 type MetricTextField = "name" | "description";
 type TranslationFunction = ReturnType<typeof useTranslation>["t"];
@@ -223,6 +236,11 @@ export default function MetricsSettings() {
         {t("settings.metrics.advanced_title")}
       </SettingCardLabel>
 
+      <MetricRollupRetentionCard
+        settings={settings}
+        onSave={saveMetricSettings}
+      />
+
       <MetricRetentionTable
         defaultRetentionDays={toNumber(
           settings.metric_retention_days,
@@ -291,6 +309,192 @@ export default function MetricsSettings() {
 
     </Flex>
   );
+}
+
+function MetricRollupRetentionCard({
+  settings,
+  onSave,
+}: {
+  settings: SettingsResponse;
+  onSave: (changes: Partial<SettingsResponse>) => Promise<void>;
+}) {
+  const { t } = useTranslation();
+  const [draft, setDraft] = React.useState({
+    minute: String(
+      toNumber(
+        settings[ROLLUP_RETENTION_KEYS.minute],
+        DEFAULT_ROLLUP_RETENTION.minute,
+      ),
+    ),
+    fiveMinute: String(
+      toNumber(
+        settings[ROLLUP_RETENTION_KEYS.fiveMinute],
+        DEFAULT_ROLLUP_RETENTION.fiveMinute,
+      ),
+    ),
+    hour: String(
+      toNumber(
+        settings[ROLLUP_RETENTION_KEYS.hour],
+        DEFAULT_ROLLUP_RETENTION.hour,
+      ),
+    ),
+  });
+  const [saving, setSaving] = React.useState(false);
+
+  React.useEffect(() => {
+    setDraft({
+      minute: String(
+        toNumber(
+          settings[ROLLUP_RETENTION_KEYS.minute],
+          DEFAULT_ROLLUP_RETENTION.minute,
+        ),
+      ),
+      fiveMinute: String(
+        toNumber(
+          settings[ROLLUP_RETENTION_KEYS.fiveMinute],
+          DEFAULT_ROLLUP_RETENTION.fiveMinute,
+        ),
+      ),
+      hour: String(
+        toNumber(
+          settings[ROLLUP_RETENTION_KEYS.hour],
+          DEFAULT_ROLLUP_RETENTION.hour,
+        ),
+      ),
+    });
+  }, [settings]);
+
+  const current = {
+    minute: toNumber(
+      settings[ROLLUP_RETENTION_KEYS.minute],
+      DEFAULT_ROLLUP_RETENTION.minute,
+    ),
+    fiveMinute: toNumber(
+      settings[ROLLUP_RETENTION_KEYS.fiveMinute],
+      DEFAULT_ROLLUP_RETENTION.fiveMinute,
+    ),
+    hour: toNumber(
+      settings[ROLLUP_RETENTION_KEYS.hour],
+      DEFAULT_ROLLUP_RETENTION.hour,
+    ),
+  };
+
+  const hasChanges =
+    draft.minute !== String(current.minute) ||
+    draft.fiveMinute !== String(current.fiveMinute) ||
+    draft.hour !== String(current.hour);
+
+  const updateDraft = (key: keyof typeof draft, value: string) => {
+    setDraft((previous) => ({ ...previous, [key]: value }));
+  };
+
+  const handleSave = async () => {
+    const minute = parseInteger(draft.minute);
+    const fiveMinute = parseInteger(draft.fiveMinute);
+    const hour = parseInteger(draft.hour);
+    if (minute === undefined || fiveMinute === undefined || hour === undefined) {
+      toast.error(t("settings.metrics.rollup_retention_invalid"));
+      return;
+    }
+    if (minute > fiveMinute || fiveMinute > hour * 60) {
+      toast.error(t("settings.metrics.rollup_retention_order_invalid"));
+      return;
+    }
+
+    setSaving(true);
+    try {
+      await onSave({
+        [ROLLUP_RETENTION_KEYS.minute]: minute,
+        [ROLLUP_RETENTION_KEYS.fiveMinute]: fiveMinute,
+        [ROLLUP_RETENTION_KEYS.hour]: hour,
+      });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <SettingCard
+      title={
+        <Flex align="center" gap="2">
+          <Timer size={16} />
+          {t("settings.metrics.rollup_retention_title")}
+        </Flex>
+      }
+      description={t("settings.metrics.rollup_retention_description")}
+      direction="column"
+    >
+      <Flex direction="column" gap="3" className="w-full pt-3">
+        <Flex gap="3" wrap="wrap">
+          <RollupRetentionInput
+            label={t("settings.metrics.rollup_minute_label")}
+            unit={t("settings.metrics.minutes_unit")}
+            value={draft.minute}
+            disabled={saving}
+            onChange={(value) => updateDraft("minute", value)}
+          />
+          <RollupRetentionInput
+            label={t("settings.metrics.rollup_five_minute_label")}
+            unit={t("settings.metrics.minutes_unit")}
+            value={draft.fiveMinute}
+            disabled={saving}
+            onChange={(value) => updateDraft("fiveMinute", value)}
+          />
+          <RollupRetentionInput
+            label={t("settings.metrics.rollup_hour_label")}
+            unit={t("settings.metrics.hours_unit")}
+            value={draft.hour}
+            disabled={saving}
+            onChange={(value) => updateDraft("hour", value)}
+          />
+        </Flex>
+        <Flex justify="end">
+          <Button disabled={saving || !hasChanges} onClick={() => void handleSave()}>
+            <Save size={14} />
+            {t("settings.metrics.rollup_retention_save")}
+          </Button>
+        </Flex>
+      </Flex>
+    </SettingCard>
+  );
+}
+
+function RollupRetentionInput({
+  label,
+  unit,
+  value,
+  disabled,
+  onChange,
+}: {
+  label: string;
+  unit: string;
+  value: string;
+  disabled: boolean;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <Flex direction="column" gap="1" style={{ minWidth: "12rem" }}>
+      <Text size="2" weight="medium">
+        {label}
+      </Text>
+      <TextField.Root
+        type="number"
+        min="1"
+        step="1"
+        value={value}
+        disabled={disabled}
+        onChange={(event) => onChange(event.target.value)}
+      >
+        <TextField.Slot side="right">{unit}</TextField.Slot>
+      </TextField.Root>
+    </Flex>
+  );
+}
+
+function parseInteger(value: string): number | undefined {
+  if (!/^\d+$/.test(value.trim())) return undefined;
+  const parsed = Number(value);
+  return Number.isSafeInteger(parsed) && parsed > 0 ? parsed : undefined;
 }
 
 function MetricRetentionTable({

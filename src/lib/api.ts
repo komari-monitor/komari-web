@@ -14,6 +14,9 @@ export interface SettingsResponse {
   o_auth_provider: string;
   o_auth_enabled: boolean;
   custom_head: string;
+  metric_rollup_minute_retention_minutes?: number;
+  metric_rollup_five_minute_retention_minutes?: number;
+  metric_rollup_hour_retention_hours?: number;
   CreatedAt: string;
   UpdatedAt: string;
   [key: string]: any;
