@@ -374,7 +374,17 @@ const DashboardContent = () => {
       <Flex gap="4" wrap="wrap">
         <Card className="flex-1 min-w-72">
           <Flex gap="4" align="center">
-            <ProgressRing percent={stats.onlineRate} color={health.color} />
+            <ProgressRing
+              percent={stats.onlineRate}
+              color={health.color}
+              ariaLabel={t(
+                "dashboard.onlineRateAria",
+                "{{percent}}% of servers online",
+                {
+                  percent: stats.onlineRate.toFixed(0),
+                },
+              )}
+            />
             <Flex direction="column" gap="2" style={{ minWidth: 0 }}>
               <Text size="4" weight="bold" className="truncate">
                 {healthDesc[health.level]}
@@ -392,6 +402,7 @@ const DashboardContent = () => {
                 <Tips
                   side="right"
                   className="mr-auto"
+                  ariaLabel={t("dashboard.offlineListAria", "Offline servers")}
                   trigger={
                     <Text
                       size="2"
@@ -514,6 +525,7 @@ const DashboardContent = () => {
                       <Button
                         size="1"
                         variant="soft"
+                        aria-label={t("dashboard.renewed", "I've renewed")}
                         disabled={
                           renewingUuid === node.uuid ||
                           !node.billing_cycle ||
@@ -594,7 +606,14 @@ const DashboardContent = () => {
               </Text>
             </Flex>
           ) : (
-            <ChartContainer config={chartConfig} className="h-[280px] w-full">
+            <ChartContainer
+              config={chartConfig}
+              className="h-[280px] w-full"
+              aria-label={t(
+                "dashboard.trafficChartAria",
+                "Last 24h traffic chart, showing upload and download rate and cumulative traffic",
+              )}
+            >
               <AreaChart
                 data={traffic.points}
                 margin={{ top: 8, right: 4, bottom: 0, left: 4 }}
@@ -662,7 +681,12 @@ const DashboardContent = () => {
                   cursor={false}
                   content={
                     <ChartTooltipContent
-                      labelFormatter={(v: any) => new Date(v).toLocaleString()}
+                      labelFormatter={(_value: any, payload: any[]) => {
+                        const point = payload?.[0]?.payload;
+                        return point?.time
+                          ? new Date(point.time).toLocaleString()
+                          : "";
+                      }}
                       formatter={(value: any, name: any) =>
                         name === "upRate" || name === "downRate"
                           ? formatSpeed(Number(value))
@@ -771,9 +795,11 @@ const DashboardContent = () => {
 const ProgressRing = ({
   percent,
   color,
+  ariaLabel,
 }: {
   percent: number;
   color: "green" | "red" | "orange" | "gray";
+  ariaLabel?: string;
 }) => {
   const radius = 40;
   const circumference = 2 * Math.PI * radius;
@@ -784,6 +810,8 @@ const ProgressRing = ({
       height="104"
       viewBox="0 0 104 104"
       style={{ flex: "none" }}
+      role="img"
+      aria-label={ariaLabel}
     >
       <circle
         cx="52"

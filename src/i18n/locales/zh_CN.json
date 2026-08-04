@@ -373,8 +373,10 @@
     "monitoringDb": "监控数据库",
     "noData": "暂无数据",
     "noOfflineNodes": "无离线服务器",
+    "offlineListAria": "离线服务器列表",
     "offlineNodes": "离线 {{offline}} 台",
     "onlineNodes": "在线 {{online}}/{{total}} 台",
+    "onlineRateAria": "服务器在线率 {{percent}}%",
     "overview": "总览",
     "renewed": "我已续费",
     "renewFailed": "续费失败",
@@ -384,6 +386,7 @@
     "title": "仪表板",
     "topTraffic": "流量消耗 Top 5",
     "traffic24h": "最近24小时流量",
+    "trafficChartAria": "最近24小时流量图，显示上传/下载速率与累计流量",
     "uploadRate": "上传速率",
     "uploadTotal": "累计上传"
   },
