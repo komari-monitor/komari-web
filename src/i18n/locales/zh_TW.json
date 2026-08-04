@@ -1082,7 +1082,7 @@
       },
       "table_prefix_description": "監控表名前綴，預設 metric_",
       "table_prefix_title": "表名前綴",
-      "title": "監控資料庫"
+      "title": "資料庫"
     },
     "missing_required_fields": "請填寫必填欄位: {{fieldNames}}",
     "notification": {

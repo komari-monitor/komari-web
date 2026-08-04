@@ -1082,7 +1082,7 @@
       },
       "table_prefix_description": "Prefiks untuk tabel pemantauan, default metric_",
       "table_prefix_title": "Prefiks tabel",
-      "title": "Basis Data Pemantauan"
+      "title": "Basis Data"
     },
     "missing_required_fields": "Silakan isi kolom yang wajib: {{fieldNames}}",
     "notification": {

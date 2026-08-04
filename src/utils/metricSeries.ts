@@ -129,8 +129,12 @@ export const comparePingTaskOrder = (
   const rightTask = rightId ? tasks.get(rightId) : undefined;
 
   if (leftTask && rightTask) {
-    const weightDelta = leftTask.weight - rightTask.weight;
-    if (weightDelta !== 0) return weightDelta;
+    const leftWeight = Number(leftTask.weight);
+    const rightWeight = Number(rightTask.weight);
+    if (Number.isFinite(leftWeight) && Number.isFinite(rightWeight)) {
+      const weightDelta = leftWeight - rightWeight;
+      if (weightDelta !== 0) return weightDelta;
+    }
 
     const idDelta = leftTask.id - rightTask.id;
     if (idDelta !== 0) return idDelta;

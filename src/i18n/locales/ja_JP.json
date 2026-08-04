@@ -1082,7 +1082,7 @@
       },
       "table_prefix_description": "監視テーブルの接頭辞。デフォルトは metric_",
       "table_prefix_title": "テーブル接頭辞",
-      "title": "監視データベース"
+      "title": "データベース"
     },
     "missing_required_fields": "必須フィールドを入力してください: {{fieldNames}}",
     "notification": {

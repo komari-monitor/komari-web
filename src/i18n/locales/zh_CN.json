@@ -1082,7 +1082,7 @@
       },
       "table_prefix_description": "监控表名前缀，默认 metric_",
       "table_prefix_title": "表名前缀",
-      "title": "监控数据库"
+      "title": "数据库"
     },
     "missing_required_fields": "请填写必填字段: {{fieldNames}}",
     "notification": {

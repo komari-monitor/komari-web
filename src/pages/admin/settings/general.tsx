@@ -13,7 +13,6 @@ import {
   SettingCardShortTextInput,
   SettingCardSwitch,
 } from "@/components/admin/SettingCard";
-import { DatabaseMaintenanceCard } from "@/components/admin/DatabaseMaintenanceCard";
 import React from "react";
 import { toast } from "sonner";
 import Loading from "@/components/loading";
@@ -117,8 +116,6 @@ export default function GeneralSettings() {
           </Flex>
         </Flex>
       </SettingCardCollapse>
-      <SettingCardLabel>{t("settings.database.title")}</SettingCardLabel>
-      <DatabaseMaintenanceCard />
     </>
   );
 }

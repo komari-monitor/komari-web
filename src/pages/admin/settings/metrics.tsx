@@ -5,6 +5,7 @@ import {
   SettingCardLabel,
   SettingCardShortTextInput,
 } from "@/components/admin/SettingCard";
+import { DatabaseMaintenanceCard } from "@/components/admin/DatabaseMaintenanceCard";
 import {
   Table,
   TableBody,
@@ -189,6 +190,7 @@ export default function MetricsSettings() {
   return (
     <Flex direction="column" gap="3">
       <SettingCardLabel>{t("settings.metrics.title")}</SettingCardLabel>
+      <DatabaseMaintenanceCard />
 
       {/*<Callout.Root color="blue" variant="surface">
         <Callout.Icon>

@@ -1082,7 +1082,7 @@
       },
       "table_prefix_description": "Prefix for monitoring tables, default metric_",
       "table_prefix_title": "Table prefix",
-      "title": "Monitoring Database"
+      "title": "Database"
     },
     "missing_required_fields": "Please fill in the required fields: {{fieldNames}}",
     "notification": {
