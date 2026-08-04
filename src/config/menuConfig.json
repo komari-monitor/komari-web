@@ -1,8 +1,13 @@
 {
   "menu": [
     {
+      "labelKey": "common.dashboard",
+      "path": "/admin/dashboard",
+      "icon": "LayoutDashboard"
+    },
+    {
       "labelKey": "common.server",
-      "path": "/admin",
+      "path": "/admin/servers",
       "icon": "Server"
     },
     {

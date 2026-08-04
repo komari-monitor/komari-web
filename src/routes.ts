@@ -2,10 +2,12 @@
 import { lazy } from "react";
 import type { RouteObject } from "react-router-dom";
 import React from "react";
+import { Navigate } from "react-router-dom";
 
 const Index = lazy(() => import("./pages/Index"));
 const AdminLayout = lazy(() => import("./pages/admin/_layout"));
 const Admin = lazy(() => import("./pages/admin"));
+const Dashboard = lazy(() => import("./pages/admin/dashboard"));
 const NotFound = lazy(() => import("./pages/404"));
 
 export const routes: RouteObject[] = [
@@ -44,7 +46,15 @@ export const routes: RouteObject[] = [
     path: "/admin",
     element: React.createElement(AdminLayout),
     children: [
-      { index: true, element: React.createElement(Admin) },
+      { index: true, element: React.createElement(Navigate, { to: "/admin/dashboard", replace: true }) },
+      {
+        path: "dashboard",
+        element: React.createElement(Dashboard),
+      },
+      {
+        path: "servers",
+        element: React.createElement(Admin),
+      },
       {
         path: "theme_managed",
         element: React.createElement(
