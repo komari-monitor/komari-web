@@ -366,6 +366,7 @@ const DashboardContent = () => {
   const [pingStats, setPingStats] = useState<PingMetricStat[]>([]);
   const [pingTasks, setPingTasks] = useState<PublicPingTask[]>([]);
   const [renewingUuid, setRenewingUuid] = useState<string | null>(null);
+  const [renewedUuids, setRenewedUuids] = useState<Set<string>>(new Set());
 
   const onlineSet = useMemo(() => {
     const out = new Set<string>();
@@ -410,6 +411,7 @@ const DashboardContent = () => {
     return (nodeList ?? [])
       .filter((node) => {
         if (!node.expired_at) return false;
+        if (renewedUuids.has(node.uuid)) return false;
         const ts = new Date(node.expired_at).getTime();
         return ts >= now && ts <= deadline;
       })
@@ -417,7 +419,7 @@ const DashboardContent = () => {
         (a, b) =>
           new Date(a.expired_at).getTime() - new Date(b.expired_at).getTime(),
       );
-  }, [nodeList]);
+  }, [nodeList, renewedUuids]);
 
   const fetchLatest = useCallback(async () => {
     try {
@@ -553,7 +555,7 @@ const DashboardContent = () => {
             date: expiry.toLocaleDateString(),
           }),
         );
-        void fetchAll();
+        setRenewedUuids((prev) => new Set(prev).add(node.uuid));
       } else {
         toast.error(t("dashboard.renewFailed", "Renewal failed"));
       }
