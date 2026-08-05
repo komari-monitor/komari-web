@@ -1,13 +1,29 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
-import { Badge, Button, Card, Flex, Separator, Text } from "@radix-ui/themes";
+import {
+  Badge,
+  Button,
+  Card,
+  Flex,
+  IconButton,
+  Popover,
+  Separator,
+  Text,
+} from "@radix-ui/themes";
 import { useTranslation } from "react-i18next";
-import { Area, AreaChart, CartesianGrid, XAxis, YAxis } from "recharts";
-import { useLiveData, LiveDataProvider } from "@/contexts/LiveDataContext";
+import type { TFunction } from "i18next";
+import {
+  Area,
+  AreaChart,
+  CartesianGrid,
+  Line,
+  LineChart,
+  XAxis,
+  YAxis,
+} from "recharts";
 import { useNodeList, type NodeBasicInfo } from "@/contexts/NodeListContext";
 import { useRPC2Call } from "@/contexts/RPC2Context";
 import { formatBytes } from "@/utils/unitHelper";
 import Loading from "@/components/loading";
-import UsageBar from "@/components/UsageBar";
 import Tips from "@/components/ui/tips";
 import {
   ChartContainer,
@@ -15,9 +31,33 @@ import {
   ChartTooltipContent,
   type ChartConfig,
 } from "@/components/ui/chart";
-import { CalendarClock, Cpu, Database } from "lucide-react";
+import {
+  CalendarClock,
+  ChartNoAxesCombined,
+  Cpu,
+  Database,
+  Gauge,
+  List,
+  MemoryStick,
+  RefreshCw,
+} from "lucide-react";
 import { toast } from "sonner";
-import type { QueryMetricsResponse } from "@/types/metrics";
+import type {
+  MetricSeries,
+  MetricTags,
+  PingMetricStat,
+  PingMetricStatsResponse,
+  PublicPingTask,
+  QueryMetricsResponse,
+} from "@/types/metrics";
+import {
+  PING_LATENCY_METRIC,
+  metricSeriesColor,
+  normalizeMetricSeriesList,
+  pingMetricStatKey,
+  pingTaskId,
+  pingTaskName,
+} from "@/utils/metricSeries";
 
 const formatSpeed = (bytes: number): string => {
   if (bytes === 0) return "0 B/s";
@@ -31,8 +71,56 @@ const formatSpeed = (bytes: number): string => {
   return `${size.toFixed(decimals)} ${units[i]}`;
 };
 
+const weightedP95 = (
+  points: { value: number; count?: number }[],
+): number | null => {
+  const valid = points.filter(
+    (point) =>
+      Number.isFinite(point.value) &&
+      point.value >= 0 &&
+      (point.count ?? 1) > 0,
+  );
+  if (valid.length === 0) return null;
+  const total = valid.reduce((sum, point) => sum + (point.count ?? 1), 0);
+  const sorted = [...valid].sort((a, b) => a.value - b.value);
+  let cumulative = 0;
+  for (const point of sorted) {
+    cumulative += point.count ?? 1;
+    if (cumulative >= total * 0.95) return point.value;
+  }
+  return sorted[sorted.length - 1].value;
+};
+
+const formatPeakTime = (t: TFunction, timestamp: number): string => {
+  const date = new Date(timestamp);
+  const now = new Date();
+  const startOfToday = new Date(
+    now.getFullYear(),
+    now.getMonth(),
+    now.getDate(),
+  ).getTime();
+  const time = date.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: false,
+  });
+  if (timestamp >= startOfToday) {
+    return `${t("dashboard.today", "Today")} ${time}`;
+  }
+  if (timestamp >= startOfToday - DAY_MS) {
+    return `${t("dashboard.yesterday", "Yesterday")} ${time}`;
+  }
+  return `${date.toLocaleDateString()} ${time}`;
+};
+
 const EXPIRING_SOON_DAYS = 7;
 const DAY_MS = 24 * 3600 * 1000;
+
+const latencyColor = (ms: number): "green" | "yellow" | "red" =>
+  ms < 100 ? "green" : ms <= 280 ? "yellow" : "red";
+
+const volatilityColor = (value: number): "green" | "yellow" | "red" =>
+  value < 0.3 ? "green" : value <= 1 ? "yellow" : "red";
 
 // 与后端 utils/renewal 保持一致：
 // 27-32 按自然月 +1 月，87-95 +3 月，175-185 +6 月，
@@ -68,25 +156,51 @@ const computeRenewalDate = (
   return result;
 };
 
-const DASHBOARD_REFRESH_MS = 60000;
+type TopP95Item = {
+  uuid: string;
+  name: string;
+  value: number;
+  peak: number;
+  peakTime: number;
+};
+
+type TrafficNodeTotals = {
+  uuid: string;
+  up: number;
+  down: number;
+  total: number;
+  peakRate: number;
+  peakTime: number;
+};
+
+type PingRankItem = {
+  key: string;
+  entityId: string;
+  taskId: string;
+  label: string;
+  p95: number | null;
+  volatility: number;
+  loss: number;
+};
+
+const CPU_METRIC_KEYS = ["cpu.usage"];
+const MEM_METRIC_KEYS = ["memory.used"];
+const NET_METRIC_KEYS = ["net.in.rate", "net.out.rate"];
+const PING_METRIC_KEYS = [PING_LATENCY_METRIC];
+
+const miniChartCache = new Map<string, MetricSeries[]>();
 
 const Dashboard = () => {
-  return (
-    <LiveDataProvider>
-      <DashboardContent />
-    </LiveDataProvider>
-  );
+  return <DashboardContent />;
 };
 
 const DashboardContent = () => {
   const { t } = useTranslation();
-  const { live_data } = useLiveData();
   const { nodeList, isLoading, error, refresh } = useNodeList();
   const { call } = useRPC2Call();
 
-  const liveData = live_data?.data;
-  const onlineSet = useMemo(() => new Set(liveData?.online ?? []), [liveData]);
-
+  const [latest, setLatest] = useState<Record<string, any> | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
   const [traffic, setTraffic] = useState<{
     points: {
       time: number;
@@ -95,7 +209,7 @@ const DashboardContent = () => {
       upCum: number;
       downCum: number;
     }[];
-    nodeTotals: { uuid: string; up: number; down: number; total: number }[];
+    nodeTotals: TrafficNodeTotals[];
     totalUp: number;
     totalDown: number;
   } | null>(null);
@@ -103,19 +217,25 @@ const DashboardContent = () => {
     main: number | null;
     monitoring: number | null;
   } | null>(null);
+  const [topCpu, setTopCpu] = useState<TopP95Item[]>([]);
+  const [topMem, setTopMem] = useState<TopP95Item[]>([]);
+  const [pingStats, setPingStats] = useState<PingMetricStat[]>([]);
+  const [pingTasks, setPingTasks] = useState<PublicPingTask[]>([]);
+  const [pingP95, setPingP95] = useState<QueryMetricsResponse | null>(null);
   const [renewingUuid, setRenewingUuid] = useState<string | null>(null);
+
+  const onlineSet = useMemo(() => {
+    const out = new Set<string>();
+    if (latest) {
+      for (const [uuid, value] of Object.entries(latest)) {
+        if ((value as any)?.online) out.add(uuid);
+      }
+    }
+    return out;
+  }, [latest]);
 
   const stats = useMemo(() => {
     const nodes = nodeList ?? [];
-    let cpuSum = 0;
-    let withLive = 0;
-    for (const node of nodes) {
-      if (!onlineSet.has(node.uuid)) continue;
-      const record = liveData?.data[node.uuid];
-      if (!record) continue;
-      withLive += 1;
-      cpuSum += record.cpu.usage || 0;
-    }
     const online = onlineSet.size;
     const total = nodes.length;
     return {
@@ -123,9 +243,8 @@ const DashboardContent = () => {
       online,
       offline: total - online,
       onlineRate: total ? (online / total) * 100 : 0,
-      avgCpu: withLive ? cpuSum / withLive : 0,
     };
-  }, [liveData, nodeList, onlineSet]);
+  }, [nodeList, onlineSet]);
 
   const offlineNodes = useMemo(
     () => (nodeList ?? []).filter((node) => !onlineSet.has(node.uuid)),
@@ -134,6 +253,11 @@ const DashboardContent = () => {
 
   const nodeNameMap = useMemo(
     () => new Map((nodeList ?? []).map((node) => [node.uuid, node.name])),
+    [nodeList],
+  );
+
+  const memTotalMap = useMemo(
+    () => new Map((nodeList ?? []).map((node) => [node.uuid, node.mem_total])),
     [nodeList],
   );
 
@@ -152,6 +276,17 @@ const DashboardContent = () => {
       );
   }, [nodeList]);
 
+  const fetchLatest = useCallback(async () => {
+    try {
+      const result = await call<unknown, Record<string, any>>(
+        "common:getNodesLatestStatus",
+      );
+      setLatest(result ?? null);
+    } catch (e) {
+      console.error("Failed to fetch latest status:", e);
+    }
+  }, [call]);
+
   const fetchTraffic = useCallback(async () => {
     const now = new Date();
     const start = new Date(now.getTime() - 24 * 3600 * 1000);
@@ -165,7 +300,7 @@ const DashboardContent = () => {
         ],
         start: start.toISOString(),
         end: now.toISOString(),
-        aggregation: "max",
+        aggregation: "p95",
         aggregation_by_metric: {
           "traffic.up": "sum",
           "traffic.down": "sum",
@@ -182,6 +317,7 @@ const DashboardContent = () => {
         }
       >();
       const byEntity = new Map<string, { up: number; down: number }>();
+      const byEntityRate = new Map<string, Map<number, { up: number; down: number }>>();
       for (const series of res?.series ?? []) {
         const isRate =
           series.metric_key === "net.in.rate" ||
@@ -206,6 +342,12 @@ const DashboardContent = () => {
           if (isRate) {
             if (isUp) entry.upRate += point.value;
             else entry.downRate += point.value;
+            const rateMap = byEntityRate.get(entity) ?? new Map();
+            const rateEntry = rateMap.get(ts) ?? { up: 0, down: 0 };
+            if (isUp) rateEntry.up += point.value;
+            else rateEntry.down += point.value;
+            rateMap.set(ts, rateEntry);
+            byEntityRate.set(entity, rateMap);
           } else if (isUp) {
             entry.upDelta += point.value;
           } else {
@@ -243,13 +385,26 @@ const DashboardContent = () => {
           downCum: totalDown,
         });
       }
-      const nodeTotals = Array.from(byEntity.entries())
-        .map(([uuid, value]) => ({
-          uuid,
-          up: value.up,
-          down: value.down,
-          total: value.up + value.down,
-        }))
+      const nodeTotals: TrafficNodeTotals[] = Array.from(byEntity.entries())
+        .map(([uuid, value]) => {
+          let peakRate = 0;
+          let peakTime = 0;
+          for (const [ts, rateEntry] of byEntityRate.get(uuid) ?? []) {
+            const combined = rateEntry.up + rateEntry.down;
+            if (combined > peakRate) {
+              peakRate = combined;
+              peakTime = ts;
+            }
+          }
+          return {
+            uuid,
+            up: value.up,
+            down: value.down,
+            total: value.up + value.down,
+            peakRate,
+            peakTime,
+          };
+        })
         .sort((a, b) => b.total - a.total);
       setTraffic({ points, nodeTotals, totalUp, totalDown });
     } catch (e) {
@@ -271,44 +426,137 @@ const DashboardContent = () => {
     }
   }, []);
 
-  useEffect(() => {
-    let interval: number | undefined;
-    const stopPolling = () => {
-      if (interval !== undefined) {
-        window.clearInterval(interval);
-        interval = undefined;
+  const fetchTopP95 = useCallback(async () => {
+    const now = new Date();
+    const start = new Date(now.getTime() - 24 * 3600 * 1000);
+    try {
+      const res = await call<any, QueryMetricsResponse>("public:queryMetrics", {
+        metric_keys: ["cpu.usage", "memory.used"],
+        start: start.toISOString(),
+        end: now.toISOString(),
+        aggregation: "p95",
+        fill_empty: false,
+      });
+      const cpuByEntity = new Map<
+        string,
+        { values: { value: number; count?: number }[]; peak: number; peakTime: number }
+      >();
+      const memByEntity = new Map<
+        string,
+        { values: { value: number; count?: number }[]; peak: number; peakTime: number }
+      >();
+      for (const series of res?.series ?? []) {
+        const bucket =
+          series.metric_key === "cpu.usage" ? cpuByEntity : memByEntity;
+        const entry =
+          bucket.get(series.entity_id) ?? { values: [], peak: 0, peakTime: 0 };
+        for (const point of series.points ?? []) {
+          if (point.value == null) continue;
+          entry.values.push({ value: point.value, count: point.count });
+          if (point.value > entry.peak) {
+            entry.peak = point.value;
+            entry.peakTime = new Date(point.time).getTime();
+          }
+        }
+        bucket.set(series.entity_id, entry);
       }
-    };
-    const startPolling = () => {
-      if (interval === undefined && !document.hidden) {
-        interval = window.setInterval(refresh, 5000);
-      }
-    };
-    const handleVisibilityChange = () => {
-      stopPolling();
-      if (!document.hidden) {
-        refresh();
-        startPolling();
-      }
-    };
+      const buildItems = (
+        bucket: Map<
+          string,
+          { values: { value: number; count?: number }[]; peak: number; peakTime: number }
+        >,
+        toPercent: (uuid: string, value: number) => number,
+      ): TopP95Item[] =>
+        Array.from(bucket.entries())
+          .map(([uuid, entry]) => {
+            const p95 = weightedP95(entry.values);
+            if (p95 == null) return null;
+            return {
+              uuid,
+              name: nodeNameMap.get(uuid) ?? uuid.slice(0, 8),
+              value: toPercent(uuid, p95),
+              peak: toPercent(uuid, entry.peak),
+              peakTime: entry.peakTime,
+            };
+          })
+          .filter(
+            (item): item is TopP95Item =>
+              item !== null && Number.isFinite(item.value),
+          )
+          .sort((a, b) => b.value - a.value);
+      setTopCpu(buildItems(cpuByEntity, (_uuid, value) => value));
+      setTopMem(
+        buildItems(memByEntity, (uuid, value) => {
+          const totalBytes = memTotalMap.get(uuid) ?? 0;
+          return totalBytes > 0 ? (value / totalBytes) * 100 : 0;
+        }),
+      );
+    } catch (e) {
+      console.error("Failed to fetch top metrics:", e);
+    }
+  }, [call, nodeNameMap, memTotalMap]);
 
-    document.addEventListener("visibilitychange", handleVisibilityChange);
-    startPolling();
-    return () => {
-      stopPolling();
-      document.removeEventListener("visibilitychange", handleVisibilityChange);
-    };
-  }, [refresh]);
+  const fetchPingStats = useCallback(async () => {
+    const now = new Date();
+    const start = new Date(now.getTime() - 24 * 3600 * 1000);
+    try {
+      const [statsRes, tasksRes, p95Res] = await Promise.all([
+        call<unknown, PingMetricStatsResponse>("public:getPingMetricStats", {
+          hours: 24,
+        }),
+        call<unknown, PublicPingTask[]>("public:getPublicPingTasks").catch(
+          () => [],
+        ),
+        call<any, QueryMetricsResponse>("public:queryMetrics", {
+          metric_keys: [PING_LATENCY_METRIC],
+          start: start.toISOString(),
+          end: now.toISOString(),
+          aggregation: "p95",
+          fill_empty: false,
+        }).catch(() => null),
+      ]);
+      setPingStats(Array.isArray(statsRes?.stats) ? statsRes.stats : []);
+      setPingTasks(Array.isArray(tasksRes) ? tasksRes : []);
+      setPingP95(p95Res);
+    } catch (e) {
+      console.error("Failed to fetch ping stats:", e);
+    }
+  }, [call]);
+
+  const fetchAll = useCallback(async () => {
+    setRefreshing(true);
+    miniChartCache.clear();
+    try {
+      await Promise.allSettled([
+        refresh(),
+        fetchLatest(),
+        fetchTraffic(),
+        fetchDbSize(),
+        fetchTopP95(),
+        fetchPingStats(),
+      ]);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [
+    refresh,
+    fetchLatest,
+    fetchTraffic,
+    fetchDbSize,
+    fetchTopP95,
+    fetchPingStats,
+  ]);
 
   useEffect(() => {
-    fetchTraffic();
-    fetchDbSize();
-    const interval = window.setInterval(() => {
-      fetchTraffic();
-      fetchDbSize();
-    }, DASHBOARD_REFRESH_MS);
-    return () => window.clearInterval(interval);
-  }, [fetchTraffic, fetchDbSize]);
+    void fetchAll();
+  }, [fetchAll]);
+
+  const [topFetched, setTopFetched] = useState(false);
+  useEffect(() => {
+    if (topFetched || isLoading || !nodeList) return;
+    setTopFetched(true);
+    void fetchTopP95();
+  }, [topFetched, isLoading, nodeList, fetchTopP95]);
 
   const handleRenew = async (node: NodeBasicInfo) => {
     const expiry = computeRenewalDate(
@@ -394,11 +642,181 @@ const DashboardContent = () => {
     },
   } satisfies ChartConfig;
 
+  const pingP95Map = useMemo(() => {
+    const map = new Map<string, number>();
+    for (const series of pingP95?.series ?? []) {
+      const taskId = pingTaskId(series.tags);
+      if (!taskId) continue;
+      const p95 = weightedP95(
+        (series.points ?? []).map((point) => ({
+          value: point.value ?? NaN,
+          count: point.count,
+        })),
+      );
+      if (p95 != null) {
+        map.set(pingMetricStatKey(series.entity_id, taskId), p95);
+      }
+    }
+    return map;
+  }, [pingP95]);
+
+  const pingRankItems = useMemo(() => {
+    const taskMap = new Map(
+      pingTasks.map((task) => [String(task.id), task]),
+    );
+    return pingStats.map((stat) => {
+      const taskName = pingTaskName(
+        stat.task_id,
+        taskMap,
+        (id) => `${t("ping.task", "Ping task")} ${id}`,
+      );
+      const nodeName =
+        nodeNameMap.get(stat.entity_id) ?? stat.entity_id.slice(0, 8);
+      const p95 =
+        pingP95Map.get(pingMetricStatKey(stat.entity_id, stat.task_id)) ?? null;
+      return {
+        key: pingMetricStatKey(stat.entity_id, stat.task_id),
+        entityId: stat.entity_id,
+        taskId: stat.task_id,
+        label: `${nodeName} · ${taskName}`,
+        p95,
+        volatility: stat.p99_p50_ratio ?? 0,
+        loss: stat.loss ?? 0,
+      } satisfies PingRankItem;
+    });
+  }, [pingStats, pingP95Map, pingTasks, nodeNameMap, t]);
+
+  const stableLatencyItems = useMemo(
+    () => [...pingRankItems].sort((a, b) => a.volatility - b.volatility),
+    [pingRankItems],
+  );
+
+  const unstableLatencyItems = useMemo(
+    () => [...pingRankItems].sort((a, b) => b.volatility - a.volatility),
+    [pingRankItems],
+  );
+
+  const highestLossItems = useMemo(
+    () => [...pingRankItems].sort((a, b) => b.loss - a.loss),
+    [pingRankItems],
+  );
+
+  const renderLatencyColumn = (
+    title: string,
+    items: PingRankItem[],
+    renderValue: (item: PingRankItem) => React.ReactNode,
+  ) => (
+    <Flex direction="column" gap="2" className="flex-1 min-w-56">
+      <Flex justify="between" align="center" gap="2">
+        <Text size="2" weight="bold">
+          {title}
+        </Text>
+        <RankListPopover
+          title={title}
+          ariaLabel={t("common.details", "Details")}
+        >
+          {items.length === 0 ? (
+            <Text size="2" color="gray">
+              {t("dashboard.noData", "No data")}
+            </Text>
+          ) : (
+            <Flex direction="column" gap="2">
+              {items.map((item, index) => (
+                <Flex key={item.key} justify="between" align="center" gap="2">
+                  <Text size="2" className="truncate" title={item.label}>
+                    <Text size="2" color="gray">
+                      {index + 1}.
+                    </Text>{" "}
+                    {item.label}
+                  </Text>
+                  <Flex align="center" gap="1" className="shrink-0">
+                    {renderValue(item)}
+                    <MiniChartButton
+                      uuid={item.entityId}
+                      metricKeys={PING_METRIC_KEYS}
+                      tags={{ task_id: item.taskId }}
+                      ariaLabel={t("dashboard.viewChart", "View 24h chart")}
+                    />
+                  </Flex>
+                </Flex>
+              ))}
+            </Flex>
+          )}
+        </RankListPopover>
+      </Flex>
+      {items.length === 0 ? (
+        <Text size="2" color="gray">
+          {t("dashboard.noData", "No data")}
+        </Text>
+      ) : (
+        <Flex direction="column" gap="2">
+          {items.slice(0, 3).map((item, index) => (
+            <Flex key={item.key} justify="between" align="center" gap="2">
+              <Text size="2" className="truncate" title={item.label}>
+                <Text size="2" color="gray">
+                  {index + 1}.
+                </Text>{" "}
+                {item.label}
+              </Text>
+              <Flex align="center" gap="1" className="shrink-0">
+                {renderValue(item)}
+                <MiniChartButton
+                  uuid={item.entityId}
+                  metricKeys={PING_METRIC_KEYS}
+                  tags={{ task_id: item.taskId }}
+                  ariaLabel={t("dashboard.viewChart", "View 24h chart")}
+                />
+              </Flex>
+            </Flex>
+          ))}
+        </Flex>
+      )}
+    </Flex>
+  );
+
+  const renderLatencyValue = (item: PingRankItem) => (
+    <Text size="2" className="whitespace-nowrap">
+      <Text
+        size="2"
+        color={item.p95 != null ? latencyColor(item.p95) : "gray"}
+      >
+        {item.p95 != null ? `${Math.round(item.p95)} ms` : "-"}
+      </Text>{" "}
+      ·{" "}
+      <Text size="2" color={volatilityColor(item.volatility)}>
+        {t("chart.volatility", "Volatility")} {item.volatility.toFixed(2)}
+      </Text>
+    </Text>
+  );
+
   if (isLoading) return <Loading text="" />;
   if (error) return <div>{error}</div>;
 
   return (
     <Flex direction="column" gap="4" p="4">
+      <Flex justify="between" align="center" wrap="wrap" gap="2">
+        <Flex direction="column" gap="1">
+          <Text size="5" weight="bold">
+            {t("dashboard.title", "Dashboard")}
+          </Text>
+          <Text size="2" color="gray">
+            {t(
+              "dashboard.greeting",
+              "May every server run smoothly and everything is under control.",
+            )}
+          </Text>
+        </Flex>
+        <Button
+          size="1"
+          variant="soft"
+          disabled={refreshing}
+          onClick={() => void fetchAll()}
+        >
+          <RefreshCw size={14} />
+          {t("common.refresh", "Refresh")}
+        </Button>
+      </Flex>
+
       <Flex gap="4" wrap="wrap">
         <Card className="flex-1 min-w-72">
           <Flex gap="4" align="center">
@@ -468,16 +886,6 @@ const DashboardContent = () => {
         </Card>
 
         <Card className="flex-1 min-w-64">
-          <StatCard
-            title={t("dashboard.avgCpu", "Average CPU")}
-            value={`${stats.avgCpu.toFixed(1)}%`}
-            icon={<Cpu size={18} />}
-          >
-            <UsageBar label="" value={stats.avgCpu} compact />
-          </StatCard>
-        </Card>
-
-        <Card className="flex-1 min-w-64">
           <Flex direction="column" gap="3">
             <Flex gap="2" align="center" style={{ color: "var(--gray-10)" }}>
               <Database size={18} />
@@ -502,19 +910,34 @@ const DashboardContent = () => {
                   {dbInfo ? formatBytes(dbInfo.monitoring ?? 0) : "-"}
                 </Text>
               </Flex>
+              <Separator size="4" />
+              <Flex justify="between" align="center" gap="2">
+                <Text size="2" weight="medium">
+                  {t("settings.database.local_total", "Local Database Total")}
+                </Text>
+                <Text size="3" weight="bold">
+                  {dbInfo
+                    ? formatBytes((dbInfo.main ?? 0) + (dbInfo.monitoring ?? 0))
+                    : "-"}
+                </Text>
+              </Flex>
             </Flex>
           </Flex>
         </Card>
 
-        {expiringNodes.length > 0 && (
-          <Card className="flex-1 min-w-72">
-            <Flex direction="column" gap="3">
-              <Flex gap="2" align="center" style={{ color: "var(--amber-11)" }}>
-                <CalendarClock size={18} />
-                <Text size="3" weight="bold">
-                  {t("dashboard.expiringSoon", "Expiring soon")}
-                </Text>
-              </Flex>
+        <Card className="flex-1 min-w-72">
+          <Flex direction="column" gap="3">
+            <Flex gap="2" align="center" style={{ color: "var(--amber-11)" }}>
+              <CalendarClock size={18} />
+              <Text size="3" weight="bold">
+                {t("dashboard.expiringSoon", "Expiring soon")}
+              </Text>
+            </Flex>
+            {expiringNodes.length === 0 ? (
+              <Text size="2" color="gray">
+                {t("dashboard.noExpiring", "No servers expiring soon")}
+              </Text>
+            ) : (
               <Flex direction="column" gap="3">
                 {expiringNodes.map((node) => {
                   const daysLeft = Math.ceil(
@@ -569,251 +992,373 @@ const DashboardContent = () => {
                   );
                 })}
               </Flex>
+            )}
+          </Flex>
+        </Card>
+      </Flex>
+
+      <Flex gap="4" wrap="wrap" align="stretch">
+        <Card className="flex-1 min-w-[320px]">
+          <Flex direction="column" gap="3">
+            <Flex justify="between" align="center" wrap="wrap" gap="2">
+              <Text size="3" weight="bold">
+                {t("dashboard.traffic24h", "Last 24h traffic")}
+              </Text>
+              <Flex gap="4" align="center" wrap="wrap">
+                <Flex gap="1" align="center">
+                  <span
+                    className="w-2.5 h-2.5 rounded-full"
+                    style={{ backgroundColor: "var(--green-9)" }}
+                  />
+                  <Text size="2" color="gray">
+                    {t("dashboard.uploadRate", "Upload rate")}
+                  </Text>
+                </Flex>
+                <Flex gap="1" align="center">
+                  <span
+                    className="w-2.5 h-2.5 rounded-full"
+                    style={{ backgroundColor: "var(--blue-9)" }}
+                  />
+                  <Text size="2" color="gray">
+                    {t("dashboard.downloadRate", "Download rate")}
+                  </Text>
+                </Flex>
+                <Flex gap="1" align="center">
+                  <span
+                    className="w-4 border-t-2 border-dashed"
+                    style={{ borderColor: "var(--green-9)" }}
+                  />
+                  <Text size="2" color="gray">
+                    {t("dashboard.uploadTotal", "Upload cumulative")}
+                  </Text>
+                </Flex>
+                <Flex gap="1" align="center">
+                  <span
+                    className="w-4 border-t-2 border-dashed"
+                    style={{ borderColor: "var(--blue-9)" }}
+                  />
+                  <Text size="2" color="gray">
+                    {t("dashboard.downloadTotal", "Download cumulative")}
+                  </Text>
+                </Flex>
+                <Text size="2" color="gray">
+                  ↑ {formatBytes(traffic?.totalUp ?? 0)} ↓{" "}
+                  {formatBytes(traffic?.totalDown ?? 0)}
+                </Text>
+              </Flex>
             </Flex>
+            {traffic === null ? (
+              <Flex align="center" justify="center" style={{ height: 180 }}>
+                <Loading text="" />
+              </Flex>
+            ) : traffic.points.length === 0 ? (
+              <Flex align="center" justify="center" style={{ height: 180 }}>
+                <Text size="2" color="gray">
+                  {t("dashboard.noData", "No data")}
+                </Text>
+              </Flex>
+            ) : (
+              <ChartContainer
+                config={chartConfig}
+                className="h-[180px] w-full"
+                style={{ aspectRatio: "auto" }}
+                aria-label={t(
+                  "dashboard.trafficChartAria",
+                  "Last 24h traffic chart, showing upload and download rate and cumulative traffic",
+                )}
+              >
+                <AreaChart
+                  data={traffic.points}
+                  margin={{ top: 8, right: 4, bottom: 0, left: 4 }}
+                >
+                  <defs>
+                    <linearGradient id="gradUp" x1="0" y1="0" x2="0" y2="1">
+                      <stop
+                        offset="0%"
+                        stopColor="var(--green-9)"
+                        stopOpacity={0.35}
+                      />
+                      <stop
+                        offset="100%"
+                        stopColor="var(--green-9)"
+                        stopOpacity={0.02}
+                      />
+                    </linearGradient>
+                    <linearGradient id="gradDown" x1="0" y1="0" x2="0" y2="1">
+                      <stop
+                        offset="0%"
+                        stopColor="var(--blue-9)"
+                        stopOpacity={0.35}
+                      />
+                      <stop
+                        offset="100%"
+                        stopColor="var(--blue-9)"
+                        stopOpacity={0.02}
+                      />
+                    </linearGradient>
+                  </defs>
+                  <CartesianGrid vertical={false} />
+                  <XAxis
+                    dataKey="time"
+                    tickLine={false}
+                    axisLine={false}
+                    tickFormatter={(v: any) =>
+                      new Date(v).toLocaleTimeString([], {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                      })
+                    }
+                  />
+                  <YAxis
+                    yAxisId="rate"
+                    type="number"
+                    tickLine={false}
+                    axisLine={false}
+                    width={1}
+                    mirror
+                    tick={{ dx: 8 }}
+                    tickFormatter={(v: any) => formatSpeed(Number(v))}
+                  />
+                  <YAxis
+                    yAxisId="cum"
+                    orientation="right"
+                    type="number"
+                    tickLine={false}
+                    axisLine={false}
+                    width={1}
+                    mirror
+                    tick={{ dx: -8 }}
+                    tickFormatter={(v: any) => formatBytes(Number(v))}
+                  />
+                  <ChartTooltip
+                    cursor={false}
+                    content={
+                      <ChartTooltipContent
+                        labelFormatter={(_value: any, payload: any[]) => {
+                          const point = payload?.[0]?.payload;
+                          return point?.time
+                            ? new Date(point.time).toLocaleString()
+                            : "";
+                        }}
+                        formatter={(value: any, name: any) =>
+                          name === "upRate" || name === "downRate"
+                            ? formatSpeed(Number(value))
+                            : formatBytes(Number(value))
+                        }
+                      />
+                    }
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="upRate"
+                    name="upRate"
+                    yAxisId="rate"
+                    stroke="var(--color-upRate)"
+                    strokeWidth={2}
+                    fill="url(#gradUp)"
+                    isAnimationActive={false}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="downRate"
+                    name="downRate"
+                    yAxisId="rate"
+                    stroke="var(--color-downRate)"
+                    strokeWidth={2}
+                    fill="url(#gradDown)"
+                    isAnimationActive={false}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="upCum"
+                    name="upCum"
+                    yAxisId="cum"
+                    stroke="var(--color-upCum)"
+                    strokeWidth={1.5}
+                    strokeDasharray="6 4"
+                    fill="none"
+                    isAnimationActive={false}
+                  />
+                  <Area
+                    type="monotone"
+                    dataKey="downCum"
+                    name="downCum"
+                    yAxisId="cum"
+                    stroke="var(--color-downCum)"
+                    strokeWidth={1.5}
+                    strokeDasharray="6 4"
+                    fill="none"
+                    isAnimationActive={false}
+                  />
+                </AreaChart>
+              </ChartContainer>
+            )}
+            {traffic && traffic.nodeTotals.length > 0 && (
+              <>
+                <Separator size="4" />
+                <Flex direction="column" gap="3">
+                  <Flex justify="between" align="center" gap="2">
+                    <Text size="3" weight="bold">
+                      {t("dashboard.topTraffic", "Top traffic servers")}
+                    </Text>
+                    <RankListPopover
+                      title={t("dashboard.topTraffic", "Top traffic servers")}
+                      ariaLabel={t("common.details", "Details")}
+                    >
+                      <Flex direction="column" gap="2">
+                        {traffic.nodeTotals.map((node, index) => (
+                          <Flex
+                            key={node.uuid}
+                            justify="between"
+                            align="center"
+                            gap="2"
+                          >
+                            <Text size="2" className="truncate">
+                              <Text size="2" color="gray">
+                                {index + 1}.
+                              </Text>{" "}
+                              {nodeNameMap.get(node.uuid) ??
+                                node.uuid.slice(0, 8)}
+                            </Text>
+                            <Flex align="center" gap="2" className="shrink-0">
+                              <Text
+                                size="2"
+                                color="gray"
+                                className="whitespace-nowrap"
+                              >
+                                ↑ {formatBytes(node.up)} ↓{" "}
+                                {formatBytes(node.down)}
+                              </Text>
+                              <MiniChartButton
+                                uuid={node.uuid}
+                                metricKeys={NET_METRIC_KEYS}
+                                ariaLabel={t(
+                                  "dashboard.viewChart",
+                                  "View 24h chart",
+                                )}
+                              />
+                            </Flex>
+                          </Flex>
+                        ))}
+                      </Flex>
+                    </RankListPopover>
+                  </Flex>
+                  <Flex direction="column" gap="3">
+                    {traffic.nodeTotals.slice(0, 5).map((node, index) => (
+                      <Flex key={node.uuid} direction="column" gap="1">
+                        <Flex justify="between" align="center" gap="2">
+                          <Text size="2" className="truncate">
+                            <Text size="2" color="gray">
+                              {index + 1}.
+                            </Text>{" "}
+                            {nodeNameMap.get(node.uuid) ?? node.uuid.slice(0, 8)}
+                          </Text>
+                          <Flex align="center" gap="2" className="shrink-0">
+                            <Text
+                              size="2"
+                              color="gray"
+                              className="whitespace-nowrap"
+                            >
+                              ↑ {formatBytes(node.up)} ↓ {formatBytes(node.down)}
+                            </Text>
+                            <MiniChartButton
+                              uuid={node.uuid}
+                              metricKeys={NET_METRIC_KEYS}
+                              ariaLabel={t(
+                                "dashboard.viewChart",
+                                "View 24h chart",
+                              )}
+                            />
+                          </Flex>
+                        </Flex>
+                        {node.peakRate > 0 && (
+                          <Text size="1" color="gray" className="truncate">
+                            {t(
+                              "dashboard.peakAt",
+                              "Peak {{value}} at {{time}}",
+                              {
+                                value: formatSpeed(node.peakRate),
+                                time: formatPeakTime(t, node.peakTime),
+                              },
+                            )}
+                          </Text>
+                        )}
+                        <div
+                          className="h-2 rounded-full overflow-hidden"
+                          style={{ backgroundColor: "var(--gray-5)" }}
+                        >
+                          <div
+                            className="h-full rounded-full"
+                            style={{
+                              width: `${
+                                (node.total / traffic.nodeTotals[0].total) *
+                                100
+                              }%`,
+                              backgroundColor: "var(--accent-9)",
+                              transition: "width 0.5s ease-out",
+                            }}
+                          />
+                        </div>
+                      </Flex>
+                    ))}
+                  </Flex>
+                </Flex>
+              </>
+            )}
+          </Flex>
+        </Card>
+
+        <Flex direction="column" gap="4" className="w-80 shrink-0">
+          <Card>
+            <TopRankCard
+              title={t("dashboard.topCpu", "Top CPU usage")}
+              icon={<Cpu size={18} />}
+              items={topCpu}
+              metricKeys={CPU_METRIC_KEYS}
+              t={t}
+            />
           </Card>
-        )}
+          <Card>
+            <TopRankCard
+              title={t("dashboard.topMem", "Top memory usage")}
+              icon={<MemoryStick size={18} />}
+              items={topMem}
+              metricKeys={MEM_METRIC_KEYS}
+              t={t}
+            />
+          </Card>
+        </Flex>
       </Flex>
 
       <Card>
         <Flex direction="column" gap="3">
-          <Flex justify="between" align="center" wrap="wrap" gap="2">
+          <Flex gap="2" align="center" style={{ color: "var(--gray-10)" }}>
+            <Gauge size={18} />
             <Text size="3" weight="bold">
-              {t("dashboard.traffic24h", "Last 24h traffic")}
+              {t("nodeCard.ping", "Ping")}
             </Text>
-            <Flex gap="4" align="center" wrap="wrap">
-              <Flex gap="1" align="center">
-                <span
-                  className="w-2.5 h-2.5 rounded-full"
-                  style={{ backgroundColor: "var(--green-9)" }}
-                />
-                <Text size="2" color="gray">
-                  {t("dashboard.uploadRate", "Upload rate")}
-                </Text>
-              </Flex>
-              <Flex gap="1" align="center">
-                <span
-                  className="w-2.5 h-2.5 rounded-full"
-                  style={{ backgroundColor: "var(--blue-9)" }}
-                />
-                <Text size="2" color="gray">
-                  {t("dashboard.downloadRate", "Download rate")}
-                </Text>
-              </Flex>
-              <Flex gap="1" align="center">
-                <span
-                  className="w-4 border-t-2 border-dashed"
-                  style={{ borderColor: "var(--green-9)" }}
-                />
-                <Text size="2" color="gray">
-                  {t("dashboard.uploadTotal", "Upload cumulative")}
-                </Text>
-              </Flex>
-              <Flex gap="1" align="center">
-                <span
-                  className="w-4 border-t-2 border-dashed"
-                  style={{ borderColor: "var(--blue-9)" }}
-                />
-                <Text size="2" color="gray">
-                  {t("dashboard.downloadTotal", "Download cumulative")}
-                </Text>
-              </Flex>
-              <Text size="2" color="gray">
-                ↑ {formatBytes(traffic?.totalUp ?? 0)} ↓{" "}
-                {formatBytes(traffic?.totalDown ?? 0)}
-              </Text>
-            </Flex>
           </Flex>
-          {traffic === null ? (
-            <Flex align="center" justify="center" style={{ height: 280 }}>
-              <Loading text="" />
-            </Flex>
-          ) : traffic.points.length === 0 ? (
-            <Flex align="center" justify="center" style={{ height: 280 }}>
-              <Text size="2" color="gray">
-                {t("dashboard.noData", "No data")}
-              </Text>
-            </Flex>
-          ) : (
-            <ChartContainer
-              config={chartConfig}
-              className="h-[280px] w-full"
-              aria-label={t(
-                "dashboard.trafficChartAria",
-                "Last 24h traffic chart, showing upload and download rate and cumulative traffic",
-              )}
-            >
-              <AreaChart
-                data={traffic.points}
-                margin={{ top: 8, right: 4, bottom: 0, left: 4 }}
-              >
-                <defs>
-                  <linearGradient id="gradUp" x1="0" y1="0" x2="0" y2="1">
-                    <stop
-                      offset="0%"
-                      stopColor="var(--green-9)"
-                      stopOpacity={0.35}
-                    />
-                    <stop
-                      offset="100%"
-                      stopColor="var(--green-9)"
-                      stopOpacity={0.02}
-                    />
-                  </linearGradient>
-                  <linearGradient id="gradDown" x1="0" y1="0" x2="0" y2="1">
-                    <stop
-                      offset="0%"
-                      stopColor="var(--blue-9)"
-                      stopOpacity={0.35}
-                    />
-                    <stop
-                      offset="100%"
-                      stopColor="var(--blue-9)"
-                      stopOpacity={0.02}
-                    />
-                  </linearGradient>
-                </defs>
-                <CartesianGrid vertical={false} />
-                <XAxis
-                  dataKey="time"
-                  tickLine={false}
-                  axisLine={false}
-                  tickFormatter={(v: any) =>
-                    new Date(v).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })
-                  }
-                />
-                <YAxis
-                  yAxisId="rate"
-                  type="number"
-                  tickLine={false}
-                  axisLine={false}
-                  width={1}
-                  mirror
-                  tick={{ dx: 8 }}
-                  tickFormatter={(v: any) => formatSpeed(Number(v))}
-                />
-                <YAxis
-                  yAxisId="cum"
-                  orientation="right"
-                  type="number"
-                  tickLine={false}
-                  axisLine={false}
-                  width={1}
-                  mirror
-                  tick={{ dx: -8 }}
-                  tickFormatter={(v: any) => formatBytes(Number(v))}
-                />
-                <ChartTooltip
-                  cursor={false}
-                  content={
-                    <ChartTooltipContent
-                      labelFormatter={(_value: any, payload: any[]) => {
-                        const point = payload?.[0]?.payload;
-                        return point?.time
-                          ? new Date(point.time).toLocaleString()
-                          : "";
-                      }}
-                      formatter={(value: any, name: any) =>
-                        name === "upRate" || name === "downRate"
-                          ? formatSpeed(Number(value))
-                          : formatBytes(Number(value))
-                      }
-                    />
-                  }
-                />
-                <Area
-                  type="monotone"
-                  dataKey="upRate"
-                  name="upRate"
-                  yAxisId="rate"
-                  stroke="var(--color-upRate)"
-                  strokeWidth={2}
-                  fill="url(#gradUp)"
-                  isAnimationActive={false}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="downRate"
-                  name="downRate"
-                  yAxisId="rate"
-                  stroke="var(--color-downRate)"
-                  strokeWidth={2}
-                  fill="url(#gradDown)"
-                  isAnimationActive={false}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="upCum"
-                  name="upCum"
-                  yAxisId="cum"
-                  stroke="var(--color-upCum)"
-                  strokeWidth={1.5}
-                  strokeDasharray="6 4"
-                  fill="none"
-                  isAnimationActive={false}
-                />
-                <Area
-                  type="monotone"
-                  dataKey="downCum"
-                  name="downCum"
-                  yAxisId="cum"
-                  stroke="var(--color-downCum)"
-                  strokeWidth={1.5}
-                  strokeDasharray="6 4"
-                  fill="none"
-                  isAnimationActive={false}
-                />
-              </AreaChart>
-            </ChartContainer>
-          )}
-          {traffic && traffic.nodeTotals.length > 0 && (
-            <>
-              <Separator size="4" />
-              <Flex direction="column" gap="3">
-                <Text size="3" weight="bold">
-                  {t("dashboard.topTraffic", "Top traffic servers")}
+          <Flex gap="6" wrap="wrap">
+            {renderLatencyColumn(
+              t("dashboard.stableLatency", "Most stable latency"),
+              stableLatencyItems,
+              renderLatencyValue,
+            )}
+            {renderLatencyColumn(
+              t("dashboard.unstableLatency", "Most unstable latency"),
+              unstableLatencyItems,
+              renderLatencyValue,
+            )}
+            {renderLatencyColumn(
+              t("dashboard.highestLoss", "Highest packet loss"),
+              highestLossItems,
+              (item) => (
+                <Text size="2" className="whitespace-nowrap">
+                  {item.loss.toFixed(1)}%
                 </Text>
-                <Flex direction="column" gap="3">
-                  {traffic.nodeTotals.slice(0, 5).map((node, index) => (
-                    <Flex key={node.uuid} direction="column" gap="1">
-                      <Flex justify="between" align="center" gap="2">
-                        <Text size="2" className="truncate">
-                          <Text size="2" color="gray">
-                            {index + 1}.
-                          </Text>{" "}
-                          {nodeNameMap.get(node.uuid) ?? node.uuid.slice(0, 8)}
-                        </Text>
-                        <Text
-                          size="2"
-                          color="gray"
-                          className="whitespace-nowrap"
-                        >
-                          ↑ {formatBytes(node.up)} ↓ {formatBytes(node.down)}
-                        </Text>
-                      </Flex>
-                      <div
-                        className="h-2 rounded-full overflow-hidden"
-                        style={{ backgroundColor: "var(--gray-5)" }}
-                      >
-                        <div
-                          className="h-full rounded-full"
-                          style={{
-                            width: `${
-                              (node.total / traffic.nodeTotals[0].total) * 100
-                            }%`,
-                            backgroundColor: "var(--accent-9)",
-                            transition: "width 0.5s ease-out",
-                          }}
-                        />
-                      </div>
-                    </Flex>
-                  ))}
-                </Flex>
-              </Flex>
-            </>
-          )}
+              ),
+            )}
+          </Flex>
         </Flex>
       </Card>
     </Flex>
@@ -876,33 +1421,375 @@ const ProgressRing = ({
   );
 };
 
-const StatCard = React.memo(
-  ({
-    title,
-    value,
-    icon,
-    children,
-  }: {
-    title: string;
-    value: React.ReactNode;
-    icon: React.ReactNode;
-    children?: React.ReactNode;
-  }) => {
-    return (
-      <Flex direction="column" gap="3">
-        <Flex gap="2" align="center" style={{ color: "var(--gray-10)" }}>
+const TopRankCard = ({
+  title,
+  icon,
+  items,
+  metricKeys,
+  t,
+}: {
+  title: string;
+  icon: React.ReactNode;
+  items: TopP95Item[];
+  metricKeys: string[];
+  t: TFunction;
+}) => {
+  return (
+    <Flex direction="column" gap="3">
+      <Flex
+        gap="2"
+        align="center"
+        justify="between"
+        style={{ color: "var(--gray-10)" }}
+      >
+        <Flex gap="2" align="center">
           {icon}
-          <Text size="2" color="gray">
+          <Text size="3" weight="bold">
             {title}
           </Text>
         </Flex>
-        <Text size="6" weight="bold">
-          {value}
-        </Text>
-        {children}
+        <RankListPopover
+          title={title}
+          ariaLabel={t("common.details", "Details")}
+        >
+          <Flex direction="column" gap="2">
+            {items.map((item, index) => (
+              <Flex key={item.uuid} justify="between" align="center" gap="2">
+                <Text size="2" className="truncate" title={item.name}>
+                  <Text size="2" color="gray">
+                    {index + 1}.
+                  </Text>{" "}
+                  {item.name}
+                </Text>
+                <Flex align="center" gap="1" className="shrink-0">
+                  <Text size="2" weight="bold" className="whitespace-nowrap">
+                    {item.value.toFixed(1)}%
+                  </Text>
+                  <MiniChartButton
+                    uuid={item.uuid}
+                    metricKeys={metricKeys}
+                    ariaLabel={t("dashboard.viewChart", "View 24h chart")}
+                  />
+                </Flex>
+              </Flex>
+            ))}
+          </Flex>
+        </RankListPopover>
       </Flex>
-    );
-  },
+      {items.length === 0 ? (
+        <Text size="2" color="gray">
+          {t("dashboard.noData", "No data")}
+        </Text>
+      ) : (
+        <Flex direction="column" gap="3">
+          {items.slice(0, 4).map((item, index) => {
+            const percent = Math.min(Math.max(item.value, 0), 100);
+            const barColor =
+              percent >= 80 ? "red" : percent >= 60 ? "orange" : "green";
+            return (
+              <Flex key={item.uuid} direction="column" gap="1">
+                <Flex justify="between" align="center" gap="2">
+                  <Text size="2" className="truncate" title={item.name}>
+                    <Text size="2" color="gray">
+                      {index + 1}.
+                    </Text>{" "}
+                    {item.name}
+                  </Text>
+                  <Flex align="center" gap="1" className="shrink-0">
+                    <Text size="2" weight="bold" className="whitespace-nowrap">
+                      {item.value.toFixed(1)}%
+                    </Text>
+                    <MiniChartButton
+                      uuid={item.uuid}
+                      metricKeys={metricKeys}
+                      ariaLabel={t("dashboard.viewChart", "View 24h chart")}
+                    />
+                  </Flex>
+                </Flex>
+                <Text size="1" color="gray" className="truncate">
+                  {t("dashboard.peakAt", "Peak {{value}} at {{time}}", {
+                    value: `${item.peak.toFixed(1)}%`,
+                    time: formatPeakTime(t, item.peakTime),
+                  })}
+                </Text>
+                <div
+                  className="h-1.5 rounded-full overflow-hidden"
+                  style={{ backgroundColor: "var(--gray-5)" }}
+                >
+                  <div
+                    className="h-full rounded-full"
+                    style={{
+                      width: `${percent}%`,
+                      backgroundColor: `var(--${barColor}-9)`,
+                      transition: "width 0.5s ease-out",
+                    }}
+                  />
+                </div>
+              </Flex>
+            );
+          })}
+        </Flex>
+      )}
+    </Flex>
+  );
+};
+
+const formatMetricValue = (metricKey: string, value: number): string => {
+  if (metricKey === "net.in.rate" || metricKey === "net.out.rate") {
+    return formatSpeed(value);
+  }
+  if (metricKey === "memory.used") {
+    return formatBytes(value);
+  }
+  if (metricKey === PING_LATENCY_METRIC) {
+    return `${Math.round(value)} ms`;
+  }
+  return `${value.toFixed(1)}%`;
+};
+
+const MiniMetricChart = ({
+  uuid,
+  metricKeys,
+  tags,
+}: {
+  uuid: string;
+  metricKeys: string[];
+  tags?: MetricTags;
+}) => {
+  const { t } = useTranslation();
+  const { call } = useRPC2Call();
+  const [seriesList, setSeriesList] = useState<MetricSeries[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const tagsKey = JSON.stringify(tags ?? null);
+  const cacheKey = `${uuid}|${metricKeys.join(",")}|${tagsKey}`;
+
+  useEffect(() => {
+    let active = true;
+    const cached = miniChartCache.get(cacheKey);
+    if (cached) {
+      setSeriesList(cached);
+      setError(null);
+      setLoading(false);
+      return;
+    }
+    setLoading(true);
+    setError(null);
+    const now = new Date();
+    const start = new Date(now.getTime() - 24 * 3600 * 1000);
+    call<any, QueryMetricsResponse>("public:queryMetrics", {
+      metric_keys: metricKeys,
+      entity_id: uuid,
+      tags,
+      start: start.toISOString(),
+      end: now.toISOString(),
+      aggregation: "avg",
+      max_points: 240,
+      fill_empty: true,
+    })
+      .then((res) => {
+        if (!active) return;
+        const next = normalizeMetricSeriesList(res?.series);
+        miniChartCache.set(cacheKey, next);
+        setSeriesList(next);
+        setLoading(false);
+      })
+      .catch((err) => {
+        if (!active) return;
+        setError(err instanceof Error ? err.message : "Error");
+        setLoading(false);
+      });
+    return () => {
+      active = false;
+    };
+  }, [call, uuid, metricKeys, tags, tagsKey, cacheKey]);
+
+  const chartData = useMemo(() => {
+    const rows = new Map<number, Record<string, string | number | null>>();
+    const keys: string[] = [];
+    for (const series of seriesList) {
+      if (!keys.includes(series.metric_key)) keys.push(series.metric_key);
+      for (const point of series.points ?? []) {
+        if (point.value == null) continue;
+        const ts = new Date(point.time).getTime();
+        const row = rows.get(ts) ?? { time: ts };
+        row[series.metric_key] = point.value;
+        rows.set(ts, row);
+      }
+    }
+    return {
+      rows: Array.from(rows.values()).sort(
+        (a, b) => Number(a.time) - Number(b.time),
+      ),
+      keys,
+    };
+  }, [seriesList]);
+
+  const chartConfig = useMemo(() => {
+    const config: ChartConfig = {};
+    for (const [index, key] of chartData.keys.entries()) {
+      config[key] = {
+        label:
+          key === "net.in.rate"
+            ? t("dashboard.uploadRate", "Upload rate")
+            : key === "net.out.rate"
+              ? t("dashboard.downloadRate", "Download rate")
+              : key === "cpu.usage"
+                ? t("dashboard.avgCpu", "Average CPU")
+                : key === PING_LATENCY_METRIC
+                  ? t("nodeCard.ping", "Ping")
+                  : key,
+        color: metricSeriesColor(index),
+      };
+    }
+    return config;
+  }, [chartData.keys, t]);
+
+  return (
+    <Flex direction="column" gap="2" style={{ width: 400 }}>
+      <Text size="2" weight="bold">
+        {t("chart.recentDay", "Last 1 day")}
+      </Text>
+      {loading ? (
+        <Flex align="center" justify="center" style={{ height: 180 }}>
+          <Loading text="" />
+        </Flex>
+      ) : error ? (
+        <Flex align="center" justify="center" style={{ height: 180 }}>
+          <Text size="2" color="red">
+            {error}
+          </Text>
+        </Flex>
+      ) : chartData.rows.length === 0 ? (
+        <Flex align="center" justify="center" style={{ height: 180 }}>
+          <Text size="2" color="gray">
+            {t("dashboard.noData", "No data")}
+          </Text>
+        </Flex>
+      ) : (
+        <ChartContainer
+          config={chartConfig}
+          className="h-[180px] w-full"
+          style={{ aspectRatio: "auto" }}
+        >
+          <LineChart
+            data={chartData.rows}
+            margin={{ top: 8, right: 8, bottom: 0, left: 8 }}
+          >
+            <CartesianGrid vertical={false} />
+            <XAxis
+              dataKey="time"
+              tickLine={false}
+              axisLine={false}
+              tickFormatter={(v: any) =>
+                new Date(v).toLocaleTimeString([], {
+                  hour: "2-digit",
+                  minute: "2-digit",
+                })
+              }
+            />
+            <YAxis
+              tickLine={false}
+              axisLine={false}
+              width={1}
+              mirror
+              tick={{ dx: 8 }}
+              tickFormatter={(v: any) =>
+                formatMetricValue(chartData.keys[0] ?? "", Number(v))
+              }
+            />
+            <ChartTooltip
+              cursor={false}
+              content={
+                <ChartTooltipContent
+                  labelFormatter={(_value: any, payload: any[]) => {
+                    const point = payload?.[0]?.payload;
+                    return point?.time
+                      ? new Date(Number(point.time)).toLocaleString()
+                      : "";
+                  }}
+                  formatter={(value: any, name: any) =>
+                    formatMetricValue(String(name), Number(value))
+                  }
+                />
+              }
+            />
+            {chartData.keys.map((key, index) => (
+              <Line
+                key={key}
+                type="monotone"
+                dataKey={key}
+                name={key}
+                stroke={metricSeriesColor(index)}
+                strokeWidth={2}
+                dot={false}
+                isAnimationActive={false}
+              />
+            ))}
+          </LineChart>
+        </ChartContainer>
+      )}
+    </Flex>
+  );
+};
+
+const RankListPopover = ({
+  title,
+  ariaLabel,
+  children,
+}: {
+  title: string;
+  ariaLabel?: string;
+  children: React.ReactNode;
+}) => (
+  <Popover.Root>
+    <Popover.Trigger>
+      <IconButton size="1" variant="ghost" color="gray" aria-label={ariaLabel}>
+        <List size={14} />
+      </IconButton>
+    </Popover.Trigger>
+    <Popover.Content style={{ width: 340 }}>
+      <Flex direction="column" gap="2">
+        <Text size="2" weight="bold">
+          {title}
+        </Text>
+        <div
+          className="overflow-y-auto pr-1"
+          style={{ maxHeight: 320 }}
+        >
+          {children}
+        </div>
+      </Flex>
+    </Popover.Content>
+  </Popover.Root>
+);
+
+const MiniChartButton = ({
+  uuid,
+  metricKeys,
+  tags,
+  ariaLabel,
+}: {
+  uuid: string;
+  metricKeys: string[];
+  tags?: MetricTags;
+  ariaLabel?: string;
+}) => (
+  <Popover.Root>
+    <Popover.Trigger>
+      <IconButton
+        size="1"
+        variant="ghost"
+        color="gray"
+        aria-label={ariaLabel}
+      >
+        <ChartNoAxesCombined size={14} />
+      </IconButton>
+    </Popover.Trigger>
+    <Popover.Content style={{ width: 440 }}>
+      <MiniMetricChart uuid={uuid} metricKeys={metricKeys} tags={tags} />
+    </Popover.Content>
+  </Popover.Root>
 );
 
 export default Dashboard;
