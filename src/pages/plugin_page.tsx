@@ -9,19 +9,19 @@ export default function PluginPage() {
   const { short, filepath } = useParams<{ short: string; filepath: string }>();
   if (!short || !filepath) {
     return (
-      <Callout.Root>
+      <Callout.Root className="km-plugin-missing">
         <Callout.Text>{t("plugin.page_missing_params", "Missing plugin page parameters")}</Callout.Text>
       </Callout.Root>
     );
   }
   const src = `/api/plugin/${encodeURIComponent(short)}/${filepath}`;
   return (
-    <Box className="h-full min-h-[calc(100vh-96px)]">
+    <Box className="km-page-plugin h-full min-h-[calc(100vh-96px)]">
       <iframe
         title={`${short}/${filepath}`}
         src={src}
         sandbox="allow-forms allow-modals allow-popups allow-same-origin allow-scripts"
-        className="h-full min-h-[calc(100vh-96px)] w-full border-0"
+        className="km-plugin-frame h-full min-h-[calc(100vh-96px)] w-full border-0"
       />
     </Box>
   );

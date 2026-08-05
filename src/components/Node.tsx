@@ -78,11 +78,11 @@ const Node = React.memo(
         transition: "all 0.2s ease-in-out",
       }}
       id={basic.uuid}
-      className="node-card hover:cursor-pointer hover:shadow-lg hover:bg-accent-2"
+      className="km-node-card node-card hover:cursor-pointer hover:shadow-lg hover:bg-accent-2"
     >
       <Flex direction="column" gap="2">
         <Flex justify="between" align="center" my={isMobile ? "-1" : "0"}>
-          <Flex justify="start" align="center" style={{ flex: 1, minWidth: 0 }}>
+          <Flex justify="start" align="center" style={{ flex: 1, minWidth: 0 }} className="km-node-region">
             <Flag flag={basic.region} />
             <Link
               to={`/instance/${basic.uuid}`}
@@ -90,6 +90,7 @@ const Node = React.memo(
             >
               <Flex direction="column" style={{ minWidth: 0 }}>
                 <Text
+                  className="km-node-name"
                   weight="bold"
                   size={isMobile ? "2" : "4"}
                   truncate
@@ -121,7 +122,7 @@ const Node = React.memo(
               </Flex>
             </Link>
           </Flex>
-          <Flex gap="2" align="center" style={{ flex: "none" }}>
+          <Flex gap="2" align="center" style={{ flex: "none" }} className="km-node-chart">
             {live?.message && <Tips color="#CE282E">{live.message}</Tips>}
             <MiniPingChartFloat
               uuid={basic.uuid}
@@ -137,7 +138,7 @@ const Node = React.memo(
                 </IconButton>
               }
             />
-            <Badge color={online ? "green" : "red"} variant="soft">
+            <Badge color={online ? "green" : "red"} variant="soft" className="km-node-status">
               {online ? t("nodeCard.online") : t("nodeCard.offline")}
             </Badge>
           </Flex>
@@ -329,7 +330,7 @@ export const NodeGrid = ({ nodes, liveData, onlineSet }: NodeGridProps) => {
 
   return (
     <Box
-      className="gap-2 md:gap-4"
+      className="km-node-list gap-2 md:gap-4"
       style={{
         display: "grid",
         gridTemplateColumns: "repeat(auto-fill, minmax(300px, 1fr))",

@@ -39,7 +39,7 @@ const CommandClipboardPanel = ({ ...props }: { [key: string]: any }) => {
         overflowX={"clip"}
         overflowY={"scroll"}
         style={{ height: "100%" }}
-        className="command-clipboard-container"
+        className="km-command-clipboard km-command-clipboard-list command-clipboard-container"
       >
         <Flex>
           <label className="text-lg font-semibold">
@@ -98,7 +98,7 @@ const AddButton = () => {
           <PlusIcon size="16" />
         </IconButton>
       </Dialog.Trigger>
-      <Dialog.Content>
+      <Dialog.Content className="km-command-clipboard-input">
         <Dialog.Title>{t("common.add")}</Dialog.Title>
         <form onSubmit={handleAddCommand}>
           <Flex direction="column" gap="2">
@@ -244,7 +244,7 @@ const CommandCard = (item: CommandClipboard) => {
   const { t } = useTranslation();
   const { sendCommand } = useTerminal();
   return (
-    <Flex key={item.id} direction="column">
+    <Flex key={item.id} direction="column" className="km-command-clipboard-item">
       <Card>
         <Flex direction="column" gap="2">
           <Flex justify="between" align="center">

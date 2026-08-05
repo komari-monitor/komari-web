@@ -24,8 +24,9 @@ const UsageBar = React.memo(
 
     if (compact) {
       return (
-        <Box style={{ width: "100%" }}>
+        <Box className="km-usage-bar" style={{ width: "100%" }}>
           <Box
+            className="km-usage-bar-track"
             style={{
               width: "100%",
               height: "6px",
@@ -55,7 +56,7 @@ const UsageBar = React.memo(
     }
 
     return (
-      <Flex direction="column" gap="1" style={{ width: "100%" }}>
+      <Flex direction="column" gap="1" className="km-usage-bar" style={{ width: "100%" }}>
         <Flex justify="between" align="center">
           <Text size="2" color="gray">
             {label}
@@ -65,6 +66,7 @@ const UsageBar = React.memo(
           </Text>
         </Flex>
         <Box
+          className="km-usage-bar-track"
           style={{
             width: "100%",
             height: "8px",

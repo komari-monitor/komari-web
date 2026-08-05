@@ -116,6 +116,7 @@ const NotificationSettings = () => {
         onChange={async (checked) => {
           await updateSettingsWithToast({ notification_enabled: checked }, t);
         }}
+        className="km-page-admin-settings-notification km-setting-card"
       />
       <SettingCardLongTextInput
         title={t("settings.notification.template")}
@@ -176,6 +177,7 @@ const NotificationSettings = () => {
             );
           }
         }}
+        className="km-setting-card"
       >
         GO
       </SettingCardButton>

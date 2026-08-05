@@ -118,7 +118,7 @@ const Layout = () => {
   const isEmpty = Array.isArray(nodeDetail) && nodeDetail.length === 0;
 
   return (
-    <Flex direction="column" gap="4" p="4">
+    <Flex direction="column" gap="4" p="4" className="km-page-admin-index">
       <Header
         searchTerm={searchTerm}
         setSearchTerm={setSearchTerm}

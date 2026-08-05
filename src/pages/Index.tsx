@@ -176,8 +176,8 @@ const Index = () => {
   return (
     <>
       <Callouts />
-      <Card className="summary-card mx-4 md:text-base text-sm relative">
-        <div className="absolute top-2 right-2">
+      <Card className="km-page-index km-summary-card summary-card mx-4 md:text-base text-sm relative">
+        <div className="km-summary-card-settings absolute top-2 right-2">
           <Popover.Root>
             <Popover.Trigger>
               <IconButton
@@ -212,7 +212,7 @@ const Index = () => {
         </div>
 
         <div
-          className="grid gap-2"
+          className="km-summary-card-grid grid gap-2"
           style={{
             gridTemplateColumns: `repeat(auto-fit, minmax(230px, 1fr))`,
             gridAutoRows: "min-content",
@@ -236,8 +236,13 @@ const Callouts = () => {
   const { showCallout } = useLiveData();
   const ishttps = window.location.protocol === "https:";
   return (
-    <Flex direction="column" gap="2" className="m-2">
-      <Callout.Root m="2" hidden={ishttps} color="red">
+    <Flex direction="column" gap="2" className="km-callouts m-2">
+      <Callout.Root
+        m="2"
+        hidden={ishttps}
+        color="red"
+        className="km-callout km-callout-https"
+      >
         <Callout.Icon>
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -256,7 +261,13 @@ const Callouts = () => {
           </Text>
         </Callout.Text>
       </Callout.Root>
-      <Callout.Root m="2" hidden={showCallout} id="callout" color="tomato">
+      <Callout.Root
+        m="2"
+        hidden={showCallout}
+        id="callout"
+        color="tomato"
+        className="km-callout km-callout-websocket"
+      >
         <Callout.Icon>
           <svg
             xmlns="http://www.w3.org/2000/svg"
@@ -291,7 +302,7 @@ type TopCardProps = {
 const TopCard: React.FC<TopCardProps> = React.memo(
   ({ title, value, description }) => {
     return (
-      <div className="min-w-52 md:max-w-72 w-full">
+      <div className="km-top-card min-w-52 md:max-w-72 w-full">
         <Flex direction="column" gap="1">
           <label className="text-muted-foreground text-sm">{title}</label>
           <label className="font-medium -mt-2 text-md">{value}</label>

@@ -449,7 +449,7 @@ const ThemePage = () => {
   }
 
   return (
-    <Box className="p-6 space-y-6">
+    <Box className="km-page-admin-settings-theme p-6 space-y-6">
       <Flex justify="between" align="center" gap="3" wrap="wrap">
         <Text size="6" weight="bold">
           {t("theme.title")}

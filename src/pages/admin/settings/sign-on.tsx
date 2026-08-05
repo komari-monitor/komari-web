@@ -115,6 +115,7 @@ export default function SignOnSettings() {
         onChange={async (checked) => {
           await updateSettingsWithToast({ disable_password_login: checked }, t);
         }}
+        className="km-page-admin-settings-sign-on km-setting-card"
       />
       <SettingCardLabel>{t("settings.sso.title")}</SettingCardLabel>
       <SettingCardSwitch
@@ -124,6 +125,7 @@ export default function SignOnSettings() {
         onChange={async (checked) => {
           await updateSettingsWithToast({ o_auth_enabled: checked }, t);
         }}
+        className="km-setting-card"
       />
       <SettingCardSelect
         title={String(t("settings.sso.provider"))}

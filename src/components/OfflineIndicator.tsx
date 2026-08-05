@@ -25,7 +25,7 @@ export const OnlineIndicator = () => {
   const { isOnline: isOnlineOnline } = usePWA();
   const { t: tOnline } = useTranslation();
   return (
-    <div className="flex items-center gap-1 text-xs text-gray-500">
+    <div className="km-offline-indicator flex items-center gap-1 text-xs text-gray-500">
       {isOnlineOnline ? (
         <>
           <Wifi size={12} className="text-green-500" />

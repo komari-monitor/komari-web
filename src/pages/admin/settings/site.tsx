@@ -244,6 +244,7 @@ export default function SiteSettings() {
         onChange={async (checked) => {
           await updateSettingsWithToast({ cors_origin_check_enabled: checked }, t);
         }}
+        className="km-page-admin-settings-site km-setting-card"
       />
       <SettingCardLongTextInput
         title={t("settings.site.cors_allowed_origins", "API CORS 允许列表")}
@@ -268,6 +269,7 @@ export default function SiteSettings() {
             t,
           );
         }}
+        className="km-setting-card"
       />
       <SettingCardLongTextInput
         title={t("settings.site.ws_allowed_origins", "WebSocket Origin 允许列表")}
@@ -286,6 +288,7 @@ export default function SiteSettings() {
         onChange={async (checked) => {
           await updateSettingsWithToast({ send_ip_addr_to_guest: checked }, t);
         }}
+        className="km-setting-card"
       />
       <SettingCardShortTextInput
         title={t("settings.site.script_domain")}
@@ -304,6 +307,7 @@ export default function SiteSettings() {
         onChange={async (checked) => {
           await updateSettingsWithToast({ private_site: checked }, t);
         }}
+        className="km-setting-card"
       />
       <SettingCardCollapse
         title={t("settings.site.temporary_share")}
@@ -537,6 +541,7 @@ export default function SiteSettings() {
         onClick={() => {
           window.open("/api/admin/download/backup", "_blank");
         }}
+        className="km-setting-card"
       >
         <DownloadIcon size={16} />
       </SettingCardIconButton>
@@ -544,6 +549,7 @@ export default function SiteSettings() {
         title={t("settings.site.backup_restore")}
         description={t("settings.site.backup_restore_description")}
         onClick={() => setRestoreOpen(true)}
+        className="km-setting-card"
       >
         {t("common.select")}
       </SettingCardButton>

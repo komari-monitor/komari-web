@@ -53,7 +53,7 @@ const InnerLayout = () => {
     return <div>{error || nodeDetailError}</div>;
   }
   return (
-    <Flex direction="column" gap="4" className="p-4">
+    <Flex direction="column" gap="4" className="km-page-admin-notification-load p-4">
       <div className="flex justify-between items-center">
         <label className="text-2xl font-bold">
           {t("notification.load.title")}
@@ -414,7 +414,7 @@ const AddButton: React.FC = () => {
       </Dialog.Trigger>
       <Dialog.Content>
         <Dialog.Title>{t("common.add")}</Dialog.Title>
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="km-notification-load-form">
           <Flex direction="column" justify="end" gap="2" className="font-bold">
             <label htmlFor="load_name">{t("common.name")}</label>
             <TextField.Root id="load_name" name="load_name" />

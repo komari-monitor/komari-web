@@ -150,7 +150,7 @@ const ThemeManaged: React.FC = () => {
   };
 
   return (
-    <Flex direction="column" gap="4" className="p-2 md:p-4">
+    <Flex direction="column" gap="4" className="km-page-admin-theme-managed p-2 md:p-4">
       <Flex justify="between" align="center">
         <Heading size="4">
           {theme
@@ -177,7 +177,7 @@ const ThemeManaged: React.FC = () => {
         </Callout.Root>
       )}
       <Separator size="4" />
-      <Flex direction="column" gap="3">
+      <Flex direction="column" gap="3" className="km-theme-managed-form">
         {fields.map((f, idx) => {
           if (f.type === "title") {
             return (

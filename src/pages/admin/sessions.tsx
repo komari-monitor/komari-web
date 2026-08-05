@@ -106,7 +106,7 @@ export default function Sessions() {
   }
 
   return (
-    <div className="p-4">
+    <div className="km-page-admin-sessions p-4">
       <h1 className="text-2xl font-semibold mb-4">{t("sessions.title")}</h1>
       <div className="mb-4">
         <Dialog.Root>
@@ -131,7 +131,7 @@ export default function Sessions() {
           </Dialog.Content>
         </Dialog.Root>
       </div>
-      <div className="overflow-hidden rounded-lg">
+      <div className="km-sessions-table overflow-hidden rounded-lg">
         <Table>
           <TableHeader>
             <TableRow>
@@ -148,7 +148,7 @@ export default function Sessions() {
             {sessions.data.map((s) => {
               const isCurrent = s.session === sessions.current;
               return (
-                <TableRow key={s.uuid}>
+                <TableRow key={s.uuid} className="km-session-item">
                   <TableCell>
                     <Dialog.Root>
                       <Dialog.Trigger>

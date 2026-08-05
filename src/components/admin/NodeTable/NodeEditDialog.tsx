@@ -59,9 +59,9 @@ export function EditDialog({ item }: { item: z.infer<typeof schema> }) {
           <Pencil className="p-1" />
         </IconButton>
       </Dialog.Trigger>
-      <Dialog.Content>
+      <Dialog.Content className="km-node-edit-dialog">
         <Dialog.Title>{t("admin.nodeEdit.editInfo", "编辑信息")}</Dialog.Title>
-        <div className="flex flex-col gap-4">
+        <div className="km-node-edit-form flex flex-col gap-4">
           <div>
             <label className="block mb-1 text-sm font-medium text-muted-foreground">
               {t("admin.nodeEdit.name", "名称")}

@@ -136,7 +136,7 @@ export const TaskView = ({ pingTasks }: { pingTasks: PingTask[] }) => {
   };
 
   return (
-    <div className="rounded-xl overflow-hidden">
+    <div className="km-page-admin-pingtask-task km-pingtask-task-table rounded-xl overflow-hidden">
       <Table>
         <TableHeader>
           <TableRow>
@@ -351,7 +351,7 @@ const Row = ({
               <Pencil size="16" />
             </IconButton>
           </Dialog.Trigger>
-          <Dialog.Content>
+          <Dialog.Content className="km-pingtask-task-form">
             <Dialog.Title>{t("common.edit")}</Dialog.Title>
             <form onSubmit={handleEdit} className="flex flex-col gap-2">
               <label>{t("common.name")}</label>

@@ -172,7 +172,7 @@ export default function PluginConfigPage() {
   const hasItems = items.some((item) => item.type !== "title");
 
   return (
-    <Box className="p-4">
+    <Box className="km-page-admin-plugin-config p-4">
       <Flex align="center" gap="2" mb="3">
         <Blocks size={20} />
         <Heading size="4">{t("plugin.config", "Configuration")}</Heading>
@@ -220,7 +220,7 @@ export default function PluginConfigPage() {
         </Card>
 
         {/* 右侧：配置项 */}
-        <Flex direction="column" gap="3" className="min-w-0 flex-1">
+        <Flex direction="column" gap="3" className="km-plugin-config-form min-w-0 flex-1">
           {!selected && (
             <Callout.Root>
               <Callout.Text>{t("plugin.config_select_hint", "Select a plugin to configure")}</Callout.Text>

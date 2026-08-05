@@ -103,7 +103,7 @@ const TrafficReportEditForm = ({
         e.preventDefault();
         onSubmit({ enable: enabled, daily, weekly, monthly });
       }}
-      className="flex flex-col gap-3"
+      className="km-notification-traffic-form flex flex-col gap-3"
     >
       <label htmlFor="status">{t("common.status")}</label>
       <Switch
@@ -245,7 +245,7 @@ const InnerLayout = () => {
   }
 
   return (
-    <div className="flex flex-col gap-4 md:p-4 p-1">
+    <div className="km-page-admin-notification-traffic-report flex flex-col gap-4 md:p-4 p-1">
       <Flex justify="between" align="center" wrap="wrap">
         <label className="text-2xl font-semibold">
           {t("notification.traffic_report.full_title")}
@@ -329,7 +329,7 @@ const TrafficReportTable = ({
     .filter((node) => node.name.toLowerCase().includes(search.toLowerCase()));
 
   return (
-    <div className="rounded-lg overflow-hidden">
+    <div className="km-notification-traffic-card rounded-lg overflow-hidden">
       <Table>
         <TableHeader>
           <TableRow>

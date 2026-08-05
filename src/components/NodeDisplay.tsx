@@ -108,7 +108,7 @@ const NodeDisplay: React.FC<NodeDisplayProps> = ({ nodes, liveData }) => {
   }, [nodes, searchTerm, onlineSet, selectedGroup]);
 
   return (
-    <div className="w-full">
+    <div className="km-node-display w-full">
       {/* 控制栏 */}
       <Flex
         direction={{ initial: "column", sm: "row" }}
@@ -180,7 +180,7 @@ const NodeDisplay: React.FC<NodeDisplayProps> = ({ nodes, liveData }) => {
         <Flex
           align="center"
           gap="2"
-          className="mx-4 mb-2 -mt-2 overflow-x-auto"
+          className="km-node-group mx-4 mb-2 -mt-2 overflow-x-auto"
         >
           <label className="whitespace-nowrap text-md text-muted-foreground">
             {t("common.group")}
@@ -194,7 +194,7 @@ const NodeDisplay: React.FC<NodeDisplayProps> = ({ nodes, liveData }) => {
               {t("common.all")}
             </SegmentedControl.Item>
             {groups.map((group) => (
-              <SegmentedControl.Item key={group} value={group}>
+              <SegmentedControl.Item key={group} value={group} className="km-node-group-name">
                 {group}
               </SegmentedControl.Item>
             ))}
@@ -202,7 +202,7 @@ const NodeDisplay: React.FC<NodeDisplayProps> = ({ nodes, liveData }) => {
         </Flex>
       )}
       {/* 搜索结果统计 */}
-      <Flex justify="between" align="center" className="mx-4 mb-2">
+      <Flex justify="between" align="center" className="km-node-summary mx-4 mb-2">
         {searchTerm.trim() ? (
           <Text size="2" color="gray">
             {t("search.results", {

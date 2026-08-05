@@ -120,8 +120,8 @@ export default function AboutPage() {
   );
 
   return (
-    <div className="flex flex-col gap-4">
-      <h1 className="text-2xl font-bold text-foreground">{t("common.about")}</h1>
+    <div className="km-page-admin-about km-about-content flex flex-col gap-4">
+      <h1 className="km-about-title text-2xl font-bold text-foreground">{t("common.about")}</h1>
       <SegmentedControl.Root defaultValue={view} onValueChange={setView}>
         <SegmentedControl.Item value="open_source">
           {t("about.open_source_title")}
@@ -136,7 +136,7 @@ export default function AboutPage() {
           case "eula":
             return (
               <>
-                <div className="license-text mb-4 p-4 border rounded-md bg-accent-1 flex flex-col gap-2">
+                <div className="km-about-license license-text mb-4 p-4 border rounded-md bg-accent-1 flex flex-col gap-2">
                   <pre className="text-wrap">{getEula(i18n.language)}</pre>
                 </div>
               </>
@@ -144,7 +144,7 @@ export default function AboutPage() {
           case "open_source":
             return (
               <>
-                <div className="text-foreground flex flex-col gap-4">
+                <div className="km-about-license text-foreground flex flex-col gap-4">
                   <SettingCardCollapse
                     title="MIT License"
                     description="Copyright (C) 2025 Komari Monitor"
@@ -161,7 +161,7 @@ export default function AboutPage() {
                 <h2 className="text-xl font-semibold text-foreground">
                   {t("about.open_source")}
                 </h2>
-                <div className="copyright text-sm text-gray-500 dark:text-gray-400">
+                <div className="km-about-copyright copyright text-sm text-gray-500 dark:text-gray-400">
                   {sortedLicenses.map(([license, libs]) => (
                     <div key={license} className="mb-2">
                       <h3 className="font-black text-lg text-foreground">
@@ -181,7 +181,7 @@ export default function AboutPage() {
           case "readme":
             return (
               <>
-                <div className="markdown-body border border-muted/20 rounded-md">
+                <div className="km-about-changelog markdown-body border border-muted/20 rounded-md">
                   {markdown ? (
                     <ReactMarkdown
                       remarkPlugins={[remarkGfm]}

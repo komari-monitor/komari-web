@@ -190,16 +190,16 @@ export default function Install() {
 
   if (ready === false)
     return (
-      <main className="flex min-h-screen items-center justify-center p-6">
+      <main className="km-page-install flex min-h-screen items-center justify-center p-6">
         <Text>{t("install.completed")}</Text>
       </main>
     );
 
   const titles = ["welcome", "administrator", "site", "database", "confirm"];
   return (
-    <main className="min-h-screen px-4 py-8 sm:px-6">
+    <main className="km-page-install min-h-screen px-4 py-8 sm:px-6">
       <Container size="2">
-        <div className="mb-5">
+        <div className="km-install-header mb-5">
           <GuideHeader />
         </div>
         <Heading size="7" mb="5">
@@ -223,8 +223,8 @@ export default function Install() {
             <Callout.Text>{error}</Callout.Text>
           </Callout.Root>
         )}
-        <form onSubmit={submit}>
-          <Card size="3">
+        <form onSubmit={submit} className="km-install-form">
+          <Card size="3" className="km-install-step">
             {step === 0 && (
               <Flex direction="column" gap="5">
                 <Flex align="center" gap="3">

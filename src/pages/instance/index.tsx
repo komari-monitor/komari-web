@@ -153,29 +153,29 @@ export default function InstancePage() {
   }, [chartRealtimeActive, length, onRefresh, uuid]);
   // #region 布局
   return (
-    <div className="flex flex-row justify-center p-4 gap-4">
+    <div className="km-page-instance flex flex-row justify-center p-4 gap-4">
       {showServerListInDetails && !isMobile && (
-        <div className="w-[300px] shrink-0 self-start sticky top-4">
+        <div className="km-instance-server-list w-[300px] shrink-0 self-start sticky top-4">
           <Card
-            className="w-full overflow-hidden shadow-lg"
+            className="km-instance-server-list-card w-full overflow-hidden shadow-lg"
             style={{ height: "calc(100vh - 2rem)" }}
           >
             <Flex direction="column" gap="0" className="h-full min-h-0">
-              <div className="p-3 border-b border-accent-3">
+              <div className="km-instance-server-list-header p-3 border-b border-accent-3">
                 <Text size="2" weight="bold">
                   {t("common.serverList")}
                 </Text>
               </div>
-              <div className="flex-1 min-h-0 overflow-y-auto overscroll-contain">
+              <div className="km-instance-server-list-items flex-1 min-h-0 overflow-y-auto overscroll-contain">
                 {groupedNodes.map((group, groupIndex) => (
                   <div key={groupIndex}>
                     {group.group && (
-                      <div className="px-3 py-1 text-xs font-semibold text-accent-8 bg-accent-2 sticky top-0">
+                      <div className="km-instance-server-group px-3 py-1 text-xs font-semibold text-accent-8 bg-accent-2 sticky top-0">
                         {group.group}
                       </div>
                     )}
                     {group.group === null && (
-                      <div className="px-3 py-1 text-xs font-semibold text-accent-8 bg-accent-2 sticky top-0">
+                      <div className="km-instance-server-group px-3 py-1 text-xs font-semibold text-accent-8 bg-accent-2 sticky top-0">
                         {t("common.ungrouped")}
                       </div>
                     )}
@@ -186,7 +186,7 @@ export default function InstancePage() {
                           role="link"
                           tabIndex={0}
                           onClick={() => navigate(`/instance/${node.uuid}`)}
-                          className={`mx-1 my-0.5 px-2 py-0 cursor-pointer transition-colors text-sm rounded-md border-l-[4px] flex items-center gap-2 ${
+                          className={`km-instance-server-item mx-1 my-0.5 px-2 py-0 cursor-pointer transition-colors text-sm rounded-md border-l-[4px] flex items-center gap-2 ${
                             node.uuid === uuid
                               ? "bg-accent-4 text-accent-10 font-bold"
                               : "hover:bg-accent-3"
@@ -216,9 +216,9 @@ export default function InstancePage() {
           </Card>
         </div>
       )}
-      <div className="flex flex-col h-full items-center gap-2">
-        <div className="flex flex-col gap-1 md:p-4 p-3 border-0 rounded-md">
-          <h1 className="flex items-center flex-wrap">
+      <div className="km-instance-main flex flex-col h-full items-center gap-2">
+        <div className="km-instance-header flex flex-col gap-1 md:p-4 p-3 border-0 rounded-md">
+          <h1 className="km-instance-title flex items-center flex-wrap">
             <Flag flag={node?.region ?? ""} />
             <Text size="3" weight="bold" wrap="nowrap">
               {node?.name ?? uuid}

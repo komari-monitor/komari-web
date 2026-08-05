@@ -71,12 +71,12 @@ const ThemeRaw = () => {
   }
 
   return (
-    <Box className="h-full min-h-[calc(100vh-96px)]">
+    <Box className="km-page-admin-theme-raw h-full min-h-[calc(100vh-96px)]">
       <iframe
         title="Theme raw content"
         srcDoc={html}
         sandbox="allow-forms allow-modals allow-popups allow-same-origin allow-scripts"
-        className="h-full min-h-[calc(100vh-96px)] w-full border-0"
+        className="km-theme-raw-frame h-full min-h-[calc(100vh-96px)] w-full border-0"
       />
     </Box>
   );

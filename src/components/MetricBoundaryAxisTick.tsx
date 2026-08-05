@@ -31,7 +31,7 @@ const MetricBoundaryAxisTick = ({
       x={x}
       y={y + 14}
       textAnchor={textAnchor}
-      className="fill-muted-foreground text-[11px]"
+      className="km-metric-boundary-tick fill-muted-foreground text-[11px]"
     >
       {formatBoundaryTime(payload.value)}
     </text>

@@ -379,7 +379,7 @@ const ExecContent = () => {
     };
 
     return (
-        <div className="p-4 flex flex-col gap-3">
+        <div className="km-page-admin-exec km-exec-header p-4 flex flex-col gap-3">
             {/* 页面标题 */}
             <div>
                 <h1 className="text-2xl font-bold">{t("exec.title")}</h1>
@@ -391,7 +391,7 @@ const ExecContent = () => {
             <Separator size="4" />
 
             {/* 命令输入区域 */}
-            <Card className="p-6">
+            <Card className="km-exec-editor-card p-6">
                 <Flex direction="column" gap="4">
 
                     <label htmlFor={COMMAND_EDITOR_ID} className="text-xl font-bold">
@@ -405,7 +405,7 @@ const ExecContent = () => {
                         <div
                             ref={commandLineGutterRef}
                             aria-hidden="true"
-                            className="select-none overflow-hidden border-r border-[var(--gray-a5)] bg-[var(--gray-2)] px-2 text-right font-mono text-xs text-[var(--gray-11)] [line-height:var(--command-editor-line-height)] [padding-bottom:calc(var(--command-editor-vertical-padding)/2)] [padding-top:calc(var(--command-editor-vertical-padding)/2)]"
+                            className="km-exec-editor-gutter select-none overflow-hidden border-r border-[var(--gray-a5)] bg-[var(--gray-2)] px-2 text-right font-mono text-xs text-[var(--gray-11)] [line-height:var(--command-editor-line-height)] [padding-bottom:calc(var(--command-editor-vertical-padding)/2)] [padding-top:calc(var(--command-editor-vertical-padding)/2)]"
                         >
                             {commandLineLabels.map((label, index) => (
                                 <div
@@ -433,7 +433,7 @@ const ExecContent = () => {
                             rows={COMMAND_EDITOR_COLLAPSED_LINES}
                             wrap="soft"
                             spellCheck={false}
-                            className="h-full w-full resize-none border-0 bg-transparent px-3 font-mono text-sm text-[var(--gray-12)] outline-none placeholder:text-[var(--gray-9)] [line-height:var(--command-editor-line-height)] [padding-bottom:calc(var(--command-editor-vertical-padding)/2)] [padding-top:calc(var(--command-editor-vertical-padding)/2)]"
+                            className="km-exec-editor-input h-full w-full resize-none border-0 bg-transparent px-3 font-mono text-sm text-[var(--gray-12)] outline-none placeholder:text-[var(--gray-9)] [line-height:var(--command-editor-line-height)] [padding-bottom:calc(var(--command-editor-vertical-padding)/2)] [padding-top:calc(var(--command-editor-vertical-padding)/2)]"
                             style={{
                                 maxHeight: commandFocused ? "60vh" : COMMAND_EDITOR_COLLAPSED_HEIGHT,
                                 overflowY: commandFocused ? "auto" : "hidden",
@@ -491,7 +491,7 @@ const ExecContent = () => {
 
             {/* 执行结果区域 */}
             {results.length > 0 && (
-                <Card className="p-6">
+                <Card className="km-exec-output p-6">
                     <Flex direction="column" gap="4">
                         <Flex justify="between" align="center">
                             <Text size="4" weight="medium">

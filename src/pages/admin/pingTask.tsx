@@ -48,21 +48,21 @@ const InnerLayout = () => {
     return <div>{error || nodeDetailError}</div>;
   }
   return (
-    <Flex direction="column" gap="4" className="p-4">
+    <Flex direction="column" gap="4" className="km-page-admin-pingtask p-4">
       <div className="flex justify-between items-center">
         <label className="text-2xl font-bold">{t("ping.title")}</label>
         <AddButton />
       </div>
-      <Tabs.Root defaultValue="task">
+      <Tabs.Root defaultValue="task" className="km-pingtask-nav">
         <Tabs.List>
           <Tabs.Trigger value="task">{t("ping.task_view")}</Tabs.Trigger>
           <Tabs.Trigger value="server">{t("ping.server_view")}</Tabs.Trigger>
         </Tabs.List>
         <Box pt="3">
-          <Tabs.Content value="task">
+          <Tabs.Content value="task" className="km-pingtask-view">
             <TaskView pingTasks={pingTasks ?? []} />
           </Tabs.Content>
-          <Tabs.Content value="server">
+          <Tabs.Content value="server" className="km-pingtask-view">
             <ServerView pingTasks={pingTasks ?? []} />
           </Tabs.Content>
         </Box>

@@ -263,8 +263,8 @@ export default function PluginsPage() {
   if (loading) return <Loading />;
 
   return (
-    <Box className="p-4 space-y-4">
-      <Flex align="center" justify="between">
+    <Box className="km-page-admin-plugins p-4 space-y-4">
+      <Flex align="center" justify="between" className="km-plugins-toolbar">
         <Flex align="center" gap="2">
           <Blocks size={20} />
           <Heading size="4">{t("plugin.title", "Plugins")}</Heading>
@@ -288,9 +288,9 @@ export default function PluginsPage() {
           <Callout.Text>{t("plugin.no_plugins", "No plugins installed yet")}</Callout.Text>
         </Callout.Root>
       ) : (
-        <Flex direction="column" gap="3">
+        <Flex direction="column" gap="3" className="km-plugins-list">
           {plugins.map((plugin) => (
-            <Card key={plugin.short} className="w-full">
+            <Card key={plugin.short} className="km-plugin-card w-full">
               <Flex direction="column" gap="2">
                 <Flex align="center" justify="between" gap="4">
                   <Flex align="center" gap="3" className="min-w-0">

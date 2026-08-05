@@ -56,7 +56,7 @@ const MiniPingChartFloat: React.FC<FloatMiniPingChartProps> = ({
           onMouseLeave={handleMouseLeave}
           onClick={handleClick}
           style={{ cursor: "pointer" }}
-          className="flex items-center justify-center"
+          className="km-mini-ping-chart-float flex items-center justify-center"
         >
           {trigger}
         </span>

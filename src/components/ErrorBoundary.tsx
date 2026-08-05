@@ -31,7 +31,7 @@ class ErrorBoundary extends React.Component<
   render() {
     if (this.state.hasError) {
       return (
-        <div className="flex flex-col items-center justify-center min-h-[300px] p-8 bg-gradient-to-br from-rose-50 to-red-50 border border-red-200 rounded-md shadow-md max-w-3xl mx-auto">
+        <div className="km-error-boundary flex flex-col items-center justify-center min-h-[300px] p-8 bg-gradient-to-br from-rose-50 to-red-50 border border-red-200 rounded-md shadow-md max-w-3xl mx-auto">
           {/* Icon for visual emphasis */}
           <svg
             className="w-12 h-12 text-red-500 mb-4"

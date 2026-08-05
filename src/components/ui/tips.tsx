@@ -37,7 +37,7 @@ const Tips: React.FC<TipsProps & React.HTMLAttributes<HTMLDivElement>> = ({
   };
 
   return (
-    <div className="relative inline-block" {...props}>
+    <div className="relative inline-block km-ui-tips" {...props}>
       {isDialog ? (
         <Dialog.Root open={isOpen} onOpenChange={setIsOpen}>
           <Dialog.Trigger aria-label={ariaLabel}>

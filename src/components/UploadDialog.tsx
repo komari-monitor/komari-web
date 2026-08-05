@@ -80,18 +80,18 @@ const UploadDialog: React.FC<UploadDialogProps> = ({
 
   return (
     <Dialog.Root open={open} onOpenChange={onOpenChange}>
-      <Dialog.Content maxWidth="450px">
+      <Dialog.Content maxWidth="450px" className="km-upload-dialog">
         <Dialog.Title>{title}</Dialog.Title>
         {description ? (
           <Dialog.Description>{description}</Dialog.Description>
         ) : null}
 
-        <Box className="space-y-4 mt-4">
+        <Box className="km-upload-file-list space-y-4 mt-4">
           <Flex
             direction="column"
             align="center"
             justify="center"
-            className="border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-gray-400 transition-colors"
+            className="km-upload-dropzone border-2 border-dashed border-gray-300 rounded-lg p-8 text-center cursor-pointer hover:border-gray-400 transition-colors"
             onDrop={handleDrop}
             onDragOver={handleDragOver}
             onClick={() => {

@@ -336,9 +336,9 @@ export default function DatabaseMigration() {
   };
 
   return (
-    <main className="min-h-screen bg-[var(--color-background)] text-[var(--gray-12)]">
+    <main className="km-page-database-migration min-h-screen bg-[var(--color-background)] text-[var(--gray-12)]">
       <header
-        className="border-b bg-[var(--color-panel-solid)]"
+        className="km-database-migration-header border-b bg-[var(--color-panel-solid)]"
         style={{ borderColor: "var(--gray-a5)" }}
       >
         <Container size="3" px={{ initial: "4", sm: "6" }} py="3">
@@ -630,8 +630,11 @@ function LegacySetup({
     <Flex direction="column" gap="5">
       <Flex direction="column" gap="3">
         <SettingCardLabel>{t(`${LEGACY_I18N}.overview`)}</SettingCardLabel>
-        <div className="grid gap-3 sm:grid-cols-2">
-          <SettingCard title={t(`${LEGACY_I18N}.load_rows`)}>
+        <div className="km-database-migration-stats grid gap-3 sm:grid-cols-2">
+          <SettingCard
+            className="km-database-migration-card"
+            title={t(`${LEGACY_I18N}.load_rows`)}
+          >
             <Flex direction="column" gap="1" className="mt-2 w-full">
               <Text size="7" weight="bold" className="tabular-nums">
                 {number(summary.load_rows)}{" "}
@@ -644,7 +647,10 @@ function LegacySetup({
               </Text>
             </Flex>
           </SettingCard>
-          <SettingCard title={t(`${LEGACY_I18N}.latency_rows`)}>
+          <SettingCard
+            className="km-database-migration-card"
+            title={t(`${LEGACY_I18N}.latency_rows`)}
+          >
             <Text size="7" weight="bold" className="mt-2 tabular-nums">
               {number(summary.latency_rows)}{" "}
               <Text size="2" color="gray">
@@ -665,6 +671,7 @@ function LegacySetup({
       <Flex direction="column" gap="3">
         <SettingCardLabel>{t(`${LEGACY_I18N}.target`)}</SettingCardLabel>
         <SettingCard
+          className="km-database-migration-card"
           title={t(`${LEGACY_I18N}.target`)}
           description={t(`${LEGACY_I18N}.target_description`)}
         >
@@ -732,7 +739,7 @@ function Completion({
           </Text>
         </Callout.Text>
       </Callout.Root>
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="km-database-migration-stats grid gap-3 sm:grid-cols-3">
         {[
           ["before", status.before_bytes ?? 0],
           ["after", status.after_bytes ?? 0],

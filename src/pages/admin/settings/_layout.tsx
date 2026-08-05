@@ -3,7 +3,7 @@ import { Outlet } from "react-router-dom";
 
 export default function SettingLayout() {
   return (
-    <Flex direction="column" gap="3" className="p-0 md:p-4">
+    <Flex direction="column" gap="3" className="km-admin-settings-layout km-admin-settings-content p-0 md:p-4">
       <Outlet />
     </Flex>
   );

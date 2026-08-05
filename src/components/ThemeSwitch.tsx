@@ -22,7 +22,7 @@ const ThemeSwitch = ({ icon }: ThemeSwitchProps = {}) => {
   );
   return (
     <DropdownMenu.Root>
-      <DropdownMenu.Trigger>{trigger}</DropdownMenu.Trigger>
+      <DropdownMenu.Trigger className="km-theme-switch">{trigger}</DropdownMenu.Trigger>
       <DropdownMenu.Content>
         <DropdownMenu.Item onSelect={() => setAppearance("light")}>
           {t("theme.light", "Light")}

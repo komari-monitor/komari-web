@@ -70,7 +70,7 @@ const NodeSelectorDialog: React.FC<NodeSelectorDialogProps> = ({
       <Dialog.Trigger>
         {children ? children : <Button>{title || t("common.select")}</Button>}
       </Dialog.Trigger>
-      <Dialog.Content style={{ maxWidth: 400 }}>
+      <Dialog.Content style={{ maxWidth: 400 }} className="km-node-selector-dialog">
         <Dialog.Title>{title || t("common.select")}</Dialog.Title>
         <Flex direction="column" gap="3">
           <Flex justify="between" align="center" gap="2">
@@ -95,7 +95,7 @@ const NodeSelectorDialog: React.FC<NodeSelectorDialogProps> = ({
           <NodeSelector
             value={temp}
             onChange={setTemp}
-            className={className}
+            className={`km-node-selector-list ${className ?? ""}`}
             hiddenUuidOnlyClient={hiddenUuidOnlyClient}
             hiddenDescription={hiddenDescription}
           />

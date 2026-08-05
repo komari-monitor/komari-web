@@ -105,7 +105,7 @@ function SelectorInner<T>(props: SelectorProps<T>) {
   };
 
   return (
-    <div className={`flex flex-col ${className}`}>
+    <div className={`km-selector flex flex-col ${className}`}>
       <TextField.Root
         className="mb-2 flex items-center gap-1"
         placeholder={resolvedSearchPlaceholder}
@@ -135,6 +135,7 @@ function SelectorInner<T>(props: SelectorProps<T>) {
               const id = getId(it);
               return (
                 <TableRow
+                  className="km-node-selector-item"
                   key={id}
                   onClick={() => {
                     handleCheck(id, !value.includes(id));
@@ -153,6 +154,7 @@ function SelectorInner<T>(props: SelectorProps<T>) {
             })}
             {orphanIds.map((id) => (
               <TableRow
+                className="km-node-selector-item"
                 key={id}
                 onClick={() => {
                   handleCheck(id, !value.includes(id));

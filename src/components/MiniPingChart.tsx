@@ -234,7 +234,7 @@ const MiniPingChart = ({
   return (
     <Card
       style={{ width, height }}
-      className="flex min-h-0 flex-col gap-2 overflow-hidden"
+      className="km-mini-ping-chart flex min-h-0 flex-col gap-2 overflow-hidden"
     >
       {loading && (
         <div className="flex min-h-0 flex-1 items-center justify-center">
@@ -301,7 +301,7 @@ const MiniPingChart = ({
 
           <ChartContainer
             config={chartConfig}
-            className="min-h-0 h-10/12 w-full flex-1"
+            className="km-mini-ping-chart-canvas min-h-0 h-10/12 w-full flex-1"
           >
             <LineChart
               data={chartData}

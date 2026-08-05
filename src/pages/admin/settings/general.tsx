@@ -45,6 +45,7 @@ export default function GeneralSettings() {
         onChange={async (checked) => {
           await updateSettingsWithToast({ geo_ip_enabled: checked }, t);
         }}
+        className="km-page-admin-settings-general km-setting-card"
       />
       <SettingCardSelect
         title={t("settings.geoip.provider_title")}
@@ -76,6 +77,7 @@ export default function GeneralSettings() {
             );
           }
         }}
+        className="km-setting-card"
       >
         {t("common.update")}
       </SettingCardButton>

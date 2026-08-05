@@ -28,6 +28,7 @@ export default function SsoSettings() {
         onChange={async (checked) => {
           await updateSettingsWithToast({ o_auth_enabled: checked }, t);
         }}
+        className="km-page-admin-settings-sso km-setting-card"
       />
       <SettingCardSelect
         title={t("settings.sso.provider")}

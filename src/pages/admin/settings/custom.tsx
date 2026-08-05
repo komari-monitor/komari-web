@@ -20,7 +20,7 @@ export default function CustomSettings() {
   }
 
   return (
-    <>
+    <div className="km-page-admin-settings-custom">
       <SettingCardLongTextInput
         title={t("settings.custom.header")}
         description={t("settings.custom.header_description")}
@@ -29,6 +29,6 @@ export default function CustomSettings() {
           await updateSettingsWithToast({ custom_head: data },t);
         }}
       />
-    </>
+    </div>
   );
 }

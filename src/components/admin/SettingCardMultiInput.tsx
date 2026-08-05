@@ -77,7 +77,7 @@ export function SettingCardMultiInputCollapse({
         }
         return null;
       })}
-      <Flex direction="column" gap="2" className="w-full">
+      <Flex direction="column" gap="2" className="km-setting-card-multi-input w-full">
         {items.map((item) => (
           <React.Fragment key={item.tag}>
             <label className="text-sm font-semibold">{item.label}</label>

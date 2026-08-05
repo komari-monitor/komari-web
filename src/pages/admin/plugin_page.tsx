@@ -17,12 +17,12 @@ export default function PluginPage() {
   }
   const src = `/api/admin/plugin/${encodeURIComponent(short)}/${file}`;
   return (
-    <Box className="h-full min-h-[calc(100vh-96px)]">
+    <Box className="km-page-admin-plugin h-full min-h-[calc(100vh-96px)]">
       <iframe
         title={`${short}/${file}`}
         src={src}
         sandbox="allow-forms allow-modals allow-popups allow-same-origin allow-scripts"
-        className="h-full min-h-[calc(100vh-96px)] w-full border-0"
+        className="km-plugin-frame h-full min-h-[calc(100vh-96px)] w-full border-0"
       />
     </Box>
   );

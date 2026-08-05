@@ -11,7 +11,7 @@ import {
 import { toast } from "sonner";
 const GeneralNotification = () => {
   return (
-    <Flex direction="column" gap="3" className="p-0 md:p-4">
+    <Flex direction="column" gap="3" className="km-page-admin-notification-general km-notification-general-form p-0 md:p-4">
       <Inner />
     </Flex>
   );

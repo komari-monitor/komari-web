@@ -90,8 +90,8 @@ const LogPage = () => {
   }
 
   return (
-    <div className="flex flex-col gap-2 p-4">
-      <div className="flex justify-between items-center">
+    <div className="km-page-admin-log flex flex-col gap-2 p-4">
+      <div className="km-log-toolbar flex justify-between items-center">
         <h1 className="text-2xl font-bold">{t("logs.title")}</h1>
         <div className="flex items-center gap-2">
           <Button variant="soft" onClick={() => navigate("/admin/pprof")}>
@@ -107,7 +107,7 @@ const LogPage = () => {
           />
         </div>
       </div>
-      <div className="rounded-lg overflow-hidden">
+      <div className="km-log-output rounded-lg overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>

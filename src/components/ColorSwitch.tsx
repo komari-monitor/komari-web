@@ -23,7 +23,7 @@ const ColorSwitch = ({ icon }: ColorSwitchProps = {}) => {
 
   return (
     <DropdownMenu.Root>
-      <DropdownMenu.Trigger>
+      <DropdownMenu.Trigger className="km-color-switch">
           {trigger}
       </DropdownMenu.Trigger>
       <DropdownMenu.Content>

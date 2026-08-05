@@ -15,6 +15,7 @@ const NotFound: React.FC = () => {
       justify="center"
       style={{ height: '100vh', padding: '16px', textAlign: 'center' }}
       gap="3"
+      className="km-page-404"
     >
       <Text size="9" weight="bold">
         404

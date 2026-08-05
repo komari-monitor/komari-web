@@ -275,6 +275,7 @@ export function DatabaseMaintenanceCard() {
     <SettingCard
       title={t("settings.database.maintenance_title")}
       description={t("settings.database.maintenance_description")}
+      className="km-admin-db-maintenance-card"
     >
       <Flex direction="column" className="w-full pt-2" gap="0">
         {overview ? (

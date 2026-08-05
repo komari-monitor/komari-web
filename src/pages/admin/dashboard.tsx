@@ -793,7 +793,7 @@ const DashboardContent = () => {
   if (error) return <div>{error}</div>;
 
   return (
-    <Flex direction="column" gap="4" p="4">
+    <Flex direction="column" gap="4" p="4" className="km-page-admin-dashboard">
       <Flex justify="between" align="center" wrap="wrap" gap="2">
         <Flex direction="column" gap="1">
           <Text size="5" weight="bold">
@@ -818,7 +818,7 @@ const DashboardContent = () => {
       </Flex>
 
       <Flex gap="4" wrap="wrap">
-        <Card className="flex-1 min-w-72">
+        <Card className="km-dashboard-card flex-1 min-w-72">
           <Flex gap="4" align="center">
             <ProgressRing
               percent={stats.onlineRate}
@@ -885,7 +885,7 @@ const DashboardContent = () => {
           </Flex>
         </Card>
 
-        <Card className="flex-1 min-w-64">
+        <Card className="km-dashboard-card flex-1 min-w-64">
           <Flex direction="column" gap="3">
             <Flex gap="2" align="center" style={{ color: "var(--gray-10)" }}>
               <Database size={18} />
@@ -925,7 +925,7 @@ const DashboardContent = () => {
           </Flex>
         </Card>
 
-        <Card className="flex-1 min-w-72">
+        <Card className="km-dashboard-card flex-1 min-w-72">
           <Flex direction="column" gap="3">
             <Flex gap="2" align="center" style={{ color: "var(--amber-11)" }}>
               <CalendarClock size={18} />
@@ -1060,7 +1060,7 @@ const DashboardContent = () => {
             ) : (
               <ChartContainer
                 config={chartConfig}
-                className="h-[180px] w-full"
+                className="km-dashboard-chart h-[180px] w-full"
                 style={{ aspectRatio: "auto" }}
                 aria-label={t(
                   "dashboard.trafficChartAria",
@@ -1669,7 +1669,7 @@ const MiniMetricChart = ({
       ) : (
         <ChartContainer
           config={chartConfig}
-          className="h-[180px] w-full"
+          className="km-dashboard-chart h-[180px] w-full"
           style={{ aspectRatio: "auto" }}
         >
           <LineChart

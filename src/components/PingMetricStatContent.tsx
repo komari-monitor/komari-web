@@ -36,7 +36,7 @@ const PingMetricStatContent = ({ stat, t }: PingMetricStatContentProps) => {
   if (stat.type) rows.push([t("common.type"), stat.type.toUpperCase()]);
 
   return (
-    <div className="grid grid-cols-[max-content_1fr] gap-x-3 gap-y-1">
+    <div className="km-ping-metric-stat grid grid-cols-[max-content_1fr] gap-x-3 gap-y-1">
       {rows.map(([label, value]) => (
         <div key={label} className="contents">
           <span className="text-muted-foreground">{label}</span>

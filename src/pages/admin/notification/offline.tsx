@@ -66,7 +66,7 @@ const NotificationEditForm = ({
         e.preventDefault();
         onSubmit({ enable: enabled, cooldown: 3000, grace_period: grace });
       }}
-      className="flex flex-col gap-2"
+      className="km-notification-offline-form flex flex-col gap-2"
     >
       <label htmlFor="status">{t("common.status")}</label>
       <Switch
@@ -182,7 +182,7 @@ const InnerLayout = () => {
     return <div>Error: {onError?.message || onNodeError}</div>;
   }
   return (
-    <div className="flex flex-col gap-4 md:p-4 p-1">
+    <div className="km-page-admin-notification-offline flex flex-col gap-4 md:p-4 p-1">
       <Flex justify="between" align="center" wrap="wrap">
         <label className="text-2xl font-semibold">
           {t("notification.offline.full_title", "离线通知设置")}
@@ -243,7 +243,7 @@ const InnerLayout = () => {
           </Dialog.Content>
         </Dialog.Root>
       </Flex>
-      <label className="text-sm text-muted-foreground">
+      <label className="km-notification-offline-preview text-sm text-muted-foreground">
         <span
           dangerouslySetInnerHTML={{ __html: t("notification.offline.tips") }}
         />

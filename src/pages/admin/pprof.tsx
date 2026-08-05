@@ -336,7 +336,7 @@ export default function PprofPage() {
   const durationOptions = summary ? captureDurations(summary) : [];
 
   return (
-    <Flex direction="column" gap="3">
+    <Flex direction="column" gap="3" className="km-page-admin-pprof">
       <Flex justify="between" align="center" gap="2" wrap="wrap">
         <SettingCardLabel>{t("pprof.title")}</SettingCardLabel>
         <Button
@@ -412,6 +412,7 @@ export default function PprofPage() {
         <SettingCard
           title={t("pprof.heap_preview_title")}
           description={t("pprof.heap_preview_description")}
+          className="km-pprof-output"
         >
           {heapPreviewLoading ? (
             <Text size="2" color="gray" className="w-full py-3">
@@ -437,6 +438,7 @@ export default function PprofPage() {
         <SettingCard
           title={t("pprof.profiles_title")}
           description={t("pprof.profiles_description")}
+          className="km-pprof-form"
         >
           <Flex direction="column" gap="3" className="w-full pt-3">
             <Flex direction="column" gap="1">

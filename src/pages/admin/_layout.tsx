@@ -28,10 +28,10 @@ const AdminLayout = () => {
   return (
     <>
       <Dialog.Root open={open}>
-        <Dialog.Content>
+        <Dialog.Content className="km-admin-eula-dialog">
           <Dialog.Content>
             <Dialog.Title>{t("eula.title")}</Dialog.Title>
-            <div className="flex flex-col gap-2">
+            <div className="km-admin-eula-content flex flex-col gap-2">
               <div className="max-h-[70vh] overflow-y-auto space-y-4">
                 <pre className="text-wrap">{getEula(i18n.language)}</pre>
               </div>

@@ -138,7 +138,7 @@ export default function XtermjsSettingsPage() {
 
   if (error) {
     return (
-      <Flex direction="column" gap="3">
+    <Flex direction="column" gap="3" className="km-page-admin-settings-xtermjs">
         <Callout.Root color="red" size="1">
           <Callout.Icon>
             <AlertTriangle size={16} />
@@ -157,6 +157,7 @@ export default function XtermjsSettingsPage() {
         title={t("settings.xtermjs.title")}
         description={t("settings.xtermjs.reset_defaults")}
         onClick={handleReset}
+        className="km-setting-card"
       >
         {t("common.reset", "Reset")}
       </SettingCardButton>
@@ -219,6 +220,7 @@ export default function XtermjsSettingsPage() {
           );
           toast.success(t("settings.settings_saved"));
         }}
+        className="km-setting-card"
       />
 
       <SettingCardShortTextInput
@@ -259,6 +261,7 @@ export default function XtermjsSettingsPage() {
           );
           toast.success(t("settings.settings_saved"));
         }}
+        className="km-setting-card"
       />
 
       <SettingCardSwitch
@@ -274,6 +277,7 @@ export default function XtermjsSettingsPage() {
           );
           toast.success(t("settings.settings_saved"));
         }}
+        className="km-setting-card"
       />
 
       {themeBackgroundIsOpaque && (

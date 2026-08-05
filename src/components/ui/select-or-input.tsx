@@ -231,8 +231,9 @@ export function SelectOrInput<T extends Primitive = string>(
   const listId = React.useId();
 
   return (
-    <div ref={containerRef} className={cn("relative", className)}>
+    <div ref={containerRef} className={cn("km-ui-select-or-input relative", className)}>
       <TextField.Root
+        className="km-ui-select"
         //role="combobox"
         //aria-controls={open ? listId : undefined}
         aria-expanded={open}

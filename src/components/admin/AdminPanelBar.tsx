@@ -374,6 +374,7 @@ const AdminPanelBar = ({ content }: AdminPanelBarProps) => {
   return (
     <>
       <Grid
+        className="km-admin-layout km-admin-panel-bar"
         columns={{ initial: "1fr", md: sidebarOpen ? "240px 1fr" : "0px 1fr" }} // 动态调整网格列
         rows={{ initial: "auto 1fr", md: "auto 1fr" }}
         style={{
@@ -385,7 +386,7 @@ const AdminPanelBar = ({ content }: AdminPanelBarProps) => {
       >
         {/* Navbar */}
         <motion.nav
-          className="col-span-2"
+          className="km-admin-panel-topbar col-span-2"
           initial={{ y: 0 }}
           animate={{ y: 0 }}
           transition={{ duration: 0.5, ease: "easeOut" }}
@@ -482,7 +483,7 @@ const AdminPanelBar = ({ content }: AdminPanelBarProps) => {
                     `${versionInfo.version} (${versionInfo.hash})`)}
               </label>
             </Flex>
-            <Flex gap="3" align="center" overflowX="auto">
+            <Flex gap="3" align="center" overflowX="auto" className="km-admin-panel-controls">
               {account && !account.logged_in && (
                 <LoginDialog
                   autoOpen={true}
@@ -498,6 +499,7 @@ const AdminPanelBar = ({ content }: AdminPanelBarProps) => {
               <IconButton
                 variant="soft"
                 color="orange"
+                className="km-admin-panel-account"
                 onClick={logout}
                 title={t("common.logout", "Logout")}
                 aria-label={t("common.logout", "Logout")}
@@ -515,6 +517,7 @@ const AdminPanelBar = ({ content }: AdminPanelBarProps) => {
             initial="closed"
             animate={sidebarOpen ? "open" : "closed"}
             exit="closed"
+            className="km-admin-panel-nav"
             style={{
               backgroundColor: "var(--accent-1)",
               height: "100%",
@@ -731,6 +734,7 @@ const AdminPanelBar = ({ content }: AdminPanelBarProps) => {
         <motion.div
           variants={contentVariants}
           animate={sidebarOpen ? "open" : "closed"}
+          className="km-admin-panel-content"
           style={{
             backgroundColor: "var(--accent-3)",
             display: isMobile && sidebarOpen ? "none" : "block",

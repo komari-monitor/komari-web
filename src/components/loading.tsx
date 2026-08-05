@@ -11,7 +11,7 @@ const Loading = ({ text, children, size }: LoadingProps) => {
   const { t } = useTranslation();
 
   return (
-    <div className="flex items-center justify-center flex-col">
+    <div className="km-loading flex items-center justify-center flex-col">
       <div
         className="showbox"
         style={{

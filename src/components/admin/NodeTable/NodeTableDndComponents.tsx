@@ -17,7 +17,7 @@ export function DragHandle({ id }: { id: string }) {
       {...attributes}
       {...listeners}
       variant="ghost"
-      className="text-muted-foreground size-7 hover:bg-transparent"
+      className="km-node-table-dnd-handle text-muted-foreground size-7 hover:bg-transparent"
     >
       <GripVertical className="text-muted-foreground size-3" />
       <span className="sr-only">Drag to reorder</span>
@@ -35,7 +35,7 @@ export function DraggableRow({ row }: { row: Row<z.infer<typeof schema>> }) {
       data-state={row.getIsSelected() && "selected"}
       data-dragging={isDragging}
       ref={setNodeRef}
-      className="relative z-0 data-[dragging=true]:z-10 data-[dragging=true]:opacity-80"
+      className="km-node-table-dnd-row relative z-0 data-[dragging=true]:z-10 data-[dragging=true]:opacity-80"
       style={{
         transform: CSS.Transform.toString(transform),
         transition: transition,

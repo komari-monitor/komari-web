@@ -31,7 +31,7 @@ const NodeSelector: React.FC<NodeSelectorProps> = ({
 
   return (
     <Selector
-      className={className}
+      className={`km-node-selector ${className}`}
       hiddenDescription={hiddenDescription}
       value={nodesFiltered}
       onChange={onChange}

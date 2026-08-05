@@ -288,7 +288,7 @@ export default function PluginMarketPage() {
   if (loading) return <Loading />;
 
   return (
-    <Box className="p-4 space-y-4">
+    <Box className="km-page-admin-market-plugins p-4 space-y-4">
       <Flex align="center" justify="between">
         <Flex align="center" gap="2">
           <Blocks size={20} />
@@ -328,6 +328,7 @@ export default function PluginMarketPage() {
         value={search}
         onChange={(event) => setSearch(event.target.value)}
         placeholder={t("plugin.market_search", "Search plugins...")}
+        className="km-market-plugins-toolbar"
       >
         <TextField.Slot>
           <Search size={14} />
@@ -339,7 +340,7 @@ export default function PluginMarketPage() {
           <Callout.Text>{t("plugin.market_no_plugins", "No plugins in the market")}</Callout.Text>
         </Callout.Root>
       ) : (
-        <Grid columns={{ initial: "1", sm: "2", lg: "3" }} gap="3">
+        <Grid columns={{ initial: "1", sm: "2", lg: "3" }} gap="3" className="km-market-plugins-list">
           {filteredPlugins.map((plugin) => {
             const installedVersion = installed.get(plugin.short);
             const isInstalled = installedVersion !== undefined;
@@ -349,7 +350,7 @@ export default function PluginMarketPage() {
             const canConfigure = isInstalled && hasConfiguration(installedInfo.get(plugin.short));
             const key = `${plugin.source_id}:${plugin.short}`;
             return (
-              <Card key={key}>
+              <Card key={key} className="km-market-plugin-card">
                 <Flex direction="column" gap="2">
                   <Flex align="center" justify="between">
                     <Text weight="bold">{displayText(plugin.name) || plugin.short}</Text>

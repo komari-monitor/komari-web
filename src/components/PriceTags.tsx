@@ -23,14 +23,14 @@ const PriceTags = ({
 
   if (price == 0) {
     return (
-      <Flex gap="1" {...props} wrap="wrap">
+      <Flex gap="1" {...props} wrap="wrap" className="km-price-tags">
         <CustomTags tags={tags} />
       </Flex>
     );
   }
 
   return (
-    <Flex gap="1" {...props} wrap="wrap">
+    <Flex gap="1" {...props} wrap="wrap" className="km-price-tags">
       {ip4 && (
         <Badge size="1" variant="soft" className="text-sm" color="green">
           <label className="flex justify-center items-center gap-1 text-xs">

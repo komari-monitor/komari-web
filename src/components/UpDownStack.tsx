@@ -16,7 +16,7 @@ export function UpDownStack({
   }[align];
 
   return (
-    <div className={`flex flex-col gap-0 ${alignClass} ${className}`}>
+    <div className={`km-up-down-stack flex flex-col gap-0 ${alignClass} ${className}`}>
       <label className="text-base font-bold">{up}</label>
       <label className="text-sm text-muted-foreground -mt-1">{down}</label>
     </div>

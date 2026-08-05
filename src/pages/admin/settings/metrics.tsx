@@ -201,7 +201,7 @@ export default function MetricsSettings() {
   }
 
   return (
-    <Flex direction="column" gap="3">
+    <Flex direction="column" gap="3" className="km-page-admin-settings-metrics">
       <SettingCardLabel>{t("settings.metrics.title")}</SettingCardLabel>
       <DatabaseMaintenanceCard />
 
@@ -423,6 +423,7 @@ function MetricRollupRetentionCard({
       }
       description={t("settings.metrics.rollup_retention_description")}
       direction="column"
+      className="km-setting-card"
     >
       <Flex direction="column" gap="3" className="w-full pt-3">
         <Flex gap="3" wrap="wrap">
@@ -670,6 +671,7 @@ function MetricRetentionTable({
         days: defaultRetentionDays,
       })}
       direction="column"
+      className="km-setting-card"
     >
       <Flex direction="column" gap="3" className="w-full pt-3">
         <Flex justify="between" align="center" gap="2" wrap="wrap">
@@ -990,6 +992,7 @@ function MigrationCard() {
       title={t("settings.metrics.migration_card_title")}
       description={t("settings.metrics.migration_card_description")}
       direction="column"
+      className="km-setting-card"
     >
       <Flex direction="column" gap="3" className="w-full pt-3">
         {/* 状态行 */}

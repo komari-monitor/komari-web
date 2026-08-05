@@ -1351,7 +1351,7 @@ const LoadChart = ({ data = [], onRealtimeActiveChange }: LoadChartProps) => {
   const customInputMax = toDateTimeLocalValue(new Date());
 
   return (
-    <Flex direction="column" align="center" gap="4" className="w-full max-w-screen">
+    <Flex direction="column" align="center" gap="4" className="km-load-chart w-full max-w-screen">
       <div className="w-full overflow-x-auto px-2">
         <div className="w-max mx-auto">
           <SegmentedControl.Root value={selectedView.key} onValueChange={setViewKey}>
@@ -1434,7 +1434,7 @@ const LoadChart = ({ data = [], onRealtimeActiveChange }: LoadChartProps) => {
         </div>
       )}
 
-      <Card className="w-full max-w-[1100px]">
+      <Card className="km-load-chart-controls w-full max-w-[1100px]">
         <div className="flex flex-wrap items-center justify-between gap-3">
           <div className="flex flex-wrap items-center gap-3">
             <div className="flex items-center gap-2 text-sm font-medium">
@@ -1522,7 +1522,7 @@ const LoadChart = ({ data = [], onRealtimeActiveChange }: LoadChartProps) => {
           items={charts.map((chart) => chart.id)}
           strategy={rectSortingStrategy}
         >
-          <div className="grid w-full max-w-[1100px] grid-cols-1 gap-3 lg:grid-cols-3">
+          <div className="km-load-chart-canvas grid w-full max-w-[1100px] grid-cols-1 gap-3 lg:grid-cols-3">
             {charts.map((chart) => {
           const chartPingStatsMap = pingStatsMap;
           const metricBuilt = buildRowsFromMetricSeries(

@@ -66,7 +66,7 @@ export default function NumberPicker({
   const isMaxDisabled = currentValue >= max;
 
   return (
-    <Flex align="center" gap="2">
+    <Flex align="center" gap="2" className="km-ui-number-picker">
       <IconButton
         variant="soft"
         radius="full"
@@ -78,6 +78,7 @@ export default function NumberPicker({
         <Minus size="16" />
       </IconButton>
       <TextField.Root
+        className="km-ui-number-input"
         type="text"
         inputMode="numeric"
         value={value}

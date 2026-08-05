@@ -39,15 +39,15 @@ export const DetailsGrid = ({
 
   return (
     <Container
-      className={`DetailsGrid max-w-[900px]`}
+      className={`km-details-grid DetailsGrid max-w-[900px]`}
     >
       <div className={`flex flex-wrap gap-${gap ?? "4"} basis-full justify-center ${align === "center" ? "justify-between" : ""}`}>
         <UpDownStack
-          className="md:w-128 flex-[0_0_calc(50%-0.5rem)]"
+          className="km-details-item md:w-128 flex-[0_0_calc(50%-0.5rem)]"
           up="CPU"
           down={`${node?.cpu_name} (x${node?.cpu_cores})`}
         />
-        <label className={`flex flex-wrap gap-2 gap-x-8 flex-[0_0_calc(50%-0.5rem)] ${align === "center" ? "justify-end" : ""}`}>
+        <label className={`km-details-item flex flex-wrap gap-2 gap-x-8 flex-[0_0_calc(50%-0.5rem)] ${align === "center" ? "justify-end" : ""}`}>
           <UpDownStack up={t("admin.nodeDetail.arch")} down={node?.arch ?? "Unknown"} />
 
           <UpDownStack
@@ -56,8 +56,8 @@ export const DetailsGrid = ({
             down={node?.virtualization ?? "Unknown"}
           />
         </label>
-        <UpDownStack up="GPU" down={node?.gpu_name ?? "Unknown"} className="flex-[0_0_calc(50%-0.5rem)]" />
-        <div className={`flex flex-col gap-0 flex-[0_0_calc(50%-0.5rem)] ${align === "center" ? "items-end text-right" : "items-start"}`}>
+        <UpDownStack up="GPU" down={node?.gpu_name ?? "Unknown"} className="km-details-item flex-[0_0_calc(50%-0.5rem)]" />
+        <div className={`km-details-item flex flex-col gap-0 flex-[0_0_calc(50%-0.5rem)] ${align === "center" ? "items-end text-right" : "items-start"}`}>
           <label className="text-base font-bold">{t("nodeCard.os")}</label>
           <label className="text-sm text-muted-foreground -mt-1">{node?.os ?? "Unknown"}</label>
           <label className="text-xs text-muted-foreground opacity-75">
@@ -66,7 +66,7 @@ export const DetailsGrid = ({
         </div>
 
         <UpDownStack
-          className="md:w-64 w-full flex-[0_0_calc(50%-0.5rem)]"
+          className="km-details-item md:w-64 w-full flex-[0_0_calc(50%-0.5rem)]"
           up={t("nodeCard.networkSpeed")}
           down={` ↑ ${formatBytes(
             currentRecord?.network.up || 0
@@ -79,7 +79,7 @@ export const DetailsGrid = ({
         <UpDownStack
           up={t("nodeCard.totalTraffic")}
           align={align === "center" ? "end" : "start"}
-          className="flex-[0_0_calc(50%-0.5rem)]"
+          className="km-details-item flex-[0_0_calc(50%-0.5rem)]"
             down={`↑
           ${formatBytes(
               currentRecord?.network.totalUp || 0
@@ -90,32 +90,32 @@ export const DetailsGrid = ({
             )}`}
         />
         <UpDownStack
-          className="md:w-70 w-full flex-[0_0_calc(50%-0.5rem)]"
+          className="km-details-item md:w-70 w-full flex-[0_0_calc(50%-0.5rem)]"
           up={t("nodeCard.ram")}
           down={formatBytes(node?.mem_total || 0)}
         />
         <UpDownStack
           up={t("nodeCard.swap")}
-          className="flex-[0_0_calc(50%-0.5rem)]"
+          className="km-details-item flex-[0_0_calc(50%-0.5rem)]"
           align={align === "center" ? "end" : "start"}
           down={formatBytes(node?.swap_total || 0)}
         />
         <UpDownStack
-          className="md:w-64 w-full flex-[0_0_calc(50%-0.5rem)]"
+          className="km-details-item md:w-64 w-full flex-[0_0_calc(50%-0.5rem)]"
           up={t("nodeCard.disk")}
           down={formatBytes(node?.disk_total || 0)}
         />
         <div className="flex-[0_0_calc(50%-0.5rem)]" />
         <UpDownStack
           up={t("nodeCard.uptime")}
-          className="flex-[0_0_calc(50%-0.5rem)]"
+          className="km-details-item flex-[0_0_calc(50%-0.5rem)]"
           down={
             currentRecord?.uptime
               ? formatUptime(currentRecord.uptime, t)
               : "-"
           }
         />
-        <label className={`flex flex-wrap gap-2 flex-[0_0_calc(50%-0.5rem)] ${align === "center" ? "justify-end" : ""}`}>
+        <label className={`km-details-item flex flex-wrap gap-2 flex-[0_0_calc(50%-0.5rem)] ${align === "center" ? "justify-end" : ""}`}>
           <Flex align={"center"} gap="2">
             <Text size="2" weight="bold" wrap="nowrap">
               {t("nodeCard.last_updated")}

@@ -34,7 +34,7 @@ const LanguageSwitch = ({ icon }: LanguageSwitch = {}) => {
   );
   return (
     <DropdownMenu.Root>
-      <DropdownMenu.Trigger>{trigger}</DropdownMenu.Trigger>
+      <DropdownMenu.Trigger className="km-language-switch">{trigger}</DropdownMenu.Trigger>
       <DropdownMenu.Content>
         {languages.map((lang) => (
           <DropdownMenu.Item

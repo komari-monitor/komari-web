@@ -9,7 +9,7 @@ const ManagePage = () => {
   }, [navigate]);
 
   return (
-    <div className="flex flex-col items-center justify-center h-screen">
+    <div className="km-page-manage flex flex-col items-center justify-center h-screen">
       <p>
         This page is provided for compatibility with Isatidia's frontend
         program.

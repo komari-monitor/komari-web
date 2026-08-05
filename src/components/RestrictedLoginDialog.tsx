@@ -70,6 +70,7 @@ export default function RestrictedLoginDialog({
   return (
     <Dialog.Root open={auth !== null && !auth.logged_in}>
       <Dialog.Content
+        className="km-restricted-login-dialog"
         maxWidth="430px"
         onEscapeKeyDown={(event) => event.preventDefault()}
         onPointerDownOutside={(event) => event.preventDefault()}
@@ -78,7 +79,7 @@ export default function RestrictedLoginDialog({
         <Dialog.Description>{t("login.desc")}</Dialog.Description>
         {auth?.password_login_enabled && (
           <form
-            className="mt-5 space-y-3"
+            className="km-restricted-login-form mt-5 space-y-3"
             onSubmit={(event) => {
               event.preventDefault();
               void login();

@@ -37,7 +37,7 @@ export function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
         </label>
         </div>
       </DrawerTrigger>
-      <DrawerContent>
+      <DrawerContent className="km-node-detail-viewer">
         <DrawerHeader className="gap-1">
           <DrawerTitle>{item.name}</DrawerTitle>
           <DrawerDescription>
@@ -46,7 +46,7 @@ export function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
         </DrawerHeader>
         <div className="flex flex-col gap-4 overflow-y-auto px-4 text-sm">
           <form className="flex flex-col gap-4">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="km-node-detail-row grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex flex-col gap-3">
                 <Label htmlFor="detail-ip">
                   {t("admin.nodeDetail.ipAddress", "IP 地址")}
@@ -108,7 +108,7 @@ export function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                 </span>
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="km-node-detail-row grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex flex-col gap-3">
                 <Label htmlFor="detail-os">
                   {t("admin.nodeDetail.os", "操作系统")}
@@ -134,7 +134,7 @@ export function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                 </span>
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="km-node-detail-row grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex flex-col gap-3">
                 <Label htmlFor="detail-cpu_name">
                   {t("admin.nodeDetail.cpu", "CPU")}
@@ -162,7 +162,7 @@ export function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                 </span>
               </div>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="km-node-detail-row grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex flex-col gap-3">
                 <Label htmlFor="detail-mem_total">
                   {t("admin.nodeDetail.memTotal", "总内存 (Bytes)")}
@@ -192,7 +192,7 @@ export function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                 </span>
               </div>
             </div>
-            <div className="flex flex-col gap-3">
+            <div className="km-node-detail-row flex flex-col gap-3">
               <Label htmlFor="detail-gpu_name">
                 {t("admin.nodeDetail.gpu", "GPU")}
               </Label>
@@ -205,7 +205,7 @@ export function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                 )}
               </span>
             </div>
-            <div className="flex flex-col gap-3">
+            <div className="km-node-detail-row flex flex-col gap-3">
               <Label htmlFor="detail-uuid">
                 {t("admin.nodeDetail.uuid", "UUID")}
               </Label>
@@ -216,7 +216,7 @@ export function TableCellViewer({ item }: { item: z.infer<typeof schema> }) {
                 {item.uuid || <span className="text-muted-foreground">-</span>}
               </span>
             </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="km-node-detail-row grid grid-cols-1 md:grid-cols-2 gap-4">
               <div className="flex flex-col gap-3">
                 <Label htmlFor="detail-createdAt">
                   {t("admin.nodeDetail.createdAt", "创建时间")}

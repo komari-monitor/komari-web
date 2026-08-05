@@ -198,9 +198,9 @@ export default function DatabaseRecovery() {
   }, [completed]);
 
   return (
-    <main className="min-h-screen bg-[var(--color-background)] text-[var(--gray-12)]">
+    <main className="km-page-database-recovery min-h-screen bg-[var(--color-background)] text-[var(--gray-12)]">
       <header
-        className="border-b bg-[var(--color-panel-solid)]"
+        className="km-database-recovery-header border-b bg-[var(--color-panel-solid)]"
         style={{ borderColor: "var(--gray-a5)" }}
       >
         <Container size="3" px={{ initial: "4", sm: "6" }} py="3">

@@ -48,8 +48,8 @@ export function SettingCard({
       style={{ borderColor: "var(--gray-a5)" }}
       className={
         bordless
-          ? "border-0"
-          : "border-1 rounded-md py-2 px-4 bg-transparent  min-h-8" + className
+          ? "km-setting-card border-0"
+          : "km-setting-card border-1 rounded-md py-2 px-4 bg-transparent  min-h-8 " + className
       }
     >
       <Flex

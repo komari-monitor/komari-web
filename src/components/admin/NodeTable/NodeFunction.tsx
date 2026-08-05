@@ -120,7 +120,7 @@ export function ActionsCell({ row }: { row: Row<z.infer<typeof schema>> }) {
   };
 
   return (
-    <div className="flex gap-3 justify-center">
+    <div className="km-node-function flex gap-3 justify-center">
       <Dialog.Root>
         <Dialog.Trigger>
           <IconButton
