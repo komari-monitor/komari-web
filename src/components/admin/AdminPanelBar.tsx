@@ -168,6 +168,7 @@ const AdminPanelBar = ({ content }: AdminPanelBarProps) => {
           resolvePluginIcon(plugin.short, icon) || "Blocks";
         const items: ExtendedMenuItem[] = [];
         for (const plugin of result) {
+          if (!plugin.enabled) continue; // 未启用的插件不注入导航菜单
           for (const page of plugin.pages || []) {
             if (page.visibility === "public") continue; // 公开页面走公开路由，不进后台导航
             const label =
