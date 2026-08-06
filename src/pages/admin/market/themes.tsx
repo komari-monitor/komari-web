@@ -1,14 +1,8 @@
 import Loading from "@/components/loading";
+import { useAdminNavigation } from "@/contexts/AdminNavigationContext";
+import { usePublicInfo } from "@/contexts/PublicInfoContext";
 import { useSettings } from "@/lib/api";
 import { resolveI18nText, type I18nText } from "@/utils/i18nText";
-import {
-  getThemeConfigurationType,
-  normalizeThemeRedirectTarget,
-  THEME_CONFIGURATION_MANAGED,
-  THEME_CONFIGURATION_RAW,
-  THEME_CONFIGURATION_REDIRECT,
-  type ThemeConfiguration,
-} from "@/utils/themeConfiguration";
 import {
   Badge,
   Box,
@@ -110,40 +104,6 @@ async function request<T>(input: RequestInfo | URL, init?: RequestInit) {
   return payload;
 }
 
-const hasThemeConfigurationMenu = (configuration?: ThemeConfiguration) => {
-  const type = getThemeConfigurationType(configuration);
-
-  if (type === THEME_CONFIGURATION_MANAGED) {
-    return (
-      Array.isArray(configuration?.data) && configuration.data.length > 0
-    );
-  }
-
-  if (type === THEME_CONFIGURATION_RAW) return true;
-
-  return (
-    type === THEME_CONFIGURATION_REDIRECT &&
-    Boolean(normalizeThemeRedirectTarget(configuration?.data))
-  );
-};
-
-const themeNeedsSidebarRefresh = async (themeShort: string) => {
-  try {
-    const response = await fetch(
-      `/themes/${encodeURIComponent(themeShort)}/komari-theme.json`,
-      { cache: "no-cache" },
-    );
-    if (!response.ok) return false;
-
-    const manifest = (await response.json()) as {
-      configuration?: ThemeConfiguration;
-    };
-    return hasThemeConfigurationMenu(manifest.configuration);
-  } catch {
-    return false;
-  }
-};
-
 export default function ThemeMarketPage() {
   const { t, i18n } = useTranslation();
   const [themes, setThemes] = useState<MarketTheme[]>([]);
@@ -164,6 +124,8 @@ export default function ThemeMarketPage() {
   const [settingTheme, setSettingTheme] = useState<string | null>(null);
   const [deletingTheme, setDeletingTheme] = useState<string | null>(null);
   const { settings, refetch: refetchSettings } = useSettings();
+  const { refresh: refreshPublicInfo } = usePublicInfo();
+  const { refreshNavigation } = useAdminNavigation();
   const currentTheme = settings?.theme;
   const language = i18n.resolvedLanguage || i18n.language;
   const displayText = useCallback(
@@ -231,6 +193,10 @@ export default function ThemeMarketPage() {
       });
       toast.success(payload.message || t("market.install_success", "Theme installed"));
       await loadCatalog();
+      if (currentTheme === theme.short) {
+        await refreshPublicInfo();
+        refreshNavigation();
+      }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : String(error));
     } finally {
@@ -243,10 +209,9 @@ export default function ThemeMarketPage() {
     try {
       await request(`/api/admin/theme/set?theme=${encodeURIComponent(theme.short)}`);
       await refetchSettings();
+      await refreshPublicInfo();
+      refreshNavigation();
       toast.success(t("theme.set_success", "Theme activated"));
-      if (await themeNeedsSidebarRefresh(theme.short)) {
-        window.location.reload();
-      }
     } catch (error) {
       toast.error(error instanceof Error ? error.message : String(error));
     } finally {
@@ -257,7 +222,8 @@ export default function ThemeMarketPage() {
   const uninstallTheme = async (theme: MarketTheme) => {
     setDeletingTheme(theme.short);
     try {
-      if (currentTheme === theme.short) {
+      const wasActive = currentTheme === theme.short;
+      if (wasActive) {
         await request("/api/admin/theme/set?theme=default");
       }
       await request("/api/admin/theme/delete", {
@@ -266,6 +232,10 @@ export default function ThemeMarketPage() {
         body: JSON.stringify({ short: theme.short }),
       });
       await Promise.all([loadCatalog(), refetchSettings()]);
+      if (wasActive) {
+        await refreshPublicInfo();
+        refreshNavigation();
+      }
       setSelectedTheme(null);
       toast.success(t("market.uninstall_success", "Theme uninstalled"));
     } catch (error) {

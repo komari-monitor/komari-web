@@ -60,7 +60,7 @@ interface PublicInfoContextType {
   publicInfo: PublicInfo | null;
   isLoading: boolean;
   error: string | null;
-  refresh: () => void;
+  refresh: () => Promise<void>;
 }
 
 const PublicInfoContext = React.createContext<PublicInfoContextType | undefined>(
@@ -75,34 +75,30 @@ export const PublicInfoProvider: React.FC<{ children: React.ReactNode }> = ({
   const [error, setError] = React.useState<string | null>(null);
   //const { call } = useRPC2Call();
   // 公共信息使用public，避免在私有站点的情况下RPC返回401
-  const refresh = () => {
+  const refresh = React.useCallback(async () => {
     setError(null);
     setIsLoading(true);
-    fetch("/api/public")
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error("Failed to fetch public info");
-        }
-        return response.json();
-      })
-      .then((resp: Response) => {
-        if (resp && resp.data) {
-          setPublicInfo(withThemeDefaults(resp.data));
-        } else {
-          setPublicInfo(null);
-        }
-      })
-      .catch((err) => {
-        setError(err.message || "An error occurred while fetching public info");
-      })
-      .finally(() => {
-        setIsLoading(false);
-      });
-  };
+    try {
+      const response = await fetch("/api/public");
+      if (!response.ok) {
+        throw new Error("Failed to fetch public info");
+      }
+      const resp = (await response.json()) as Response;
+      if (resp && resp.data) {
+        setPublicInfo(withThemeDefaults(resp.data));
+      } else {
+        setPublicInfo(null);
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err));
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
 
   React.useEffect(() => {
-    refresh();
-  }, []);
+    void refresh();
+  }, [refresh]);
 
   return (
     <PublicInfoContext.Provider value={{ publicInfo, isLoading, error, refresh }}>

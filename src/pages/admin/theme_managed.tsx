@@ -1,12 +1,7 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Flex, Heading, Callout, Separator, Button } from "@radix-ui/themes";
+import { Flex, Heading, Callout, Button } from "@radix-ui/themes";
 import { usePublicInfo } from "@/contexts/PublicInfoContext";
-import {
-  SettingCardSelect,
-  SettingCardSwitch,
-  SettingCardShortTextInput,
-  SettingCardLongTextInput,
-} from "@/components/admin/SettingCard";
+import ConfigFormTabs from "@/components/admin/ConfigFormTabs";
 import { toast } from "sonner";
 import Loading from "@/components/loading";
 import { useTranslation } from "react-i18next";
@@ -150,21 +145,11 @@ const ThemeManaged: React.FC = () => {
   };
 
   return (
-    <Flex direction="column" gap="4" className="km-page-admin-theme-managed p-2 md:p-4">
-      <Flex justify="between" align="center">
-        <Heading size="4">
-          {theme
-            ? t("theme.manage_with_name", {
-                name: theme === "default" ? "" : theme,
-              })
-            : t("theme.title")}
-        </Heading>
-        {fields.length > 0 && (
-          <Button onClick={saveAll} disabled={saving}>
-            {t("common.save")}
-          </Button>
-        )}
-      </Flex>
+    <Flex
+      direction="column"
+      gap="4"
+      className="km-page-admin-theme-managed h-full min-h-0 p-2 md:p-4"
+    >
       {error && (
         <Callout.Root color="red">
           <Callout.Text>{error}</Callout.Text>
@@ -176,101 +161,44 @@ const ThemeManaged: React.FC = () => {
           <Callout.Text>{t("theme.no_config")}</Callout.Text>
         </Callout.Root>
       )}
-      <Separator size="4" />
-      <Flex direction="column" gap="3" className="km-theme-managed-form">
-        {fields.map((f, idx) => {
-          if (f.type === "title") {
-            return (
-              <Heading key={idx} size="3" className="mt-4">
-                {resolveI18nText(f.name, currentLanguage) || t("common.title")}
+      {fields.length > 0 ? (
+        <ConfigFormTabs
+          items={fields}
+          values={values}
+          onValueChange={handleValueChange}
+          resolveText={(v) => resolveI18nText(v, currentLanguage)}
+          className="km-admin-theme-managed-config min-h-0 flex-1"
+          formClassName="km-theme-managed-form"
+          header={
+            <Flex justify="between" align="center" wrap="wrap" gap="3">
+              <Heading size="4">
+                {theme
+                  ? t("theme.manage_with_name", {
+                      name: theme === "default" ? "" : theme,
+                    })
+                  : t("theme.title")}
               </Heading>
-            );
+              <Button onClick={saveAll} disabled={saving}>
+                {t("common.save")}
+              </Button>
+            </Flex>
           }
-          if (!f.key) return null;
-          const val = values[f.key];
-          const title = resolveI18nText(f.name, currentLanguage);
-          const description = resolveI18nText(f.help, currentLanguage);
-          switch (f.type) {
-            case "switch":
-              return (
-                <SettingCardSwitch
-                  key={f.key}
-                  title={title}
-                  description={description}
-                  defaultChecked={!!val}
-                  onChange={(checked) => handleValueChange(f.key!, checked)}
-                />
-              );
-            case "select": {
-              const opts = (f.options || "")
-                .split(",")
-                .map((s) => s.trim())
-                .filter(Boolean)
-                .map((o) => ({ value: o }));
-              return (
-                <SettingCardSelect
-                  key={f.key}
-                  title={title}
-                  description={description}
-                  value={val}
-                  options={opts}
-                  OnSave={(v) => handleValueChange(f.key!, v)}
-                  label={val || t("common.select")}
-                />
-              );
-            }
-            case "number":
-              return (
-                <SettingCardShortTextInput
-                  key={f.key}
-                  title={title}
-                  description={description}
-                  type="number"
-                  showSaveButton={false}
-                  value={val !== undefined ? String(val) : ""}
-                  onChange={(e) =>
-                    handleValueChange(
-                      f.key!,
-                      e.target.value === ""
-                        ? undefined
-                        : Number(e.target.value),
-                    )
-                  }
-                />
-              );
-            case "richtext":
-              return (
-                <SettingCardLongTextInput
-                  key={f.key}
-                  title={title}
-                  description={description}
-                  defaultValue={val !== undefined ? String(val) : ""}
-                  showSaveButton={false}
-                  onChange={(e) => handleValueChange(f.key!, e.target.value)}
-                />
-              );
-            case "string":
-            default:
-              return (
-                <SettingCardShortTextInput
-                  key={f.key}
-                  title={title}
-                  description={description}
-                  value={val !== undefined ? String(val) : ""}
-                  required={f.required}
-                  showSaveButton={false}
-                  onChange={(e) => handleValueChange(f.key!, e.target.value)}
-                />
-              );
+          footer={
+            <Flex className="mt-4">
+              <Button onClick={saveAll} disabled={saving}>
+                {t("common.save")}
+              </Button>
+            </Flex>
           }
-        })}
-      </Flex>
-      {fields.length > 0 && (
-        <Flex>
-          <Button onClick={saveAll} disabled={saving}>
-            {t("common.save")}
-          </Button>
-        </Flex>
+        />
+      ) : (
+        <Heading size="4">
+          {theme
+            ? t("theme.manage_with_name", {
+                name: theme === "default" ? "" : theme,
+              })
+            : t("theme.title")}
+        </Heading>
       )}
     </Flex>
   );

@@ -18,6 +18,7 @@ import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import Loading from "@/components/loading";
 import UploadDialog from "@/components/UploadDialog";
+import { useAdminNavigation } from "@/contexts/AdminNavigationContext";
 import { useRPC2Call } from "@/contexts/RPC2Context";
 import { resolveI18nText, type I18nText } from "@/utils/i18nText";
 import { iconMap, resolvePluginIcon } from "@/utils/iconHelper";
@@ -54,6 +55,7 @@ const renderPluginIcon = (
 // 插件管理：上传 zip、switch 启停、权限确认弹窗、运行日志、行内错误文本。
 export default function PluginsPage() {
   const { call } = useRPC2Call();
+  const { refreshNavigation } = useAdminNavigation();
   const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const language = i18n.resolvedLanguage || i18n.language || "";
@@ -179,6 +181,7 @@ export default function PluginsPage() {
           ? t("plugin.enable_success", "Plugin enabled")
           : t("plugin.disable_success", "Plugin disabled"),
       );
+      refreshNavigation();
       await loadList();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : String(error));
@@ -199,6 +202,7 @@ export default function PluginsPage() {
         enabled: true,
         approved: true,
       });
+      refreshNavigation();
       toast.success(t("plugin.enable_success", "Plugin enabled"));
     } catch (error) {
       toast.error(error instanceof Error ? error.message : String(error));

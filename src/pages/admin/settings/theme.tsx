@@ -27,6 +27,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
+import { useAdminNavigation } from "@/contexts/AdminNavigationContext";
 import { usePublicInfo } from "@/contexts/PublicInfoContext";
 import Loading from "@/components/loading";
 import { useSettings } from "@/lib/api";
@@ -83,7 +84,8 @@ const ThemePage = () => {
   } = useSettings();
   const currentTheme = settings?.theme;
   const navigate = useNavigate();
-  const { publicInfo } = usePublicInfo();
+  const { publicInfo, refresh: refreshPublicInfo } = usePublicInfo();
+  const { refreshNavigation } = useAdminNavigation();
   const [activeThemeHasConfig, setActiveThemeHasConfig] = useState(false);
 
   // 当 currentTheme 或 publicInfo.theme 变化时重新检测当前主题是否有配置文件
@@ -260,6 +262,8 @@ const ThemePage = () => {
 
       // 刷新 settings 以获取最新的主题设置
       await refetchSettings();
+      await refreshPublicInfo();
+      refreshNavigation();
 
       // 更新主题列表中的活跃状态
       setThemes((prevThemes) =>
@@ -268,18 +272,6 @@ const ThemePage = () => {
           active: theme.short === themeShort,
         })),
       );
-
-      const theme = themes.find((t) => t.short === themeShort);
-      console.log(theme);
-      if (
-        theme &&
-        getThemeConfigurationType(theme.configuration) ===
-          THEME_CONFIGURATION_MANAGED &&
-        Array.isArray(theme.configuration.data) &&
-        theme.configuration.data.length > 0
-      ) {
-        window.location.reload();
-      }
 
       toast.success(t("theme.set_success"));
     } catch (err) {
@@ -315,6 +307,10 @@ const ThemePage = () => {
 
       // 重新获取主题列表
       await fetchThemes();
+      if (themeShort === currentTheme) {
+        await refreshPublicInfo();
+        refreshNavigation();
+      }
 
       setUpdateDialogOpen(false);
       setPreviewDialogOpen(false);

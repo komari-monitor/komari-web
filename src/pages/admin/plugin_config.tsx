@@ -8,19 +8,13 @@ import {
   Card,
   Flex,
   Heading,
-  Separator,
   Text,
 } from "@radix-ui/themes";
 
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import Loading from "@/components/loading";
-import {
-  SettingCardLongTextInput,
-  SettingCardSelect,
-  SettingCardShortTextInput,
-  SettingCardSwitch,
-} from "@/components/admin/SettingCard";
+import ConfigFormTabs from "@/components/admin/ConfigFormTabs";
 import { useRPC2Call } from "@/contexts/RPC2Context";
 import { resolveI18nText } from "@/utils/i18nText";
 import { iconMap, resolvePluginIcon } from "@/utils/iconHelper";
@@ -172,176 +166,93 @@ export default function PluginConfigPage() {
   const hasItems = items.some((item) => item.type !== "title");
 
   return (
-    <Box className="km-page-admin-plugin-config p-4">
-      <Flex align="center" gap="2" mb="3">
-        <Blocks size={20} />
-        <Heading size="4">{t("plugin.config", "Configuration")}</Heading>
-      </Flex>
-      <Separator size="4" mb="4" />
-      <Flex direction={{ initial: "column", md: "row" }} gap="4" align="start">
-        {/* 左侧：插件列表 */}
-        <Card className="w-full md:w-64 shrink-0">
-          <Flex direction="column" gap="1">
-            {configurablePlugins.length === 0 && (
-              <Text size="2" color="gray">
-                {plugins.length === 0
-                  ? t("plugin.no_plugins", "No plugins installed yet")
-                  : t("plugin.config_no_configurable_plugins", "No plugins with configuration items")}
-              </Text>
-            )}
-            {configurablePlugins.map((plugin) => {
-              const isActive = selected?.short === plugin.short;
-              return (
-                <button
-                  key={plugin.short}
-                  type="button"
-                  onClick={() => selectPlugin(plugin)}
-                  className="group flex w-full items-center gap-2 rounded-md p-2 text-left transition-colors duration-200 hover:bg-accent-3"
-                  style={{
-                    borderLeft: isActive
-                      ? "4px solid var(--accent-8)"
-                      : "4px solid transparent",
-                    backgroundColor: isActive ? "var(--accent-4)" : "transparent",
-                    color: isActive ? "var(--accent-10)" : "inherit",
-                  }}
-                >
-                  {renderPluginIcon(plugin, 16, "h-5 w-5 shrink-0", isActive ? 1 : 0.7)}
-                  <Text
-                    size="2"
-                    weight={isActive ? "bold" : "medium"}
-                    className="min-w-0 truncate"
-                  >
-                    {displayText(plugin.name) || plugin.short}
-                  </Text>
-                </button>
-              );
-            })}
-          </Flex>
-        </Card>
-
-        {/* 右侧：配置项 */}
-        <Flex direction="column" gap="3" className="km-plugin-config-form min-w-0 flex-1">
-          {!selected && (
-            <Callout.Root>
-              <Callout.Text>{t("plugin.config_select_hint", "Select a plugin to configure")}</Callout.Text>
-            </Callout.Root>
-          )}
-          {selected && error && (
-            <Callout.Root color="red">
-              <Callout.Text>{error}</Callout.Text>
-            </Callout.Root>
-          )}
-          {selected && !error && !hasItems && (
-            <Callout.Root>
-              <Callout.Text>{t("plugin.config_no_items", "This plugin has no configuration items")}</Callout.Text>
-            </Callout.Root>
-          )}
-          {selected && !error && hasItems && (
-            <>
-              <Flex justify="between" align="center">
-                <Text weight="bold">
-                  {displayText(selected.name) || selected.short}
-                </Text>
+    <Box className="km-page-admin-plugin-config h-full min-h-0 p-4">
+      <ConfigFormTabs
+        items={items}
+        values={values}
+        onValueChange={handleValueChange}
+        resolveText={displayText}
+        className="h-full"
+        header={
+          <Flex direction="column" gap="3">
+            <Flex justify="between" align="center" wrap="wrap" gap="3">
+              <Flex align="center" gap="2">
+                <Blocks size={20} />
+                <Heading size="4">{t("plugin.config", "Configuration")}</Heading>
+              </Flex>
+              {selected && !error && hasItems && (
                 <Button onClick={saveAll} disabled={saving}>
                   {saving ? t("plugin.saving", "Saving...") : t("common.save")}
                 </Button>
-              </Flex>
-              <Flex direction="column" gap="3">
-                {items.map((item, index) => {
-                  if (item.type === "title") {
-                    return (
-                      <Heading key={index} size="3" className="mt-4">
-                        {displayText(item.name) || t("common.title")}
-                      </Heading>
-                    );
-                  }
-                  if (!item.key) return null;
-                  const value = values[item.key];
-                  const title = displayText(item.name);
-                  const description = displayText(item.help);
-                  switch (item.type) {
-                    case "switch":
-                      return (
-                        <SettingCardSwitch
-                          key={item.key}
-                          title={title}
-                          description={description}
-                          defaultChecked={!!value}
-                          onChange={(checked) => handleValueChange(item.key!, checked)}
-                        />
-                      );
-                    case "select": {
-                      const options = (item.options || "")
-                        .split(",")
-                        .map((option) => option.trim())
-                        .filter(Boolean)
-                        .map((option) => ({ value: option }));
-                      return (
-                        <SettingCardSelect
-                          key={item.key}
-                          title={title}
-                          description={description}
-                          value={value}
-                          options={options}
-                          OnSave={(v) => handleValueChange(item.key!, v)}
-                          label={value !== undefined ? String(value) : t("common.select")}
-                        />
-                      );
-                    }
-                    case "number":
-                      return (
-                        <SettingCardShortTextInput
-                          key={item.key}
-                          title={title}
-                          description={description}
-                          type="number"
-                          showSaveButton={false}
-                          value={value !== undefined ? String(value) : ""}
-                          onChange={(event) =>
-                            handleValueChange(
-                              item.key!,
-                              event.target.value === ""
-                                ? undefined
-                                : Number(event.target.value),
-                            )
-                          }
-                        />
-                      );
-                    case "richtext":
-                      return (
-                        <SettingCardLongTextInput
-                          key={item.key}
-                          title={title}
-                          description={description}
-                          defaultValue={value !== undefined ? String(value) : ""}
-                          showSaveButton={false}
-                          onChange={(event) =>
-                            handleValueChange(item.key!, event.target.value)
-                          }
-                        />
-                      );
-                    case "string":
-                    default:
-                      return (
-                        <SettingCardShortTextInput
-                          key={item.key}
-                          title={title}
-                          description={description}
-                          value={value !== undefined ? String(value) : ""}
-                          required={item.required}
-                          showSaveButton={false}
-                          onChange={(event) =>
-                            handleValueChange(item.key!, event.target.value)
-                          }
-                        />
-                      );
-                  }
-                })}
-              </Flex>
-            </>
-          )}
-        </Flex>
-      </Flex>
+              )}
+            </Flex>
+            {selected && !error && hasItems && (
+              <Text weight="bold">
+                {displayText(selected.name) || selected.short}
+              </Text>
+            )}
+          </Flex>
+        }
+        notice={
+          !selected || error || !hasItems ? (
+            <Box className="mb-4">
+              {!selected ? (
+                <Callout.Root>
+                  <Callout.Text>{t("plugin.config_select_hint", "Select a plugin to configure")}</Callout.Text>
+                </Callout.Root>
+              ) : error ? (
+                <Callout.Root color="red">
+                  <Callout.Text>{error}</Callout.Text>
+                </Callout.Root>
+              ) : (
+                <Callout.Root>
+                  <Callout.Text>{t("plugin.config_no_items", "This plugin has no configuration items")}</Callout.Text>
+                </Callout.Root>
+              )}
+            </Box>
+          ) : undefined
+        }
+        sidebar={
+          <Card>
+            <Flex direction="column" gap="1">
+              {configurablePlugins.length === 0 && (
+                <Text size="2" color="gray">
+                  {plugins.length === 0
+                    ? t("plugin.no_plugins", "No plugins installed yet")
+                    : t("plugin.config_no_configurable_plugins", "No plugins with configuration items")}
+                </Text>
+              )}
+              {configurablePlugins.map((plugin) => {
+                const isActive = selected?.short === plugin.short;
+                return (
+                  <button
+                    key={plugin.short}
+                    type="button"
+                    onClick={() => selectPlugin(plugin)}
+                    className="group flex w-full items-center gap-2 rounded-md p-2 text-left transition-colors duration-200 hover:bg-accent-3"
+                    style={{
+                      borderLeft: isActive
+                        ? "4px solid var(--accent-8)"
+                        : "4px solid transparent",
+                      backgroundColor: isActive ? "var(--accent-4)" : "transparent",
+                      color: isActive ? "var(--accent-10)" : "inherit",
+                    }}
+                  >
+                    {renderPluginIcon(plugin, 16, "h-5 w-5 shrink-0", isActive ? 1 : 0.7)}
+                    <Text
+                      size="2"
+                      weight={isActive ? "bold" : "medium"}
+                      className="min-w-0 truncate"
+                    >
+                      {displayText(plugin.name) || plugin.short}
+                    </Text>
+                  </button>
+                );
+              })}
+            </Flex>
+          </Card>
+        }
+      />
     </Box>
   );
 }

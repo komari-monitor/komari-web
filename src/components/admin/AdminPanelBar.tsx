@@ -21,6 +21,7 @@ import { iconMap, resolvePluginIcon } from "../../utils/iconHelper";
 import { ChevronDownIcon } from "@radix-ui/react-icons";
 import { TablerMenu2 } from "../Icones/Tabler";
 import LoginDialog from "../Login";
+import { useAdminNavigation } from "@/contexts/AdminNavigationContext";
 import { useAccount } from "@/contexts/AccountContext";
 import { usePublicInfo } from "@/contexts/PublicInfoContext";
 import Tips from "../ui/tips";
@@ -60,7 +61,11 @@ const AdminPanelBar = ({ content }: AdminPanelBarProps) => {
   const ishttps = window.location.protocol === "https:";
   const [t, i18n] = useTranslation();
   const location = useLocation();
+  const isConfigFormPage =
+    location.pathname === "/admin/theme_managed" ||
+    location.pathname === "/admin/plugins/config";
   const { publicInfo } = usePublicInfo();
+  const { refreshVersion } = useAdminNavigation();
   //const navigate = useNavigate();
   // 获取版本信息
   const [versionInfo, setVersionInfo] = useState<{
@@ -155,7 +160,7 @@ const AdminPanelBar = ({ content }: AdminPanelBarProps) => {
     return () => {
       ignore = true;
     };
-  }, [currentTheme]);
+  }, [currentTheme, refreshVersion]);
   // 插件注入的管理页面：manifest pages（visibility=admin）-> 插件菜单的二级菜单。
   // iframe 页面进入 plugin-page 路由；redirect 页面复用主题的站内跳转校验。
   useEffect(() => {
@@ -206,7 +211,7 @@ const AdminPanelBar = ({ content }: AdminPanelBarProps) => {
     return () => {
       ignore = true;
     };
-  }, [call, currentLanguage]);
+  }, [call, currentLanguage, refreshVersion]);
 
   useEffect(() => {
     const fetchVersionInfo = async () => {
@@ -381,7 +386,7 @@ const AdminPanelBar = ({ content }: AdminPanelBarProps) => {
         style={{
           height: "100vh",
           width: "100vw",
-          overflow: "auto",
+          overflow: "hidden",
           backgroundColor: "var(--accent-1)",
         }}
       >
@@ -740,6 +745,7 @@ const AdminPanelBar = ({ content }: AdminPanelBarProps) => {
             backgroundColor: "var(--accent-3)",
             display: isMobile && sidebarOpen ? "none" : "block",
             height: "100%", // Ensure the container takes full height
+            minHeight: 0,
             overflow: "hidden", // Prevent this container from scrolling
           }}
         >
@@ -747,9 +753,12 @@ const AdminPanelBar = ({ content }: AdminPanelBarProps) => {
             style={{
               backgroundColor: "var(--accent-1)",
               height: "100%",
+              minHeight: 0,
               borderRadius: "0",
               padding: isMobile ? "8px" : "16px",
-              overflowY: "auto",
+              overflowY: isConfigFormPage ? "hidden" : "auto",
+              display: isConfigFormPage ? "flex" : "block",
+              flexDirection: isConfigFormPage ? "column" : undefined,
               boxSizing: "border-box",
             }}
           >
@@ -772,7 +781,11 @@ const AdminPanelBar = ({ content }: AdminPanelBarProps) => {
                 </Text>
               </Callout.Text>
             </Callout.Root>
-            {content}
+            {isConfigFormPage ? (
+              <div className="min-h-0 flex-1">{content}</div>
+            ) : (
+              content
+            )}
           </div>
         </motion.div>
       </Grid>

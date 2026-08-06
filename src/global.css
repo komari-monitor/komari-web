@@ -166,3 +166,22 @@ body, * {
   scrollbar-width: thin;
   scrollbar-color: rgba(80,80,80,0.4) transparent;
 }
+
+/* 主题/插件配置页顶部 Tab 栏：覆盖 Radix 默认隐藏滚动条，窄屏时可横向滚动 */
+.km-config-form-tabs-list {
+  scrollbar-width: thin;
+  scrollbar-color: var(--gray-a6) transparent;
+}
+.km-config-form-tabs-list::-webkit-scrollbar {
+  height: 6px;
+}
+.km-config-form-tabs-list::-webkit-scrollbar-thumb {
+  border-radius: 9999px;
+  background-color: var(--gray-a6);
+}
+.km-config-form-tabs-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+.km-config-form-tabs-list::-webkit-scrollbar-button {
+  display: none;
+}
