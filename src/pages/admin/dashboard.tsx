@@ -181,6 +181,7 @@ type PingRankItem = {
   p95: number | null;
   volatility: number;
   loss: number;
+  valid: number;
 };
 
 const CPU_METRIC_KEYS = ["cpu.usage"];
@@ -654,17 +655,25 @@ const DashboardContent = () => {
         p95,
         volatility: stat.p99_p50_ratio ?? 0,
         loss: stat.loss ?? 0,
+        valid: stat.valid,
       } satisfies PingRankItem;
     });
   }, [pingStats, pingP95Map, pingTasks, nodeNameMap, t]);
 
+  // 无有效延迟样本(如 100% 丢包)的节点波动无意义，不参与稳定性排名
   const stableLatencyItems = useMemo(
-    () => [...pingRankItems].sort((a, b) => a.volatility - b.volatility),
+    () =>
+      [...pingRankItems]
+        .filter((item) => item.valid > 0)
+        .sort((a, b) => a.volatility - b.volatility),
     [pingRankItems],
   );
 
   const unstableLatencyItems = useMemo(
-    () => [...pingRankItems].sort((a, b) => b.volatility - a.volatility),
+    () =>
+      [...pingRankItems]
+        .filter((item) => item.valid > 0)
+        .sort((a, b) => b.volatility - a.volatility),
     [pingRankItems],
   );
 

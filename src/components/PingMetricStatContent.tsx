@@ -27,7 +27,7 @@ const PingMetricStatContent = ({ stat, t }: PingMetricStatContentProps) => {
   if (typeof stat.stddev === "number") {
     rows.push([t("chart.sampling.stddev"), formatMilliseconds(stat.stddev)]);
   }
-  if (typeof stat.p99_p50_ratio === "number") {
+  if (typeof stat.p99_p50_ratio === "number" && (stat.valid ?? 0) > 0) {
     rows.push([t("chart.volatility"), stat.p99_p50_ratio.toFixed(2)]);
   }
   rows.push([t("chart.total"), String(stat.total)]);

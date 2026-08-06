@@ -90,6 +90,8 @@ export default function RestrictedLoginDialog({
                 {t("login.username")}
               </Text>
               <TextField.Root
+                id="restricted-login-username"
+                name="username"
                 value={username}
                 onChange={(event) => setUsername(event.target.value)}
                 autoComplete="username"
@@ -102,6 +104,8 @@ export default function RestrictedLoginDialog({
                 {t("login.password")}
               </Text>
               <TextField.Root
+                id="restricted-login-password"
+                name="password"
                 type="password"
                 value={password}
                 onChange={(event) => setPassword(event.target.value)}
@@ -115,6 +119,8 @@ export default function RestrictedLoginDialog({
                   {t("login.two_factor")}
                 </Text>
                 <TextField.Root
+                  id="restricted-login-2fa-code"
+                  name="2fa_code"
                   value={twoFactor}
                   onChange={(event) => setTwoFactor(event.target.value)}
                   autoComplete="one-time-code"
