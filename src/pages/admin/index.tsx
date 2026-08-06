@@ -2631,7 +2631,7 @@ function BillingButton({ node }: { node: NodeDetail }) {
       );
       const expiredAtValue = (formData.get("expiredAt") as string) || "";
       const expiredAt = expiredAtValue
-        ? new Date(`${expiredAtValue}T00:00:00`).toISOString()
+        ? new Date(`${expiredAtValue}T00:00:00Z`).toISOString()
         : null;
       const currencyValue = (formData.get("currency") as string) || "$";
 
