@@ -306,7 +306,7 @@ const MiniPingChart = ({
             <LineChart
               data={chartData}
               accessibilityLayer
-              margin={{ top: 8, right: 16, bottom: 0, left: 16 }}
+              margin={{ top: 16, right: 8, bottom: 4, left: 8 }}
             >
               <CartesianGrid vertical={false} />
               <XAxis
@@ -321,12 +321,13 @@ const MiniPingChart = ({
               <YAxis
                 tickLine={false}
                 axisLine={false}
-                unit="ms"
                 allowDecimals={false}
                 orientation="left"
                 type="number"
-                tick={{ dx: -10 }}
+                width={1}
                 mirror
+                tick={{ dx: 8 }}
+                tickFormatter={(value) => `${value}\u00a0ms`}
               />
               <ChartTooltip
                 cursor={false}

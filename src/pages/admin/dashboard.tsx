@@ -1050,7 +1050,7 @@ const DashboardContent = () => {
               >
                 <AreaChart
                   data={traffic.points}
-                  margin={{ top: 8, right: 4, bottom: 0, left: 4 }}
+                  margin={{ top: 16, right: 8, bottom: 4, left: 8 }}
                 >
                   <defs>
                     <linearGradient id="gradUp" x1="0" y1="0" x2="0" y2="1">
@@ -1098,7 +1098,9 @@ const DashboardContent = () => {
                     width={1}
                     mirror
                     tick={{ dx: 8 }}
-                    tickFormatter={(v: any) => formatSpeed(Number(v))}
+                    tickFormatter={(v: any) =>
+                      formatSpeed(Number(v)).replace(/ /g, "\u00a0")
+                    }
                   />
                   <YAxis
                     yAxisId="cum"
@@ -1109,7 +1111,9 @@ const DashboardContent = () => {
                     width={1}
                     mirror
                     tick={{ dx: -8 }}
-                    tickFormatter={(v: any) => formatBytes(Number(v))}
+                    tickFormatter={(v: any) =>
+                      formatBytes(Number(v)).replace(/ /g, "\u00a0")
+                    }
                   />
                   <ChartTooltip
                     cursor={false}
@@ -1655,7 +1659,7 @@ const MiniMetricChart = ({
         >
           <LineChart
             data={chartData.rows}
-            margin={{ top: 8, right: 8, bottom: 0, left: 8 }}
+            margin={{ top: 16, right: 8, bottom: 4, left: 8 }}
           >
             <CartesianGrid vertical={false} />
             <XAxis
@@ -1676,7 +1680,10 @@ const MiniMetricChart = ({
               mirror
               tick={{ dx: 8 }}
               tickFormatter={(v: any) =>
-                formatMetricValue(chartData.keys[0] ?? "", Number(v))
+                formatMetricValue(chartData.keys[0] ?? "", Number(v)).replace(
+                  / /g,
+                  "\u00a0",
+                )
               }
             />
             <ChartTooltip

@@ -1698,7 +1698,7 @@ const LoadChart = ({ data = [], onRealtimeActiveChange }: LoadChartProps) => {
                   <LineChart
                     data={chartRows}
                     accessibilityLayer
-                    margin={{ top: 8, right: 4, bottom: 0, left: 4 }}
+                    margin={{ top: 16, right: 8, bottom: 4, left: 8 }}
                   >
                     <CartesianGrid vertical={false} />
                     <XAxis
@@ -1718,12 +1718,17 @@ const LoadChart = ({ data = [], onRealtimeActiveChange }: LoadChartProps) => {
                         tickLine={false}
                         axisLine={false}
                         domain={axis.kind === "percent" ? [0, 100] : undefined}
-                        tickFormatter={(value) => formatValue(Number(value), axis.kind)}
+                        tickFormatter={(value) =>
+                          formatValue(Number(value), axis.kind).replace(
+                            / /g,
+                            "\u00a0",
+                          )
+                        }
                         orientation={axis.orientation}
                         type="number"
-                        tick={{ dx: axis.orientation === "left" ? 8 : -8 }}
                         width={1}
                         mirror
+                        tick={{ dx: axis.orientation === "left" ? 8 : -8 }}
                       />
                     ))}
                     <ChartTooltip
