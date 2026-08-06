@@ -91,6 +91,25 @@ const weightedP95 = (
   return sorted[sorted.length - 1].value;
 };
 
+const weightedAverage = (
+  points: { value: number; count?: number }[],
+): number | null => {
+  const valid = points.filter(
+    (point) => Number.isFinite(point.value) && (point.count ?? 1) > 0,
+  );
+  if (valid.length === 0) return null;
+  const totalCount = valid.reduce(
+    (sum, point) => sum + (point.count ?? 1),
+    0,
+  );
+  return (
+    valid.reduce(
+      (sum, point) => sum + point.value * (point.count ?? 1),
+      0,
+    ) / totalCount
+  );
+};
+
 const formatPeakTime = (t: TFunction, timestamp: number): string => {
   const date = new Date(timestamp);
   const now = new Date();
@@ -156,7 +175,7 @@ const computeRenewalDate = (
   return result;
 };
 
-type TopP95Item = {
+type TopRankItem = {
   uuid: string;
   name: string;
   value: number;
@@ -301,12 +320,12 @@ const computeTrafficSummary = (
   return { points, nodeTotals, totalUp, totalDown };
 };
 
-const computeTopP95Items = (
+const computeTopAverageItems = (
   res: QueryMetricsResponse | null,
   metricKey: string,
   nodeNameMap: Map<string, string>,
   toPercent: (uuid: string, value: number) => number,
-): TopP95Item[] => {
+): TopRankItem[] => {
   if (!res) return [];
   const bucket = new Map<
     string,
@@ -326,11 +345,11 @@ const computeTopP95Items = (
     }
     bucket.set(series.entity_id, entry);
   }
-  const items: TopP95Item[] = [];
+  const items: TopRankItem[] = [];
   for (const [uuid, entry] of bucket) {
-    const p95 = weightedP95(entry.values);
-    if (p95 == null) continue;
-    const value = toPercent(uuid, p95);
+    const average = weightedAverage(entry.values);
+    if (average == null) continue;
+    const value = toPercent(uuid, average);
     if (!Number.isFinite(value)) continue;
     items.push({
       uuid,
@@ -452,6 +471,8 @@ const DashboardContent = () => {
         aggregation_by_metric: {
           "traffic.up": "sum",
           "traffic.down": "sum",
+          "cpu.usage": "avg",
+          "memory.used": "avg",
         },
         fill_empty: true,
       });
@@ -516,18 +537,28 @@ const DashboardContent = () => {
   // nodeNameMap/memTotalMap 变化会自动重算，无需再次请求。
   const traffic = useMemo(() => computeTrafficSummary(metricsRes), [metricsRes]);
 
-  const topCpu = useMemo<TopP95Item[]>(
+  const topCpu = useMemo<TopRankItem[]>(
     () =>
-      computeTopP95Items(metricsRes, CPU_METRIC_KEYS[0], nodeNameMap, (_uuid, value) => value),
+      computeTopAverageItems(
+        metricsRes,
+        CPU_METRIC_KEYS[0],
+        nodeNameMap,
+        (_uuid, value) => value,
+      ),
     [metricsRes, nodeNameMap],
   );
 
-  const topMem = useMemo<TopP95Item[]>(
+  const topMem = useMemo<TopRankItem[]>(
     () =>
-      computeTopP95Items(metricsRes, MEM_METRIC_KEYS[0], nodeNameMap, (uuid, value) => {
-        const totalBytes = memTotalMap.get(uuid) ?? 0;
-        return totalBytes > 0 ? (value / totalBytes) * 100 : 0;
-      }),
+      computeTopAverageItems(
+        metricsRes,
+        MEM_METRIC_KEYS[0],
+        nodeNameMap,
+        (uuid, value) => {
+          const totalBytes = memTotalMap.get(uuid) ?? 0;
+          return totalBytes > 0 ? (value / totalBytes) * 100 : 0;
+        },
+      ),
     [metricsRes, nodeNameMap, memTotalMap],
   );
 
@@ -1415,7 +1446,7 @@ const TopRankCard = ({
 }: {
   title: string;
   icon: React.ReactNode;
-  items: TopP95Item[];
+  items: TopRankItem[];
   metricKeys: string[];
   t: TFunction;
 }) => {
