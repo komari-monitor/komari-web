@@ -1368,6 +1368,7 @@
     "title": "Theme Management",
     "update": "Update Theme",
     "update_description": "If the original theme URL is inaccessible, please upload the theme package to update it.",
+    "update_default_description": "The update is installed as a writable overlay in the data directory. The version embedded in the binary remains available as an automatic fallback.",
     "update_failed": "Theme update failed",
     "update_mode": "Update Mode",
     "update_mode_auto": "Auto (Use Original URL)",

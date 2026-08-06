@@ -1368,6 +1368,7 @@
     "title": "Manajemen Tema",
     "update": "Perbarui Tema",
     "update_description": "Jika URL tema asli tidak dapat diakses, silakan unggah paket tema untuk memperbaruinya.",
+    "update_default_description": "Pembaruan dipasang sebagai lapisan yang dapat ditulis di direktori data. Versi bawaan biner tetap tersedia sebagai cadangan otomatis.",
     "update_failed": "Gagal memperbarui tema",
     "update_mode": "Mode Pembaruan",
     "update_mode_auto": "Otomatis (Gunakan URL Asli)",
