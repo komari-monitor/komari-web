@@ -206,6 +206,7 @@ type PingRankItem = {
 const CPU_METRIC_KEYS = ["cpu.usage"];
 const MEM_METRIC_KEYS = ["memory.used"];
 const NET_METRIC_KEYS = ["net.in.rate", "net.out.rate"];
+const NET_TOTAL_METRIC_KEYS = ["net.total.up", "net.total.down"];
 const PING_METRIC_KEYS = [PING_LATENCY_METRIC];
 
 // 首页所有指标卡共用一个 24h 查询（流量/CPU/内存/延迟），
@@ -227,6 +228,38 @@ const computeTrafficSummary = (
   res: QueryMetricsResponse | null,
 ): TrafficSummary | null => {
   if (!res) return null;
+
+  // The first cumulative counter after a collection gap/reset is a baseline,
+  // not traffic observed during that chart bucket.
+  const discontinuities = new Set<string>();
+  for (const series of res.series ?? []) {
+    if (!NET_TOTAL_METRIC_KEYS.includes(series.metric_key)) continue;
+    const direction = series.metric_key === "net.total.up" ? "up" : "down";
+    let previousValue: number | null = null;
+    let gapAfterValue = false;
+    let reboundBaseline: number | null = null;
+    for (const point of series.points ?? []) {
+      if (point.value == null) {
+        if (previousValue !== null) gapAfterValue = true;
+        continue;
+      }
+      const ts = new Date(point.time).getTime();
+      let discontinuity = gapAfterValue;
+      if (previousValue !== null && point.value < previousValue) {
+        discontinuity = true;
+        reboundBaseline = previousValue;
+      } else if (reboundBaseline !== null) {
+        if (point.value >= reboundBaseline) discontinuity = true;
+        reboundBaseline = null;
+      }
+      if (discontinuity) {
+        discontinuities.add(`${series.entity_id}\0${direction}\0${ts}`);
+      }
+      previousValue = point.value;
+      gapAfterValue = false;
+    }
+  }
+
   const byTime = new Map<
     number,
     { upRate: number; downRate: number; upDelta: number; downDelta: number }
@@ -266,8 +299,10 @@ const computeTrafficSummary = (
         rateMap.set(ts, rateEntry);
         byEntityRate.set(entity, rateMap);
       } else if (isUp) {
+        if (discontinuities.has(`${entity}\0up\0${ts}`)) continue;
         entry.upDelta += point.value;
       } else {
+        if (discontinuities.has(`${entity}\0down\0${ts}`)) continue;
         entry.downDelta += point.value;
       }
       byTime.set(ts, entry);
@@ -459,6 +494,7 @@ const DashboardContent = () => {
       const res = await call<any, QueryMetricsResponse>("public:queryMetrics", {
         metric_keys: [
           ...NET_METRIC_KEYS,
+          ...NET_TOTAL_METRIC_KEYS,
           "traffic.up",
           "traffic.down",
           ...CPU_METRIC_KEYS,
@@ -471,6 +507,8 @@ const DashboardContent = () => {
         aggregation_by_metric: {
           "traffic.up": "sum",
           "traffic.down": "sum",
+          "net.total.up": "last",
+          "net.total.down": "last",
           "cpu.usage": "avg",
           "memory.used": "avg",
         },

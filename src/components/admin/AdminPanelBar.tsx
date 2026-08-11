@@ -21,6 +21,7 @@ import { iconMap, resolvePluginIcon } from "../../utils/iconHelper";
 import { ChevronDownIcon } from "@radix-ui/react-icons";
 import { TablerMenu2 } from "../Icones/Tabler";
 import LoginDialog from "../Login";
+import InlineSvgIcon from "../InlineSvgIcon";
 import { useAdminNavigation } from "@/contexts/AdminNavigationContext";
 import { useAccount } from "@/contexts/AccountContext";
 import { usePublicInfo } from "@/contexts/PublicInfoContext";
@@ -574,7 +575,7 @@ const AdminPanelBar = ({ content }: AdminPanelBarProps) => {
                       const link = /^(https?:\/\/|\/|\.\/|\.\.\/)/.test(icon);
                       if (link) {
                         return (
-                          <img
+                          <InlineSvgIcon
                             src={icon}
                             alt={t(labelKey)}
                             style={{

@@ -14,6 +14,7 @@ import {
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import Loading from "@/components/loading";
+import InlineSvgIcon from "@/components/InlineSvgIcon";
 import ConfigFormTabs from "@/components/admin/ConfigFormTabs";
 import { useRPC2Call } from "@/contexts/RPC2Context";
 import { resolveI18nText } from "@/utils/i18nText";
@@ -26,7 +27,7 @@ interface ConfigurationResponse {
   data?: Record<string, any>;
 }
 
-// 渲染插件 icon：lucide 名用组件，URL/相对路径用 img，否则默认 Blocks。
+// 渲染插件 icon：lucide 名用组件，URL/相对路径用图片或内联 SVG，否则默认 Blocks。
 const renderPluginIcon = (
   plugin: PluginInfo,
   size: number,
@@ -42,7 +43,7 @@ const renderPluginIcon = (
     return <Cmp size={size} className={className} style={{ opacity }} />;
   }
   return (
-    <img
+    <InlineSvgIcon
       src={icon}
       alt=""
       className={`${className} object-contain`}

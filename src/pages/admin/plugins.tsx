@@ -17,6 +17,7 @@ import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import Loading from "@/components/loading";
+import InlineSvgIcon from "@/components/InlineSvgIcon";
 import UploadDialog from "@/components/UploadDialog";
 import { useAdminNavigation } from "@/contexts/AdminNavigationContext";
 import { useRPC2Call } from "@/contexts/RPC2Context";
@@ -33,7 +34,7 @@ const hasConfiguration = (plugin: PluginInfo) =>
   Array.isArray(plugin.configuration?.data) &&
   plugin.configuration!.data!.some((item) => item.type !== "title");
 
-// 渲染插件 icon：lucide 名用组件，URL/相对路径用 img，否则默认 Blocks。
+// 渲染插件 icon：lucide 名用组件，URL/相对路径用图片或内联 SVG，否则默认 Blocks。
 const renderPluginIcon = (
   plugin: PluginInfo,
   size: number,
@@ -45,9 +46,7 @@ const renderPluginIcon = (
   if (Cmp) {
     return <Cmp size={size} className={className} />;
   }
-  return (
-    <img src={icon} alt="" className={`${className} object-contain`} />
-  );
+  return <InlineSvgIcon src={icon} alt="" className={`${className} object-contain`} />;
 };
 
 
