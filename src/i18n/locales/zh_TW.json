@@ -373,6 +373,8 @@
     "search": "搜尋",
     "select": "選擇",
     "select_all": "全選",
+    "select_nodes": "選擇節點",
+    "select_ping_tasks": "選擇 Ping 任務",
     "select_clients": "選擇客戶端",
     "select_tasks": "選擇任務",
     "selected": "{{count}}選擇",

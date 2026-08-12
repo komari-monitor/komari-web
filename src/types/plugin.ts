@@ -18,7 +18,7 @@ export interface PluginConfigItem {
   key?: string;
   name?: I18nText;
   required?: boolean;
-  type: string; // title string number select switch richtext
+  type: string; // title textbox string number select switch richtext nodes pingtasks
   options?: string;
   default?: any;
   help?: I18nText;

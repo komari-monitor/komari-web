@@ -13,7 +13,7 @@ import {
   Callout,
   Separator,
 } from "@radix-ui/themes";
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   Upload,
   Settings,
@@ -36,13 +36,14 @@ import {
   getThemeConfigurationType,
   THEME_CONFIGURATION_MANAGED,
 } from "@/utils/themeConfiguration";
+import { resolveI18nText, type I18nText } from "@/utils/i18nText";
 
 interface Theme {
   id: string;
-  name: string;
+  name: I18nText;
   short: string;
-  description: string;
-  author: string;
+  description?: I18nText;
+  author?: I18nText;
   version: string;
   preview?: string;
   url?: string;
@@ -52,7 +53,7 @@ interface Theme {
 }
 
 const ThemePage = () => {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [themes, setThemes] = useState<Theme[]>([]);
   const [themesLoading, setThemesLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
@@ -87,6 +88,11 @@ const ThemePage = () => {
   const { publicInfo, refresh: refreshPublicInfo } = usePublicInfo();
   const { refreshNavigation } = useAdminNavigation();
   const [activeThemeHasConfig, setActiveThemeHasConfig] = useState(false);
+  const language = i18n.resolvedLanguage || i18n.language || "";
+  const displayText = useCallback(
+    (value: I18nText | undefined) => resolveI18nText(value, language) || "",
+    [language],
+  );
 
   // 当 currentTheme 或 publicInfo.theme 变化时重新检测当前主题是否有配置文件
   useEffect(() => {
@@ -509,7 +515,7 @@ const ThemePage = () => {
                 {theme.preview ? (
                   <img
                     src={`/themes/${theme.short}/${theme.preview}`}
-                    alt={theme.name}
+                    alt={displayText(theme.name)}
                     className="w-full h-full object-cover"
                     onError={(e) => {
                       e.currentTarget.style.display = "none";
@@ -551,11 +557,11 @@ const ThemePage = () => {
                 className="p-4 space-y-2"
               >
                 <Text weight="bold" size="3">
-                  {theme.name}
+                  {displayText(theme.name)}
                 </Text>
                 <Flex justify="between" align="center">
                   <Text size="1" color="gray">
-                    by {theme.author}
+                    by {displayText(theme.author)}
                   </Text>
                   <Text size="1" color="gray">
                     v{theme.version}
@@ -609,14 +615,14 @@ const ThemePage = () => {
       {/* 预览对话框 */}
       <Dialog.Root open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
         <Dialog.Content maxWidth="800px">
-          <Dialog.Title>{selectedTheme?.name}</Dialog.Title>
+          <Dialog.Title>{displayText(selectedTheme?.name)}</Dialog.Title>
 
           <Box className="space-y-4 mt-4">
             <Box className="aspect-video bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden relative">
               {selectedTheme?.preview ? (
                 <img
                   src={`/themes/${selectedTheme.short}/${selectedTheme.preview}`}
-                  alt={selectedTheme.name}
+                  alt={displayText(selectedTheme.name)}
                   className="w-full h-full object-cover"
                 />
               ) : (
@@ -631,7 +637,7 @@ const ThemePage = () => {
                 <Text size="2" weight="bold" color="gray" wrap="nowrap">
                   {t("theme.author")}
                 </Text>
-                <Text size="3">{selectedTheme?.author}</Text>
+                <Text size="3">{displayText(selectedTheme?.author)}</Text>
               </Flex>
               <Flex gap="2" justify="start" align="center">
                 <Text size="2" weight="bold" color="gray" wrap="nowrap">
@@ -643,7 +649,7 @@ const ThemePage = () => {
                 <Text size="2" weight="bold" color="gray" wrap="nowrap">
                   {t("common.description")}
                 </Text>
-                <Text size="3">{selectedTheme?.description}</Text>
+                <Text size="3">{displayText(selectedTheme?.description)}</Text>
               </Flex>
               {selectedTheme?.url && (
                 <Flex gap="2" justify="start" align="center">
@@ -719,7 +725,9 @@ const ThemePage = () => {
         <Dialog.Content maxWidth="400px">
           <Dialog.Title>{t("theme.confirm_delete")}</Dialog.Title>
           <Dialog.Description>
-            {t("theme.delete_warning", { themeName: themeToDelete?.name })}
+            {t("theme.delete_warning", {
+              themeName: displayText(themeToDelete?.name),
+            })}
           </Dialog.Description>
           <Flex gap="3" mt="4" justify="end">
             <Dialog.Close>
@@ -856,7 +864,7 @@ const ThemePage = () => {
                         {t("theme.name")}
                       </Text>
                       <Text size="3" weight="bold">
-                        {importPreview.theme.name}
+                        {displayText(importPreview.theme.name)}
                       </Text>
                     </Flex>
                     <Flex gap="2" align="center">
@@ -869,7 +877,9 @@ const ThemePage = () => {
                       <Text size="2" weight="bold" color="gray" wrap="nowrap">
                         {t("theme.author")}
                       </Text>
-                      <Text size="3">{importPreview.theme.author}</Text>
+                      <Text size="3">
+                        {displayText(importPreview.theme.author)}
+                      </Text>
                     </Flex>
                     {importPreview.theme.description && (
                       <Flex gap="2" align="center">
@@ -882,7 +892,7 @@ const ThemePage = () => {
                           {t("common.description")}
                         </Text>
                         <Text size="3">
-                          {importPreview.theme.description}
+                          {displayText(importPreview.theme.description)}
                         </Text>
                       </Flex>
                     )}

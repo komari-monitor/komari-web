@@ -373,6 +373,8 @@
     "search": "検索",
     "select": "選択",
     "select_all": "すべて選択",
+    "select_nodes": "ノードを選択",
+    "select_ping_tasks": "Ping タスクを選択",
     "select_clients": "クライアントを選択",
     "select_tasks": "タスクを選択",
     "selected": "{{count}}選択",

@@ -73,7 +73,7 @@ export default function PluginConfigPage() {
     [language],
   );
 
-  // 插件是否声明了可编辑配置项（忽略 title 分组项），无配置项的插件不显示在列表中。
+  // 插件是否声明了可展示配置项（忽略 title 分组项），无配置项的插件不显示在列表中。
   const hasConfiguration = (plugin: PluginInfo) =>
     Array.isArray(plugin?.configuration?.data) &&
     plugin!.configuration!.data!.some((item) => item.type !== "title");
@@ -113,9 +113,16 @@ export default function PluginConfigPage() {
         : [];
       const init: Record<string, any> = {};
       items.forEach((item) => {
-        if (item.type !== "title" && item.key) {
+        if (item.type !== "title" && item.type !== "textbox" && item.key) {
           const saved = result?.data?.[item.key];
-          init[item.key] = saved !== undefined ? saved : item.default;
+          const selection = item.type === "nodes" || item.type === "pingtasks";
+          init[item.key] =
+            saved !== undefined
+              ? selection
+                ? JSON.stringify(saved)
+                : saved
+              : item.default ??
+                (selection ? "[]" : undefined);
         }
       });
       setValues(init);
@@ -165,6 +172,9 @@ export default function PluginConfigPage() {
     ? configuration.data
     : [];
   const hasItems = items.some((item) => item.type !== "title");
+  const hasEditableItems = items.some(
+    (item) => item.type !== "title" && item.type !== "textbox",
+  );
 
   return (
     <Box className="km-page-admin-plugin-config h-full min-h-0 p-4">
@@ -181,7 +191,7 @@ export default function PluginConfigPage() {
                 <Blocks size={20} />
                 <Heading size="4">{t("plugin.config", "Configuration")}</Heading>
               </Flex>
-              {selected && !error && hasItems && (
+              {selected && !error && hasEditableItems && (
                 <Button onClick={saveAll} disabled={saving}>
                   {saving ? t("plugin.saving", "Saving...") : t("common.save")}
                 </Button>

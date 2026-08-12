@@ -373,6 +373,8 @@
     "search": "Cari",
     "select": "Pilih",
     "select_all": "Pilih semua",
+    "select_nodes": "Pilih node",
+    "select_ping_tasks": "Pilih tugas Ping",
     "select_clients": "Pilih klien",
     "select_tasks": "Pilih tugas",
     "selected": "{{count}} dipilih",

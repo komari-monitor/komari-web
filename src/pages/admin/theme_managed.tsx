@@ -15,7 +15,16 @@ import {
 interface ThemeFieldBase {
   name?: I18nText; // 显示名（字符串或多语言字典）
   help?: I18nText; // 帮助文本（字符串或多语言字典）
-  type: "title" | "switch" | "select" | "number" | "string" | "richtext";
+  type:
+    | "title"
+    | "textbox"
+    | "switch"
+    | "select"
+    | "number"
+    | "string"
+    | "richtext"
+    | "nodes"
+    | "pingtasks";
   key?: string; // 对应设置键（title 无需）
   default?: any; // 默认值
   options?: string; // 仅 select 支持，逗号分隔
@@ -76,11 +85,16 @@ const ThemeManaged: React.FC = () => {
         // 初始值：优先 publicInfo.theme_settings，其次 default
         const init: Record<string, any> = {};
         ds.forEach((f) => {
-          if (f.type !== "title" && f.key) {
+          if (f.type !== "title" && f.type !== "textbox" && f.key) {
+            const selection = f.type === "nodes" || f.type === "pingtasks";
+            const saved = themeSettings?.[f.key];
             init[f.key] =
-              themeSettings && themeSettings[f.key] !== undefined
-                ? themeSettings[f.key]
-                : f.default;
+              saved !== undefined
+                ? selection
+                  ? JSON.stringify(saved)
+                  : saved
+                : f.default ??
+                  (selection ? "[]" : undefined);
           }
         });
         setValues(init);
@@ -102,7 +116,7 @@ const ThemeManaged: React.FC = () => {
     // 全量：对所有字段（非 title）输出当前值
     const obj: Record<string, any> = {};
     fields.forEach((f) => {
-      if (f.type === "title" || !f.key) return;
+      if (f.type === "title" || f.type === "textbox" || !f.key) return;
       const current = values[f.key];
       // 直接使用当前值，undefined 时才用默认值
       if (current !== undefined) {
@@ -110,7 +124,8 @@ const ThemeManaged: React.FC = () => {
       } else if (f.default !== undefined) {
         obj[f.key] = f.default;
       } else {
-        obj[f.key] = "";
+        obj[f.key] =
+          f.type === "nodes" || f.type === "pingtasks" ? "[]" : "";
       }
     });
     return obj;
