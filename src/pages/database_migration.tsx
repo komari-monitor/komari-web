@@ -35,6 +35,10 @@ const API_BASE = "/api/admin/database-migration";
 const LEGACY_I18N = "settings.update_1_2_7";
 const STRUCTURE_I18N = "metric_store_restructure";
 const COMMON_I18N = "database_migration";
+const RECLAIM_START_PROGRESS = 80;
+const RECLAIM_PROGRESS_CAP = 99;
+const RECLAIM_STEP_MS = 30_000;
+const NORMAL_ROUTER_PROBE_MS = 1_000;
 
 type Mode = "legacy_monitoring" | "metric_store_restructure";
 type Driver = "sqlite" | "mysql" | "postgresql";
@@ -138,6 +142,18 @@ async function getMe(): Promise<Me> {
   return (await response.json()) as Me;
 }
 
+async function normalRouterAvailable(): Promise<boolean> {
+  try {
+    const response = await fetch("/ping", {
+      cache: "no-store",
+      redirect: "manual",
+    });
+    return response.status === 200;
+  } catch {
+    return false;
+  }
+}
+
 function formatBytes(value: number, locale: string): string {
   if (!Number.isFinite(value) || value <= 0) return "0 B";
   const units = ["B", "KB", "MB", "GB", "TB"];
@@ -169,6 +185,9 @@ export default function DatabaseMigration() {
   const [confirmSQLite, setConfirmSQLite] = useState(false);
   const [confirmLarge, setConfirmLarge] = useState(false);
   const [confirmDiscard, setConfirmDiscard] = useState(false);
+  const [probeActive, setProbeActive] = useState(false);
+  const [reclaimStartedAt, setReclaimStartedAt] = useState<number | null>(null);
+  const [reclaimNow, setReclaimNow] = useState(0);
 
   const refresh = useCallback(async () => {
     try {
@@ -215,12 +234,6 @@ export default function DatabaseMigration() {
     return () => window.clearInterval(timer);
   }, [refresh, status?.state]);
 
-  useEffect(() => {
-    if (status?.state !== "completed") return;
-    const timer = window.setTimeout(() => window.location.replace("/"), 4500);
-    return () => window.clearTimeout(timer);
-  }, [status?.state]);
-
   const mode = status?.mode || auth?.mode;
   const legacy = mode === "legacy_monitoring";
   const prefix = legacy ? LEGACY_I18N : STRUCTURE_I18N;
@@ -252,12 +265,84 @@ export default function DatabaseMigration() {
     (status.state === "ready" || status.state === "failed") &&
     !busy;
 
+  const simulatedProgress =
+    probeActive && reclaimStartedAt !== null
+      ? Math.min(
+          RECLAIM_PROGRESS_CAP,
+          RECLAIM_START_PROGRESS +
+            Math.floor(
+              Math.max(0, reclaimNow - reclaimStartedAt) / RECLAIM_STEP_MS,
+            ),
+        )
+      : !legacy && status?.state === "completed"
+        ? RECLAIM_PROGRESS_CAP
+        : null;
+  const displayedProgress = simulatedProgress ?? status?.progress ?? 0;
+  const upgradeWaiting =
+    !legacy &&
+    (probeActive ||
+      status?.state === "reclaiming" ||
+      status?.state === "completed");
+
+  useEffect(() => {
+    if (legacy) return;
+    if (status?.state === "failed") {
+      setProbeActive(false);
+      setReclaimStartedAt(null);
+      return;
+    }
+    const startsProbe =
+      status?.state === "reclaiming" || status?.state === "completed";
+    if (!startsProbe || probeActive) return;
+    setProbeActive(true);
+    setReclaimStartedAt(
+      status?.state === "completed"
+        ? Date.now() -
+            (RECLAIM_PROGRESS_CAP - RECLAIM_START_PROGRESS) * RECLAIM_STEP_MS
+        : Date.now(),
+    );
+    setReclaimNow(Date.now());
+  }, [legacy, status?.state, probeActive]);
+
+  useEffect(() => {
+    if (!probeActive) return;
+    const timer = window.setInterval(() => setReclaimNow(Date.now()), 1_000);
+    return () => window.clearInterval(timer);
+  }, [probeActive]);
+
+  useEffect(() => {
+    if (!probeActive) return;
+    let stopped = false;
+    const check = async () => {
+      if (stopped) return;
+      if (await normalRouterAvailable()) {
+        stopped = true;
+        window.location.replace("/");
+      }
+    };
+    void check();
+    const timer = window.setInterval(
+      () => void check(),
+      NORMAL_ROUTER_PROBE_MS,
+    );
+    return () => {
+      stopped = true;
+      window.clearInterval(timer);
+    };
+  }, [probeActive]);
+
+  useEffect(() => {
+    if (!legacy || status?.state !== "completed") return;
+    const timer = window.setTimeout(() => window.location.replace("/"), 4500);
+    return () => window.clearTimeout(timer);
+  }, [legacy, status?.state]);
+
   const phaseText = useMemo(() => {
     if (!status) return "";
     if (!legacy) {
       if (status.state === "discarding")
         return t(`${STRUCTURE_I18N}.phase_discarding`);
-      if (status.state === "reclaiming")
+      if (status.state === "reclaiming" || status.state === "completed")
         return t(`${STRUCTURE_I18N}.phase_reclaiming`);
       return t(`${STRUCTURE_I18N}.phase_copying`);
     }
@@ -414,18 +499,18 @@ export default function DatabaseMigration() {
               />
             )}
 
-          {auth?.logged_in && active && status && (
+          {auth?.logged_in && (active || upgradeWaiting) && status && (
             <Flex direction="column" gap="3">
               <Flex justify="between" align="baseline" gap="3" wrap="wrap">
                 <Text weight="bold">{phaseText}</Text>
                 <Text size="2" color="gray" className="tabular-nums">
                   {new Intl.NumberFormat(locale, {
                     maximumFractionDigits: 1,
-                  }).format(status.progress)}
+                  }).format(displayedProgress)}
                   %
                 </Text>
               </Flex>
-              <Progress value={status.progress} size="3" />
+              <Progress value={displayedProgress} size="3" />
               {(legacy ||
                 status.state === "copying" ||
                 status.state === "discarding") && (
@@ -450,7 +535,7 @@ export default function DatabaseMigration() {
             </Flex>
           )}
 
-          {auth?.logged_in && status?.state === "completed" && (
+          {auth?.logged_in && status?.state === "completed" && legacy && (
             <Completion status={status} locale={locale} legacy={legacy} />
           )}
 
