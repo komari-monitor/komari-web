@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Badge,
   Box,
@@ -19,6 +19,7 @@ import { toast } from "sonner";
 import Loading from "@/components/loading";
 import InlineSvgIcon from "@/components/InlineSvgIcon";
 import UploadDialog from "@/components/UploadDialog";
+import { createChunkUploadTask, type ChunkUploadTask } from "@/lib/chunkUpload";
 import { useAdminNavigation } from "@/contexts/AdminNavigationContext";
 import { useRPC2Call } from "@/contexts/RPC2Context";
 import { resolveI18nText, type I18nText } from "@/utils/i18nText";
@@ -67,7 +68,7 @@ export default function PluginsPage() {
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
-  const [uploadXhr, setUploadXhr] = useState<XMLHttpRequest | null>(null);
+  const uploadTaskRef = useRef<ChunkUploadTask | null>(null);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [toggling, setToggling] = useState<string | null>(null);
   const [pendingApproval, setPendingApproval] = useState<PluginInfo | null>(null);
@@ -90,75 +91,34 @@ export default function PluginsPage() {
     loadList().finally(() => setLoading(false));
   }, [loadList]);
 
-  const uploadPlugin = (file: File) => {
+  const uploadPlugin = async (file: File) => {
     if (!file.name.endsWith(".zip")) {
       toast.error(t("plugin.invalid_file_type", "Invalid file type, only .zip files are supported"));
       return;
     }
     setUploading(true);
     setUploadProgress(0);
-    const xhr = new XMLHttpRequest();
-    setUploadXhr(xhr);
-
-    xhr.upload.addEventListener("progress", (event) => {
-      if (event.lengthComputable) {
-        setUploadProgress(Math.round((event.loaded / event.total) * 100));
-      }
-    });
-
-    xhr.addEventListener("load", async () => {
-      if (xhr.status === 413) {
-        toast.error(t("plugin.upload_413_content_too_large", "File upload failed (413). Please check and increase the file size limit in your reverse proxy server (such as Nginx/CDN) configuration (client_max_body_size) to ensure that this value is greater than your target file size."));
-        setUploading(false);
-        setUploadProgress(0);
-        setUploadXhr(null);
-        return;
-      }
-      if (xhr.status >= 200 && xhr.status < 300) {
-        try {
-          const payload = JSON.parse(xhr.responseText) as { status?: string; message?: string } | null;
-          if (!payload || payload.status === "error") {
-            throw new Error(payload?.message || "Upload failed");
-          }
-          toast.success(payload.message || t("plugin.uploaded", "Plugin uploaded"));
-          setUploadDialogOpen(false);
-          setUploadProgress(0);
-          await loadList();
-        } catch (error) {
-          toast.error(t("plugin.upload_failed", "Plugin upload failed") + ": " + (error instanceof Error ? error.message : String(error)));
-        }
-      } else {
-        try {
-          const errorData = JSON.parse(xhr.responseText);
-          throw new Error(errorData.message || "Upload failed");
-        } catch (error) {
-          toast.error(t("plugin.upload_failed", "Plugin upload failed") + ": " + (error instanceof Error ? error.message : "Unknown error"));
-        }
-      }
-      setUploading(false);
-      setUploadXhr(null);
-    });
-
-    xhr.addEventListener("error", () => {
-      toast.error(t("plugin.upload_failed", "Plugin upload failed") + ": Network error");
-      setUploading(false);
+    const task = createChunkUploadTask("/api/admin/upload");
+    uploadTaskRef.current = task;
+    try {
+      await task.upload("plugin", file, setUploadProgress);
+      toast.success(t("plugin.uploaded", "Plugin uploaded"));
+      setUploadDialogOpen(false);
       setUploadProgress(0);
-      setUploadXhr(null);
-    });
-
-    xhr.addEventListener("abort", () => {
-      toast.error(t("plugin.upload_failed", "Plugin upload failed") + ": Upload cancelled");
+      await loadList();
+    } catch (error) {
+      if (!(error instanceof DOMException && error.name === "AbortError")) {
+        toast.error(t("plugin.upload_failed", "Plugin upload failed") + ": " + (error instanceof Error ? error.message : String(error)));
+      }
+    } finally {
       setUploading(false);
-      setUploadProgress(0);
-      setUploadXhr(null);
-    });
-
-    xhr.open("POST", "/api/admin/plugin/install");
-    xhr.send(file);
+      uploadTaskRef.current = null;
+    }
   };
 
   const cancelUpload = () => {
-    if (uploadXhr) uploadXhr.abort();
+    uploadTaskRef.current?.cancel();
+    setUploadProgress(0);
   };
 
   const toggle = async (plugin: PluginInfo, enabled: boolean) => {

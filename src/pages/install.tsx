@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import {
   Button,
@@ -23,6 +23,7 @@ import {
 import { useTranslation } from "react-i18next";
 import GuideHeader from "@/components/GuideHeader";
 import UploadDialog from "@/components/UploadDialog";
+import { createChunkUploadTask, type ChunkUploadTask } from "@/lib/chunkUpload";
 import { isSQLiteDSN } from "@/utils/metric";
 
 type APIResponse<T> = {
@@ -61,7 +62,7 @@ export default function Install() {
   const [restoreOpen, setRestoreOpen] = useState(false);
   const [restoring, setRestoring] = useState(false);
   const [restoreProgress, setRestoreProgress] = useState(0);
-  const [restoreXhr, setRestoreXhr] = useState<XMLHttpRequest | null>(null);
+  const restoreTaskRef = useRef<ChunkUploadTask | null>(null);
   const [error, setError] = useState("");
   const [ready, setReady] = useState<boolean | null>(null);
 
@@ -117,7 +118,7 @@ export default function Install() {
     }
   };
 
-  const restoreBackup = (file: File) => {
+  const restoreBackup = async (file: File) => {
     if (!file.name.toLowerCase().endsWith(".zip")) {
       setError(t("install.restore_file_type"));
       return;
@@ -126,66 +127,31 @@ export default function Install() {
     setError("");
     setRestoring(true);
     setRestoreProgress(0);
-    const formData = new FormData();
-    formData.append("backup", file);
-    const xhr = new XMLHttpRequest();
-    setRestoreXhr(xhr);
-
-    xhr.upload.addEventListener("progress", (event) => {
-      if (event.lengthComputable) {
-        setRestoreProgress(Math.round((event.loaded / event.total) * 100));
-      }
-    });
-    xhr.addEventListener("load", () => {
-      if (xhr.status === 413) {
-        setError(t("install.restore_413"));
-        setRestoring(false);
-        setRestoreProgress(0);
-        setRestoreXhr(null);
-        return;
-      }
-      try {
-        const payload: Partial<APIResponse<unknown>> = xhr.responseText
-          ? (JSON.parse(xhr.responseText) as APIResponse<unknown>)
-          : {};
-        if (
-          xhr.status < 200 ||
-          xhr.status >= 300 ||
-          payload.status !== "success"
-        ) {
-          throw new Error(payload.message || `HTTP ${xhr.status}`);
-        }
-        // The server restarts after a successful upload, so retain the progress state.
-        setRestoreXhr(null);
-        window.setTimeout(() => window.location.assign("/"), 5000);
-      } catch (reason) {
+    const task = createChunkUploadTask("/api/install/upload");
+    restoreTaskRef.current = task;
+    let restored = false;
+    try {
+      await task.upload("backup", file, setRestoreProgress);
+      restored = true;
+      window.setTimeout(() => window.location.assign("/"), 5000);
+    } catch (reason) {
+      if (!(reason instanceof DOMException && reason.name === "AbortError")) {
         setError(
           reason instanceof Error
             ? reason.message
             : t("install.restore_failed"),
         );
-        setRestoring(false);
-        setRestoreProgress(0);
-        setRestoreXhr(null);
       }
-    });
-    xhr.addEventListener("error", () => {
-      setError(t("install.restore_failed"));
-      setRestoring(false);
       setRestoreProgress(0);
-      setRestoreXhr(null);
-    });
-    xhr.addEventListener("abort", () => {
-      setRestoring(false);
-      setRestoreProgress(0);
-      setRestoreXhr(null);
-    });
-    xhr.open("POST", "/api/install/restore");
-    xhr.send(formData);
+    } finally {
+      restoreTaskRef.current = null;
+      if (!restored) setRestoring(false);
+    }
   };
 
   const cancelRestore = () => {
-    restoreXhr?.abort();
+    restoreTaskRef.current?.cancel();
+    setRestoreProgress(0);
   };
 
   if (ready === false)
