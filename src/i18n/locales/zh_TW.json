@@ -643,6 +643,7 @@
     "title": "通知",
     "traffic_report": {
       "daily": "日報",
+      "deprecation_notice": "Komari 內建的流量報告將在 1.5.0 版本移除，請儘快遷移至「流量定期報告」外掛。",
       "errors": {
         "fetch_failed": "取得流量定時報告設定失敗",
         "save_failed": "儲存流量定時報告設定失敗",
@@ -654,6 +655,7 @@
       "report_type": "定時型別",
       "separator": "、",
       "title": "流量定時報告",
+      "visit_plugin_market": "造訪外掛市集",
       "weekly": "週報"
     }
   },
@@ -707,6 +709,7 @@
     "market_refresh_success": "外掛來源已重新整理",
     "market_reinstall": "重新安裝",
     "market_search": "搜尋外掛...",
+    "market_update_required": "需要更新 Komari",
     "market_uninstall_success": "外掛已卸載",
     "market_warning": "外掛市集中的第三方外掛未經官方審查，可能包含有害程式碼，請仔細甄別後再安裝。",
     "no_logs": "暫無日誌",

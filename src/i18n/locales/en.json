@@ -643,6 +643,7 @@
     "title": "Notification",
     "traffic_report": {
       "daily": "Daily",
+      "deprecation_notice": "Komari's built-in traffic reports will be removed in version 1.5.0. Please migrate to the Scheduled Traffic Reports plugin as soon as possible.",
       "errors": {
         "fetch_failed": "Failed to fetch traffic report notifications",
         "save_failed": "Failed to save traffic report settings",
@@ -654,6 +655,7 @@
       "report_type": "Report Type",
       "separator": ", ",
       "title": "Traffic Report",
+      "visit_plugin_market": "Visit Plugin Market",
       "weekly": "Weekly"
     }
   },
@@ -707,6 +709,7 @@
     "market_refresh_success": "Plugin sources refreshed",
     "market_reinstall": "Reinstall",
     "market_search": "Search plugins...",
+    "market_update_required": "Komari update required",
     "market_uninstall_success": "Plugin uninstalled",
     "market_warning": "Third-party plugins in the market are not vetted by the project and may contain harmful code. Please review carefully before installing.",
     "no_logs": "No logs",

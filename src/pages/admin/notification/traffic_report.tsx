@@ -17,11 +17,12 @@ import {
   type TrafficReportNotification,
 } from "@/contexts/TrafficReportContext";
 import React from "react";
-import { Pencil, Search } from "lucide-react";
+import { AlertTriangle, Pencil, Search } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import {
   Badge,
   Button,
+  Callout,
   Dialog,
   Flex,
   IconButton,
@@ -246,6 +247,18 @@ const InnerLayout = () => {
 
   return (
     <div className="km-page-admin-notification-traffic-report flex flex-col gap-4 md:p-4 p-1">
+      <Callout.Root color="amber" size="1">
+        <Callout.Icon>
+          <AlertTriangle size={16} />
+        </Callout.Icon>
+        <Callout.Text>
+          {t("notification.traffic_report.deprecation_notice")}{" "}
+          <a href="/admin/market/plugins" className="text-accent-9 underline">
+            {t("notification.traffic_report.visit_plugin_market")}
+          </a>
+        </Callout.Text>
+      </Callout.Root>
+
       <Flex justify="between" align="center" wrap="wrap">
         <label className="text-2xl font-semibold">
           {t("notification.traffic_report.full_title")}

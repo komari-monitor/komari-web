@@ -643,6 +643,7 @@
     "title": "通知",
     "traffic_report": {
       "daily": "日次レポート",
+      "deprecation_notice": "Komari 内蔵のトラフィックレポートは 1.5.0 で削除される予定です。できるだけ早く「定期トラフィックレポート」プラグインへ移行してください。",
       "errors": {
         "fetch_failed": "トラフィックレポート設定の取得に失敗しました",
         "save_failed": "トラフィックレポート設定の保存に失敗しました",
@@ -654,6 +655,7 @@
       "report_type": "レポートタイプ",
       "separator": "、",
       "title": "トラフィックレポート",
+      "visit_plugin_market": "プラグインマーケットへ移動",
       "weekly": "週次レポート"
     }
   },
@@ -707,6 +709,7 @@
     "market_refresh_success": "プラグインソースを更新しました",
     "market_reinstall": "再インストール",
     "market_search": "プラグインを検索...",
+    "market_update_required": "Komari の更新が必要です",
     "market_uninstall_success": "プラグインをアンインストールしました",
     "market_warning": "マーケットのサードパーティ製プラグインは公式の審査を受けていません。有害なコードが含まれている可能性があるため、インストール前に十分に確認してください。",
     "no_logs": "ログはありません",

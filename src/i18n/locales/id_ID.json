@@ -643,6 +643,7 @@
     "title": "Notifikasi",
     "traffic_report": {
       "daily": "Harian",
+      "deprecation_notice": "Laporan trafik bawaan Komari akan dihapus pada versi 1.5.0. Segera migrasikan ke plugin Scheduled Traffic Reports.",
       "errors": {
         "fetch_failed": "Gagal memuat pengaturan laporan trafik",
         "save_failed": "Gagal menyimpan pengaturan laporan trafik",
@@ -654,6 +655,7 @@
       "report_type": "Tipe Laporan",
       "separator": ", ",
       "title": "Laporan Trafik",
+      "visit_plugin_market": "Kunjungi Pasar Plugin",
       "weekly": "Mingguan"
     }
   },
@@ -707,6 +709,7 @@
     "market_refresh_success": "Sumber plugin disegarkan",
     "market_reinstall": "Pasang Ulang",
     "market_search": "Cari plugin...",
+    "market_update_required": "Komari perlu diperbarui",
     "market_uninstall_success": "Plugin dihapus",
     "market_warning": "Plugin pihak ketiga di pasar tidak diverifikasi oleh proyek ini dan mungkin berisi kode berbahaya. Harap periksa dengan cermat sebelum memasang.",
     "no_logs": "Tidak ada log",

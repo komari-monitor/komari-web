@@ -96,6 +96,58 @@ function isVersionNewer(candidate: string, installed: string) {
   return false;
 }
 
+function isKomariCompatible(constraint: string | undefined, current: string) {
+  const parse = (value: string): [number, number, number] | null => {
+    const parts = value.trim().replace(/^v/, "").split(".");
+    if (
+      parts.length > 3 ||
+      parts.some((part) => part === "" || !/^\d+$/.test(part))
+    ) {
+      return null;
+    }
+    return [0, 1, 2].map((index) => Number(parts[index] || 0)) as [
+      number,
+      number,
+      number,
+    ];
+  };
+  const currentVersion = parse(current);
+  const requirement = (constraint || "").trim();
+  if (!requirement || !currentVersion) return true;
+
+  let operator = "";
+  let version = requirement;
+  for (const candidate of [">=", "<=", ">", "<", "="]) {
+    if (version.startsWith(candidate)) {
+      operator = candidate;
+      version = version.slice(candidate.length).trim();
+      break;
+    }
+  }
+  const requiredVersion = parse(version);
+  if (!requiredVersion) return false;
+
+  let comparison = 0;
+  for (let index = 0; index < 3; index += 1) {
+    if (currentVersion[index] !== requiredVersion[index]) {
+      comparison = currentVersion[index] > requiredVersion[index] ? 1 : -1;
+      break;
+    }
+  }
+  switch (operator) {
+    case ">=":
+      return comparison >= 0;
+    case ">":
+      return comparison > 0;
+    case "<=":
+      return comparison <= 0;
+    case "<":
+      return comparison < 0;
+    default:
+      return comparison === 0;
+  }
+}
+
 // 插件是否声明了可编辑配置项（忽略 title 分组项）。
 const hasConfiguration = (plugin: PluginInfo | undefined) =>
   Array.isArray(plugin?.configuration?.data) &&
@@ -124,6 +176,7 @@ export default function PluginMarketPage() {
   );
 
   const [plugins, setPlugins] = useState<MarketPlugin[]>([]);
+  const [currentVersion, setCurrentVersion] = useState("");
   const [sourceStatuses, setSourceStatuses] = useState<SourceStatus[]>([]);
   const [sources, setSources] = useState<MarketSource[]>([]);
   const [installed, setInstalled] = useState<Map<string, string>>(new Map());
@@ -155,14 +208,16 @@ export default function PluginMarketPage() {
   const loadCatalog = useCallback(
     async (force = false) => {
       const suffix = force ? "?refresh=true" : "";
-      const [catalogPayload, installedResult] = await Promise.all([
+      const [catalogPayload, installedResult, versionInfo] = await Promise.all([
         request<{ plugins: MarketPlugin[]; sources: SourceStatus[] }>(
           `/api/admin/plugin/market/catalog${suffix}`,
         ),
         call<any, PluginInfo[]>("admin:listPlugins").catch(() => []),
+        call<any, { version: string }>("common:getVersion"),
       ]);
       setPlugins(catalogPayload.data?.plugins || []);
       setSourceStatuses(catalogPayload.data?.sources || []);
+      setCurrentVersion(versionInfo.version);
       const list = Array.isArray(installedResult) ? installedResult : [];
       setInstalled(
         new Map(list.map((plugin) => [plugin.short, plugin.version])),
@@ -402,6 +457,10 @@ export default function PluginMarketPage() {
               installedVersion &&
               isVersionNewer(plugin.version, installedVersion),
             );
+            const komariCompatible = isKomariCompatible(
+              plugin.komari,
+              currentVersion,
+            );
             const canConfigure =
               isInstalled && hasConfiguration(installedInfo.get(plugin.short));
             const key = `${plugin.source_id}:${plugin.short}`;
@@ -423,12 +482,17 @@ export default function PluginMarketPage() {
                             : t("market.installed", "Installed")}
                         </Badge>
                       )}
-                      {!isInstalled && !plugin.installable && (
+                      {!isInstalled && (!plugin.installable || !komariCompatible) && (
                         <Badge color="gray" variant="soft">
-                          {t(
-                            "market.install_unavailable",
-                            "Package unavailable",
-                          )}
+                          {komariCompatible
+                            ? t(
+                                "market.install_unavailable",
+                                "Package unavailable",
+                              )
+                            : t(
+                                "plugin.market_update_required",
+                                "Komari update required",
+                              )}
                         </Badge>
                       )}
                     </Box>
@@ -445,7 +509,7 @@ export default function PluginMarketPage() {
                       {plugin.source_name}
                     </Text>
                     <Flex gap="1" wrap="wrap" justify="end">
-                      {!isInstalled && plugin.installable && (
+                      {!isInstalled && plugin.installable && komariCompatible && (
                         <Button
                           size="1"
                           disabled={installing === key}
@@ -457,7 +521,7 @@ export default function PluginMarketPage() {
                             : t("plugin.market_install", "Install")}
                         </Button>
                       )}
-                      {isInstalled && plugin.installable && (
+                      {isInstalled && plugin.installable && komariCompatible && (
                         <Button
                           size="1"
                           disabled={installing === key}
