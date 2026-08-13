@@ -86,9 +86,12 @@ export default function PluginConfigPage() {
   const loadList = useCallback(async () => {
     try {
       const result = await call<any, PluginInfo[]>("admin:listPlugins");
-      setPlugins(Array.isArray(result) ? result : []);
+      const nextPlugins = Array.isArray(result) ? result : [];
+      setPlugins(nextPlugins);
+      return nextPlugins;
     } catch (e) {
       toast.error(e instanceof Error ? e.message : String(e));
+      return null;
     }
   }, [call]);
 
@@ -154,13 +157,33 @@ export default function PluginConfigPage() {
         short: selected.short,
         data: values,
       });
-      toast.success(t("plugin.config_saved", "Configuration saved"));
+      toast.success(
+        selected.enabled
+          ? t(
+              "plugin.config_saved_and_reloaded",
+              "Configuration saved and plugin reloaded",
+            )
+          : t("plugin.config_saved", "Configuration saved"),
+      );
     } catch (e) {
+      const errorMessage = e instanceof Error ? e.message : String(e);
+      const reloadFailed =
+        selected.enabled && errorMessage.includes("plugin configuration saved but reload failed");
       toast.error(
-        `${t("plugin.config_save_failed", "Failed to save configuration")}: ${
-          e instanceof Error ? e.message : String(e)
+        `${reloadFailed
+          ? t(
+              "plugin.config_saved_reload_failed",
+              "Configuration saved, but plugin reload failed",
+            )
+          : t("plugin.config_save_failed", "Failed to save configuration")}: ${
+          errorMessage
         }`,
       );
+      if (reloadFailed) {
+        const nextPlugins = await loadList();
+        const nextSelected = nextPlugins?.find((plugin) => plugin.short === selected.short);
+        if (nextSelected) setSelected(nextSelected);
+      }
     } finally {
       setSaving(false);
     }
@@ -193,7 +216,13 @@ export default function PluginConfigPage() {
               </Flex>
               {selected && !error && hasEditableItems && (
                 <Button onClick={saveAll} disabled={saving}>
-                  {saving ? t("plugin.saving", "Saving...") : t("common.save")}
+                  {saving
+                    ? selected.enabled
+                      ? t("plugin.saving_and_reloading", "Saving and reloading...")
+                      : t("plugin.saving", "Saving...")
+                    : selected.enabled
+                      ? t("plugin.save_and_reload", "Save and reload")
+                      : t("common.save")}
                 </Button>
               )}
             </Flex>
