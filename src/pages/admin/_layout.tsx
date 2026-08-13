@@ -11,21 +11,18 @@ import { normalizeLanguage, readStoredLanguage } from "@/utils/language";
 import { useTranslation } from "react-i18next";
 const AdminLayout = () => {
   const { t, i18n } = useTranslation();
-  const { settings, loading } = useSettings();
+  const { settings, loading, error, setSettings } = useSettings();
   const lang = readStoredLanguage() || "en";
   const [open, setOpen] = useState(false);
   useEffect(() => {
-    if (loading) {
+    if (loading || error || !settings || settings.eula_accepted !== false) {
       setOpen(false);
+      return;
     }
-    else if (
-      settings &&
-      !settings.eula_accepted &&
-      normalizeLanguage(lang).startsWith("zh")
-    ) {
+    if (normalizeLanguage(lang).startsWith("zh")) {
       setOpen(true);
     }
-  }, [loading, settings, lang]);
+  }, [loading, error, settings, lang]);
   return (
     <>
       <Dialog.Root open={open}>
@@ -46,12 +43,20 @@ const AdminLayout = () => {
                 </Button>
                 <Button
                   variant="solid"
-                  onClick={() => {
-                    setOpen(false);
-                    updateSettingsWithToast(
-                      { eula_accepted: true },
-                      (key) => key
-                    );
+                  onClick={async () => {
+                    try {
+                      await updateSettingsWithToast(
+                        { eula_accepted: true },
+                        (key) => key
+                      );
+                      setSettings((prev) => ({
+                        ...prev,
+                        eula_accepted: true,
+                      }));
+                      setOpen(false);
+                    } catch {
+                      setOpen(true);
+                    }
                   }}
                 >
                   {t("eula.accept")}

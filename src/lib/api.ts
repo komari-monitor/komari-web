@@ -266,6 +266,7 @@ export function useSettings() {
     settings,
     loading,
     error,
+    setSettings,
     updateSetting,
     updateMultipleSettings,
     refetch: async () => {
