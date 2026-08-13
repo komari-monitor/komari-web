@@ -18,6 +18,7 @@
     "disable_2fa_confirmation": "本当に2FAを無効にしますか？",
     "enable_2fa": "二要素認証を有効にする",
     "greeting": "{{username}}さん、今日は何をしますか？",
+    "menu": "アカウント",
     "new_password": "新しいパスワード",
     "new_password_repeat": "新しいパスワードを再入力",
     "otp_empty_error": "空の確認コード",
@@ -627,6 +628,12 @@
     "empty": "サーバーデータはありません"
   },
   "notification": {
+    "channels": {
+      "title": "通知チャンネル"
+    },
+    "general": {
+      "title": "一般イベント"
+    },
     "load": {
       "title": "負荷通知"
     },
@@ -658,6 +665,9 @@
       "visit_plugin_market": "プラグインマーケットへ移動",
       "weekly": "週次レポート"
     }
+  },
+  "operations": {
+    "title": "運用"
   },
   "page_not_found": "残念ながら、ページは小鞠に食べられてしまいました。",
   "ping": {
@@ -1327,6 +1337,9 @@
     }
   },
   "status_settings": "ステータス表示設定",
+  "system": {
+    "title": "システム"
+  },
   "terminal": {
     "disconnect": "接続が切断されました",
     "no_active_connection": "アクティブな接続はありません",

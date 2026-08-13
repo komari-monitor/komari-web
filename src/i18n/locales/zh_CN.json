@@ -18,6 +18,7 @@
     "disable_2fa_confirmation": "您确定禁用2FA吗？",
     "enable_2fa": "开启双重身份验证",
     "greeting": "{{username}}，您今天想做什么？",
+    "menu": "账户",
     "new_password": "新密码",
     "new_password_repeat": "重复新密码",
     "otp_empty_error": "空验证码",
@@ -627,6 +628,12 @@
     "empty": "暂无服务器数据"
   },
   "notification": {
+    "channels": {
+      "title": "通知渠道"
+    },
+    "general": {
+      "title": "通用事件"
+    },
     "load": {
       "title": "负载通知"
     },
@@ -658,6 +665,9 @@
       "visit_plugin_market": "访问插件市场",
       "weekly": "周报"
     }
+  },
+  "operations": {
+    "title": "运维"
   },
   "page_not_found": "真不巧，网页被小鞠吃掉了。",
   "ping": {
@@ -1327,6 +1337,9 @@
     }
   },
   "status_settings": "状态显示设置",
+  "system": {
+    "title": "系统"
+  },
   "terminal": {
     "disconnect": "连接已断开",
     "no_active_connection": "没有活动连接",

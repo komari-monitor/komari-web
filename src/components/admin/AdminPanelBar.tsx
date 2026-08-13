@@ -302,24 +302,33 @@ const AdminPanelBar = ({ content }: AdminPanelBarProps) => {
     return () => window.removeEventListener("resize", handleResize);
   }, [isMobile]);
 
-  // 插件注入页面作为“插件”主菜单的二级菜单；主题配置菜单保持顶级扩展项。
+  // 主题配置和插件注入页面分别作为“主题”“插件”主菜单的二级菜单。
   const mergedBaseMenuItems: ExtendedMenuItem[] = useMemo(() => {
-    if (pluginMenuItems.length === 0) return baseMenuItems;
-    return baseMenuItems.map((item) =>
-      item.labelKey === "plugin.title"
-        ? { ...item, children: [...(item.children || []), ...pluginMenuItems] }
-        : item,
-    );
-  }, [pluginMenuItems]);
+    return baseMenuItems.map((item) => {
+      if (item.labelKey === "theme.menu" && extraMenuItems.length > 0) {
+        return {
+          ...item,
+          children: [...(item.children || []), ...extraMenuItems],
+        };
+      }
+      if (item.labelKey === "plugin.title" && pluginMenuItems.length > 0) {
+        return {
+          ...item,
+          children: [...(item.children || []), ...pluginMenuItems],
+        };
+      }
+      return item;
+    });
+  }, [extraMenuItems, pluginMenuItems]);
+  const bottomStartPath = mergedBaseMenuItems.find(
+    (item) => item.bottom,
+  )?.path;
 
   // 根据路径自动展开子菜单（包含动态扩展项；plugin-page 用 query 定位文件，
   // 因此子菜单匹配基于 pathname 部分）
   useEffect(() => {
     const newState: { [key: string]: boolean } = {};
-    const combined: ExtendedMenuItem[] = [
-      ...mergedBaseMenuItems,
-      ...extraMenuItems,
-    ];
+    const combined: ExtendedMenuItem[] = mergedBaseMenuItems;
     combined.forEach((item) => {
       if (item.children) {
         newState[item.path] = item.children.some((child: MenuItem) => {
@@ -562,7 +571,7 @@ const AdminPanelBar = ({ content }: AdminPanelBarProps) => {
                 className="h-full md:mt-0 mt-6"
                 style={{ width: "100%" }}
               >
-                {[...mergedBaseMenuItems, ...extraMenuItems].map(
+                {mergedBaseMenuItems.map(
                   (item: ExtendedMenuItem) => {
                     // 支持 icon 为 URL/相对路径
                     const isOpen = openSubMenus[item.path];
@@ -715,20 +724,30 @@ const AdminPanelBar = ({ content }: AdminPanelBarProps) => {
                         </div>
                       );
                     }
+                    const isBottomStart =
+                      item.bottom && item.path === bottomStartPath;
                     return (
-                      <SidebarItem
+                      <div
                         key={item.path}
-                        to={item.path}
-                        icon={renderIcon(
-                          item.icon,
-                          item.labelKey,
-                          "flex w-4 h-5 items-center justify-center",
-                        )}
-                        children={item.rawLabel || t(item.labelKey)}
-                        onClick={() => isMobile && setSidebarOpen(false)}
-                        newTab={item.newTab}
-                        reloadDocument={item.reloadDocument}
-                      />
+                        style={
+                          isBottomStart
+                            ? { marginTop: "auto" }
+                            : undefined
+                        }
+                      >
+                        <SidebarItem
+                          to={item.path}
+                          icon={renderIcon(
+                            item.icon,
+                            item.labelKey,
+                            "flex w-4 h-5 items-center justify-center",
+                          )}
+                          children={item.rawLabel || t(item.labelKey)}
+                          onClick={() => isMobile && setSidebarOpen(false)}
+                          newTab={item.newTab}
+                          reloadDocument={item.reloadDocument}
+                        />
+                      </div>
                     );
                   },
                 )}

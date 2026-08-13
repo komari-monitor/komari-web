@@ -4,4 +4,5 @@ export interface MenuItem {
   icon: string;
   children?: MenuItem[];
   newTab?: boolean;
+  bottom?: boolean;
 }

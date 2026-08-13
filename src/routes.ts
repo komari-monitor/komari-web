@@ -68,6 +68,27 @@ export const routes: RouteObject[] = [
         ),
       },
       {
+        path: "themes",
+        element: React.createElement(
+          lazy(() => import("./pages/admin/settings/_layout"))
+        ),
+        children: [
+          {
+            index: true,
+            element: React.createElement(
+              lazy(() => import("./pages/admin/themes"))
+            ),
+          },
+        ],
+      },
+      {
+        path: "theme",
+        element: React.createElement(Navigate, {
+          to: "/admin/themes",
+          replace: true,
+        }),
+      },
+      {
         path: "plugins",
         element: React.createElement(
           lazy(() => import("./pages/admin/plugins"))
@@ -116,6 +137,13 @@ export const routes: RouteObject[] = [
         ),
         children: [
           {
+            index: true,
+            element: React.createElement(Navigate, {
+              to: "/admin/settings/site",
+              replace: true,
+            }),
+          },
+          {
             path: "site",
             element: React.createElement(
               lazy(() => import("./pages/admin/settings/site"))
@@ -123,9 +151,10 @@ export const routes: RouteObject[] = [
           },
           {
             path: "theme",
-            element: React.createElement(
-              lazy(() => import("./pages/admin/settings/theme"))
-            ),
+            element: React.createElement(Navigate, {
+              to: "/admin/themes",
+              replace: true,
+            }),
           },
           {
             path: "custom",
@@ -141,9 +170,10 @@ export const routes: RouteObject[] = [
           },
           {
             path: "notification",
-            element: React.createElement(
-              lazy(() => import("./pages/admin/settings/notification"))
-            ),
+            element: React.createElement(Navigate, {
+              to: "/admin/notification/channels",
+              replace: true,
+            }),
           },
           {
             path: "general",
@@ -168,6 +198,27 @@ export const routes: RouteObject[] = [
       {
         path: "notification",
         children: [
+          {
+            index: true,
+            element: React.createElement(Navigate, {
+              to: "/admin/notification/channels",
+              replace: true,
+            }),
+          },
+          {
+            path: "channels",
+            element: React.createElement(
+              lazy(() => import("./pages/admin/settings/_layout"))
+            ),
+            children: [
+              {
+                index: true,
+                element: React.createElement(
+                  lazy(() => import("./pages/admin/notification/channels"))
+                ),
+              },
+            ],
+          },
           {
             path: "offline",
             element: React.createElement(

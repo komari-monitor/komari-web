@@ -18,6 +18,7 @@
     "disable_2fa_confirmation": "您確定禁用2FA嗎？",
     "enable_2fa": "開啟雙重身份驗證",
     "greeting": "{{username}}，您今天想做什麼？",
+    "menu": "帳戶",
     "new_password": "新密碼",
     "new_password_repeat": "重複新密碼",
     "otp_empty_error": "空驗證碼",
@@ -627,6 +628,12 @@
     "empty": "暫無伺服器資料"
   },
   "notification": {
+    "channels": {
+      "title": "通知頻道"
+    },
+    "general": {
+      "title": "通用事件"
+    },
     "load": {
       "title": "負載通知"
     },
@@ -658,6 +665,9 @@
       "visit_plugin_market": "造訪外掛市集",
       "weekly": "週報"
     }
+  },
+  "operations": {
+    "title": "維運"
   },
   "page_not_found": "真不巧，網頁被小鞠吃掉了。",
   "ping": {
@@ -1327,6 +1337,9 @@
     }
   },
   "status_settings": "狀態顯示設定",
+  "system": {
+    "title": "系統"
+  },
   "terminal": {
     "disconnect": "連線已斷開",
     "no_active_connection": "沒有活動連線",

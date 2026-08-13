@@ -18,6 +18,7 @@
     "disable_2fa_confirmation": "Apakah Anda yakin ingin menonaktifkan 2FA?",
     "enable_2fa": "Aktifkan 2FA",
     "greeting": "Halo, {{username}}! Mau melakukan apa hari ini?",
+    "menu": "Akun",
     "new_password": "Kata sandi baru",
     "new_password_repeat": "Ulangi kata sandi",
     "otp_empty_error": "Kode OTP tidak boleh kosong",
@@ -627,6 +628,12 @@
     "empty": "Tidak ada data server"
   },
   "notification": {
+    "channels": {
+      "title": "Saluran Notifikasi"
+    },
+    "general": {
+      "title": "Peristiwa Umum"
+    },
     "load": {
       "title": "Beban"
     },
@@ -658,6 +665,9 @@
       "visit_plugin_market": "Kunjungi Pasar Plugin",
       "weekly": "Mingguan"
     }
+  },
+  "operations": {
+    "title": "Operasional"
   },
   "page_not_found": "Server tidak dapat menemukan halaman yang Anda minta.",
   "ping": {
@@ -1327,6 +1337,9 @@
     }
   },
   "status_settings": "Pengaturan Status",
+  "system": {
+    "title": "Sistem"
+  },
   "terminal": {
     "disconnect": "Terputus",
     "no_active_connection": "Tidak ada koneksi aktif",

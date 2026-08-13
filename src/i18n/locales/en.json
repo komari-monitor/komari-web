@@ -18,6 +18,7 @@
     "disable_2fa_confirmation": "Are you sure to disable 2fa?",
     "enable_2fa": "Enable 2FA",
     "greeting": "Hello~ {{username}}, What do you want to do today?",
+    "menu": "Account",
     "new_password": "New password",
     "new_password_repeat": "Repeat Password",
     "otp_empty_error": "Empty otp code",
@@ -627,6 +628,12 @@
     "empty": "No server data available"
   },
   "notification": {
+    "channels": {
+      "title": "Notification Channels"
+    },
+    "general": {
+      "title": "General Events"
+    },
     "load": {
       "title": "Load"
     },
@@ -658,6 +665,9 @@
       "visit_plugin_market": "Visit Plugin Market",
       "weekly": "Weekly"
     }
+  },
+  "operations": {
+    "title": "Operations"
   },
   "page_not_found": "The server cannot find the specific page you're trying to access.",
   "ping": {
@@ -1327,6 +1337,9 @@
     }
   },
   "status_settings": "Status Settings",
+  "system": {
+    "title": "System"
+  },
   "terminal": {
     "disconnect": "Disconnected",
     "no_active_connection": "No active connection",
