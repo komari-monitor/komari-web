@@ -79,8 +79,13 @@ const emptySource = (): Omit<MarketSource, "id"> => ({
 
 function isVersionNewer(candidate: string, installed: string) {
   const parse = (value: string) => {
-    const match = value.trim().replace(/^v/i, "").match(/^(\d+)(?:\.(\d+))?(?:\.(\d+))?/);
-    return match ? [Number(match[1]), Number(match[2] || 0), Number(match[3] || 0)] : null;
+    const match = value
+      .trim()
+      .replace(/^v/i, "")
+      .match(/^(\d+)(?:\.(\d+))?(?:\.(\d+))?/);
+    return match
+      ? [Number(match[1]), Number(match[2] || 0), Number(match[3] || 0)]
+      : null;
   };
   const next = parse(candidate);
   const current = parse(installed);
@@ -98,7 +103,9 @@ const hasConfiguration = (plugin: PluginInfo | undefined) =>
 
 async function request<T>(input: RequestInfo | URL, init?: RequestInit) {
   const response = await fetch(input, init);
-  const payload = (await response.json().catch(() => null)) as APIResponse<T> | null;
+  const payload = (await response
+    .json()
+    .catch(() => null)) as APIResponse<T> | null;
   if (!response.ok || !payload || payload.status === "error") {
     throw new Error(payload?.message || `HTTP ${response.status}`);
   }
@@ -120,38 +127,50 @@ export default function PluginMarketPage() {
   const [sourceStatuses, setSourceStatuses] = useState<SourceStatus[]>([]);
   const [sources, setSources] = useState<MarketSource[]>([]);
   const [installed, setInstalled] = useState<Map<string, string>>(new Map());
-  const [installedInfo, setInstalledInfo] = useState<Map<string, PluginInfo>>(new Map());
+  const [installedInfo, setInstalledInfo] = useState<Map<string, PluginInfo>>(
+    new Map(),
+  );
   const [search, setSearch] = useState("");
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [installing, setInstalling] = useState<string | null>(null);
-  const [pluginToUninstall, setPluginToUninstall] = useState<MarketPlugin | null>(null);
+  const [pluginToUninstall, setPluginToUninstall] =
+    useState<MarketPlugin | null>(null);
   const [deletingPlugin, setDeletingPlugin] = useState<string | null>(null);
   const [sourcesOpen, setSourcesOpen] = useState(false);
   const [editingID, setEditingID] = useState<string | null>(null);
   const [sourceForm, setSourceForm] = useState(emptySource());
   const [savingSource, setSavingSource] = useState(false);
-  const [sourceToDelete, setSourceToDelete] = useState<MarketSource | null>(null);
+  const [sourceToDelete, setSourceToDelete] = useState<MarketSource | null>(
+    null,
+  );
 
   const loadSources = useCallback(async () => {
-    const payload = await request<MarketSource[]>("/api/admin/plugin/market/sources");
+    const payload = await request<MarketSource[]>(
+      "/api/admin/plugin/market/sources",
+    );
     setSources(payload.data || []);
   }, []);
 
-  const loadCatalog = useCallback(async (force = false) => {
-    const suffix = force ? "?refresh=true" : "";
-    const [catalogPayload, installedResult] = await Promise.all([
-      request<{ plugins: MarketPlugin[]; sources: SourceStatus[] }>(
-        `/api/admin/plugin/market/catalog${suffix}`,
-      ),
-      call<any, PluginInfo[]>("admin:listPlugins").catch(() => []),
-    ]);
-    setPlugins(catalogPayload.data?.plugins || []);
-    setSourceStatuses(catalogPayload.data?.sources || []);
-    const list = Array.isArray(installedResult) ? installedResult : [];
-    setInstalled(new Map(list.map((plugin) => [plugin.short, plugin.version])));
-    setInstalledInfo(new Map(list.map((plugin) => [plugin.short, plugin])));
-  }, [call]);
+  const loadCatalog = useCallback(
+    async (force = false) => {
+      const suffix = force ? "?refresh=true" : "";
+      const [catalogPayload, installedResult] = await Promise.all([
+        request<{ plugins: MarketPlugin[]; sources: SourceStatus[] }>(
+          `/api/admin/plugin/market/catalog${suffix}`,
+        ),
+        call<any, PluginInfo[]>("admin:listPlugins").catch(() => []),
+      ]);
+      setPlugins(catalogPayload.data?.plugins || []);
+      setSourceStatuses(catalogPayload.data?.sources || []);
+      const list = Array.isArray(installedResult) ? installedResult : [];
+      setInstalled(
+        new Map(list.map((plugin) => [plugin.short, plugin.version])),
+      );
+      setInstalledInfo(new Map(list.map((plugin) => [plugin.short, plugin])));
+    },
+    [call],
+  );
 
   useEffect(() => {
     Promise.all([loadCatalog(), loadSources()])
@@ -182,7 +201,9 @@ export default function PluginMarketPage() {
     setRefreshing(true);
     try {
       await loadCatalog(true);
-      toast.success(t("plugin.market_refresh_success", "Plugin sources refreshed"));
+      toast.success(
+        t("plugin.market_refresh_success", "Plugin sources refreshed"),
+      );
     } catch (error) {
       toast.error(error instanceof Error ? error.message : String(error));
     } finally {
@@ -197,9 +218,15 @@ export default function PluginMarketPage() {
       const payload = await request("/api/admin/plugin/market/install", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ source_id: plugin.source_id, short: plugin.short }),
+        body: JSON.stringify({
+          source_id: plugin.source_id,
+          short: plugin.short,
+        }),
       });
-      toast.success(payload.message || t("plugin.market_install_success", "Plugin installed"));
+      toast.success(
+        payload.message ||
+          t("plugin.market_install_success", "Plugin installed"),
+      );
       await loadCatalog();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : String(error));
@@ -228,7 +255,11 @@ export default function PluginMarketPage() {
 
   const startEditSource = (source: MarketSource) => {
     setEditingID(source.id);
-    setSourceForm({ name: source.name, url: source.url, enabled: source.enabled });
+    setSourceForm({
+      name: source.name,
+      url: source.url,
+      enabled: source.enabled,
+    });
   };
 
   const saveSource = async () => {
@@ -259,13 +290,19 @@ export default function PluginMarketPage() {
     }
   };
 
-  const updateSourceEnabled = async (source: MarketSource, enabled: boolean) => {
+  const updateSourceEnabled = async (
+    source: MarketSource,
+    enabled: boolean,
+  ) => {
     try {
-      await request(`/api/admin/plugin/market/sources/${encodeURIComponent(source.id)}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...source, enabled }),
-      });
+      await request(
+        `/api/admin/plugin/market/sources/${encodeURIComponent(source.id)}`,
+        {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ ...source, enabled }),
+        },
+      );
       await Promise.all([loadSources(), loadCatalog(true)]);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : String(error));
@@ -274,9 +311,12 @@ export default function PluginMarketPage() {
 
   const deleteSource = async (source: MarketSource) => {
     try {
-      await request(`/api/admin/plugin/market/sources/${encodeURIComponent(source.id)}`, {
-        method: "DELETE",
-      });
+      await request(
+        `/api/admin/plugin/market/sources/${encodeURIComponent(source.id)}`,
+        {
+          method: "DELETE",
+        },
+      );
       if (editingID === source.id) startCreateSource();
       toast.success(t("market.source_deleted", "Source deleted"));
       await Promise.all([loadSources(), loadCatalog(true)]);
@@ -313,16 +353,24 @@ export default function PluginMarketPage() {
       <Separator size="4" />
 
       <Callout.Root color="amber" size="1">
-        <Callout.Icon><ShieldAlert size={16} /></Callout.Icon>
+        <Callout.Icon>
+          <ShieldAlert size={16} />
+        </Callout.Icon>
         <Callout.Text>{t("plugin.market_warning")}</Callout.Text>
       </Callout.Root>
 
-      {sourceStatuses.filter((source) => source.error).map((source) => (
-        <Callout.Root key={source.id} color="red" size="1">
-          <Callout.Icon><AlertTriangle size={16} /></Callout.Icon>
-          <Callout.Text>{source.name}: {source.error}</Callout.Text>
-        </Callout.Root>
-      ))}
+      {sourceStatuses
+        .filter((source) => source.error)
+        .map((source) => (
+          <Callout.Root key={source.id} color="red" size="1">
+            <Callout.Icon>
+              <AlertTriangle size={16} />
+            </Callout.Icon>
+            <Callout.Text>
+              {source.name}: {source.error}
+            </Callout.Text>
+          </Callout.Root>
+        ))}
 
       <TextField.Root
         value={search}
@@ -337,26 +385,39 @@ export default function PluginMarketPage() {
 
       {filteredPlugins.length === 0 ? (
         <Callout.Root>
-          <Callout.Text>{t("plugin.market_no_plugins", "No plugins in the market")}</Callout.Text>
+          <Callout.Text>
+            {t("plugin.market_no_plugins", "No plugins in the market")}
+          </Callout.Text>
         </Callout.Root>
       ) : (
-        <Grid columns={{ initial: "1", sm: "2", lg: "3" }} gap="3" className="km-market-plugins-list">
+        <Grid
+          columns={{ initial: "1", sm: "2", lg: "3" }}
+          gap="3"
+          className="km-market-plugins-list"
+        >
           {filteredPlugins.map((plugin) => {
             const installedVersion = installed.get(plugin.short);
             const isInstalled = installedVersion !== undefined;
             const hasUpdate = Boolean(
-              installedVersion && isVersionNewer(plugin.version, installedVersion),
+              installedVersion &&
+              isVersionNewer(plugin.version, installedVersion),
             );
-            const canConfigure = isInstalled && hasConfiguration(installedInfo.get(plugin.short));
+            const canConfigure =
+              isInstalled && hasConfiguration(installedInfo.get(plugin.short));
             const key = `${plugin.source_id}:${plugin.short}`;
             return (
               <Card key={key} className="km-market-plugin-card">
                 <Flex direction="column" gap="2">
                   <Flex align="center" justify="between">
-                    <Text weight="bold">{displayText(plugin.name) || plugin.short}</Text>
+                    <Text weight="bold">
+                      {displayText(plugin.name) || plugin.short}
+                    </Text>
                     <Box>
                       {isInstalled && (
-                        <Badge color={hasUpdate ? "orange" : "green"} variant="soft">
+                        <Badge
+                          color={hasUpdate ? "orange" : "green"}
+                          variant="soft"
+                        >
                           {hasUpdate
                             ? t("market.update_available", "Update available")
                             : t("market.installed", "Installed")}
@@ -364,14 +425,17 @@ export default function PluginMarketPage() {
                       )}
                       {!isInstalled && !plugin.installable && (
                         <Badge color="gray" variant="soft">
-                          {t("market.install_unavailable", "Package unavailable")}
+                          {t(
+                            "market.install_unavailable",
+                            "Package unavailable",
+                          )}
                         </Badge>
                       )}
                     </Box>
                   </Flex>
                   <Text size="2" color="gray">
-                    {plugin.short} · {displayText(plugin.author)}
-                    {plugin.komari ? ` · komari ${plugin.komari}` : ""}
+                    {displayText(plugin.author)}
+                    {plugin.komari ? ` · ${plugin.komari}` : ""}
                   </Text>
                   {displayText(plugin.description) && (
                     <Text size="2">{displayText(plugin.description)}</Text>
@@ -445,51 +509,65 @@ export default function PluginMarketPage() {
       {/* 源管理弹窗：与主题市场一致 */}
       <Dialog.Root open={sourcesOpen} onOpenChange={setSourcesOpen}>
         <Dialog.Content maxWidth="760px">
-          <Dialog.Title>{t("market.manage_sources", "Manage sources")}</Dialog.Title>
+          <Dialog.Title>
+            {t("market.manage_sources", "Manage sources")}
+          </Dialog.Title>
           <Dialog.Description className="sr-only">
             {t("market.manage_sources", "Manage sources")}
           </Dialog.Description>
           <Flex direction="column" gap="3" mt="4">
             {sources.length === 0 ? (
-              <Text color="gray">{t("market.no_sources", "No sources configured")}</Text>
-            ) : sources.map((source, index) => (
-              <Box key={source.id}>
-                {index > 0 && <Separator size="4" mb="3" />}
-                <Flex justify="between" align="center" gap="3">
-                  <Box className="min-w-0">
-                    <Text as="div" weight="medium">{source.name}</Text>
-                    <Text as="div" size="1" color="gray" className="truncate">{source.url}</Text>
-                  </Box>
-                  <Flex align="center" gap="2" className="shrink-0">
-                    <Switch
-                      checked={source.enabled}
-                      onCheckedChange={(checked) => updateSourceEnabled(source, checked)}
-                    />
-                    <IconButton
-                      variant="ghost"
-                      onClick={() => startEditSource(source)}
-                      title={t("common.edit", "Edit")}
-                    >
-                      <Pencil size={16} />
-                    </IconButton>
-                    <IconButton
-                      variant="ghost"
-                      color="red"
-                      onClick={() => setSourceToDelete(source)}
-                      title={t("common.delete", "Delete")}
-                    >
-                      <Trash2 size={16} />
-                    </IconButton>
+              <Text color="gray">
+                {t("market.no_sources", "No sources configured")}
+              </Text>
+            ) : (
+              sources.map((source, index) => (
+                <Box key={source.id}>
+                  {index > 0 && <Separator size="4" mb="3" />}
+                  <Flex justify="between" align="center" gap="3">
+                    <Box className="min-w-0">
+                      <Text as="div" weight="medium">
+                        {source.name}
+                      </Text>
+                      <Text as="div" size="1" color="gray" className="truncate">
+                        {source.url}
+                      </Text>
+                    </Box>
+                    <Flex align="center" gap="2" className="shrink-0">
+                      <Switch
+                        checked={source.enabled}
+                        onCheckedChange={(checked) =>
+                          updateSourceEnabled(source, checked)
+                        }
+                      />
+                      <IconButton
+                        variant="ghost"
+                        onClick={() => startEditSource(source)}
+                        title={t("common.edit", "Edit")}
+                      >
+                        <Pencil size={16} />
+                      </IconButton>
+                      <IconButton
+                        variant="ghost"
+                        color="red"
+                        onClick={() => setSourceToDelete(source)}
+                        title={t("common.delete", "Delete")}
+                      >
+                        <Trash2 size={16} />
+                      </IconButton>
+                    </Flex>
                   </Flex>
-                </Flex>
-              </Box>
-            ))}
+                </Box>
+              ))
+            )}
           </Flex>
 
           <Separator size="4" my="5" />
           <Flex justify="between" align="center" mb="3">
             <Text weight="bold">
-              {editingID ? t("market.edit_source", "Edit source") : t("market.add_source", "Add source")}
+              {editingID
+                ? t("market.edit_source", "Edit source")
+                : t("market.add_source", "Add source")}
             </Text>
             {editingID && (
               <Button size="1" variant="ghost" onClick={startCreateSource}>
@@ -502,14 +580,20 @@ export default function PluginMarketPage() {
             <TextField.Root
               value={sourceForm.name}
               onChange={(event) =>
-                setSourceForm((current) => ({ ...current, name: event.target.value }))
+                setSourceForm((current) => ({
+                  ...current,
+                  name: event.target.value,
+                }))
               }
               placeholder={t("market.source_name", "Source name")}
             />
             <TextField.Root
               value={sourceForm.url}
               onChange={(event) =>
-                setSourceForm((current) => ({ ...current, url: event.target.value }))
+                setSourceForm((current) => ({
+                  ...current,
+                  url: event.target.value,
+                }))
               }
               placeholder="https://raw.githubusercontent.com/owner/repo/main/v1.json"
             />
@@ -525,9 +609,15 @@ export default function PluginMarketPage() {
               </Flex>
               <Button
                 onClick={saveSource}
-                disabled={savingSource || !sourceForm.name.trim() || !sourceForm.url.trim()}
+                disabled={
+                  savingSource ||
+                  !sourceForm.name.trim() ||
+                  !sourceForm.url.trim()
+                }
               >
-                {savingSource && <RefreshCw size={15} className="animate-spin" />}
+                {savingSource && (
+                  <RefreshCw size={15} className="animate-spin" />
+                )}
                 {editingID ? t("common.save", "Save") : t("common.add", "Add")}
               </Button>
             </Flex>
@@ -558,18 +648,24 @@ export default function PluginMarketPage() {
           </Dialog.Description>
           <Flex justify="end" gap="2" mt="4">
             <Dialog.Close>
-              <Button variant="soft" color="gray">{t("common.cancel", "Cancel")}</Button>
+              <Button variant="soft" color="gray">
+                {t("common.cancel", "Cancel")}
+              </Button>
             </Dialog.Close>
             <Button
               color="red"
-              disabled={!pluginToUninstall || deletingPlugin === pluginToUninstall.short}
+              disabled={
+                !pluginToUninstall || deletingPlugin === pluginToUninstall.short
+              }
               onClick={async () => {
                 if (!pluginToUninstall) return;
                 await uninstallPlugin(pluginToUninstall);
                 setPluginToUninstall(null);
               }}
             >
-              {deletingPlugin && <RefreshCw size={15} className="animate-spin" />}
+              {deletingPlugin && (
+                <RefreshCw size={15} className="animate-spin" />
+              )}
               {t("market.uninstall", "Uninstall")}
             </Button>
           </Flex>
@@ -592,7 +688,9 @@ export default function PluginMarketPage() {
           </Dialog.Description>
           <Flex justify="end" gap="2" mt="4">
             <Dialog.Close>
-              <Button variant="soft" color="gray">{t("common.cancel", "Cancel")}</Button>
+              <Button variant="soft" color="gray">
+                {t("common.cancel", "Cancel")}
+              </Button>
             </Dialog.Close>
             <Button
               color="red"

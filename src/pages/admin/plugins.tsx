@@ -12,7 +12,14 @@ import {
   Switch,
   Text,
 } from "@radix-ui/themes";
-import { Blocks, FileText, RefreshCw, Settings2, Trash2, Upload } from "lucide-react";
+import {
+  Blocks,
+  FileText,
+  RefreshCw,
+  Settings2,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
@@ -47,10 +54,14 @@ const renderPluginIcon = (
   if (Cmp) {
     return <Cmp size={size} className={className} />;
   }
-  return <InlineSvgIcon src={icon} alt="" className={`${className} object-contain`} />;
+  return (
+    <InlineSvgIcon
+      src={icon}
+      alt=""
+      className={`${className} object-contain`}
+    />
+  );
 };
-
-
 
 // 插件管理：上传 zip、switch 启停、权限确认弹窗、运行日志、行内错误文本。
 export default function PluginsPage() {
@@ -71,7 +82,9 @@ export default function PluginsPage() {
   const uploadTaskRef = useRef<ChunkUploadTask | null>(null);
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
   const [toggling, setToggling] = useState<string | null>(null);
-  const [pendingApproval, setPendingApproval] = useState<PluginInfo | null>(null);
+  const [pendingApproval, setPendingApproval] = useState<PluginInfo | null>(
+    null,
+  );
   const [logPlugin, setLogPlugin] = useState<PluginInfo | null>(null);
   const [logContent, setLogContent] = useState("");
   const [logsLoading, setLogsLoading] = useState(false);
@@ -93,7 +106,12 @@ export default function PluginsPage() {
 
   const uploadPlugin = async (file: File) => {
     if (!file.name.endsWith(".zip")) {
-      toast.error(t("plugin.invalid_file_type", "Invalid file type, only .zip files are supported"));
+      toast.error(
+        t(
+          "plugin.invalid_file_type",
+          "Invalid file type, only .zip files are supported",
+        ),
+      );
       return;
     }
     setUploading(true);
@@ -108,7 +126,11 @@ export default function PluginsPage() {
       await loadList();
     } catch (error) {
       if (!(error instanceof DOMException && error.name === "AbortError")) {
-        toast.error(t("plugin.upload_failed", "Plugin upload failed") + ": " + (error instanceof Error ? error.message : String(error)));
+        toast.error(
+          t("plugin.upload_failed", "Plugin upload failed") +
+            ": " +
+            (error instanceof Error ? error.message : String(error)),
+        );
       }
     } finally {
       setUploading(false);
@@ -176,9 +198,12 @@ export default function PluginsPage() {
     setLogContent("");
     setLogsLoading(true);
     try {
-      const result = await call<{ short: string }, { logs?: string }>("admin:getPluginLogs", {
-        short: plugin.short,
-      });
+      const result = await call<{ short: string }, { logs?: string }>(
+        "admin:getPluginLogs",
+        {
+          short: plugin.short,
+        },
+      );
       setLogContent(result?.logs || "");
     } catch (error) {
       setLogContent(
@@ -211,15 +236,32 @@ export default function PluginsPage() {
     const labels: string[] = [];
     const p = plugin.permissions;
     if (!p) return labels;
-    if (p.allowSystemRPC) labels.push(t("plugin.permission.allowSystemRPC", "Call system RPC"));
-    if (p.allowRoutes) labels.push(t("plugin.permission.allowRoutes", "Register HTTP routes"));
-    if (p.allowHooks) labels.push(t("plugin.permission.allowHooks", "Modify HTTP requests/responses"));
+    if (p.allowSystemRPC)
+      labels.push(t("plugin.permission.allowSystemRPC", "Call system RPC"));
+    if (p.allowRoutes)
+      labels.push(t("plugin.permission.allowRoutes", "Register HTTP routes"));
+    if (p.allowHooks)
+      labels.push(
+        t("plugin.permission.allowHooks", "Modify HTTP requests/responses"),
+      );
     if (p.allowHTMLInject)
-      labels.push(t("plugin.permission.allowHTMLInject", "Embed CSS/JS into every HTML page"));
-    if (p.allowExec) labels.push(t("plugin.permission.allowExec", "Execute child processes"));
-    if (p.allowListen) labels.push(t("plugin.permission.allowListen", "Listen on local ports"));
+      labels.push(
+        t(
+          "plugin.permission.allowHTMLInject",
+          "Embed CSS/JS into every HTML page",
+        ),
+      );
+    if (p.allowExec)
+      labels.push(t("plugin.permission.allowExec", "Execute child processes"));
+    if (p.allowListen)
+      labels.push(t("plugin.permission.allowListen", "Listen on local ports"));
     if (p.allowAllFileAccess)
-      labels.push(t("plugin.permission.allowAllFileAccess", "Access files outside the plugin directory"));
+      labels.push(
+        t(
+          "plugin.permission.allowAllFileAccess",
+          "Access files outside the plugin directory",
+        ),
+      );
     return labels;
   };
 
@@ -233,7 +275,10 @@ export default function PluginsPage() {
           <Heading size="4">{t("plugin.title", "Plugins")}</Heading>
         </Flex>
         <Flex gap="2">
-          <Button onClick={() => setUploadDialogOpen(true)} disabled={uploading}>
+          <Button
+            onClick={() => setUploadDialogOpen(true)}
+            disabled={uploading}
+          >
             <Upload size={14} />
             {t("plugin.upload", "Upload Plugin")}
           </Button>
@@ -248,7 +293,9 @@ export default function PluginsPage() {
 
       {plugins.length === 0 ? (
         <Callout.Root>
-          <Callout.Text>{t("plugin.no_plugins", "No plugins installed yet")}</Callout.Text>
+          <Callout.Text>
+            {t("plugin.no_plugins", "No plugins installed yet")}
+          </Callout.Text>
         </Callout.Root>
       ) : (
         <Flex direction="column" gap="3" className="km-plugins-list">
@@ -260,14 +307,16 @@ export default function PluginsPage() {
                     {renderPluginIcon(plugin, 20, "h-5 w-5 shrink-0")}
                     <Flex direction="column" gap="1" className="min-w-0">
                       <Flex align="center" gap="2" wrap="wrap">
-                        <Text weight="bold">{displayText(plugin.name) || plugin.short}</Text>
+                        <Text weight="bold">
+                          {displayText(plugin.name) || plugin.short}
+                        </Text>
                         <Badge color={plugin.running ? "green" : "gray"}>
                           {plugin.running
                             ? t("plugin.running", "Running")
                             : t("plugin.stopped", "Stopped")}
                         </Badge>
                         <Text size="2" color="gray">
-                          {plugin.short} · v{plugin.version}
+                          v{plugin.version}
                           {displayText(plugin.author)
                             ? ` · ${displayText(plugin.author)}`
                             : ""}
@@ -295,7 +344,11 @@ export default function PluginsPage() {
                         {t("plugin.config", "Configuration")}
                       </Button>
                     )}
-                    <Button size="1" variant="soft" onClick={() => openLogs(plugin)}>
+                    <Button
+                      size="1"
+                      variant="soft"
+                      onClick={() => openLogs(plugin)}
+                    >
                       <FileText size={14} />
                       {t("logs.title", "Logs")}
                     </Button>
@@ -329,7 +382,8 @@ export default function PluginsPage() {
                 {plugin.last_error && (
                   <Callout.Root color="red" size="1">
                     <Callout.Text>
-                      {t("plugin.last_error", "Last error")}: {plugin.last_error}
+                      {t("plugin.last_error", "Last error")}:{" "}
+                      {plugin.last_error}
                     </Callout.Text>
                   </Callout.Root>
                 )}
@@ -347,7 +401,9 @@ export default function PluginsPage() {
         }}
       >
         <Dialog.Content>
-          <Dialog.Title>{t("plugin.permission_title", "Permission required")}</Dialog.Title>
+          <Dialog.Title>
+            {t("plugin.permission_title", "Permission required")}
+          </Dialog.Title>
           <Text as="p" size="2" className="mb-2">
             {t(
               "plugin.permission_description",
@@ -355,17 +411,23 @@ export default function PluginsPage() {
             )}
           </Text>
           <Flex direction="column" gap="2" my="3">
-            {pendingApproval && permissionLabels(pendingApproval).length === 0 && (
-              <Text size="2" color="gray">
-                {t(
-                  "plugin.permission_none",
-                  "This plugin requests no special permissions",
-                )}
-              </Text>
-            )}
+            {pendingApproval &&
+              permissionLabels(pendingApproval).length === 0 && (
+                <Text size="2" color="gray">
+                  {t(
+                    "plugin.permission_none",
+                    "This plugin requests no special permissions",
+                  )}
+                </Text>
+              )}
             {pendingApproval &&
               permissionLabels(pendingApproval).map((label) => (
-                <Badge key={label} color="orange" size="2" className="justify-start">
+                <Badge
+                  key={label}
+                  color="orange"
+                  size="2"
+                  className="justify-start"
+                >
                   {label}
                 </Badge>
               ))}
@@ -399,7 +461,9 @@ export default function PluginsPage() {
             {t("logs.title", "Logs")} · {logPlugin?.short}
           </Dialog.Title>
           <pre className="max-h-[60vh] overflow-auto whitespace-pre-wrap rounded-md bg-gray-1 p-3 text-xs">
-            {logsLoading ? t("plugin.loading", "Loading...") : logContent || t("plugin.no_logs", "No logs")}
+            {logsLoading
+              ? t("plugin.loading", "Loading...")
+              : logContent || t("plugin.no_logs", "No logs")}
           </pre>
         </Dialog.Content>
       </Dialog.Root>
@@ -409,10 +473,16 @@ export default function PluginsPage() {
         open={uploadDialogOpen}
         onOpenChange={setUploadDialogOpen}
         title={t("plugin.upload", "Upload Plugin")}
-        description={t("plugin.upload_description", "Upload a .zip plugin package")}
+        description={t(
+          "plugin.upload_description",
+          "Upload a .zip plugin package",
+        )}
         accept=".zip"
         dragDropText={t("plugin.drag_drop", "Drag and drop files here")}
-        clickToBrowseText={t("plugin.or_click_to_browse", "Or click to browse files")}
+        clickToBrowseText={t(
+          "plugin.or_click_to_browse",
+          "Or click to browse files",
+        )}
         hintText={t("plugin.zip_files_only", "Only .zip files are supported")}
         uploading={uploading}
         progress={uploadProgress}
@@ -436,7 +506,10 @@ export default function PluginsPage() {
             {t("plugin.delete_confirm", "Delete this plugin?")}{" "}
             {pluginToDelete?.short}
             <br />
-            {t("plugin.delete_confirm_desc", "The plugin directory and its configuration will be removed.")}
+            {t(
+              "plugin.delete_confirm_desc",
+              "The plugin directory and its configuration will be removed.",
+            )}
           </Text>
           <Flex gap="2" justify="end">
             <Button variant="soft" onClick={() => setPluginToDelete(null)}>
@@ -447,7 +520,9 @@ export default function PluginsPage() {
               disabled={deleting}
               onClick={() => pluginToDelete && deletePlugin(pluginToDelete)}
             >
-              {deleting ? t("plugin.deleting", "Deleting...") : t("plugin.delete", "Delete")}
+              {deleting
+                ? t("plugin.deleting", "Deleting...")
+                : t("plugin.delete", "Delete")}
             </Button>
           </Flex>
         </Dialog.Content>
