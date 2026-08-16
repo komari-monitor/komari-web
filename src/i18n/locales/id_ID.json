@@ -1428,5 +1428,36 @@
     "mode": "Mode Tampilan"
   },
   "warn_https": "Koneksi saat ini bukan HTTPS! Data sensitif Anda berisiko. Amankan koneksi sekarang! Fitur salin mungkin tidak tersedia!",
-  "warn_websocket": "Permintaan RPC2 gagal, periksa koneksi jaringan atau status server!"
+  "warn_websocket": "Permintaan RPC2 gagal, periksa koneksi jaringan atau status server!",
+  "billing_settings": {
+    "title": "Tagihan trafik bulanan",
+    "reset_day": "Hari tagihan",
+    "reset_day_description": "Atur ulang trafik pukul 00.00 pada hari ini setiap bulan; bulan pendek memakai hari terakhir.",
+    "reset_day_error": "Hari tagihan harus berupa bilangan bulat dari 1 sampai 31.",
+    "timezone": "Zona waktu tagihan",
+    "timezone_description": "Zona waktu IANA untuk batas pengaturan ulang bulanan, misalnya Asia/Shanghai.",
+    "timezone_error": "Masukkan zona waktu IANA yang valid."
+  },
+  "billing_history": {
+    "title": "Riwayat trafik bulanan",
+    "description": "Lihat arsip trafik bulanan dan status kuota setiap node.",
+    "client_uuid": "UUID node",
+    "client_uuid_placeholder": "Filter UUID node opsional",
+    "cycle_key": "Kunci periode",
+    "cycle_key_placeholder": "Filter periode tagihan opsional",
+    "client": "Node",
+    "period": "Periode tagihan",
+    "upload": "Unggah",
+    "download": "Unduh",
+    "billable": "Trafik tertagih",
+    "limit": "Kuota",
+    "status": "Status",
+    "exceeded": "Melebihi",
+    "within_limit": "Dalam kuota",
+    "empty": "Tidak ada arsip",
+    "load_failed": "Gagal memuat riwayat trafik bulanan",
+    "total": "{{count}} catatan",
+    "previous": "Sebelumnya",
+    "next": "Berikutnya"
+  }
 }

@@ -1428,5 +1428,36 @@
     "mode": "表示モード"
   },
   "warn_https": "現在の接続は HTTPS ではありません！あなたの敏感なデータには重大なリスクがあります。接続を安全にするために直ちに対策を講じてください！コピー操作は使用できない可能性があります！",
-  "warn_websocket": "RPC2 リクエストに失敗しました。ネットワーク接続またはサーバーの状態を確認してください！"
+  "warn_websocket": "RPC2 リクエストに失敗しました。ネットワーク接続またはサーバーの状態を確認してください！",
+  "billing_settings": {
+    "title": "月間トラフィック請求",
+    "reset_day": "請求日",
+    "reset_day_description": "毎月この日の 00:00 にトラフィックをリセットします。短い月は月末を使用します。",
+    "reset_day_error": "請求日は 1〜31 の整数で指定してください。",
+    "timezone": "請求タイムゾーン",
+    "timezone_description": "月次リセット境界に使用する IANA タイムゾーン（例: Asia/Shanghai）。",
+    "timezone_error": "有効な IANA タイムゾーンを入力してください。"
+  },
+  "billing_history": {
+    "title": "月間トラフィック履歴",
+    "description": "各ノードの月間トラフィックと上限のアーカイブを確認します。",
+    "client_uuid": "ノード UUID",
+    "client_uuid_placeholder": "任意のノード UUID フィルター",
+    "cycle_key": "請求期間キー",
+    "cycle_key_placeholder": "任意の請求期間フィルター",
+    "client": "ノード",
+    "period": "請求期間",
+    "upload": "アップロード",
+    "download": "ダウンロード",
+    "billable": "請求対象通信量",
+    "limit": "上限",
+    "status": "状態",
+    "exceeded": "超過",
+    "within_limit": "上限内",
+    "empty": "アーカイブ記録はありません",
+    "load_failed": "月間トラフィック履歴の読み込みに失敗しました",
+    "total": "{{count}} 件",
+    "previous": "前へ",
+    "next": "次へ"
+  }
 }

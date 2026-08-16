@@ -1428,5 +1428,36 @@
     "mode": "顯示模式"
   },
   "warn_https": "當前連線不是 HTTPS！您的敏感資料存在嚴重風險。請立即採取措施確保連線安全！複製操作可能無法使用！",
-  "warn_websocket": "RPC2 請求失敗，請檢查網路連線或伺服器狀態！"
+  "warn_websocket": "RPC2 請求失敗，請檢查網路連線或伺服器狀態！",
+  "billing_settings": {
+    "title": "每月流量帳單",
+    "reset_day": "帳單日",
+    "reset_day_description": "每月於該日期 00:00 重設流量；短月自動使用月底。",
+    "reset_day_error": "帳單日必須是 1 到 31 之間的整數。",
+    "timezone": "帳單時區",
+    "timezone_description": "用於計算每月重設時間的 IANA 時區，例如 Asia/Shanghai。",
+    "timezone_error": "請輸入有效的 IANA 時區。"
+  },
+  "billing_history": {
+    "title": "每月流量歷史",
+    "description": "查看每個節點已封存的每月流量與額度狀態。",
+    "client_uuid": "節點 UUID",
+    "client_uuid_placeholder": "選填，依節點 UUID 篩選",
+    "cycle_key": "帳期識別碼",
+    "cycle_key_placeholder": "選填，依帳期識別碼篩選",
+    "client": "節點",
+    "period": "帳期",
+    "upload": "上行",
+    "download": "下行",
+    "billable": "計費流量",
+    "limit": "額度",
+    "status": "狀態",
+    "exceeded": "已超額",
+    "within_limit": "額度內",
+    "empty": "暫無封存記錄",
+    "load_failed": "載入每月流量歷史失敗",
+    "total": "共 {{count}} 筆記錄",
+    "previous": "上一頁",
+    "next": "下一頁"
+  }
 }

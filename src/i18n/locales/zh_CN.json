@@ -1428,5 +1428,36 @@
     "mode": "显示模式"
   },
   "warn_https": "当前连接不是 HTTPS！您的敏感数据存在严重风险。请立即采取措施确保连接安全！复制操作可能无法使用！",
-  "warn_websocket": "RPC2 请求失败，请检查网络连接或服务器状态！"
+  "warn_websocket": "RPC2 请求失败，请检查网络连接或服务器状态！",
+  "billing_settings": {
+    "title": "月度流量账单",
+    "reset_day": "账单日",
+    "reset_day_description": "每月在该日期 00:00 重置流量；短月自动使用月末。",
+    "reset_day_error": "账单日必须是 1 到 31 之间的整数。",
+    "timezone": "账单时区",
+    "timezone_description": "用于计算月度重置时间的 IANA 时区，例如 Asia/Shanghai。",
+    "timezone_error": "请输入有效的 IANA 时区。"
+  },
+  "billing_history": {
+    "title": "月度流量历史",
+    "description": "查看每个节点已归档的月度流量和额度状态。",
+    "client_uuid": "节点 UUID",
+    "client_uuid_placeholder": "可选，按节点 UUID 筛选",
+    "cycle_key": "账期标识",
+    "cycle_key_placeholder": "可选，按账期标识筛选",
+    "client": "节点",
+    "period": "账期",
+    "upload": "上行",
+    "download": "下行",
+    "billable": "计费流量",
+    "limit": "额度",
+    "status": "状态",
+    "exceeded": "已超额",
+    "within_limit": "额度内",
+    "empty": "暂无归档记录",
+    "load_failed": "加载月度流量历史失败",
+    "total": "共 {{count}} 条记录",
+    "previous": "上一页",
+    "next": "下一页"
+  }
 }
