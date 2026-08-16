@@ -39,7 +39,6 @@ interface ThemeConfigResponse {
 const ThemeManaged: React.FC = () => {
   const { publicInfo, refresh } = usePublicInfo();
   const theme = publicInfo?.theme;
-  const themeSettings = publicInfo?.theme_settings || {}; // 当前值
   const { t, i18n } = useTranslation();
 
   const currentLanguage =
@@ -81,6 +80,7 @@ const ThemeManaged: React.FC = () => {
           return;
         }
         const ds = configuration.data;
+        const themeSettings = publicInfo?.theme_settings || {};
         setFields(ds);
         // 初始值：优先 publicInfo.theme_settings，其次 default
         const init: Record<string, any> = {};
@@ -106,7 +106,7 @@ const ThemeManaged: React.FC = () => {
       }
     }
     load();
-  }, [theme, themeSettings, t]);
+  }, [publicInfo?.theme_settings, theme, t]);
 
   const handleValueChange = (key: string, val: any) => {
     setValues((v) => ({ ...v, [key]: val }));

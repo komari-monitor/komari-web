@@ -1,14 +1,9 @@
 import Loading from "@/components/loading";
 import NodeSelectorDialog from "@/components/NodeSelectorDialog";
-import {
-  NodeDetailsProvider,
-  useNodeDetails,
-} from "@/contexts/NodeDetailsContext";
-import {
-  PingTaskProvider,
-  usePingTask,
-  type PingTask,
-} from "@/contexts/PingTaskContext";
+import { useNodeDetails } from "@/contexts/NodeDetailsContext";
+import { NodeDetailsProvider } from "@/contexts/NodeDetailsProvider";
+import { usePingTask, type PingTask } from "@/contexts/PingTaskContext";
+import { PingTaskProvider } from "@/contexts/PingTaskProvider";
 import {
   Box,
   Button,

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect, useLayoutEffect, useMemo, type CSSProperties, type KeyboardEvent } from "react";
 import Loading from "@/components/loading";
-import { NodeDetailsProvider, useNodeDetails } from "@/contexts/NodeDetailsContext";
+import { useNodeDetails } from "@/contexts/NodeDetailsContext";
+import { NodeDetailsProvider } from "@/contexts/NodeDetailsProvider";
 import { useTranslation } from "react-i18next";
 import {
     Button,

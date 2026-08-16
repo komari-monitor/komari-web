@@ -13,7 +13,7 @@ import { Link } from "react-router-dom";
 import { ChevronRight, ChevronUp, ChevronDown } from "lucide-react";
 import type { NodeBasicInfo } from "@/contexts/NodeListContext";
 import type { LiveData, Record } from "../types/LiveData";
-import { formatUptime } from "./Node";
+import { formatUptime } from "@/utils/formatUptime";
 import { formatBytes } from "@/utils/unitHelper";
 import UsageBar from "./UsageBar";
 import Flag from "./Flag";

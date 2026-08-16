@@ -1,13 +1,5 @@
 import React from "react";
-
-interface AdminNavigationContextValue {
-  refreshVersion: number;
-  refreshNavigation: () => void;
-}
-
-const AdminNavigationContext = React.createContext<
-  AdminNavigationContextValue | undefined
->(undefined);
+import { AdminNavigationContext } from "./AdminNavigationContext";
 
 export const AdminNavigationProvider: React.FC<{
   children: React.ReactNode;
@@ -28,14 +20,4 @@ export const AdminNavigationProvider: React.FC<{
       {children}
     </AdminNavigationContext.Provider>
   );
-};
-
-export const useAdminNavigation = () => {
-  const context = React.useContext(AdminNavigationContext);
-  if (!context) {
-    throw new Error(
-      "useAdminNavigation must be used within an AdminNavigationProvider",
-    );
-  }
-  return context;
 };

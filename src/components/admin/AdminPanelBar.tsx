@@ -51,6 +51,35 @@ interface AdminPanelBarProps {
   content: ReactNode;
 }
 
+interface GithubReleaseInfo {
+  tag_name: string;
+  name?: string;
+  body?: string;
+  html_url: string;
+  published_at?: string;
+  draft?: boolean;
+  prerelease?: boolean;
+}
+
+function parseSemver(input?: string | null): number[] | null {
+  if (!input) return null;
+  const normalized = String(input).trim().replace(/^v/i, "");
+  const match = normalized.match(/^(\d+)\.(\d+)\.(\d+)/);
+  if (!match) return null;
+  return [Number(match[1]), Number(match[2]), Number(match[3])];
+}
+
+function isNewerVersion(latest?: string | null, current?: string | null) {
+  const latestParts = parseSemver(latest);
+  const currentParts = parseSemver(current);
+  if (!latestParts || !currentParts) return false;
+  for (let i = 0; i < 3; i++) {
+    if (latestParts[i] > currentParts[i]) return true;
+    if (latestParts[i] < currentParts[i]) return false;
+  }
+  return false;
+}
+
 const AdminPanelBar = ({ content }: AdminPanelBarProps) => {
   const { call } = useRPC2Call();
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -78,15 +107,6 @@ const AdminPanelBar = ({ content }: AdminPanelBarProps) => {
     i18n.language ||
     (typeof navigator !== "undefined" ? navigator.language : "");
   // GitHub 最新发布信息与更新检测
-  interface GithubReleaseInfo {
-    tag_name: string;
-    name?: string;
-    body?: string;
-    html_url: string;
-    published_at?: string;
-    draft?: boolean;
-    prerelease?: boolean;
-  }
   const [latestRelease, setLatestRelease] = useState<GithubReleaseInfo | null>(
     null,
   );
@@ -161,7 +181,7 @@ const AdminPanelBar = ({ content }: AdminPanelBarProps) => {
     return () => {
       ignore = true;
     };
-  }, [currentTheme, refreshVersion]);
+  }, [currentLanguage, currentTheme, refreshVersion, t]);
   // 插件注入的管理页面：manifest pages（visibility=admin）-> 插件菜单的二级菜单。
   // iframe 页面进入 plugin-page 路由；redirect 页面复用主题的站内跳转校验。
   useEffect(() => {
@@ -229,27 +249,7 @@ const AdminPanelBar = ({ content }: AdminPanelBarProps) => {
     };
 
     fetchVersionInfo();
-  }, []);
-
-  // 规范化版本为 [major, minor, patch] 数组，忽略前缀 v 和后缀
-  function parseSemver(input?: string | null): number[] | null {
-    if (!input) return null;
-    const s = String(input).trim().replace(/^v/i, "");
-    const match = s.match(/^(\d+)\.(\d+)\.(\d+)/);
-    if (!match) return null;
-    return [Number(match[1]), Number(match[2]), Number(match[3])];
-  }
-
-  function isNewerVersion(latest?: string | null, current?: string | null) {
-    const a = parseSemver(latest);
-    const b = parseSemver(current);
-    if (!a || !b) return false;
-    for (let i = 0; i < 3; i++) {
-      if (a[i] > b[i]) return true;
-      if (a[i] < b[i]) return false;
-    }
-    return false;
-  }
+  }, [call]);
 
   // 获取 GitHub releases 列表，并筛选出“比当前版本新的所有 release”
   useEffect(() => {

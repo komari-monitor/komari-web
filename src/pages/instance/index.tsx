@@ -11,7 +11,7 @@ import LoadChart from "./LoadChart";
 import { DetailsGrid } from "@/components/DetailsGrid";
 import { usePublicInfo } from "@/contexts/PublicInfoContext";
 import { useIsMobile } from "@/hooks/use-mobile";
-import { AccountProvider } from "@/contexts/AccountContext";
+import { AccountProvider } from "@/contexts/AccountProvider";
 
 export default function InstancePage() {
   const { t } = useTranslation();

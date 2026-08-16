@@ -5,10 +5,10 @@ import {
 } from "@/utils/shellQuote";
 import React, { useEffect, useState } from "react";
 import {
-  NodeDetailsProvider,
   useNodeDetails,
   type NodeDetail,
 } from "@/contexts/NodeDetailsContext";
+import { NodeDetailsProvider } from "@/contexts/NodeDetailsProvider";
 import {
   Flex,
   TextField,
@@ -110,7 +110,7 @@ const Layout = () => {
   useEffect(() => {
     const interval = setInterval(() => { refresh() }, 5000);
     return () => clearInterval(interval);
-  }, [nodeDetail]);
+  }, [refresh]);
 
   if (isLoading) return <Loading text="" />;
   if (error) return <div>{error}</div>;

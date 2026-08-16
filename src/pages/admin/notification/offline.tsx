@@ -7,15 +7,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useNodeDetails } from "@/contexts/NodeDetailsContext";
+import { NodeDetailsProvider } from "@/contexts/NodeDetailsProvider";
 import {
-  NodeDetailsProvider,
-  useNodeDetails,
-} from "@/contexts/NodeDetailsContext";
-import {
-  OfflineNotificationProvider,
   useOfflineNotification,
   type OfflineNotification,
 } from "@/contexts/NotificationContext";
+import { OfflineNotificationProvider } from "@/contexts/NotificationProvider";
 import React from "react";
 import { Pencil, Search } from "lucide-react";
 import { useTranslation } from "react-i18next";

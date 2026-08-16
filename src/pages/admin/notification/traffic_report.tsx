@@ -7,15 +7,13 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
+import { useNodeDetails } from "@/contexts/NodeDetailsContext";
+import { NodeDetailsProvider } from "@/contexts/NodeDetailsProvider";
 import {
-  NodeDetailsProvider,
-  useNodeDetails,
-} from "@/contexts/NodeDetailsContext";
-import {
-  TrafficReportNotificationProvider,
   useTrafficReportNotification,
   type TrafficReportNotification,
 } from "@/contexts/TrafficReportContext";
+import { TrafficReportNotificationProvider } from "@/contexts/TrafficReportProvider";
 import React from "react";
 import { AlertTriangle, Pencil, Search } from "lucide-react";
 import { useTranslation } from "react-i18next";

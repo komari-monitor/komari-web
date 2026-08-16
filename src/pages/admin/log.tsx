@@ -51,7 +51,7 @@ const LogPage = () => {
       }
     };
     fetchLogs();
-  }, [page]);
+  }, [limit, page]);
 
   const totalPages = Math.ceil(total / limit);
   // 计算分页页码，显示当前页及前后1页，两端省略号
