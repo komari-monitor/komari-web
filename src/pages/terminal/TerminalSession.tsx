@@ -24,8 +24,7 @@ interface TerminalSessionProps {
   uuid: string;
   active: boolean;
   settings: XtermjsSettings;
-  otpRequired: boolean;
-  otpCode: string | null;
+  twoFaEnabled: boolean;
   disconnectMessage: string;
   onApiChange: (api: TerminalSessionApi | null) => void;
 }
@@ -42,8 +41,7 @@ const TerminalSession = ({
   uuid,
   active,
   settings,
-  otpRequired,
-  otpCode,
+  twoFaEnabled,
   disconnectMessage,
   onApiChange,
 }: TerminalSessionProps) => {
@@ -62,7 +60,7 @@ const TerminalSession = ({
   }, [onApiChange]);
 
   useEffect(() => {
-    if (!hostRef.current || (otpRequired && otpCode === null)) {
+    if (!hostRef.current) {
       return;
     }
 
@@ -113,6 +111,9 @@ const TerminalSession = ({
     let ws: WebSocket | null = null;
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
     let reconnectDeadline: number | null = null;
+    let otpBuffer = "";
+    let awaitingOtp = false;
+    let currentOtp: string | null = null;
 
     term.loadAddon(fitAddon);
     term.loadAddon(searchAddon);
@@ -190,6 +191,20 @@ const TerminalSession = ({
       }
     };
 
+    const promptOtpLine = "\r\n\x1b[1m" + t("terminal.2fa_prompt", "Two-factor authentication required.") + "\x1b[0m\r\n" + t("terminal.2fa_code_prompt", "Enter 2FA code: ");
+
+    const startOtpPrompt = (isRetry: boolean) => {
+      awaitingOtp = true;
+      otpBuffer = "";
+      if (isRetry) {
+        term.write("\r\n\x1b[31m" + t("terminal.otp_invalid", "Invalid or expired 2FA code.") + "\x1b[0m");
+      } else {
+        term.clear();
+      }
+      term.write(promptOtpLine);
+      term.focus();
+    };
+
     term.attachCustomKeyEventHandler((event) => {
       if (event.type !== "keydown") {
         return true;
@@ -220,7 +235,13 @@ const TerminalSession = ({
           if (term.hasSelection() || ctrlAlt) {
             void copySelection();
           } else {
-            send(new Uint8Array([3]));
+            if (!awaitingOtp) {
+              send(new Uint8Array([3]));
+            } else {
+              otpBuffer = "";
+              term.write("^C\r\n");
+              term.write(t("terminal.2fa_code_prompt", "Enter 2FA code: "));
+            }
           }
           return false;
         }
@@ -288,10 +309,10 @@ const TerminalSession = ({
       toast.dismiss(toastId);
     };
 
-    const connect = () => {
+    const connect = (otp: string | null) => {
       const params = new URLSearchParams();
-      if (otpRequired && otpCode) {
-        params.set("2fa_code", otpCode);
+      if (otp) {
+        params.set("2fa_code", otp);
       }
       if (requestID) {
         params.set("request_id", requestID);
@@ -356,7 +377,8 @@ const TerminalSession = ({
           return;
         }
         if (!requestID) {
-          term.write(`\n ${disconnectMessageRef.current}`);
+          hideReconnectingToast();
+          startOtpPrompt(true);
           return;
         }
 
@@ -377,16 +399,42 @@ const TerminalSession = ({
               id: toastId,
             },
           );
-          reconnectTimer = setTimeout(connect, RECONNECT_INTERVAL);
+          reconnectTimer = setTimeout(() => connect(requestID ? null : currentOtp), RECONNECT_INTERVAL);
         }
       };
 
       ws.onerror = () => {};
     };
 
-    connect();
+    if (twoFaEnabled) {
+      startOtpPrompt(false);
+    } else {
+      connect(null);
+    }
 
-    const termDataDisposable = term.onData((data) => send(data));
+    const termDataDisposable = term.onData((data) => {
+      if (awaitingOtp) {
+        if (data === "\r") {
+          awaitingOtp = false;
+          term.write("\r\n");
+          if (!otpBuffer) {
+            startOtpPrompt(false);
+            return;
+          }
+          currentOtp = otpBuffer;
+          otpBuffer = "";
+          connect(currentOtp);
+        } else if (data === "\x7f" || data === "\b") {
+          if (otpBuffer.length > 0) {
+            otpBuffer = otpBuffer.slice(0, -1);
+          }
+        } else if (data.length === 1 && data >= " " && data <= "~") {
+          otpBuffer += data;
+        }
+        return;
+      }
+      send(data);
+    });
     const api: TerminalSessionApi = {
       terminal: term,
       searchAddon,
@@ -429,7 +477,7 @@ const TerminalSession = ({
       }
       term.dispose();
     };
-  }, [otpCode, otpRequired, settings, toastId, t, uuid]);
+  }, [twoFaEnabled, settings, toastId, t, uuid]);
 
   const style = {
     "--xterm-padding": `${settings.terminalPadding}px`,

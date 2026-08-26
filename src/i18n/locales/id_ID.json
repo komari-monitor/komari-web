@@ -1346,6 +1346,9 @@
     "title": "Sistem"
   },
   "terminal": {
+    "2fa_prompt": "Autentikasi dua faktor diperlukan.",
+    "2fa_code_prompt": "Masukkan kode 2FA: ",
+    "otp_invalid": "Kode 2FA tidak valid atau kedaluwarsa",
     "disconnect": "Terputus",
     "no_active_connection": "Tidak ada koneksi aktif",
     "settings_error": "Gagal memuat pengaturan xterm; menggunakan bawaan: {{message}}",

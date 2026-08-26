@@ -1346,6 +1346,9 @@
     "title": "System"
   },
   "terminal": {
+    "2fa_prompt": "Two-factor authentication required.",
+    "2fa_code_prompt": "Enter 2FA code: ",
+    "otp_invalid": "Invalid or expired 2FA code",
     "disconnect": "Disconnected",
     "no_active_connection": "No active connection",
     "reconnecting": "Connection lost. Reconnecting...",

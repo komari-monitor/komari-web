@@ -5,6 +5,7 @@ import {
   useRef,
   useState,
 } from "react";
+import { toast } from "sonner";
 import type {
   CSSProperties,
   MouseEvent as ReactMouseEvent,
@@ -63,9 +64,6 @@ export const useTerminalPage = () => {
   );
   const [twoFaEnabled, setTwoFaEnabled] = useState(false);
   const [twoFaResolved, setTwoFaResolved] = useState(false);
-  const [otpCode, setOtpCode] = useState<string | null>(null);
-  const [otpDialogOpen, setOtpDialogOpen] = useState(false);
-  const [otpInput, setOtpInput] = useState("");
 
   // Search state
   const [searchOpen, setSearchOpen] = useState(false);
@@ -128,7 +126,7 @@ export const useTerminalPage = () => {
         const client = list.find((item) => item.uuid === initialUuid);
         if (!client) {
           if (list.length === 0) {
-            window.alert(t("terminal.no_active_connection"));
+            toast.error(t("terminal.no_active_connection"));
           }
           return;
         }
@@ -149,16 +147,13 @@ export const useTerminalPage = () => {
     let mounted = true;
     fetch("/api/me")
       .then((response) => response.json())
-      .then((data: { two_factor?: boolean }) => {
+      .then((data: { "2fa_enabled"?: boolean }) => {
         if (!mounted) {
           return;
         }
-        const enabled = Boolean(data?.two_factor);
+        const enabled = Boolean(data?.["2fa_enabled"]);
         setTwoFaEnabled(enabled);
         setTwoFaResolved(true);
-        if (enabled) {
-          setOtpDialogOpen(true);
-        }
       })
       .catch(() => {
         if (!mounted) {
@@ -792,16 +787,7 @@ export const useTerminalPage = () => {
     api?.send(`${command}\r`);
   }, []);
 
-  const submitOtp = useCallback(() => {
-    if (!otpInput) {
-      return;
-    }
-    setOtpCode(otpInput);
-    setOtpDialogOpen(false);
-  }, [otpInput]);
-
-  const otpReady = !twoFaEnabled || otpCode !== null;
-  const sessionsReady = !settingsLoading && twoFaResolved && otpReady;
+  const sessionsReady = !settingsLoading && twoFaResolved;
   const contextValue = useMemo(
     () => ({ terminal: activeApi?.terminal ?? null, sendCommand }),
     [activeApi, sendCommand],
@@ -822,9 +808,6 @@ export const useTerminalPage = () => {
     leftWidth,
     httpsCalloutOpen,
     twoFaEnabled,
-    otpCode,
-    otpDialogOpen,
-    otpInput,
     searchOpen,
     searchTerm,
     searchResultIndex,
@@ -838,8 +821,6 @@ export const useTerminalPage = () => {
     setActiveTabId,
     setServerMenuOpen,
     setRenameDraft,
-    setOtpDialogOpen,
-    setOtpInput,
     setIsClipboardOpen,
     setHttpsCalloutOpen,
     handleSearchTermChange,
@@ -862,6 +843,5 @@ export const useTerminalPage = () => {
     colorTab,
     closeTab,
     reorderTab,
-    submitOtp,
   };
 };

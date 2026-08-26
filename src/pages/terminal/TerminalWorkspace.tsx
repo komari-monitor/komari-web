@@ -20,7 +20,6 @@ export interface TerminalWorkspaceProps {
   sessionsReady: boolean;
   settings: XtermjsSettings;
   twoFaEnabled: boolean;
-  otpCode: string | null;
   disconnectMessage: string;
   searchOpen: boolean;
   searchTerm: string;
@@ -69,7 +68,6 @@ const TerminalWorkspace = ({
   sessionsReady,
   settings,
   twoFaEnabled,
-  otpCode,
   disconnectMessage,
   searchOpen,
   searchTerm,
@@ -124,8 +122,7 @@ const TerminalWorkspace = ({
                 uuid={tab.uuid}
                 active={tab.id === activeTabId}
                 settings={settings}
-                otpRequired={twoFaEnabled}
-                otpCode={otpCode}
+                twoFaEnabled={twoFaEnabled}
                 disconnectMessage={disconnectMessage}
                 onApiChange={(api) => onApiChange(tab.id, api)}
               />

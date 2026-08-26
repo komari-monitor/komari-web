@@ -1346,6 +1346,9 @@
     "title": "系統"
   },
   "terminal": {
+    "2fa_prompt": "需要雙因素認證。",
+    "2fa_code_prompt": "請輸入 2FA 驗證碼: ",
+    "otp_invalid": "2FA 驗證碼無效或已過期",
     "disconnect": "連線已斷開",
     "no_active_connection": "沒有活動連線",
     "settings_error": "xterm 設定回退：{{message}}",

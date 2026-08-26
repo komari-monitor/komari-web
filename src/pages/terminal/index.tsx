@@ -3,7 +3,6 @@ import { Theme } from "@radix-ui/themes";
 import { Toaster } from "@/components/ui/sonner";
 import { TerminalContext } from "@/contexts/TerminalContext";
 import TerminalNotices from "./TerminalNotices";
-import TerminalOtpDialog from "./TerminalOtpDialog";
 import TerminalResourceMonitor from "./TerminalResourceMonitor";
 import TerminalTabBar from "./TerminalTabBar";
 import TerminalWorkspace from "./TerminalWorkspace";
@@ -25,9 +24,6 @@ const TerminalPage = () => {
     leftWidth,
     httpsCalloutOpen,
     twoFaEnabled,
-    otpCode,
-    otpDialogOpen,
-    otpInput,
     searchOpen,
     searchTerm,
     searchResultIndex,
@@ -41,8 +37,6 @@ const TerminalPage = () => {
     setActiveTabId,
     setServerMenuOpen,
     setRenameDraft,
-    setOtpDialogOpen,
-    setOtpInput,
     setIsClipboardOpen,
     setHttpsCalloutOpen,
     handleSearchTermChange,
@@ -65,7 +59,6 @@ const TerminalPage = () => {
     colorTab,
     closeTab,
     reorderTab,
-    submitOtp,
   } = useTerminalPage();
 
   return (
@@ -119,7 +112,6 @@ const TerminalPage = () => {
             sessionsReady={sessionsReady}
             settings={resolvedSettings}
             twoFaEnabled={twoFaEnabled}
-            otpCode={otpCode}
             disconnectMessage={t("terminal.disconnect")}
             searchOpen={searchOpen}
             searchTerm={searchTerm}
@@ -144,18 +136,6 @@ const TerminalPage = () => {
           clients={clients}
           servers={resourceMonitorServers}
           onRemove={toggleResourceMonitor}
-        />
-
-        <TerminalOtpDialog
-          open={otpDialogOpen}
-          otpCode={otpCode}
-          otpInput={otpInput}
-          onOpenChange={setOtpDialogOpen}
-          onOtpInputChange={setOtpInput}
-          onSubmit={submitOtp}
-          onCancel={() => {
-            window.location.href = "/";
-          }}
         />
       </Theme>
     </TerminalContext.Provider>

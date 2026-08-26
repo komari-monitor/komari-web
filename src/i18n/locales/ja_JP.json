@@ -1346,6 +1346,9 @@
     "title": "システム"
   },
   "terminal": {
+    "2fa_prompt": "二要素認証が必要です。",
+    "2fa_code_prompt": "2FAコードを入力してください: ",
+    "otp_invalid": "2FAコードが無効または期限切れです",
     "disconnect": "接続が切断されました",
     "no_active_connection": "アクティブな接続はありません",
     "settings_error": "xterm の設定を読み込めなかったため、既定の設定を使用します：{{message}}",

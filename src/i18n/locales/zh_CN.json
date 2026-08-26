@@ -1346,6 +1346,9 @@
     "title": "系统"
   },
   "terminal": {
+    "2fa_prompt": "需要双因素认证。",
+    "2fa_code_prompt": "请输入 2FA 验证码: ",
+    "otp_invalid": "2FA 验证码无效或已过期",
     "close_others": "其他",
     "close_tab": "关闭标签页",
     "close_tabs": "关闭",
