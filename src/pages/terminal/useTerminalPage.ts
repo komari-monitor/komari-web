@@ -74,6 +74,9 @@ export const useTerminalPage = () => {
   const [searchResultCount, setSearchResultCount] = useState(0);
   const [searchCaseSensitive, setSearchCaseSensitive] = useState(false);
   const [searchUseRegex, setSearchUseRegex] = useState(false);
+  const [resourceMonitorServers, setResourceMonitorServers] = useState<
+    string[]
+  >([]);
 
   const containerRef = useRef<HTMLDivElement>(null);
   const draggingRef = useRef(false);
@@ -421,6 +424,14 @@ export const useTerminalPage = () => {
     [updateTabs],
   );
 
+  const toggleResourceMonitor = useCallback((uuid: string) => {
+    setResourceMonitorServers((current) =>
+      current.includes(uuid)
+        ? current.filter((item) => item !== uuid)
+        : [...current, uuid],
+    );
+  }, []);
+
   const closeTabs = useCallback(
     (ids: string[]) => {
       const remove = new Set(ids);
@@ -429,6 +440,14 @@ export const useTerminalPage = () => {
       const activeIndex = previous.findIndex((tab) => tab.id === activeId);
       const next = previous.filter((tab) => !remove.has(tab.id));
       updateTabs(next);
+      const removedUuids = new Set(
+        previous
+          .filter((tab) => remove.has(tab.id))
+          .map((tab) => tab.uuid),
+      );
+      setResourceMonitorServers((current) =>
+        current.filter((uuid) => !removedUuids.has(uuid)),
+      );
       setEditingTabId((id) => (id && remove.has(id) ? null : id));
       if (activeId && remove.has(activeId)) {
         const nextActive =
@@ -812,6 +831,7 @@ export const useTerminalPage = () => {
     searchResultCount,
     searchCaseSensitive,
     searchUseRegex,
+    resourceMonitorServers,
     containerRef,
     contextValue,
     sessionsReady,
@@ -827,6 +847,7 @@ export const useTerminalPage = () => {
     handleFindPrevious,
     handleToggleCaseSensitive,
     handleToggleUseRegex,
+    toggleResourceMonitor,
     openSearch,
     closeSearch,
     handleApiChange,

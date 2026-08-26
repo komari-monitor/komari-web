@@ -1,6 +1,7 @@
 import {
   Copy,
   Download,
+  Gauge,
   Palette,
   Pencil,
   Search,
@@ -30,11 +31,13 @@ interface TabMenuProps {
   total: number;
   open: boolean;
   position: ContextMenuPosition | null;
+  resourceWindowOpen: boolean;
   onOpenChange: (open: boolean) => void;
   onRename: () => void;
   onDuplicate: () => void;
   onExportText: () => void;
   onFind: () => void;
+  onToggleResourceWindow: () => void;
   onColor: (color: string | null) => void;
   onClose: (mode: CloseMode) => void;
 }
@@ -45,11 +48,13 @@ const TabMenu = ({
   total,
   open,
   position,
+  resourceWindowOpen,
   onOpenChange,
   onRename,
   onDuplicate,
   onExportText,
   onFind,
+  onToggleResourceWindow,
   onColor,
   onClose,
 }: TabMenuProps) => {
@@ -124,6 +129,18 @@ const TabMenu = ({
         <DropdownMenuItem onSelect={onFind} className="flex items-center gap-2">
           <Search size={14} />
           <span>{t("terminal.find", "查找")}</span>
+        </DropdownMenuItem>
+
+        <DropdownMenuItem
+          onSelect={onToggleResourceWindow}
+          className="flex items-center gap-2"
+        >
+          <Gauge size={14} />
+          <span>
+            {resourceWindowOpen
+              ? t("terminal.resource_monitor.close", "关闭资源小窗")
+              : t("terminal.resource_monitor.open", "打开资源小窗")}
+          </span>
         </DropdownMenuItem>
 
         <DropdownMenuSeparator />

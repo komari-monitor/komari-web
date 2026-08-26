@@ -73,6 +73,8 @@ export interface TerminalTabBarProps {
   onDuplicate: (id: string) => void;
   onExportText: (id: string) => void;
   onFind: (id: string) => void;
+  resourceMonitorServers: string[];
+  onToggleResourceWindow: (uuid: string) => void;
   onColor: (id: string, color: string | null) => void;
   onClose: (id: string, mode: CloseMode) => void;
   onReorder: (sourceId: string, targetId: string) => void;
@@ -99,6 +101,8 @@ interface SortableTabItemProps {
   onDuplicate: (id: string) => void;
   onExportText: (id: string) => void;
   onFind: (id: string) => void;
+  resourceWindowOpen: boolean;
+  onToggleResourceWindow: (uuid: string) => void;
   onColor: (id: string, color: string | null) => void;
   onClose: (id: string, mode: CloseMode) => void;
 }
@@ -124,6 +128,8 @@ const SortableTabItem = ({
   onDuplicate,
   onExportText,
   onFind,
+  resourceWindowOpen,
+  onToggleResourceWindow,
   onColor,
   onClose,
 }: SortableTabItemProps) => {
@@ -169,20 +175,22 @@ const SortableTabItem = ({
         total={total}
         open={contextMenuTabId === tab.id}
         position={contextMenuPosition}
+        resourceWindowOpen={resourceWindowOpen}
         onOpenChange={(open) => {
           if (open) {
             setContextMenuTabId(tab.id);
             return;
           }
+          // Keep the anchor in place for the Radix close animation.
           if (contextMenuTabId === tab.id) {
             setContextMenuTabId(null);
-            setContextMenuPosition(null);
           }
         }}
         onRename={() => onStartRename(tab.id)}
         onDuplicate={() => onDuplicate(tab.id)}
         onExportText={() => onExportText(tab.id)}
         onFind={() => onFind(tab.id)}
+        onToggleResourceWindow={() => onToggleResourceWindow(tab.uuid)}
         onColor={(color) => onColor(tab.id, color)}
         onClose={(mode) => onClose(tab.id, mode)}
       />
@@ -212,6 +220,8 @@ const TerminalTabBar = ({
   renameDraft,
   serverMenuOpen,
   onServerMenuOpenChange,
+  resourceMonitorServers,
+  onToggleResourceWindow,
   onActivate,
   onAdd,
   onOpenClient,
@@ -425,6 +435,9 @@ const TerminalTabBar = ({
                     renameDraft={renameDraft}
                     contextMenuTabId={contextMenuTabId}
                     contextMenuPosition={contextMenuPosition}
+                    resourceWindowOpen={resourceMonitorServers.includes(
+                      tab.uuid,
+                    )}
                     setContextMenuTabId={setContextMenuTabId}
                     setContextMenuPosition={setContextMenuPosition}
                     onActivate={onActivate}
@@ -435,6 +448,7 @@ const TerminalTabBar = ({
                     onDuplicate={onDuplicate}
                     onExportText={onExportText}
                     onFind={onFind}
+                    onToggleResourceWindow={onToggleResourceWindow}
                     onColor={onColor}
                     onClose={onClose}
                   />

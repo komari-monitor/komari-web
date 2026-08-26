@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { TerminalContext } from "@/contexts/TerminalContext";
 import TerminalNotices from "./TerminalNotices";
 import TerminalOtpDialog from "./TerminalOtpDialog";
+import TerminalResourceMonitor from "./TerminalResourceMonitor";
 import TerminalTabBar from "./TerminalTabBar";
 import TerminalWorkspace from "./TerminalWorkspace";
 import { useTerminalPage } from "./useTerminalPage";
@@ -33,6 +34,7 @@ const TerminalPage = () => {
     searchResultCount,
     searchCaseSensitive,
     searchUseRegex,
+    resourceMonitorServers,
     containerRef,
     contextValue,
     sessionsReady,
@@ -48,6 +50,7 @@ const TerminalPage = () => {
     handleFindPrevious,
     handleToggleCaseSensitive,
     handleToggleUseRegex,
+    toggleResourceMonitor,
     openSearch,
     closeSearch,
     handleApiChange,
@@ -71,7 +74,7 @@ const TerminalPage = () => {
         appearance="dark"
         className="km-page-terminal fixed inset-0 h-screen w-screen overflow-hidden bg-[#1e1e1e]"
       >
-        <Toaster theme="dark" />
+        <Toaster position="bottom-right" theme="dark" />
         <TerminalNotices
           settingsError={settingsError}
           httpsCalloutOpen={httpsCalloutOpen}
@@ -100,6 +103,8 @@ const TerminalPage = () => {
             onDuplicate={duplicateTab}
             onExportText={exportText}
             onFind={openSearch}
+            resourceMonitorServers={resourceMonitorServers}
+            onToggleResourceWindow={toggleResourceMonitor}
             onColor={colorTab}
             onClose={closeTab}
             onReorder={reorderTab}
@@ -134,6 +139,12 @@ const TerminalPage = () => {
             onAdd={addTab}
           />
         </div>
+
+        <TerminalResourceMonitor
+          clients={clients}
+          servers={resourceMonitorServers}
+          onRemove={toggleResourceMonitor}
+        />
 
         <TerminalOtpDialog
           open={otpDialogOpen}

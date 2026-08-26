@@ -1,10 +1,12 @@
-import { useEffect, useRef } from "react";
+import { useEffect, useId, useRef } from "react";
 import type { CSSProperties } from "react";
 import { Terminal } from "@xterm/xterm";
 import type { ITerminalOptions } from "@xterm/xterm";
 import { FitAddon } from "@xterm/addon-fit";
 import { SearchAddon } from "@xterm/addon-search";
 import { WebLinksAddon } from "@xterm/addon-web-links";
+import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
 import type { XtermjsSettings } from "@/hooks/useXtermjsSettings";
 import {
   isTransparentBackground,
@@ -28,6 +30,9 @@ interface TerminalSessionProps {
   onApiChange: (api: TerminalSessionApi | null) => void;
 }
 
+const RECONNECT_INTERVAL = 1000;
+const RECONNECT_WINDOW = 30000;
+
 const encode = (value: string) => new TextEncoder().encode(value);
 
 const normalizePaste = (value: string) => value.replace(/\r?\n/g, "\r");
@@ -45,6 +50,8 @@ const TerminalSession = ({
   const hostRef = useRef<HTMLDivElement>(null);
   const disconnectMessageRef = useRef(disconnectMessage);
   const onApiChangeRef = useRef(onApiChange);
+  const toastId = useId();
+  const { t } = useTranslation();
 
   useEffect(() => {
     disconnectMessageRef.current = disconnectMessage;
@@ -102,6 +109,10 @@ const TerminalSession = ({
     let firstBinary = false;
     let firstBinaryTimeout: ReturnType<typeof setTimeout> | null = null;
     let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
+    let requestID: string | null = null;
+    let ws: WebSocket | null = null;
+    let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    let reconnectDeadline: number | null = null;
 
     term.loadAddon(fitAddon);
     term.loadAddon(searchAddon);
@@ -110,16 +121,9 @@ const TerminalSession = ({
 
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const baseUrl = `${protocol}//${window.location.host}`;
-    const otpQuery = otpRequired && otpCode
-      ? `?2fa_code=${encodeURIComponent(otpCode)}`
-      : "";
-    const ws = new WebSocket(
-      `${baseUrl}/api/admin/client/${uuid}/terminal${otpQuery}`,
-    );
-    ws.binaryType = "arraybuffer";
 
     const send = (data: string | Uint8Array) => {
-      if (disposed || ws.readyState !== WebSocket.OPEN) {
+      if (disposed || !ws || ws.readyState !== WebSocket.OPEN) {
         return;
       }
       ws.send(typeof data === "string" ? encode(data) : data);
@@ -130,7 +134,7 @@ const TerminalSession = ({
         return;
       }
       fitAddon.fit();
-      if (ws.readyState === WebSocket.OPEN) {
+      if (ws && ws.readyState === WebSocket.OPEN) {
         ws.send(
           JSON.stringify({
             type: "resize",
@@ -262,7 +266,7 @@ const TerminalSession = ({
         clearInterval(heartbeatInterval);
       }
       heartbeatInterval = setInterval(() => {
-        if (ws.readyState === WebSocket.OPEN) {
+        if (ws && ws.readyState === WebSocket.OPEN) {
           ws.send(
             JSON.stringify({
               type: "heartbeat",
@@ -273,45 +277,114 @@ const TerminalSession = ({
       }, 10000);
     };
 
-    ws.onopen = () => {
-      fit();
-      startHeartbeat();
+    const stopHeartbeat = () => {
+      if (heartbeatInterval !== null) {
+        clearInterval(heartbeatInterval);
+        heartbeatInterval = null;
+      }
     };
 
-    ws.onmessage = (event) => {
-      if (disposed) {
-        return;
+    const hideReconnectingToast = () => {
+      toast.dismiss(toastId);
+    };
+
+    const connect = () => {
+      const params = new URLSearchParams();
+      if (otpRequired && otpCode) {
+        params.set("2fa_code", otpCode);
       }
-      if (event.data instanceof ArrayBuffer) {
-        if (!firstBinary) {
-          firstBinary = true;
-          // Clear screen when first agent binary packet arrives
-          term.clear();
-          term.write(new Uint8Array(event.data));
-          firstBinaryTimeout = setTimeout(() => {
-            if (disposed) {
+      if (requestID) {
+        params.set("request_id", requestID);
+      }
+      const query = params.toString();
+      ws = new WebSocket(
+        `${baseUrl}/api/admin/client/${uuid}/terminal${query ? `?${query}` : ""}`,
+      );
+      ws.binaryType = "arraybuffer";
+
+      ws.onopen = () => {
+        reconnectTimer = null;
+        reconnectDeadline = null;
+        hideReconnectingToast();
+        fit();
+        startHeartbeat();
+      };
+
+      ws.onmessage = (event) => {
+        if (disposed) {
+          return;
+        }
+        if (typeof event.data === "string") {
+          try {
+            const control = JSON.parse(event.data);
+            if (
+              control &&
+              typeof control === "object" &&
+              typeof control.request_id === "string"
+            ) {
+              requestID = control.request_id;
               return;
             }
-            term.resize(Math.max(1, term.cols - 1), term.rows);
-            fit();
-          }, 200);
-        } else {
-          term.write(new Uint8Array(event.data));
+          } catch {
+            // Plain text is terminal output from the server.
+          }
         }
-      } else {
-        term.write(event.data);
-      }
+        if (event.data instanceof ArrayBuffer) {
+          if (!firstBinary) {
+            firstBinary = true;
+            // Clear screen when first agent binary packet arrives
+            term.clear();
+            term.write(new Uint8Array(event.data));
+            firstBinaryTimeout = setTimeout(() => {
+              if (disposed) {
+                return;
+              }
+              term.resize(Math.max(1, term.cols - 1), term.rows);
+              fit();
+            }, 200);
+          } else {
+            term.write(new Uint8Array(event.data));
+          }
+        } else {
+          term.write(event.data);
+        }
+      };
+
+      ws.onclose = () => {
+        stopHeartbeat();
+        if (disposed) {
+          return;
+        }
+        if (!requestID) {
+          term.write(`\n ${disconnectMessageRef.current}`);
+          return;
+        }
+
+        const now = Date.now();
+        if (reconnectDeadline === null) {
+          reconnectDeadline = now + RECONNECT_WINDOW;
+        }
+        if (now >= reconnectDeadline) {
+          hideReconnectingToast();
+          term.write(`\n ${disconnectMessageRef.current}`);
+          return;
+        }
+        if (reconnectTimer === null) {
+          toast.loading(
+            t("terminal.reconnecting", "连接已断开，正在尝试重新连接"),
+            {
+              duration: Infinity,
+              id: toastId,
+            },
+          );
+          reconnectTimer = setTimeout(connect, RECONNECT_INTERVAL);
+        }
+      };
+
+      ws.onerror = () => {};
     };
 
-    ws.onclose = () => {
-      if (!disposed) {
-        if (heartbeatInterval !== null) {
-          clearInterval(heartbeatInterval);
-          heartbeatInterval = null;
-        }
-        term.write(`\n ${disconnectMessageRef.current}`);
-      }
-    };
+    connect();
 
     const termDataDisposable = term.onData((data) => send(data));
     const api: TerminalSessionApi = {
@@ -334,22 +407,29 @@ const TerminalSession = ({
       if (firstBinaryTimeout !== null) {
         clearTimeout(firstBinaryTimeout);
       }
-      if (heartbeatInterval !== null) {
-        clearInterval(heartbeatInterval);
+      stopHeartbeat();
+      if (reconnectTimer !== null) {
+        clearTimeout(reconnectTimer);
       }
-      ws.onopen = null;
-      ws.onmessage = null;
-      ws.onclose = null;
-      ws.onerror = null;
-      if (
-        ws.readyState === WebSocket.OPEN ||
-        ws.readyState === WebSocket.CONNECTING
-      ) {
-        ws.close();
+      hideReconnectingToast();
+      if (ws) {
+        ws.onopen = null;
+        ws.onmessage = null;
+        ws.onclose = null;
+        ws.onerror = null;
+        if (ws.readyState === WebSocket.OPEN) {
+          ws.send(JSON.stringify({ type: "close", request_id: requestID }));
+        }
+        if (
+          ws.readyState === WebSocket.OPEN ||
+          ws.readyState === WebSocket.CONNECTING
+        ) {
+          ws.close();
+        }
       }
       term.dispose();
     };
-  }, [otpCode, otpRequired, settings, uuid]);
+  }, [otpCode, otpRequired, settings, toastId, t, uuid]);
 
   const style = {
     "--xterm-padding": `${settings.terminalPadding}px`,
@@ -357,7 +437,7 @@ const TerminalSession = ({
 
   return (
     <div
-      className={`km-terminal-session terminal-page terminal-xterm-host absolute inset-0 h-full w-full overflow-hidden box-border bg-[var(--xterm-container-bg,#000)] p-[var(--xterm-padding,16px)] transition-opacity duration-150 [&_.xterm-viewport]:[scrollbar-width:thin] [&_.xterm-viewport]:[scrollbar-color:var(--xterm-scrollbar-thumb,#555)_var(--xterm-scrollbar-track,#000000)] [&_.xterm-viewport::-webkit-scrollbar]:h-2.5 [&_.xterm-viewport::-webkit-scrollbar]:w-2.5 [&_.xterm-viewport::-webkit-scrollbar-track]:bg-[var(--xterm-scrollbar-track,#000000)] [&_.xterm-viewport::-webkit-scrollbar-thumb]:rounded-[5px] [&_.xterm-viewport::-webkit-scrollbar-thumb]:bg-[var(--xterm-scrollbar-thumb,#555)] [&_.xterm-viewport::-webkit-scrollbar-thumb:hover]:bg-[var(--xterm-scrollbar-thumb-hover,#777)] ${
+      className={`km-terminal-session terminal-page terminal-xterm-host absolute inset-0 h-full w-full overflow-hidden box-border bg-[var(--xterm-container-bg,#000)] p-[var(--xterm-padding,16px)] transition-opacity duration-150 [&_.xterm-viewport]:[scrollbar-width:thin] [&_.xterm-viewport]:[scrollbar-color:var(--xterm-scrollbar-thumb,#555)_var(--xterm-scrollbar-track,#000000)] [&_.xterm-viewport::-webkit-scrollbar]:h-2.5 [&_.xterm-viewport]:[scrollbar-width:thin] [&_.xterm-viewport::-webkit-scrollbar]:w-2.5 [&_.xterm-viewport::-webkit-scrollbar-track]:bg-[var(--xterm-scrollbar-track,#000000)] [&_.xterm-viewport::-webkit-scrollbar-thumb]:rounded-[5px] [&_.xterm-viewport::-webkit-scrollbar-thumb]:bg-[var(--xterm-scrollbar-thumb,#555)] [&_.xterm-viewport::-webkit-scrollbar-thumb:hover]:bg-[var(--xterm-scrollbar-thumb-hover,#777)] ${
         active
           ? "is-active z-[1] visible pointer-events-auto opacity-100"
           : "invisible pointer-events-none opacity-0"

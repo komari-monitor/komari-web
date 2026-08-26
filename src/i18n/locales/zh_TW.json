@@ -1382,6 +1382,14 @@
       "match_case": "區分大小寫",
       "use_regex": "規則運算式",
       "close": "關閉"
+    },
+    "reconnecting": "連線中斷，正在重新連線...",
+    "resource_monitor": {
+      "close": "隱藏資源小窗",
+      "load_error": "即時資料載入失敗",
+      "open": "顯示資源小窗",
+      "title": "資源小窗",
+      "waiting": "正在等待資料..."
     }
   },
   "theme": {

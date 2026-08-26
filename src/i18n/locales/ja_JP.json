@@ -1348,7 +1348,7 @@
   "terminal": {
     "disconnect": "接続が切断されました",
     "no_active_connection": "アクティブな接続はありません",
-    "settings_error": "xterm設定のフォールバック: {{message}}",
+    "settings_error": "xterm の設定を読み込めなかったため、既定の設定を使用します：{{message}}",
     "server": "サーバー",
     "title": "ターミナル",
     "tabs": {
@@ -1374,7 +1374,7 @@
     "close_to_right": "右側",
     "close_others": "その他",
     "close_tab": "タブを閉じる",
-    "title_with_sessions": "ターミナル - {{name}} など{{count}}個のセッション",
+    "title_with_sessions": "ターミナル - {{name}}（{{count}} セッション）",
     "search": {
       "placeholder": "検索",
       "prev": "前を検索",
@@ -1382,6 +1382,14 @@
       "match_case": "大文字/小文字を区別",
       "use_regex": "正規表現を使用",
       "close": "閉じる"
+    },
+    "reconnecting": "接続が切断されました。再接続しています...",
+    "resource_monitor": {
+      "close": "リソースモニターを隠す",
+      "load_error": "リアルタイムデータを読み込めませんでした",
+      "open": "リソースモニターを表示",
+      "title": "リソースモニター",
+      "waiting": "データを待っています..."
     }
   },
   "theme": {

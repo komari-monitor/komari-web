@@ -1358,7 +1358,15 @@
     "export_text": "导出文本",
     "find": "查找",
     "no_active_connection": "没有活动连接",
+    "reconnecting": "连接已断开，正在重新连接...",
     "rename_tab": "重命名选项卡",
+    "resource_monitor": {
+      "close": "隐藏资源小窗",
+      "load_error": "实时数据加载失败",
+      "open": "显示资源小窗",
+      "title": "资源小窗",
+      "waiting": "等待数据..."
+    },
     "search": {
       "close": "关闭",
       "match_case": "区分大小写",
@@ -1368,7 +1376,7 @@
       "use_regex": "正则表达式"
     },
     "server": "服务器",
-    "settings_error": "xterm 设置回退：{{message}}",
+    "settings_error": "xterm 设置加载失败，已使用默认设置：{{message}}",
     "tabs": {
       "choose_server": "选择服务器",
       "connecting": "正在连接...",
@@ -1382,7 +1390,7 @@
       "title": "终端选项卡"
     },
     "title": "终端",
-    "title_with_sessions": "终端 - {{name}} 等{{count}}个会话"
+    "title_with_sessions": "终端 - {{name}}（{{count}} 个会话）"
   },
   "theme": {
     "active": "当前使用",

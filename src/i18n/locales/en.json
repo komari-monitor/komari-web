@@ -1348,10 +1348,11 @@
   "terminal": {
     "disconnect": "Disconnected",
     "no_active_connection": "No active connection",
-    "settings_error": "Xterm settings fallback: {{message}}",
+    "reconnecting": "Connection lost. Reconnecting...",
+    "settings_error": "Could not load xterm settings; using defaults: {{message}}",
     "server": "Server",
     "title": "Terminal",
-    "title_with_sessions": "Terminal - {{name}} and {{count}} sessions",
+    "title_with_sessions": "Terminal - {{name}} ({{count}} sessions)",
     "tabs": {
       "title": "Terminal tabs",
       "new_tab": "New tab",
@@ -1364,12 +1365,19 @@
       "scroll_left": "Scroll tabs left",
       "scroll_right": "Scroll tabs right"
     },
-    "color_tab": "Change Tab Color",
+    "color_tab": "Change tab color",
     "default_color": "Default Color",
-    "rename_tab": "Rename Tab",
-    "duplicate_tab": "Duplicate Tab",
-    "export_text": "Export Text",
+    "rename_tab": "Rename tab",
+    "duplicate_tab": "Duplicate tab",
+    "export_text": "Export text",
     "find": "Find",
+    "resource_monitor": {
+      "close": "Hide Resource Monitor",
+      "load_error": "Failed to load live data",
+      "title": "Resource Monitor",
+      "open": "Show Resource Monitor",
+      "waiting": "Waiting for data..."
+    },
     "close_tabs": "Close",
     "close_to_left": "Left",
     "close_to_right": "Right",

@@ -1348,7 +1348,7 @@
   "terminal": {
     "disconnect": "Terputus",
     "no_active_connection": "Tidak ada koneksi aktif",
-    "settings_error": "Fallback pengaturan xterm: {{message}}",
+    "settings_error": "Gagal memuat pengaturan xterm; menggunakan bawaan: {{message}}",
     "server": "Server",
     "title": "Terminal",
     "tabs": {
@@ -1374,7 +1374,7 @@
     "close_to_right": "Kanan",
     "close_others": "Lainnya",
     "close_tab": "Tutup Tab",
-    "title_with_sessions": "Terminal - {{name}} dan {{count}} sesi",
+    "title_with_sessions": "Terminal - {{name}} ({{count}} sesi)",
     "search": {
       "placeholder": "Cari",
       "prev": "Sebelumnya",
@@ -1382,6 +1382,14 @@
       "match_case": "Cocokkan Huruf Besar/Kecil",
       "use_regex": "Gunakan Regex",
       "close": "Tutup"
+    },
+    "reconnecting": "Koneksi terputus. Menyambung ulang...",
+    "resource_monitor": {
+      "close": "Sembunyikan Monitor Sumber Daya",
+      "load_error": "Gagal memuat data waktu nyata",
+      "open": "Tampilkan Monitor Sumber Daya",
+      "title": "Monitor Sumber Daya",
+      "waiting": "Menunggu data..."
     }
   },
   "theme": {
