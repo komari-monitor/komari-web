@@ -257,6 +257,11 @@
     "yellow": "黄色"
   },
   "command_clipboard": {
+    "add": "添加命令",
+    "delete": "删除命令",
+    "edit": "编辑命令",
+    "error_generic": "发生错误",
+    "error_loading": "加载命令失败：{{message}}",
     "title": "命令剪贴板"
   },
   "common": {
@@ -1341,9 +1346,43 @@
     "title": "系统"
   },
   "terminal": {
+    "close_others": "其他",
+    "close_tab": "关闭标签页",
+    "close_tabs": "关闭",
+    "close_to_left": "左侧",
+    "close_to_right": "右侧",
+    "color_tab": "更改选项卡颜色",
+    "default_color": "默认颜色",
     "disconnect": "连接已断开",
+    "duplicate_tab": "复制标签页",
+    "export_text": "导出文本",
+    "find": "查找",
     "no_active_connection": "没有活动连接",
-    "title": "终端"
+    "rename_tab": "重命名选项卡",
+    "search": {
+      "close": "关闭",
+      "match_case": "区分大小写",
+      "next": "下一个",
+      "placeholder": "查找",
+      "prev": "上一个",
+      "use_regex": "正则表达式"
+    },
+    "server": "服务器",
+    "settings_error": "xterm 设置回退：{{message}}",
+    "tabs": {
+      "choose_server": "选择服务器",
+      "connecting": "正在连接...",
+      "empty_action": "连接到服务器",
+      "empty_description": "连接服务器后即可打开终端选项卡。",
+      "empty_title": "暂无终端选项卡",
+      "new_tab": "新建选项卡",
+      "no_servers": "没有可用的服务器",
+      "scroll_left": "向左滚动选项卡",
+      "scroll_right": "向右滚动选项卡",
+      "title": "终端选项卡"
+    },
+    "title": "终端",
+    "title_with_sessions": "终端 - {{name}} 等{{count}}个会话"
   },
   "theme": {
     "active": "当前使用",

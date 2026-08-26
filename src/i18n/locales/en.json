@@ -257,7 +257,12 @@
     "yellow": "Yellow"
   },
   "command_clipboard": {
-    "title": "Command Clipboard"
+    "title": "Command Clipboard",
+    "add": "Add Command",
+    "edit": "Edit Command",
+    "delete": "Delete Command",
+    "error_loading": "Error loading commands: {{message}}",
+    "error_generic": "An error occurred"
   },
   "dashboard": {
     "title": "Dashboard",
@@ -1343,7 +1348,41 @@
   "terminal": {
     "disconnect": "Disconnected",
     "no_active_connection": "No active connection",
-    "title": "Terminal"
+    "settings_error": "Xterm settings fallback: {{message}}",
+    "server": "Server",
+    "title": "Terminal",
+    "title_with_sessions": "Terminal - {{name}} and {{count}} sessions",
+    "tabs": {
+      "title": "Terminal tabs",
+      "new_tab": "New tab",
+      "choose_server": "Choose a server",
+      "no_servers": "No servers available",
+      "empty_title": "No terminal tabs",
+      "empty_description": "Connect to a server to open a terminal tab.",
+      "empty_action": "Connect to a server",
+      "connecting": "Connecting...",
+      "scroll_left": "Scroll tabs left",
+      "scroll_right": "Scroll tabs right"
+    },
+    "color_tab": "Change Tab Color",
+    "default_color": "Default Color",
+    "rename_tab": "Rename Tab",
+    "duplicate_tab": "Duplicate Tab",
+    "export_text": "Export Text",
+    "find": "Find",
+    "close_tabs": "Close",
+    "close_to_left": "Left",
+    "close_to_right": "Right",
+    "close_others": "Others",
+    "close_tab": "Close Tab",
+    "search": {
+      "placeholder": "Find",
+      "prev": "Previous match",
+      "next": "Next match",
+      "match_case": "Match Case",
+      "use_regex": "Use Regular Expression",
+      "close": "Close"
+    }
   },
   "theme": {
     "active": "Active",

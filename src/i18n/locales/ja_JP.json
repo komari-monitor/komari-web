@@ -257,7 +257,12 @@
     "yellow": "黄色"
   },
   "command_clipboard": {
-    "title": "コマンドクリップボード"
+    "title": "コマンドクリップボード",
+    "add": "コマンドを追加",
+    "edit": "コマンドを編集",
+    "delete": "コマンドを削除",
+    "error_loading": "コマンドの読み込みに失敗しました: {{message}}",
+    "error_generic": "エラーが発生しました"
   },
   "dashboard": {
     "title": "ダッシュボード",
@@ -1343,7 +1348,41 @@
   "terminal": {
     "disconnect": "接続が切断されました",
     "no_active_connection": "アクティブな接続はありません",
-    "title": "ターミナル"
+    "settings_error": "xterm設定のフォールバック: {{message}}",
+    "server": "サーバー",
+    "title": "ターミナル",
+    "tabs": {
+      "title": "ターミナルタブ",
+      "new_tab": "新しいタブ",
+      "choose_server": "サーバーを選択",
+      "no_servers": "利用可能なサーバーはありません",
+      "empty_title": "ターミナルタブはありません",
+      "empty_description": "サーバーに接続するとターミナルタブを開けます。",
+      "empty_action": "サーバーに接続",
+      "connecting": "接続中...",
+      "scroll_left": "タブを左へスクロール",
+      "scroll_right": "タブを右へスクロール"
+    },
+    "color_tab": "タブの色を変更",
+    "default_color": "デフォルトの色",
+    "rename_tab": "タブ名を変更",
+    "duplicate_tab": "タブを複製",
+    "export_text": "テキストをエクスポート",
+    "find": "検索",
+    "close_tabs": "閉じる",
+    "close_to_left": "左側",
+    "close_to_right": "右側",
+    "close_others": "その他",
+    "close_tab": "タブを閉じる",
+    "title_with_sessions": "ターミナル - {{name}} など{{count}}個のセッション",
+    "search": {
+      "placeholder": "検索",
+      "prev": "前を検索",
+      "next": "次を検索",
+      "match_case": "大文字/小文字を区別",
+      "use_regex": "正規表現を使用",
+      "close": "閉じる"
+    }
   },
   "theme": {
     "active": "現在使用中",

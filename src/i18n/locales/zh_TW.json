@@ -257,7 +257,12 @@
     "yellow": "黃色"
   },
   "command_clipboard": {
-    "title": "命令剪貼簿"
+    "title": "命令剪貼簿",
+    "add": "新增指令",
+    "edit": "編輯指令",
+    "delete": "刪除指令",
+    "error_loading": "載入指令失敗：{{message}}",
+    "error_generic": "發生錯誤"
   },
   "dashboard": {
     "title": "儀表板",
@@ -1343,7 +1348,41 @@
   "terminal": {
     "disconnect": "連線已斷開",
     "no_active_connection": "沒有活動連線",
-    "title": "終端"
+    "settings_error": "xterm 設定回退：{{message}}",
+    "server": "伺服器",
+    "title": "終端",
+    "tabs": {
+      "title": "終端分頁",
+      "new_tab": "新增分頁",
+      "choose_server": "選擇伺服器",
+      "no_servers": "沒有可用的伺服器",
+      "empty_title": "暫無終端分頁",
+      "empty_description": "連線伺服器後即可開啟終端分頁。",
+      "empty_action": "連線到伺服器",
+      "connecting": "連線中...",
+      "scroll_left": "向左捲動分頁",
+      "scroll_right": "向右捲動分頁"
+    },
+    "color_tab": "變更分頁顏色",
+    "default_color": "預設顏色",
+    "rename_tab": "重新命名分頁",
+    "duplicate_tab": "複製標籤頁",
+    "export_text": "匯出文字",
+    "find": "尋找",
+    "close_tabs": "關閉",
+    "close_to_left": "左側",
+    "close_to_right": "右側",
+    "close_others": "其他",
+    "close_tab": "關閉標籤頁",
+    "title_with_sessions": "終端 - {{name}} 等{{count}}個工作階段",
+    "search": {
+      "placeholder": "尋找",
+      "prev": "上一個",
+      "next": "下一個",
+      "match_case": "區分大小寫",
+      "use_regex": "規則運算式",
+      "close": "關閉"
+    }
   },
   "theme": {
     "active": "當前使用",

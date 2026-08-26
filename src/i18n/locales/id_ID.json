@@ -257,7 +257,12 @@
     "yellow": "Kuning"
   },
   "command_clipboard": {
-    "title": "Papan Klip Perintah"
+    "title": "Papan Klip Perintah",
+    "add": "Tambah Perintah",
+    "edit": "Edit Perintah",
+    "delete": "Hapus Perintah",
+    "error_loading": "Gagal memuat perintah: {{message}}",
+    "error_generic": "Terjadi kesalahan"
   },
   "dashboard": {
     "title": "Dasbor",
@@ -1343,7 +1348,41 @@
   "terminal": {
     "disconnect": "Terputus",
     "no_active_connection": "Tidak ada koneksi aktif",
-    "title": "Terminal"
+    "settings_error": "Fallback pengaturan xterm: {{message}}",
+    "server": "Server",
+    "title": "Terminal",
+    "tabs": {
+      "title": "Tab Terminal",
+      "new_tab": "Tab Baru",
+      "choose_server": "Pilih Server",
+      "no_servers": "Tidak ada server tersedia",
+      "empty_title": "Tidak ada tab terminal",
+      "empty_description": "Hubungkan ke server untuk membuka tab terminal.",
+      "empty_action": "Hubungkan ke Server",
+      "connecting": "Menghubungkan...",
+      "scroll_left": "Gulir tab ke kiri",
+      "scroll_right": "Gulir tab ke kanan"
+    },
+    "color_tab": "Ubah Warna Tab",
+    "default_color": "Warna Standar",
+    "rename_tab": "Ubah Nama Tab",
+    "duplicate_tab": "Duplikat Tab",
+    "export_text": "Ekspor Teks",
+    "find": "Cari",
+    "close_tabs": "Tutup",
+    "close_to_left": "Kiri",
+    "close_to_right": "Kanan",
+    "close_others": "Lainnya",
+    "close_tab": "Tutup Tab",
+    "title_with_sessions": "Terminal - {{name}} dan {{count}} sesi",
+    "search": {
+      "placeholder": "Cari",
+      "prev": "Sebelumnya",
+      "next": "Berikutnya",
+      "match_case": "Cocokkan Huruf Besar/Kecil",
+      "use_regex": "Gunakan Regex",
+      "close": "Tutup"
+    }
   },
   "theme": {
     "active": "Aktif",
