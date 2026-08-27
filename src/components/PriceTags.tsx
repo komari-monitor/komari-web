@@ -123,7 +123,10 @@ const CustomTags = ({ tags }: { tags?: string }) => {
   if (!tags || tags.trim() === "") {
     return <></>;
   }
-  const tagList = tags.split(";").filter((tag) => tag.trim() !== "");
+  const tagList = tags
+    .split(";")
+    .filter((tag) => tag.trim() !== "")
+    .filter((tag) => !/^<TRD:\d+>$/i.test(tag.trim()));
   const colors: Array<
     | "ruby"
     | "gray"
