@@ -1,24 +1,9 @@
 import React from "react";
 import { useTranslation } from "react-i18next";
-
-export type TrafficReportNotification = {
-  client: string;
-  enable: boolean;
-  daily: boolean;
-  weekly: boolean;
-  monthly: boolean;
-};
-
-interface TrafficReportNotificationContextType {
-  trafficReportNotification: TrafficReportNotification[];
-  loading?: boolean;
-  error?: Error | null;
-  refresh: () => Promise<void>;
-}
-
-const TrafficReportContext = React.createContext<
-  TrafficReportNotificationContextType | undefined
->(undefined);
+import {
+  TrafficReportContext,
+  type TrafficReportNotification,
+} from "./TrafficReportContext";
 
 export const TrafficReportNotificationProvider: React.FC<{
   children: React.ReactNode;
@@ -26,11 +11,11 @@ export const TrafficReportNotificationProvider: React.FC<{
   const { t } = useTranslation();
   const [trafficReportNotification, setTrafficReportNotification] =
     React.useState<TrafficReportNotification[]>([]);
-  const [loading, setLoading] = React.useState<boolean>(false);
+  const [loading, setLoading] = React.useState(false);
   const firstLoad = React.useRef(true);
   const [error, setError] = React.useState<Error | null>(null);
 
-  const refresh = async () => {
+  const refresh = React.useCallback(async () => {
     if (firstLoad.current) setLoading(true);
     try {
       setError(null);
@@ -49,11 +34,11 @@ export const TrafficReportNotificationProvider: React.FC<{
         firstLoad.current = false;
       }
     }
-  };
+  }, [t]);
 
   React.useEffect(() => {
-    refresh();
-  }, []);
+    void refresh();
+  }, [refresh]);
 
   return (
     <TrafficReportContext.Provider
@@ -62,14 +47,4 @@ export const TrafficReportNotificationProvider: React.FC<{
       {children}
     </TrafficReportContext.Provider>
   );
-};
-
-export const useTrafficReportNotification = () => {
-  const context = React.useContext(TrafficReportContext);
-  if (!context) {
-    throw new Error(
-      "useTrafficReportNotification must be used within a TrafficReportNotificationProvider"
-    );
-  }
-  return context;
 };

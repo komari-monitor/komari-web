@@ -11,6 +11,11 @@
       "icon": "Server"
     },
     {
+      "labelKey": "billing_history.title",
+      "path": "/admin/billing-history",
+      "icon": "ReceiptText"
+    },
+    {
       "labelKey": "operations.title",
       "path": "/admin/ping",
       "icon": "Bolt",

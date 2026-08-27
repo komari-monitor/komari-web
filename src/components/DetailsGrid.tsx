@@ -5,7 +5,7 @@ import {
   type NodeBasicInfo,
 } from "@/contexts/NodeListContext";
 import { useLiveData } from "@/contexts/LiveDataContext";
-import { formatUptime } from "./Node";
+import { formatUptime } from "@/utils/formatUptime";
 import { formatBytes } from "@/utils/unitHelper";
 import { Flex, Text, Card } from "@radix-ui/themes";
 import type { Record as LiveRecord } from "@/types/LiveData";

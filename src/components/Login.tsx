@@ -9,7 +9,8 @@ import {
 } from "@radix-ui/themes";
 import { useTranslation } from "react-i18next";
 import { TablerSettings } from "./Icones/Tabler";
-import { AccountProvider, useAccount } from "@/contexts/AccountContext";
+import { useAccount } from "@/contexts/AccountContext";
+import { AccountProvider } from "@/contexts/AccountProvider";
 import { usePublicInfo } from "@/contexts/PublicInfoContext";
 
 type LoginDialogProps = {
@@ -39,12 +40,6 @@ const LoginDialog = ({ trigger, autoOpen = false, showSettings = true, info, onL
   const onlyOAuthLogin = oauthEnabled && !passwordLoginEnabled; // 只有 OAuth
   // Validate inputs (仅在启用密码登录时需要)
   const isFormValid = passwordLoginEnabled && username.trim() !== "" && password.trim() !== "";
-    //console.log(autoOpen, open);
-    React.useEffect(() => {
-      if (autoOpen) {
-        setOpen(true);
-      }
-    }, [autoOpen]);
     // Handle login
     const handleLogin = async () => {
       if (!isFormValid) {

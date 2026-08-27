@@ -1475,5 +1475,36 @@
     "mode": "View Mode"
   },
   "warn_https": "The current connection is not HTTPS! Your sensitive data is at serious risk. Take immediate action to secure the connection! Copy may not available!",
-  "warn_websocket": "RPC2 request failed, please check the network connection or server status!"
+  "warn_websocket": "RPC2 request failed, please check the network connection or server status!",
+  "billing_settings": {
+    "title": "Monthly traffic billing",
+    "reset_day": "Billing day",
+    "reset_day_description": "Reset traffic at 00:00 on this day each month; shorter months use the last day.",
+    "reset_day_error": "Billing day must be an integer from 1 to 31.",
+    "timezone": "Billing timezone",
+    "timezone_description": "IANA timezone used for monthly reset boundaries, for example Asia/Shanghai.",
+    "timezone_error": "Enter a valid IANA timezone."
+  },
+  "billing_history": {
+    "title": "Monthly traffic history",
+    "description": "Review archived monthly traffic and quota status for each node.",
+    "client_uuid": "Node UUID",
+    "client_uuid_placeholder": "Optional node UUID filter",
+    "cycle_key": "Cycle key",
+    "cycle_key_placeholder": "Optional billing cycle filter",
+    "client": "Node",
+    "period": "Billing period",
+    "upload": "Upload",
+    "download": "Download",
+    "billable": "Billable traffic",
+    "limit": "Quota",
+    "status": "Status",
+    "exceeded": "Exceeded",
+    "within_limit": "Within quota",
+    "empty": "No archived records",
+    "load_failed": "Failed to load monthly traffic history",
+    "total": "{{count}} records",
+    "previous": "Previous",
+    "next": "Next"
+  }
 }

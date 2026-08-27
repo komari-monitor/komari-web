@@ -1,4 +1,4 @@
-import { LiveDataProvider } from "@/contexts/LiveDataContext";
+import { LiveDataProvider } from "@/contexts/LiveDataProvider";
 import Footer from "../components/Footer";
 import NavBar from "../components/NavBar";
 import { Outlet } from "react-router-dom";

@@ -43,7 +43,7 @@ const Footer = () => {
     };
 
     fetchVersionInfo();
-  }, []);
+  }, [call]);
 
   return (
     <div className="km-footer footer p-2 border-t-1 border-t-[var(--gray-7)]">

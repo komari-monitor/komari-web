@@ -33,6 +33,34 @@ export default function GeneralSettings() {
 
   return (
     <>
+      <SettingCardLabel>{t("billing_settings.title")}</SettingCardLabel>
+      <SettingCardShortTextInput
+        type="number"
+        title={t("billing_settings.reset_day")}
+        description={t("billing_settings.reset_day_description")}
+        defaultValue={settings.billing_reset_day ?? 1}
+        OnSave={async (value) => {
+          const resetDay = Number(value);
+          if (!Number.isInteger(resetDay) || resetDay < 1 || resetDay > 31) {
+            toast.error(t("billing_settings.reset_day_error"));
+            return;
+          }
+          await updateSettingsWithToast({ billing_reset_day: resetDay }, t);
+        }}
+      />
+      <SettingCardShortTextInput
+        title={t("billing_settings.timezone")}
+        description={t("billing_settings.timezone_description")}
+        defaultValue={settings.billing_timezone ?? "Asia/Shanghai"}
+        OnSave={async (value) => {
+          const timezone = value.trim();
+          if (!timezone) {
+            toast.error(t("billing_settings.timezone_error"));
+            return;
+          }
+          await updateSettingsWithToast({ billing_timezone: timezone }, t);
+        }}
+      />
       <SettingCardLabel>
         {t("settings.general.auto_discovery")}
       </SettingCardLabel>

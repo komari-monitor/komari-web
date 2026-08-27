@@ -1,7 +1,5 @@
 import React, {
-  createContext,
   useCallback,
-  useContext,
   useEffect,
   useMemo,
   useRef,
@@ -11,6 +9,7 @@ import type {
   LiveDataResponse,
   Record as LiveRecord,
 } from "../types/LiveData";
+import { LiveDataContext } from "./LiveDataContext";
 import { useRPC2Call } from "./RPC2Context";
 
 const LIVE_DATA_INTERVAL_MS = 2000;
@@ -105,19 +104,6 @@ const mergeLiveData = (
   if (!changed && previous) return previous;
   return { data: { online, data }, status: "ok" };
 };
-
-// 创建Context
-interface LiveDataContextType {
-  live_data: LiveDataResponse | null;
-  showCallout: boolean;
-  onRefresh: (callback: (data: LiveDataResponse) => void) => () => void;
-}
-
-const LiveDataContext = createContext<LiveDataContextType>({
-  live_data: null,
-  showCallout: true,
-  onRefresh: () => () => {},
-});
 
 // 创建Provider组件
 export const LiveDataProvider: React.FC<{ children: React.ReactNode }> = ({
@@ -221,7 +207,3 @@ export const LiveDataProvider: React.FC<{ children: React.ReactNode }> = ({
     </LiveDataContext.Provider>
   );
 };
-
-export const useLiveData = () => useContext(LiveDataContext);
-
-export default LiveDataContext;
