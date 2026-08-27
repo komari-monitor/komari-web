@@ -625,6 +625,8 @@
     "totalDownload": "Total Unduhan",
     "totalNodes": "Total {{total}} server, {{online}} Hidup",
     "totalTraffic": "Total Lalu Lintas",
+    "trafficResetToday": "Reset hari ini",
+    "trafficResetIn": "{{days}} hari lagi reset",
     "totalUpload": "Total Unggahan",
     "uptime": "Waktu Aktif",
     "virtualization": "Virtualisasi"

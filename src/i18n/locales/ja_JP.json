@@ -625,6 +625,8 @@
     "totalDownload": "総ダウンロード",
     "totalNodes": "合計 {{total}} 台のサーバー、{{online}} 台がオンライン",
     "totalTraffic": "総トラフィック",
+    "trafficResetToday": "本日リセット",
+    "trafficResetIn": "{{days}}日後にリセット",
     "totalUpload": "総アップロード",
     "uptime": "稼働時間",
     "virtualization": "仮想化"

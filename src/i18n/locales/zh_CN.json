@@ -625,6 +625,8 @@
     "totalDownload": "总下载",
     "totalNodes": "共 {{total}} 个服务器，{{online}} 个在线",
     "totalTraffic": "总流量",
+    "trafficResetToday": "今日重置",
+    "trafficResetIn": "{{days}}天后重置",
     "totalUpload": "总上传",
     "uptime": "运行时间",
     "virtualization": "虚拟化"

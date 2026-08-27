@@ -625,6 +625,8 @@
     "totalDownload": "Total Download",
     "totalNodes": "{{total}} servers total, {{online}} online",
     "totalTraffic": "Traffic",
+    "trafficResetToday": "Resets today",
+    "trafficResetIn": "{{days}} days to reset",
     "totalUpload": "Total Upload",
     "uptime": "Uptime",
     "virtualization": "Virtualization"
