@@ -14,6 +14,7 @@ import { useTranslation } from "react-i18next";
 import Tips from "./ui/tips";
 
 import { formatBytes } from "@/utils/unitHelper";
+import { parseTRDFromTags, daysUntilTrafficReset } from "@/utils/trafficReset";
 
 /** 格式化秒*/
 export function formatUptime(seconds: number, t: TFunction): string {
@@ -69,6 +70,8 @@ const Node = React.memo(
   const downloadSpeed = formatBytes(liveData.network.down);
   const totalUpload = formatBytes(liveData.network.totalUp);
   const totalDownload = formatBytes(liveData.network.totalDown);
+  const resetDay = parseTRDFromTags(basic.tags);
+  const daysUntilReset = daysUntilTrafficReset(resetDay);
   //const totalTraffic = formatBytes(liveData.network.totalUp + liveData.network.totalDown);
   return (
     <Card
@@ -206,12 +209,23 @@ const Node = React.memo(
                 <Text size="1" className="md:block hidden" color="gray">
                   ↑ {totalUpload} ↓ {totalDownload}
                 </Text>
-                <Text size="1" className="md:block hidden" color="gray">
-                  {basic.traffic_limit_type &&
-                    basic.traffic_limit_type.charAt(0).toUpperCase() +
-                      basic.traffic_limit_type.slice(1)}
-                  ({formatBytes(basic.traffic_limit)})
-                </Text>
+                <Flex direction="column" align="end" gap="0">
+                  <Text size="1" className="md:block hidden" color="gray">
+                    {basic.traffic_limit_type &&
+                      basic.traffic_limit_type.charAt(0).toUpperCase() +
+                        basic.traffic_limit_type.slice(1)}
+                    ({formatBytes(basic.traffic_limit)})
+                  </Text>
+                  {daysUntilReset !== undefined && (
+                    <Text size="1" className="md:block hidden" color="gray">
+                      {daysUntilReset === 0
+                        ? t("nodeCard.trafficResetToday")
+                        : t("nodeCard.trafficResetIn", {
+                            days: daysUntilReset,
+                          })}
+                    </Text>
+                  )}
+                </Flex>
               </Flex>
             </Flex>
           ) : (
@@ -249,16 +263,25 @@ const Node = React.memo(
             </Flex>
           </Flex>
           {basic.traffic_limit > 0 && isMobile && (
-            <UsageBar
-              label={`${basic.traffic_limit_type && basic.traffic_limit_type.charAt(0).toUpperCase() + basic.traffic_limit_type.slice(1)}(${formatBytes(basic.traffic_limit)})`}
-              max={Infinity}
-              value={getTrafficPercentage(
-                liveData.network.totalUp,
-                liveData.network.totalDown,
-                basic.traffic_limit,
-                basic.traffic_limit_type ?? "sum",
+            <Flex direction="column" gap="1">
+              <UsageBar
+                label={`${basic.traffic_limit_type && basic.traffic_limit_type.charAt(0).toUpperCase() + basic.traffic_limit_type.slice(1)}(${formatBytes(basic.traffic_limit)})`}
+                max={Infinity}
+                value={getTrafficPercentage(
+                  liveData.network.totalUp,
+                  liveData.network.totalDown,
+                  basic.traffic_limit,
+                  basic.traffic_limit_type ?? "sum",
+                )}
+              />
+              {daysUntilReset !== undefined && (
+                <Text size="1" color="gray">
+                  {daysUntilReset === 0
+                    ? t("nodeCard.trafficResetToday")
+                    : t("nodeCard.trafficResetIn", { days: daysUntilReset })}
+                </Text>
               )}
-            />
+            </Flex>
           )}
           <Flex justify="between" hidden={isMobile}>
             <Text size="2" color="gray">
