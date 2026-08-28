@@ -2018,6 +2018,7 @@ const FileEditorDialog = ({
                 toast.success(t("file_manager.action_success", "File operation completed"));
               } catch (error) {
                 toast.error(error instanceof Error ? error.message : t("file_manager.action_failed", "File operation failed"));
+                onChanged?.();
               }
             })();
           }}

@@ -80,11 +80,6 @@ export function TerminalUploadProgress({ progress, onCancel }: TerminalUploadPro
               );
             })}
           </div>
-          {totalChunks > 5 && (
-            <div className="mt-2 text-[#777]">
-              {t("file_manager.upload_chunk_summary", "仅显示正在上传的区块（并发 {{active}}，共 {{count}} 个）", { active: 5, count: totalChunks })}
-            </div>
-          )}
         </div>
       )}
 

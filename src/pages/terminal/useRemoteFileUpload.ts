@@ -42,13 +42,33 @@ interface UploadSessionResponse {
   complete?: boolean;
 }
 
+interface ChunkTransferState {
+  actual: number;
+  lastActualTime: number;
+}
+
+const createChunkProgress = (size: number, chunkSize: number): UploadChunkProgress[] =>
+  Array.from(
+    { length: Math.max(1, Math.ceil(size / chunkSize)) },
+    (_, index): UploadChunkProgress => {
+      const chunkLength = Math.min(chunkSize, size - index * chunkSize);
+      return {
+        index,
+        size: chunkLength,
+        sent: 0,
+        speed: 0,
+        status: size === 0 ? "done" : "queued",
+      };
+    },
+  );
+
 const CONCURRENT_FILES = 3;
 // The agent commits the upload session on the first chunk. Send chunk zero
 // first, then fan out the remaining chunks so workers never race the handshake.
 const CONCURRENT_CHUNKS = 5;
 const MAX_RESUME_ATTEMPTS = 3;
 const RETRY_BASE_DELAY_MS = 500;
-const PROGRESS_INTERVAL_MS = 60;
+const PROGRESS_INTERVAL_MS = 200;
 
 const sleep = (ms: number, signal?: AbortSignal) =>
   new Promise<void>((resolve, reject) => {
@@ -84,15 +104,7 @@ export const useRemoteFileUpload = (
   onCompleteRef.current = onComplete;
 
   const updateProgress = useCallback((progress: RemoteUploadProgress) => {
-    setUploadProgress((current) => {
-      if (!current) return progress;
-      const smooth = current.value + (progress.value - current.value) * 0.35;
-      return {
-        ...progress,
-        value: progress.value >= 100 ? 100 : Math.max(progress.value, Math.round(smooth)),
-        speed: progress.speed ?? current.speed,
-      };
-    });
+    setUploadProgress(progress);
   }, []);
 
   const uploadOne = useCallback(
@@ -103,35 +115,69 @@ export const useRemoteFileUpload = (
       abortControllersRef.current.add(controller);
       activeUploadsRef.current += 1;
       const fileCount = activeUploadsRef.current;
-      const chunks = Array.from(
-        { length: Math.max(1, Math.ceil(file.size / TRANSFER_CHUNK_SIZE)) },
-        (_, index): UploadChunkProgress => {
-          const size = Math.min(TRANSFER_CHUNK_SIZE, file.size - index * TRANSFER_CHUNK_SIZE);
-          return { index, size, sent: 0, speed: 0, status: file.size === 0 ? "done" : "queued" };
-        },
-      );
+      let chunkSize = TRANSFER_CHUNK_SIZE;
+      let chunks = createChunkProgress(file.size, chunkSize);
       let uploadID = "";
-      let lastTime = performance.now();
-      let lastBytes = 0;
-      let lastTick = 0;
+      let lastReportTime = performance.now();
+      let lastSpeedTime = lastReportTime;
+      let lastSpeedBytes = 0;
       let smoothedSpeed = 0;
+      const chunkSpeedState = new Map<number, { time: number; sent: number; speed: number }>();
+      const chunkTransferState = new Map<number, ChunkTransferState>();
       let progressTimer: number | null = null;
 
       const report = (force = false) => {
+        const now = performance.now();
+        if (!force && now - lastReportTime < PROGRESS_INTERVAL_MS) return;
+        lastReportTime = now;
+
+        for (const chunk of chunks) {
+          const transfer = chunkTransferState.get(chunk.index);
+          if (!transfer) continue;
+          chunk.sent = Math.max(0, Math.min(chunk.size, transfer.actual));
+        }
+
         const bytes = chunks.reduce((total, chunk) => total + chunk.sent, 0);
         const completedChunks = chunks.filter((chunk) => chunk.status === "done").length;
-        const now = performance.now();
-        if (!force && now - lastTick < PROGRESS_INTERVAL_MS) return;
-        lastTick = now;
-        const elapsed = Math.max(100, now - lastTime);
-        if (bytes > lastBytes) {
-          const instantSpeed = (bytes - lastBytes) / (elapsed / 1000);
-          smoothedSpeed = smoothedSpeed > 0
-            ? smoothedSpeed * 0.7 + instantSpeed * 0.3
-            : instantSpeed;
+
+        const speedElapsed = now - lastSpeedTime;
+        if (speedElapsed >= PROGRESS_INTERVAL_MS) {
+          const instantSpeed = Math.max(0, (bytes - lastSpeedBytes) / (speedElapsed / 1000));
+          smoothedSpeed = bytes > lastSpeedBytes
+            ? smoothedSpeed > 0
+              ? smoothedSpeed * 0.7 + instantSpeed * 0.3
+              : instantSpeed
+            : smoothedSpeed * 0.75;
+          if (smoothedSpeed < 1024) smoothedSpeed = 0;
+          lastSpeedTime = now;
+          lastSpeedBytes = bytes;
         }
-        lastTime = now;
-        lastBytes = bytes;
+
+        for (const chunk of chunks) {
+          const previous = chunkSpeedState.get(chunk.index) ?? {
+            time: now,
+            sent: chunk.sent,
+            speed: 0,
+          };
+          const chunkElapsed = now - previous.time;
+          if (chunkElapsed >= PROGRESS_INTERVAL_MS) {
+            const chunkDelta = Math.max(0, chunk.sent - previous.sent);
+            if (chunkDelta > 0) {
+              const instantSpeed = chunkDelta / (chunkElapsed / 1000);
+              previous.speed = previous.speed > 0
+                ? previous.speed * 0.7 + instantSpeed * 0.3
+                : instantSpeed;
+            } else if (chunk.status === "uploading" || chunk.status === "retrying") {
+              previous.speed *= 0.75;
+              if (previous.speed < 1024) previous.speed = 0;
+            }
+            previous.time = now;
+            previous.sent = chunk.sent;
+          }
+          chunk.speed = previous.speed;
+          chunkSpeedState.set(chunk.index, previous);
+        }
+
         updateProgress({
           name,
           destination: targetDirectory,
@@ -168,31 +214,100 @@ export const useRemoteFileUpload = (
         return payload.data as unknown as UploadSessionResponse;
       };
 
+      const sendChunk = (index: number, chunk: Blob, onProgress: (sent: number) => void) =>
+        new Promise<void>((resolve, reject) => {
+          const xhr = new XMLHttpRequest();
+          let settled = false;
+          const cleanup = () => {
+            controller.signal.removeEventListener("abort", handleAbort);
+          };
+          const finish = (callback: () => void) => {
+            if (settled) return;
+            settled = true;
+            cleanup();
+            callback();
+          };
+          const handleAbort = () => {
+            xhr.abort();
+          };
+
+          if (controller.signal.aborted) {
+            reject(new DOMException("Upload canceled", "AbortError"));
+            return;
+          }
+
+          xhr.open("POST", uploadEndpoint(uuid!, "chunk"), true);
+          xhr.responseType = "json";
+          xhr.upload.addEventListener("progress", (event) => {
+            if (event.lengthComputable) {
+              onProgress(Math.min(chunk.size, event.loaded));
+            }
+          });
+          xhr.onload = () => {
+            let payload: { message?: string; data?: Record<string, unknown> } | null = null;
+            if (xhr.response && typeof xhr.response === "object") {
+              payload = xhr.response as { message?: string; data?: Record<string, unknown> };
+            } else {
+              try {
+                payload = JSON.parse(xhr.responseText) as { message?: string; data?: Record<string, unknown> };
+              } catch {
+                payload = null;
+              }
+            }
+            if (xhr.status < 200 || xhr.status >= 300 || !payload?.data) {
+              finish(() => reject(new Error(payload?.message || `Upload failed (${xhr.status})`)));
+              return;
+            }
+            finish(resolve);
+          };
+          xhr.onerror = () => finish(() => reject(new Error("Upload failed (network error)")));
+          xhr.ontimeout = () => finish(() => reject(new Error("Upload timed out")));
+          xhr.onabort = () => finish(() => reject(new DOMException("Upload canceled", "AbortError")));
+          controller.signal.addEventListener("abort", handleAbort, { once: true });
+          xhr.send(makeFormData(uploadID, index, chunk));
+        });
+
       const uploadChunkWithRetry = async (index: number) => {
-        const offset = index * TRANSFER_CHUNK_SIZE;
-        const chunk = file.slice(offset, Math.min(offset + TRANSFER_CHUNK_SIZE, file.size));
+        const offset = index * chunkSize;
+        const chunk = file.slice(offset, Math.min(offset + chunkSize, file.size));
         const chunkItem = chunks[index];
         chunkItem.status = "uploading";
+        chunkItem.sent = 0;
+        chunkItem.speed = 0;
+        chunkTransferState.set(index, { actual: 0, lastActualTime: performance.now() });
+        chunkSpeedState.set(index, { time: performance.now(), sent: 0, speed: 0 });
         report(true);
-        const chunkStartTime = performance.now();
         let attempts = 0;
         let delay = RETRY_BASE_DELAY_MS;
         for (;;) {
           try {
-            await send("chunk", {
-              method: "POST",
-              body: makeFormData(uploadID, index, chunk),
+            await sendChunk(index, chunk, (sent) => {
+              const transfer = chunkTransferState.get(index);
+              if (transfer && sent > transfer.actual) {
+                transfer.actual = sent;
+                transfer.lastActualTime = performance.now();
+              }
             });
             const chunkItem = chunks[index];
             chunkItem.sent = chunkItem.size;
-            chunkItem.speed = chunkItem.size / (Math.max(100, performance.now() - chunkStartTime) / 1000);
             chunkItem.status = "done";
-            report();
+            chunkTransferState.set(index, {
+              actual: chunkItem.size,
+              lastActualTime: performance.now(),
+            });
+            report(true);
             return;
           } catch (error) {
             if (controller.signal.aborted) throw error;
             attempts += 1;
             chunkItem.status = "retrying";
+            const retryTime = performance.now();
+            chunkItem.sent = 0;
+            chunkTransferState.set(index, {
+              actual: 0,
+              lastActualTime: retryTime,
+            });
+            chunkSpeedState.set(index, { time: retryTime, sent: 0, speed: 0 });
             report(true);
             if (attempts >= MAX_RESUME_ATTEMPTS) throw error;
             await sleep(delay, controller.signal);
@@ -204,7 +319,7 @@ export const useRemoteFileUpload = (
       try {
         report(true);
         progressTimer = window.setInterval(() => report(), PROGRESS_INTERVAL_MS);
-        const initBody = JSON.stringify({ path: targetPath, size: file.size });
+        const initBody = JSON.stringify({ path: targetPath, size: file.size, chunk_size: TRANSFER_CHUNK_SIZE });
         if (file.size === 0) {
           await send("init", {
             method: "POST",
@@ -218,6 +333,10 @@ export const useRemoteFileUpload = (
             body: initBody,
           });
           uploadID = session.upload_id;
+          if (Number.isFinite(session.chunk_size) && session.chunk_size > 0) {
+            chunkSize = session.chunk_size;
+            chunks = createChunkProgress(file.size, chunkSize);
+          }
           const chunkCount = session.chunk_count;
           await uploadChunkWithRetry(0);
           let nextIndex = 1;
@@ -262,7 +381,7 @@ export const useRemoteFileUpload = (
           (error instanceof DOMException && error.name === "AbortError");
         if (uploadID) {
           const cancelURL = `${uploadEndpoint(uuid!, "cancel")}&upload_id=${encodeURIComponent(uploadID)}`;
-          void fetch(cancelURL, { method: "POST" }).catch(() => undefined);
+          await fetch(cancelURL, { method: "POST" }).catch(() => undefined);
         }
         if (canceled) {
           toast.info(t("file_manager.upload_canceled", "Upload canceled"));

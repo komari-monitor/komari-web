@@ -322,8 +322,8 @@ const FileManagerPanel = ({ uuid }: FileManagerPanelProps) => {
   }, [loadDirectory, uuid]);
 
   const refresh = useCallback(async () => {
-    if (!currentPath) return;
-    await loadDirectory(currentPath);
+    const targetPath = normalizeRemotePath(currentPath || "/");
+    await loadDirectory(targetPath);
     setRefreshToken((value) => value + 1);
   }, [currentPath, loadDirectory]);
 
@@ -580,6 +580,7 @@ const FileManagerPanel = ({ uuid }: FileManagerPanelProps) => {
       setActionFile(null);
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t("file_manager.action_failed", "File operation failed"));
+      await refresh();
     } finally {
       setSubmitting(false);
     }
@@ -1126,8 +1127,8 @@ const FileManagerPanel = ({ uuid }: FileManagerPanelProps) => {
           initialLine={editorLine}
           refreshToken={refreshToken}
           onOpenChange={setEditorOpen}
-          onSaved={() => void loadDirectory(currentPath)}
-          onChanged={() => void loadDirectory(currentPath)}
+          onSaved={() => void refresh()}
+          onChanged={() => void refresh()}
         />
       )}
       <FileContextMenu

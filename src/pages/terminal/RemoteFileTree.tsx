@@ -373,6 +373,8 @@ export const RemoteFileTree = ({
   const pasteInto = useCallback(
     async (destination: string) => {
       if (!uuid || !clipboardSource) return;
+      const sourceParents = new Set(clipboardSource.paths.map((source) => remoteDirname(source)));
+      const refreshPaths = Array.from(new Set([destination, ...sourceParents]));
       setSubmitting(true);
       try {
         for (const source of clipboardSource.paths) {
@@ -386,17 +388,12 @@ export const RemoteFileTree = ({
           }
         }
         setClipboardSource(null);
-        await loadDirectory(destination, true);
-        for (const source of clipboardSource.paths) {
-          const sourceParent = remoteDirname(source);
-          if (sourceParent !== destination) {
-            await loadDirectory(sourceParent, true);
-          }
-        }
+        await Promise.all(refreshPaths.map((path) => loadDirectory(path, true)));
         toast.success(t("file_manager.action_success", "File operation completed"));
         onChanged?.();
       } catch (error) {
         toast.error(error instanceof Error ? error.message : t("file_manager.action_failed", "File operation failed"));
+        await Promise.all(refreshPaths.map((path) => loadDirectory(path, true)));
       } finally {
         setSubmitting(false);
       }
@@ -472,6 +469,10 @@ export const RemoteFileTree = ({
       onChanged?.();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t("file_manager.action_failed", "File operation failed"));
+      if (actionFile) {
+        await loadDirectory(remoteDirname(actionFile.path), true);
+      }
+      onChanged?.();
     } finally {
       setSubmitting(false);
     }
@@ -558,27 +559,26 @@ export const RemoteFileTree = ({
     }
 
     setSubmitting(true);
+    const sourceParents = new Set(movedPaths.map((source) => remoteDirname(source)));
+    const refreshPaths = Array.from(new Set([destination, ...sourceParents]));
     try {
-      const sourceParents = new Set<string>();
       for (const source of movedPaths) {
         const targetPath = joinRemotePath(destination, remoteBasename(source));
         await fileService.move(source, targetPath);
-        sourceParents.add(remoteDirname(source));
         onFileRenamed?.(source, targetPath);
       }
       if (clipboardSource?.cut) {
         const remaining = clipboardSource.paths.filter((source) => !movedPaths.includes(source));
         setClipboardSource(remaining.length > 0 ? { ...clipboardSource, paths: remaining } : null);
       }
-      await loadDirectory(destination, true);
-      await Promise.all(Array.from(sourceParents).map((parent) => loadDirectory(parent, true)));
+      await Promise.all(refreshPaths.map((path) => loadDirectory(path, true)));
       selectedPathsRef.current = new Set();
       setSelectedPath(null);
       toast.success(t("file_manager.action_success", "File operation completed"));
       onChanged?.();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : t("file_manager.action_failed", "File operation failed"));
-      await loadDirectory(destination, true);
+      await Promise.all(refreshPaths.map((path) => loadDirectory(path, true)));
     } finally {
       setSubmitting(false);
       setInternalDrag(null);

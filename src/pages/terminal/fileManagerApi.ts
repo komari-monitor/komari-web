@@ -3,7 +3,7 @@ export const MAX_EDITABLE_FILE_SIZE = 4 * 1024 * 1024;
 export const MAX_IMAGE_PREVIEW_SIZE = 50 * 1024 * 1024;
 export const MAX_AUDIO_PREVIEW_SIZE = 50 * 1024 * 1024;
 export const MAX_VIDEO_PREVIEW_SIZE = 2 * 1024 * 1024 * 1024;
-export const TRANSFER_CHUNK_SIZE = 2 * 1024 * 1024;
+export const TRANSFER_CHUNK_SIZE = 6 * 1024 * 1024;
 
 export interface RemoteFileInfo {
   name: string;
