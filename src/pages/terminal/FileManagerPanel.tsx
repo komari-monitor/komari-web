@@ -704,7 +704,7 @@ const FileManagerPanel = ({ uuid }: FileManagerPanelProps) => {
 
   return (
     <div
-      className={`relative flex h-full min-h-0 flex-col bg-[#181818] text-[#cccccc] ${uploadProgress ? "select-none opacity-90" : ""}`}
+      className={`relative flex h-full min-h-0 flex-col bg-[#181818] text-[#cccccc] ${uploadProgress.length > 0 ? "select-none opacity-90" : ""}`}
       onClick={closeContextMenu}
       tabIndex={0}
       onKeyDown={(event) => {
@@ -1077,7 +1077,7 @@ const FileManagerPanel = ({ uuid }: FileManagerPanelProps) => {
           <div className="h-full w-1/3 animate-[pulse_1s_ease-in-out_infinite] bg-[#007acc]" />
         </div>
       )}
-      {uploadProgress && (
+      {uploadProgress.length > 0 && (
         <TerminalUploadProgress progress={uploadProgress} onCancel={cancelUpload} />
       )}
 

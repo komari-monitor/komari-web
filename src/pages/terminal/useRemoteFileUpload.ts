@@ -10,6 +10,7 @@ import {
 } from "./fileManagerApi";
 
 export interface RemoteUploadProgress {
+  id: string;
   name: string;
   destination: string;
   value: number;
@@ -70,6 +71,13 @@ const MAX_RESUME_ATTEMPTS = 3;
 const RETRY_BASE_DELAY_MS = 500;
 const PROGRESS_INTERVAL_MS = 200;
 
+const createUploadTaskID = () => {
+  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
+    return crypto.randomUUID();
+  }
+  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+};
+
 const sleep = (ms: number, signal?: AbortSignal) =>
   new Promise<void>((resolve, reject) => {
     const timer = window.setTimeout(resolve, ms);
@@ -96,23 +104,36 @@ export const useRemoteFileUpload = (
   options: RemoteUploadOptions = {},
 ) => {
   const { t } = useTranslation();
-  const [uploadProgress, setUploadProgress] = useState<RemoteUploadProgress | null>(null);
+  const [uploadProgress, setUploadProgress] = useState<RemoteUploadProgress[]>([]);
   const activeUploadsRef = useRef(0);
   const completedFilesRef = useRef(0);
-  const abortControllersRef = useRef(new Set<AbortController>());
+  const abortControllersRef = useRef(new Map<string, AbortController>());
   const onCompleteRef = useRef(onComplete);
   onCompleteRef.current = onComplete;
 
   const updateProgress = useCallback((progress: RemoteUploadProgress) => {
-    setUploadProgress(progress);
+    setUploadProgress((current) => {
+      const existingIndex = current.findIndex((item) => item.id === progress.id);
+      if (existingIndex < 0) {
+        return [...current, progress];
+      }
+      const next = [...current];
+      next[existingIndex] = progress;
+      return next;
+    });
+  }, []);
+
+  const removeProgress = useCallback((id: string) => {
+    setUploadProgress((current) => current.filter((item) => item.id !== id));
   }, []);
 
   const uploadOne = useCallback(
     async (file: Blob, destination: string, name: string, uploadOptions: RemoteUploadOptions = options): Promise<boolean> => {
       const targetDirectory = normalizeRemotePath(destination);
       const targetPath = joinRemotePath(targetDirectory, name);
+      const taskID = createUploadTaskID();
       const controller = new AbortController();
-      abortControllersRef.current.add(controller);
+      abortControllersRef.current.set(taskID, controller);
       activeUploadsRef.current += 1;
       const fileCount = activeUploadsRef.current;
       let chunkSize = TRANSFER_CHUNK_SIZE;
@@ -179,6 +200,7 @@ export const useRemoteFileUpload = (
         }
 
         updateProgress({
+          id: taskID,
           name,
           destination: targetDirectory,
           value: file.size === 0 ? 100 : Math.min(99, Math.round((bytes / file.size) * 100)),
@@ -360,6 +382,7 @@ export const useRemoteFileUpload = (
         }
         completedFilesRef.current += 1;
         updateProgress({
+          id: taskID,
           name,
           destination: targetDirectory,
           value: 100,
@@ -395,15 +418,15 @@ export const useRemoteFileUpload = (
           window.clearInterval(progressTimer);
           progressTimer = null;
         }
-        abortControllersRef.current.delete(controller);
+        abortControllersRef.current.delete(taskID);
         activeUploadsRef.current -= 1;
         if (activeUploadsRef.current <= 0) {
           completedFilesRef.current = 0;
-          setUploadProgress(null);
         }
+        removeProgress(taskID);
       }
     },
-    [options, t, updateProgress, uuid],
+    [options, removeProgress, t, updateProgress, uuid],
   );
 
   const uploadFile = useCallback(
@@ -443,8 +466,12 @@ export const useRemoteFileUpload = (
     [uploadOne, uuid],
   );
 
-  const cancelUpload = useCallback(() => {
-    for (const controller of Array.from(abortControllersRef.current)) {
+  const cancelUpload = useCallback((taskID?: string) => {
+    if (taskID) {
+      abortControllersRef.current.get(taskID)?.abort();
+      return;
+    }
+    for (const controller of abortControllersRef.current.values()) {
       controller.abort();
     }
   }, []);

@@ -911,7 +911,7 @@ export const RemoteFileTree = ({
 		  if (files.length) void uploadFiles(files, uploadTargetRef.current || rootPath);
 		}}
 	  />
-      {uploadProgress && (
+      {uploadProgress.length > 0 && (
         <TerminalUploadProgress progress={uploadProgress} onCancel={cancelUpload} />
       )}
 

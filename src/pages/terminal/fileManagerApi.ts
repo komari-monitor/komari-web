@@ -391,8 +391,11 @@ export const fetchOfficePreviewUrl = async (uuid: string, path: string) => {
   if (!tokenResponse.ok || !tokenPayload?.data?.token) {
     throw new Error(tokenPayload?.message || "Failed to create preview token");
   }
+  // Keep the externally fetched URL opaque. Office Online has to decode the
+  // `src` parameter before requesting it, so embedding a percent-encoded file
+  // path here makes non-ASCII paths prone to double-decoding issues. The
+  // preview token already binds the client and path on the server.
   const downloadParams = new URLSearchParams({
-    path,
     inline: "1",
     preview_token: tokenPayload.data.token,
   });

@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import type { RemoteUploadProgress, UploadChunkProgress } from "./useRemoteFileUpload";
@@ -6,11 +6,16 @@ import { formatFileSize } from "./fileManagerApi";
 import { formatTransferRate } from "./transferFormat";
 
 interface TerminalUploadProgressProps {
-  progress: RemoteUploadProgress;
-  onCancel: () => void;
+  progress: RemoteUploadProgress[];
+  onCancel: (id: string) => void;
 }
 
-export function TerminalUploadProgress({ progress, onCancel }: TerminalUploadProgressProps) {
+interface UploadProgressRowProps {
+  progress: RemoteUploadProgress;
+  onCancel: (id: string) => void;
+}
+
+const UploadProgressRow = memo(function UploadProgressRow({ progress, onCancel }: UploadProgressRowProps) {
   const { t } = useTranslation();
   const [hovered, setHovered] = useState(false);
   const hoverTimer = useRef<number | null>(null);
@@ -44,7 +49,7 @@ export function TerminalUploadProgress({ progress, onCancel }: TerminalUploadPro
 
   return (
     <div
-      className="relative shrink-0 border-t border-[#2b2b2b] bg-[#202020] px-2 py-1.5"
+      className="relative min-h-[48px] shrink-0 border-b border-[#2b2b2b] px-2 py-1.5 last:border-b-0"
       onMouseEnter={handleEnter}
       onMouseLeave={handleLeave}
     >
@@ -93,9 +98,9 @@ export function TerminalUploadProgress({ progress, onCancel }: TerminalUploadPro
         <button
           type="button"
           className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-[4px] border-0 bg-transparent p-0 text-[#f48771] hover:bg-[#3a3d41] hover:text-white"
-          onClick={onCancel}
+          onClick={() => onCancel(progress.id)}
           title={t("common.cancel", "Cancel")}
-          aria-label={t("common.cancel", "Cancel")}
+          aria-label={`${t("common.cancel", "Cancel")}: ${progress.name}`}
         >
           <X size={12} />
         </button>
@@ -103,8 +108,22 @@ export function TerminalUploadProgress({ progress, onCancel }: TerminalUploadPro
       <div className="mt-1 h-1 overflow-hidden bg-[#3a3a3a]">
         <div
           className="h-full bg-[#007acc] transition-[width]"
-          style={{ width: `${progress.value}%` }}
+          style={{ width: `${Math.max(0, Math.min(100, progress.value))}%` }}
         />
+      </div>
+    </div>
+  );
+});
+
+export function TerminalUploadProgress({ progress, onCancel }: TerminalUploadProgressProps) {
+  if (progress.length === 0) return null;
+
+  return (
+    <div className="relative shrink-0 border-t border-[#2b2b2b] bg-[#202020]">
+      <div className="flex min-h-[48px] flex-col overflow-visible">
+        {progress.map((item) => (
+          <UploadProgressRow key={item.id} progress={item} onCancel={onCancel} />
+        ))}
       </div>
     </div>
   );
