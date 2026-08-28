@@ -11,11 +11,11 @@ import type {
 } from "react";
 import { useTranslation } from "react-i18next";
 import {
-  ChevronDown,
   ChevronLeft,
   ChevronRight,
-  Plus,
+  Code2,
   Server,
+  SquareTerminal,
 } from "lucide-react";
 import {
   DndContext,
@@ -58,14 +58,17 @@ import {
 export interface TerminalTabBarProps {
   tabs: TerminalTab[];
   clients: TerminalClient[];
+  clientsLoading: boolean;
   activeTabId: string | null;
   editingTabId: string | null;
   renameDraft: string;
   serverMenuOpen: boolean;
   onServerMenuOpenChange: (open: boolean) => void;
+  workbenchMenuOpen: boolean;
+  onWorkbenchMenuOpenChange: (open: boolean) => void;
   onActivate: (id: string) => void;
-  onAdd: () => void;
-  onOpenClient: (client: TerminalClient) => void;
+  onOpenTerminalClient: (client: TerminalClient) => void;
+  onOpenWorkbenchClient: (client: TerminalClient) => void;
   onStartRename: (id: string) => void;
   onDraftChange: (value: string) => void;
   onCommitRename: () => void;
@@ -73,6 +76,8 @@ export interface TerminalTabBarProps {
   onDuplicate: (id: string) => void;
   onExportText: (id: string) => void;
   onFind: (id: string) => void;
+  onOpenFileManager: (id: string) => void;
+  onOpenEditor: (id: string) => void;
   resourceMonitorServers: string[];
   onToggleResourceWindow: (uuid: string) => void;
   onColor: (id: string, color: string | null) => void;
@@ -101,6 +106,8 @@ interface SortableTabItemProps {
   onDuplicate: (id: string) => void;
   onExportText: (id: string) => void;
   onFind: (id: string) => void;
+  onOpenFileManager: (id: string) => void;
+  onOpenEditor: (id: string) => void;
   resourceWindowOpen: boolean;
   onToggleResourceWindow: (uuid: string) => void;
   onColor: (id: string, color: string | null) => void;
@@ -128,6 +135,8 @@ const SortableTabItem = ({
   onDuplicate,
   onExportText,
   onFind,
+  onOpenFileManager,
+  onOpenEditor,
   resourceWindowOpen,
   onToggleResourceWindow,
   onColor,
@@ -190,6 +199,8 @@ const SortableTabItem = ({
         onDuplicate={() => onDuplicate(tab.id)}
         onExportText={() => onExportText(tab.id)}
         onFind={() => onFind(tab.id)}
+        onOpenFileManager={() => onOpenFileManager(tab.id)}
+        onOpenEditor={() => onOpenEditor(tab.id)}
         onToggleResourceWindow={() => onToggleResourceWindow(tab.uuid)}
         onColor={(color) => onColor(tab.id, color)}
         onClose={(mode) => onClose(tab.id, mode)}
@@ -215,16 +226,19 @@ const SortableTabItem = ({
 const TerminalTabBar = ({
   tabs,
   clients,
+  clientsLoading,
   activeTabId,
   editingTabId,
   renameDraft,
   serverMenuOpen,
   onServerMenuOpenChange,
+  workbenchMenuOpen,
+  onWorkbenchMenuOpenChange,
   resourceMonitorServers,
   onToggleResourceWindow,
   onActivate,
-  onAdd,
-  onOpenClient,
+  onOpenTerminalClient,
+  onOpenWorkbenchClient,
   onStartRename,
   onDraftChange,
   onCommitRename,
@@ -232,6 +246,8 @@ const TerminalTabBar = ({
   onDuplicate,
   onExportText,
   onFind,
+  onOpenFileManager,
+  onOpenEditor,
   onColor,
   onClose,
   onReorder,
@@ -448,6 +464,8 @@ const TerminalTabBar = ({
                     onDuplicate={onDuplicate}
                     onExportText={onExportText}
                     onFind={onFind}
+                    onOpenFileManager={onOpenFileManager}
+                    onOpenEditor={onOpenEditor}
                     onToggleResourceWindow={onToggleResourceWindow}
                     onColor={onColor}
                     onClose={onClose}
@@ -476,16 +494,6 @@ const TerminalTabBar = ({
         {showActionLeadingSeparator && (
           <div className={TAB_SEPARATOR_CLASS_NAME} aria-hidden="true" />
         )}
-        <button
-          type="button"
-          className={TAB_ACTION_CLASS_NAME}
-          onClick={onAdd}
-          title={t("terminal.tabs.new_tab")}
-          aria-label={t("terminal.tabs.new_tab")}
-        >
-          <Plus size={16} />
-        </button>
-        <div className={TAB_SEPARATOR_CLASS_NAME} aria-hidden="true" />
         <DropdownMenu
           open={serverMenuOpen}
           onOpenChange={onServerMenuOpenChange}
@@ -494,10 +502,10 @@ const TerminalTabBar = ({
             <button
               type="button"
               className={TAB_ACTION_CLASS_NAME}
-              title={t("terminal.tabs.choose_server")}
-              aria-label={t("terminal.tabs.choose_server")}
+              title={t("terminal.tabs.open_terminal", "Open terminal")}
+              aria-label={t("terminal.tabs.open_terminal", "Open terminal")}
             >
-              <ChevronDown size={14} />
+              <SquareTerminal size={16} />
             </button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
@@ -505,7 +513,12 @@ const TerminalTabBar = ({
             themeAppearance="dark"
             className="min-w-[260px] !border-neutral-800 !bg-[#161616] !text-neutral-200 backdrop-blur-md"
           >
-            {clients.length === 0 ? (
+            {clientsLoading ? (
+              <DropdownMenuItem disabled>
+                <Server size={14} />
+                <span>{t("terminal.tabs.loading_servers", "Loading servers...")}</span>
+              </DropdownMenuItem>
+            ) : clients.length === 0 ? (
               <DropdownMenuItem disabled>
                 <Server size={14} />
                 <span>{t("terminal.tabs.no_servers")}</span>
@@ -517,7 +530,7 @@ const TerminalTabBar = ({
                 return (
                   <DropdownMenuItem
                     key={client.uuid}
-                    onSelect={() => onOpenClient(client)}
+                    onSelect={() => onOpenTerminalClient(client)}
                     className="flex items-center justify-between gap-3"
                   >
                     <div className="flex min-w-0 items-center gap-2">
@@ -539,6 +552,57 @@ const TerminalTabBar = ({
                   </DropdownMenuItem>
                 );
               })
+            )}
+          </DropdownMenuContent>
+        </DropdownMenu>
+
+        <DropdownMenu
+          open={workbenchMenuOpen}
+          onOpenChange={onWorkbenchMenuOpenChange}
+        >
+          <DropdownMenuTrigger asChild>
+            <button
+              type="button"
+              className={TAB_ACTION_CLASS_NAME}
+              title={t("terminal.tabs.open_workbench", "Open workbench")}
+              aria-label={t("terminal.tabs.open_workbench", "Open workbench")}
+            >
+              <Code2 size={16} />
+            </button>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent
+            align="start"
+            themeAppearance="dark"
+            className="min-w-[260px] !border-neutral-800 !bg-[#161616] !text-neutral-200 backdrop-blur-md"
+          >
+            {clientsLoading ? (
+              <DropdownMenuItem disabled>
+                <Server size={14} />
+                <span>{t("terminal.tabs.loading_servers", "Loading servers...")}</span>
+              </DropdownMenuItem>
+            ) : clients.length === 0 ? (
+              <DropdownMenuItem disabled>
+                <Server size={14} />
+                <span>{t("terminal.tabs.no_servers")}</span>
+              </DropdownMenuItem>
+            ) : (
+              orderedClients.map((client) => (
+                <DropdownMenuItem
+                  key={client.uuid}
+                  onSelect={() => onOpenWorkbenchClient(client)}
+                  className="flex min-w-0 items-center gap-2"
+                >
+                  <img
+                    src={getOSImage(client.os)}
+                    alt=""
+                    draggable={false}
+                    className="h-3.5 w-3.5 shrink-0 object-contain"
+                  />
+                  <span className="min-w-0 truncate">
+                    {client.name || client.uuid}
+                  </span>
+                </DropdownMenuItem>
+              ))
             )}
           </DropdownMenuContent>
         </DropdownMenu>

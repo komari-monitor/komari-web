@@ -4,7 +4,9 @@ import type {
   TouchEvent as ReactTouchEvent,
 } from "react";
 import { useTranslation } from "react-i18next";
+import { ClipboardList, Code2, Files, PanelRightClose, PanelRightOpen, SquareTerminal } from "lucide-react";
 import CommandClipboardPanel from "./CommandClipboard";
+import FileManagerPanel from "./FileManagerPanel";
 import TerminalSession from "./TerminalSession";
 import { TerminalSearchBar } from "./TerminalSearchBar";
 import type { TerminalSessionApi } from "./TerminalSession";
@@ -14,8 +16,10 @@ import type { TerminalTab } from "./terminalTypes";
 export interface TerminalWorkspaceProps {
   containerRef: RefObject<HTMLDivElement | null>;
   isClipboardOpen: boolean;
+  sidebarTab: "clipboard" | "files";
   leftWidth: number;
   tabs: TerminalTab[];
+  clientsLoading: boolean;
   activeTabId: string | null;
   sessionsReady: boolean;
   settings: XtermjsSettings;
@@ -34,9 +38,11 @@ export interface TerminalWorkspaceProps {
   onToggleUseRegex: () => void;
   onCloseSearch: () => void;
   onApiChange: (id: string, api: TerminalSessionApi | null) => void;
-  onToggleClipboard: () => void;
+  onToggleSidebar: () => void;
+  onSidebarTabChange: (tab: "clipboard" | "files") => void;
   onStartDragging: (event: ReactMouseEvent | ReactTouchEvent) => void;
-  onAdd: () => void;
+  onOpenTerminalMenu: () => void;
+  onOpenWorkbenchMenu: () => void;
 }
 
 const Divider = ({
@@ -53,17 +59,13 @@ const Divider = ({
   />
 );
 
-const ClipboardPanel = () => (
-  <div className="km-terminal-clipboard h-full min-w-[300px] flex-1 overflow-hidden bg-[#121212] p-2 max-[640px]:min-w-[220px]">
-    <CommandClipboardPanel className="h-full w-full" />
-  </div>
-);
-
 const TerminalWorkspace = ({
   containerRef,
   isClipboardOpen,
+  sidebarTab,
   leftWidth,
   tabs,
+  clientsLoading,
   activeTabId,
   sessionsReady,
   settings,
@@ -82,9 +84,11 @@ const TerminalWorkspace = ({
   onToggleUseRegex,
   onCloseSearch,
   onApiChange,
-  onToggleClipboard,
+  onToggleSidebar,
+  onSidebarTabChange,
   onStartDragging,
-  onAdd,
+  onOpenTerminalMenu,
+  onOpenWorkbenchMenu,
 }: TerminalWorkspaceProps) => {
   const { t } = useTranslation();
 
@@ -130,17 +134,26 @@ const TerminalWorkspace = ({
           {tabs.length === 0 && (
             <div className="km-terminal-empty-state flex h-full w-full flex-col items-center justify-center gap-3">
               <strong className="text-neutral-400">
-                {t("terminal.tabs.empty_title")}
+                {clientsLoading
+                  ? t("terminal.tabs.loading_servers", "Loading servers...")
+                  : t("terminal.tabs.empty_title")}
               </strong>
-              <p className="max-w-sm text-center text-xs text-neutral-500">
-                {t("terminal.tabs.empty_description")}
-              </p>
-              <button
-                onClick={onAdd}
-                className="rounded-[6px] border border-neutral-700 bg-neutral-800/80 px-3 py-1.5 text-xs text-neutral-200 transition-colors hover:bg-neutral-700"
-              >
-                {t("terminal.tabs.empty_action")}
-              </button>
+              <div className={`flex items-center gap-2 ${clientsLoading ? "opacity-40 pointer-events-none" : ""}`}>
+                <button
+                  onClick={onOpenTerminalMenu}
+                  className="flex items-center gap-1.5 rounded-[6px] border border-neutral-700 bg-neutral-800/80 px-3 py-1.5 text-xs text-neutral-200 transition-colors hover:bg-neutral-700 disabled:opacity-50"
+                >
+                  <SquareTerminal size={14} />
+                  {t("terminal.tabs.open_terminal", "Open terminal")}
+                </button>
+                <button
+                  onClick={onOpenWorkbenchMenu}
+                  className="flex items-center gap-1.5 rounded-[6px] border border-neutral-700 bg-neutral-800/80 px-3 py-1.5 text-xs text-neutral-200 transition-colors hover:bg-neutral-700 disabled:opacity-50"
+                >
+                  <Code2 size={14} />
+                  {t("terminal.tabs.open_workbench", "Open workbench")}
+                </button>
+              </div>
             </div>
           )}
           {tabs.length > 0 && !sessionsReady && (
@@ -152,23 +165,60 @@ const TerminalWorkspace = ({
         <button
           type="button"
           className="km-terminal-clipboard-toggle absolute right-0 top-1/2 z-[4] flex h-[48px] w-5 -translate-y-1/2 cursor-pointer items-center justify-center rounded-l-[5px] border-0 bg-[#2b2b2b] text-neutral-400 transition-colors hover:bg-[#383838] hover:text-white"
-          onClick={onToggleClipboard}
+          onClick={onToggleSidebar}
           aria-label={
             isClipboardOpen
               ? t("common.close", "Close")
-              : t("command_clipboard.title", "Command Clipboard")
+              : sidebarTab === "files"
+                ? t("file_manager.title", "File Manager")
+                : t("command_clipboard.title", "Command Clipboard")
           }
           title={
             isClipboardOpen
               ? t("common.close", "Close")
-              : t("command_clipboard.title", "Command Clipboard")
+              : sidebarTab === "files"
+                ? t("file_manager.title", "File Manager")
+                : t("command_clipboard.title", "Command Clipboard")
           }
         >
-          {isClipboardOpen ? "›" : "‹"}
+          {isClipboardOpen ? <PanelRightClose size={14} /> : <PanelRightOpen size={14} />}
         </button>
       </div>
       {isClipboardOpen && <Divider onMouseDown={onStartDragging} />}
-      {isClipboardOpen && <ClipboardPanel />}
+      <aside
+        className={`${
+          isClipboardOpen
+            ? "flex h-full min-w-[300px] flex-1 flex-col overflow-hidden bg-[#121212] max-[640px]:min-w-[220px]"
+            : "hidden"
+        }`}
+      >
+          <div className="flex h-9 shrink-0 items-center gap-1 bg-[#181818] px-1 pb-1">
+            <button
+              type="button"
+              className={`flex h-7 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-[4px] border-0 px-2 text-xs transition-colors ${sidebarTab === "clipboard" ? "bg-[#37373d] text-white" : "bg-transparent text-[#999] hover:bg-[#2a2d2e] hover:text-white"}`}
+              onClick={() => onSidebarTabChange("clipboard")}
+            >
+              <ClipboardList size={14} />
+              <span className="min-w-0 truncate">{t("command_clipboard.title", "Command Clipboard")}</span>
+            </button>
+            <button
+              type="button"
+              className={`flex h-7 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-[4px] border-0 px-2 text-xs transition-colors ${sidebarTab === "files" ? "bg-[#37373d] text-white" : "bg-transparent text-[#999] hover:bg-[#2a2d2e] hover:text-white"}`}
+              onClick={() => onSidebarTabChange("files")}
+            >
+              <Files size={14} />
+              <span className="min-w-0 truncate">{t("file_manager.title", "File Manager")}</span>
+            </button>
+          </div>
+          <div className="min-h-0 flex-1 overflow-hidden">
+            <div className={sidebarTab === "clipboard" ? "h-full overflow-hidden p-2" : "hidden"}>
+              <CommandClipboardPanel showHeader={false} className="h-full w-full" />
+            </div>
+            <div className={sidebarTab === "files" ? "h-full overflow-hidden" : "hidden"}>
+              <FileManagerPanel uuid={tabs.find((tab) => tab.id === activeTabId)?.uuid ?? null} />
+            </div>
+          </div>
+      </aside>
     </div>
   );
 };

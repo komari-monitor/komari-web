@@ -14,7 +14,6 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Selector } from "@/components/Selector";
-
 // 服务器视图：按服务器聚合展示其绑定的任务，并可快速增删绑定
 export const ServerView = ({ pingTasks }: { pingTasks: PingTask[] }) => {
   const { t } = useTranslation();
@@ -100,7 +99,7 @@ const ServerRow: React.FC<{
           id: task.id,
           name: task.name,
           type: task.type,
-          // eslint-disable-next-line @typescript-eslint/no-non-null-assertion
+           
           target: task.target!,
           default_on: task.default_on || false,
           clients: Array.from(current),

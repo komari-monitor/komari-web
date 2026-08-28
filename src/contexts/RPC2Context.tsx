@@ -57,6 +57,15 @@ export const RPC2Provider: React.FC<{ children: React.ReactNode }> = ({ children
       },
     });
 
+    // The singleton may have been explicitly disconnected during a previous
+    // StrictMode pass or route unmount. Reattach it when a provider mounts.
+    if (client.state === "disconnected") {
+      client.connect().catch((err) => {
+        setError(err instanceof Error ? err.message : i18n.t("rpc2.connection_failed"));
+        setConnectionState(client.state);
+      });
+    }
+
     // 清理函数
     return () => {
       __rpc2_refcount = Math.max(0, __rpc2_refcount - 1);

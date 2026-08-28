@@ -219,3 +219,53 @@ body, * {
 .km-config-form-tabs-list::-webkit-scrollbar-button {
   display: none;
 }
+
+.km-ui-dropdown-content,
+.km-ui-dropdown-content ~ *,
+.z-\[100000\] {
+  z-index: 100000;
+}
+
+.km-file-editor ~ [data-radix-popper-content-wrapper],
+.km-file-editor ~ .rt-DialogOverlay {
+  z-index: 20 !important;
+}
+
+[data-km-toaster-portal] {
+  position: fixed !important;
+  inset: 0 !important;
+  width: auto !important;
+  height: auto !important;
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  background: transparent !important;
+  pointer-events: none !important;
+  z-index: 2147483647 !important;
+}
+
+[data-km-toaster-portal] > * {
+  transform: none !important;
+}
+
+[data-km-toaster-portal] [data-sonner-toaster] {
+  position: fixed !important;
+  pointer-events: auto !important;
+  z-index: 2147483646 !important;
+}
+
+.km-file-editor,
+.km-file-editor [data-radix-popper-content-wrapper],
+[data-radix-popper-content-wrapper] .rt-PopoverContent,
+[role="menu"] {
+  font-family: var(
+    --km-editor-font-family,
+    "Cascadia Mono",
+    "Noto Sans SC",
+    monospace
+  );
+}
+
+.km-file-editor {
+  z-index: 10;
+}

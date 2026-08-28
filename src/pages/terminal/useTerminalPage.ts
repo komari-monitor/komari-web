@@ -52,12 +52,14 @@ export const useTerminalPage = () => {
   } = useXtermjsSettings();
   const { t } = useTranslation();
   const [clients, setClients] = useState<TerminalClient[]>([]);
+  const [clientsLoading, setClientsLoading] = useState(true);
   const [tabs, setTabs] = useState<TerminalTab[]>([]);
   const [activeTabId, setActiveTabId] = useState<string | null>(null);
   const [editingTabId, setEditingTabId] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState("");
   const [serverMenuOpen, setServerMenuOpen] = useState(false);
   const [isClipboardOpen, setIsClipboardOpen] = useState(false);
+  const [sidebarTab, setSidebarTab] = useState<"clipboard" | "files">("clipboard");
   const [leftWidth, setLeftWidth] = useState<number>(window.innerWidth * 0.7);
   const [httpsCalloutOpen, setHttpsCalloutOpen] = useState(
     window.location.protocol !== "https:",
@@ -94,8 +96,13 @@ export const useTerminalPage = () => {
     : settings;
   const appearance = {
     "--xterm-padding": `${resolvedSettings.terminalPadding}px`,
+    "--xterm-font-family": resolvedSettings.terminalOptions.fontFamily,
   } as CSSProperties;
 
+  useEffect(() => {
+    if (!settingsError) return;
+    toast.error(t("terminal.settings_error", { message: settingsError.message }));
+  }, [settingsError, t]);
   const updateTabs = useCallback((next: TerminalTab[]) => {
     tabsRef.current = next;
     setTabs(next);
@@ -111,14 +118,21 @@ export const useTerminalPage = () => {
 
   useEffect(() => {
     let mounted = true;
+    setClientsLoading(true);
     fetch("/api/admin/client/list")
-      .then((response) => response.json())
+      .then((response) => {
+        if (!response.ok) {
+          throw new Error(`Failed to load clients (${response.status})`);
+        }
+        return response.json();
+      })
       .then((data: unknown) => {
         if (!mounted) {
           return;
         }
         const list = Array.isArray(data) ? (data as TerminalClient[]) : [];
         setClients(list);
+        setClientsLoading(false);
         const initialUuid = initialUuidRef.current;
         if (!initialUuid) {
           return;
@@ -136,10 +150,18 @@ export const useTerminalPage = () => {
           setActiveTabId(tab.id);
         }
       })
-      .catch((error) => console.error("Failed to load clients:", error));
+      .catch((error) => {
+        if (mounted) {
+          console.error("Failed to load clients:", error);
+          toast.error(t("terminal.clients_load_failed", "Failed to load servers"));
+        }
+      })
+      .finally(() => {
+        if (mounted) setClientsLoading(false);
+      });
 
     return () => {
-      mounted = true;
+      mounted = false;
     };
   }, [t, updateTabs]);
 
@@ -311,8 +333,13 @@ export const useTerminalPage = () => {
       return;
     }
     const bounds = containerRef.current.getBoundingClientRect();
-    const minLeft = Math.max(bounds.width * 0.3, 300);
-    const maxLeft = bounds.width - 200;
+    const minSidebar = bounds.width <= 640 ? 220 : 300;
+    const available = Math.max(0, bounds.width - minSidebar);
+    const minLeft = Math.min(
+      Math.max(bounds.width * 0.3, bounds.width <= 640 ? 160 : 300),
+      available,
+    );
+    const maxLeft = Math.max(minLeft, available);
     const newWidth = Math.min(
       Math.max(clientX - bounds.left, minLeft),
       maxLeft,
@@ -492,6 +519,13 @@ export const useTerminalPage = () => {
     URL.revokeObjectURL(url);
   }, []);
 
+  const openFileManager = useCallback((id?: string) => {
+    if (id) {
+      setActiveTabId(id);
+    }
+    setSidebarTab("files");
+    setIsClipboardOpen(true);
+  }, []);
   const openSearch = useCallback((id?: string) => {
     if (id) {
       setActiveTabId(id);
@@ -673,6 +707,9 @@ export const useTerminalPage = () => {
   // Global Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
+      if (document.querySelector(".km-file-editor")) {
+        return;
+      }
       const ctrlShift =
         event.ctrlKey &&
         event.shiftKey &&
@@ -775,6 +812,7 @@ export const useTerminalPage = () => {
     closeTab,
     openClient,
     openSearch,
+    openFileManager,
     orderedClients,
     switchTab,
     toggleFullscreen,
@@ -799,12 +837,14 @@ export const useTerminalPage = () => {
     resolvedSettings,
     appearance,
     clients,
+    clientsLoading,
     tabs,
     activeTabId,
     editingTabId,
     renameDraft,
     serverMenuOpen,
     isClipboardOpen,
+    sidebarTab,
     leftWidth,
     httpsCalloutOpen,
     twoFaEnabled,
@@ -822,6 +862,7 @@ export const useTerminalPage = () => {
     setServerMenuOpen,
     setRenameDraft,
     setIsClipboardOpen,
+    setSidebarTab,
     setHttpsCalloutOpen,
     handleSearchTermChange,
     handleFindNext,
@@ -830,6 +871,7 @@ export const useTerminalPage = () => {
     handleToggleUseRegex,
     toggleResourceMonitor,
     openSearch,
+    openFileManager,
     closeSearch,
     handleApiChange,
     startDragging,

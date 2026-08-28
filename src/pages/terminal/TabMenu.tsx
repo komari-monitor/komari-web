@@ -1,6 +1,8 @@
 import {
   Copy,
   Download,
+  FileCode2,
+  FolderOpen,
   Gauge,
   Palette,
   Pencil,
@@ -37,6 +39,8 @@ interface TabMenuProps {
   onDuplicate: () => void;
   onExportText: () => void;
   onFind: () => void;
+  onOpenFileManager: () => void;
+  onOpenEditor: () => void;
   onToggleResourceWindow: () => void;
   onColor: (color: string | null) => void;
   onClose: (mode: CloseMode) => void;
@@ -54,7 +58,9 @@ const TabMenu = ({
   onDuplicate,
   onExportText,
   onFind,
+  onOpenEditor,
   onToggleResourceWindow,
+  onOpenFileManager,
   onColor,
   onClose,
 }: TabMenuProps) => {
@@ -141,6 +147,18 @@ const TabMenu = ({
               ? t("terminal.resource_monitor.close", "关闭资源小窗")
               : t("terminal.resource_monitor.open", "打开资源小窗")}
           </span>
+        </DropdownMenuItem>
+
+        <DropdownMenuSeparator />
+
+        <DropdownMenuItem onSelect={onOpenFileManager} className="flex items-center gap-2">
+          <FolderOpen size={14} />
+          <span>{t("file_manager.title", "文件管理")}</span>
+        </DropdownMenuItem>
+
+        <DropdownMenuItem onSelect={onOpenEditor} className="flex items-center gap-2">
+          <FileCode2 size={14} />
+          <span>{t("file_manager.open_in_editor", "在编辑器中打开")}</span>
         </DropdownMenuItem>
 
         <DropdownMenuSeparator />

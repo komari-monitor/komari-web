@@ -30,7 +30,8 @@ interface TerminalSessionProps {
 }
 
 const RECONNECT_INTERVAL = 1000;
-const RECONNECT_WINDOW = 30000;
+// 与 Server/Agent 的会话保留窗口（5 分钟）保持一致，Agent 离线恢复后会话仍可续用。
+const RECONNECT_WINDOW = 5 * 60 * 1000;
 
 const encode = (value: string) => new TextEncoder().encode(value);
 
@@ -46,10 +47,13 @@ const TerminalSession = ({
   onApiChange,
 }: TerminalSessionProps) => {
   const hostRef = useRef<HTMLDivElement>(null);
+  const activeRef = useRef(active);
   const disconnectMessageRef = useRef(disconnectMessage);
   const onApiChangeRef = useRef(onApiChange);
   const toastId = useId();
   const { t } = useTranslation();
+
+  activeRef.current = active;
 
   useEffect(() => {
     disconnectMessageRef.current = disconnectMessage;
@@ -110,6 +114,7 @@ const TerminalSession = ({
     let requestID: string | null = null;
     let ws: WebSocket | null = null;
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
+    let stableConnectionTimer: ReturnType<typeof setTimeout> | null = null;
     let reconnectDeadline: number | null = null;
     let otpBuffer = "";
     let awaitingOtp = false;
@@ -311,28 +316,41 @@ const TerminalSession = ({
 
     const connect = (otp: string | null) => {
       const params = new URLSearchParams();
-      if (otp) {
+      // 2FA is required only for the initial session creation. Reattach is
+      // authorized by the server-side session owner and must not reuse an
+      // expired TOTP value.
+      if (otp && !requestID) {
         params.set("2fa_code", otp);
       }
       if (requestID) {
         params.set("request_id", requestID);
       }
       const query = params.toString();
-      ws = new WebSocket(
+      const socket = new WebSocket(
         `${baseUrl}/api/admin/client/${uuid}/terminal${query ? `?${query}` : ""}`,
       );
-      ws.binaryType = "arraybuffer";
+      ws = socket;
+      socket.binaryType = "arraybuffer";
 
-      ws.onopen = () => {
+      socket.onopen = () => {
+        if (disposed || ws !== socket) return;
         reconnectTimer = null;
-        reconnectDeadline = null;
+        if (stableConnectionTimer !== null) {
+          clearTimeout(stableConnectionTimer);
+        }
+        // Keep a reconnect window across short-lived flaps. Once the
+        // connection is stable, a future outage gets a fresh window.
+        stableConnectionTimer = setTimeout(() => {
+          reconnectDeadline = null;
+          stableConnectionTimer = null;
+        }, 10000);
         hideReconnectingToast();
         fit();
         startHeartbeat();
       };
 
-      ws.onmessage = (event) => {
-        if (disposed) {
+      socket.onmessage = (event) => {
+        if (disposed || ws !== socket) {
           return;
         }
         if (typeof event.data === "string") {
@@ -371,39 +389,57 @@ const TerminalSession = ({
         }
       };
 
-      ws.onclose = () => {
+      socket.onclose = () => {
+        if (ws !== socket) return;
+        ws = null;
         stopHeartbeat();
+        if (stableConnectionTimer !== null) {
+          clearTimeout(stableConnectionTimer);
+          stableConnectionTimer = null;
+        }
         if (disposed) {
           return;
         }
         if (!requestID) {
-          hideReconnectingToast();
-          startOtpPrompt(true);
+          if (twoFaEnabled) {
+            hideReconnectingToast();
+            startOtpPrompt(true);
+          } else {
+            scheduleReconnect();
+          }
           return;
         }
-
-        const now = Date.now();
-        if (reconnectDeadline === null) {
-          reconnectDeadline = now + RECONNECT_WINDOW;
-        }
-        if (now >= reconnectDeadline) {
-          hideReconnectingToast();
-          term.write(`\n ${disconnectMessageRef.current}`);
-          return;
-        }
-        if (reconnectTimer === null) {
-          toast.loading(
-            t("terminal.reconnecting", "连接已断开，正在尝试重新连接"),
-            {
-              duration: Infinity,
-              id: toastId,
-            },
-          );
-          reconnectTimer = setTimeout(() => connect(requestID ? null : currentOtp), RECONNECT_INTERVAL);
-        }
+        scheduleReconnect();
       };
 
-      ws.onerror = () => {};
+      socket.onerror = () => {};
+    };
+
+    const scheduleReconnect = () => {
+      const now = Date.now();
+      if (reconnectDeadline === null) {
+        reconnectDeadline = now + RECONNECT_WINDOW;
+      }
+      if (now >= reconnectDeadline) {
+        hideReconnectingToast();
+        term.write(`\n ${disconnectMessageRef.current}`);
+        return;
+      }
+      if (reconnectTimer !== null) return;
+      toast.loading(
+        t("terminal.reconnecting", "连接已断开，正在尝试重新连接"),
+        {
+          duration: Infinity,
+          id: toastId,
+        },
+      );
+      reconnectTimer = setTimeout(() => {
+        reconnectTimer = null;
+        // Reuse the verified code while reattaching the existing request.
+        // A fresh OTP prompt is shown when the initial authenticated connect
+        // fails before a request ID is issued.
+        connect(twoFaEnabled ? currentOtp : null);
+      }, RECONNECT_INTERVAL);
     };
 
     if (twoFaEnabled) {
@@ -443,7 +479,12 @@ const TerminalSession = ({
       exportText,
     };
     onApiChangeRef.current(api);
-    requestAnimationFrame(fit);
+    requestAnimationFrame(() => {
+      fit();
+      if (activeRef.current) {
+        term.focus();
+      }
+    });
 
     return () => {
       disposed = true;
@@ -459,20 +500,25 @@ const TerminalSession = ({
       if (reconnectTimer !== null) {
         clearTimeout(reconnectTimer);
       }
+      if (stableConnectionTimer !== null) {
+        clearTimeout(stableConnectionTimer);
+      }
       hideReconnectingToast();
       if (ws) {
-        ws.onopen = null;
-        ws.onmessage = null;
-        ws.onclose = null;
-        ws.onerror = null;
-        if (ws.readyState === WebSocket.OPEN) {
-          ws.send(JSON.stringify({ type: "close", request_id: requestID }));
+        const socket = ws;
+        ws = null;
+        socket.onopen = null;
+        socket.onmessage = null;
+        socket.onclose = null;
+        socket.onerror = null;
+        if (socket.readyState === WebSocket.OPEN) {
+          socket.send(JSON.stringify({ type: "close", request_id: requestID }));
         }
         if (
-          ws.readyState === WebSocket.OPEN ||
-          ws.readyState === WebSocket.CONNECTING
+          socket.readyState === WebSocket.OPEN ||
+          socket.readyState === WebSocket.CONNECTING
         ) {
-          ws.close();
+          socket.close();
         }
       }
       term.dispose();

@@ -27,7 +27,13 @@ export class RPC2Client {
   private reconnectAttempts = 0;
   private reconnectTimeout?: NodeJS.Timeout;
   private heartbeatInterval?: NodeJS.Timeout;
+  private stableConnectionTimeout?: NodeJS.Timeout;
+  private manualDisconnect = false;
+  private connectionGeneration = 0;
   private eventListeners: RPC2EventListeners = {};
+
+  // Do not reset the retry counter for a connection that immediately flaps.
+  private readonly stableConnectionWindow = 10000;
 
   private readonly baseUrl: string;
   private readonly options: Required<RPC2ConnectionOptions>;
@@ -84,13 +90,20 @@ export class RPC2Client {
       return;
     }
 
+    this.manualDisconnect = false;
+    const generation = ++this.connectionGeneration;
+    if (this.reconnectTimeout) {
+      clearTimeout(this.reconnectTimeout);
+      this.reconnectTimeout = undefined;
+    }
     this.setConnectionState(RPC2ConnectionState.CONNECTING);
 
+    let socket: WebSocket | null = null;
     try {
       const wsUrl = this.getWebSocketUrl();
-      const ws = new WebSocket(wsUrl);
-      this.ws = ws;
-      this.setupWebSocketHandlers();
+      socket = new WebSocket(wsUrl);
+      this.ws = socket;
+      this.setupWebSocketHandlers(socket);
 
       // 等待连接建立（不覆盖已设置的处理器，避免丢失心跳与状态更新）
       await new Promise<void>((resolve, reject) => {
@@ -109,16 +122,39 @@ export class RPC2Client {
 
         const cleanup = () => {
           clearTimeout(timeout);
-          ws.removeEventListener("open", handleOpen);
-          ws.removeEventListener("error", handleError);
+          socket?.removeEventListener("open", handleOpen);
+          socket?.removeEventListener("error", handleError);
         };
 
-        ws.addEventListener("open", handleOpen, { once: true });
-        ws.addEventListener("error", handleError, { once: true });
+        socket?.addEventListener("open", handleOpen, { once: true });
+        socket?.addEventListener("error", handleError, { once: true });
       });
     } catch (error) {
-      this.setConnectionState(RPC2ConnectionState.ERROR);
+      if (generation !== this.connectionGeneration) {
+        socket?.close();
+        throw error;
+      }
+      if (socket && this.ws === socket) {
+        // A failed opening handshake does not always emit close in every
+        // browser, so close and detach it here before scheduling a retry.
+        this.ws = null;
+        if (socket.readyState !== WebSocket.CLOSED) {
+          socket.close();
+        }
+      } else if (socket) {
+        socket.close();
+      }
+      this.stopHeartbeat();
+      if (this.stableConnectionTimeout) {
+        clearTimeout(this.stableConnectionTimeout);
+        this.stableConnectionTimeout = undefined;
+      }
+      this.setConnectionState(RPC2ConnectionState.DISCONNECTED);
       this.eventListeners.onError?.(error as Error);
+      if (!this.manualDisconnect && this.options.autoReconnect &&
+          this.reconnectAttempts < this.options.maxReconnectAttempts) {
+        this.attemptReconnect();
+      }
       throw error;
     }
   }
@@ -127,7 +163,7 @@ export class RPC2Client {
    * 自动建立连接（非阻塞）
    */
   private autoConnect(): void {
-    if (this.connectionState !== RPC2ConnectionState.DISCONNECTED) {
+    if (this.manualDisconnect || this.connectionState !== RPC2ConnectionState.DISCONNECTED) {
       return;
     }
 
@@ -142,7 +178,8 @@ export class RPC2Client {
    * 断开 WebSocket 连接
    */
   disconnect(): void {
-    this.options.autoReconnect = false;
+    this.manualDisconnect = true;
+    this.connectionGeneration++;
     if (this.reconnectTimeout) {
       clearTimeout(this.reconnectTimeout);
       this.reconnectTimeout = undefined;
@@ -154,9 +191,15 @@ export class RPC2Client {
       this.heartbeatInterval = undefined;
     }
 
-    if (this.ws) {
-      this.ws.close();
-      this.ws = null;
+    if (this.stableConnectionTimeout) {
+      clearTimeout(this.stableConnectionTimeout);
+      this.stableConnectionTimeout = undefined;
+    }
+
+    const socket = this.ws;
+    this.ws = null;
+    if (socket) {
+      socket.close();
     }
 
     this.setConnectionState(RPC2ConnectionState.DISCONNECTED);
@@ -202,7 +245,13 @@ export class RPC2Client {
         timeout,
       });
 
-      this.sendMessage(request);
+      try {
+        this.sendMessage(request);
+      } catch (error) {
+        this.pendingRequests.delete(request.id!);
+        clearTimeout(timeout);
+        reject(error);
+      }
     });
   }
 
@@ -226,7 +275,7 @@ export class RPC2Client {
         method: "POST",
         headers: this.options.headers,
         body: JSON.stringify(request),
-        signal: options.timeout ? AbortSignal.timeout(options.timeout) : undefined,
+        signal: AbortSignal.timeout(options.timeout || this.options.requestTimeout),
       });
 
       if (!response.ok) {
@@ -272,6 +321,7 @@ export class RPC2Client {
         method: "POST",
         headers: this.options.headers,
         body: JSON.stringify(batchRequest),
+        signal: AbortSignal.timeout(this.options.requestTimeout),
       });
 
       if (!response.ok) {
@@ -330,17 +380,25 @@ export class RPC2Client {
     return `${protocol}//${host}${this.baseUrl}`;
   }
 
-  private setupWebSocketHandlers(): void {
-    if (!this.ws) return;
-
-    this.ws.onopen = () => {
+  private setupWebSocketHandlers(socket: WebSocket): void {
+    socket.onopen = () => {
+      if (this.ws !== socket) return;
       this.setConnectionState(RPC2ConnectionState.CONNECTED);
-      this.reconnectAttempts = 0;
+      if (this.stableConnectionTimeout) {
+        clearTimeout(this.stableConnectionTimeout);
+      }
+      this.stableConnectionTimeout = setTimeout(() => {
+        if (this.ws === socket && this.connectionState === RPC2ConnectionState.CONNECTED) {
+          this.reconnectAttempts = 0;
+        }
+        this.stableConnectionTimeout = undefined;
+      }, this.stableConnectionWindow);
       this.startHeartbeat(); // 启动心跳包
       this.eventListeners.onConnect?.();
     };
 
-    this.ws.onmessage = (event) => {
+    socket.onmessage = (event) => {
+      if (this.ws !== socket) return;
       try {
         const data = JSON.parse(event.data);
         this.handleMessage(data);
@@ -350,18 +408,26 @@ export class RPC2Client {
       }
     };
 
-    this.ws.onclose = () => {
+    socket.onclose = () => {
+      if (this.ws !== socket) return;
+      this.ws = null;
       this.setConnectionState(RPC2ConnectionState.DISCONNECTED);
       this.stopHeartbeat(); // 停止心跳包
+      if (this.stableConnectionTimeout) {
+        clearTimeout(this.stableConnectionTimeout);
+        this.stableConnectionTimeout = undefined;
+      }
+      this.clearPendingRequests(new Error(i18n.t("rpc2.connection_disconnected")));
       this.eventListeners.onDisconnect?.();
 
-      if (this.options.autoReconnect &&
+      if (!this.manualDisconnect && this.options.autoReconnect &&
           this.reconnectAttempts < this.options.maxReconnectAttempts) {
         this.attemptReconnect();
       }
     };
 
-    this.ws.onerror = (error) => {
+    socket.onerror = (error) => {
+      if (this.ws !== socket) return;
       console.error(i18n.t("rpc2.websocket_error"), error);
       this.eventListeners.onError?.(
         new Error(i18n.t("rpc2.websocket_connection_error"))
@@ -370,7 +436,7 @@ export class RPC2Client {
   }
 
   private handleMessage(data: JSONRPC2Response): void {
-    if (!data.id) return; // 忽略通知响应
+    if (data.id === undefined || data.id === null) return; // 忽略通知响应
 
     const pending = this.pendingRequests.get(data.id);
     if (!pending) return;
@@ -455,13 +521,16 @@ export class RPC2Client {
   }
 
   private attemptReconnect(): void {
+    if (this.reconnectTimeout || this.manualDisconnect) return;
     this.reconnectAttempts++;
     this.setConnectionState(RPC2ConnectionState.RECONNECTING);
     this.eventListeners.onReconnecting?.(this.reconnectAttempts);
 
     this.reconnectTimeout = setTimeout(() => {
+      this.reconnectTimeout = undefined;
+      if (this.manualDisconnect) return;
       this.connect().catch(() => {
-        // 重连失败会触发 onclose，从而继续重连或停止
+        // Failed handshakes are scheduled by connect() when no close event is emitted.
       });
     }, this.options.reconnectInterval);
   }

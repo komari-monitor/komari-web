@@ -22,7 +22,13 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 
 // 命令剪贴板面板
-const CommandClipboardPanel = ({ ...props }: { [key: string]: any }) => {
+const CommandClipboardPanel = ({
+  showHeader = true,
+  ...props
+}: {
+  showHeader?: boolean;
+  [key: string]: any;
+}) => {
   // 剪贴板列表布局
   const InnerLayout = () => {
     const { t } = useTranslation();
@@ -48,11 +54,13 @@ const CommandClipboardPanel = ({ ...props }: { [key: string]: any }) => {
         overflowY={"scroll"}
         className="km-command-clipboard km-command-clipboard-list command-clipboard-container h-full"
       >
-        <Flex>
-          <label className="text-lg font-semibold">
-            {t("command_clipboard.title")}
-          </label>
-        </Flex>
+        {showHeader && (
+          <Flex>
+            <label className="text-lg font-semibold">
+              {t("command_clipboard.title")}
+            </label>
+          </Flex>
+        )}
         <Flex justify="between" align="center" className="mr-2">
           <AddButton />
           <LanguageSwitch />
