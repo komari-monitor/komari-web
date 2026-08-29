@@ -87,16 +87,17 @@ const sleep = (ms: number, signal?: AbortSignal) =>
     }, { once: true });
   });
 
-const makeFormData = (uploadID: string, index: number, chunk: Blob) => {
-  const form = new FormData();
-  form.append("upload_id", uploadID);
-  form.append("chunk_index", String(index));
-  form.append("chunk_data", chunk);
-  return form;
-};
-
 const uploadEndpoint = (uuid: string, operation: string) =>
   `/api/admin/client/${encodeURIComponent(uuid)}/file/upload?operation=${operation}`;
+
+const uploadChunkEndpoint = (uuid: string, uploadID: string, index: number) => {
+  const params = new URLSearchParams({
+    operation: "chunk",
+    upload_id: uploadID,
+    chunk_index: String(index),
+  });
+  return `/api/admin/client/${encodeURIComponent(uuid)}/file/upload?${params.toString()}`;
+};
 
 export const useRemoteFileUpload = (
   uuid: string | null,
@@ -258,7 +259,10 @@ export const useRemoteFileUpload = (
             return;
           }
 
-          xhr.open("POST", uploadEndpoint(uuid!, "chunk"), true);
+          // Keep the data body raw; Server relays it to the Agent over the
+          // matching binary transfer stream instead of embedding it in RPC JSON.
+          xhr.open("POST", uploadChunkEndpoint(uuid!, uploadID, index), true);
+          xhr.setRequestHeader("Content-Type", "application/octet-stream");
           xhr.responseType = "json";
           xhr.upload.addEventListener("progress", (event) => {
             if (event.lengthComputable) {
@@ -286,7 +290,7 @@ export const useRemoteFileUpload = (
           xhr.ontimeout = () => finish(() => reject(new Error("Upload timed out")));
           xhr.onabort = () => finish(() => reject(new DOMException("Upload canceled", "AbortError")));
           controller.signal.addEventListener("abort", handleAbort, { once: true });
-          xhr.send(makeFormData(uploadID, index, chunk));
+          xhr.send(chunk);
         });
 
       const uploadChunkWithRetry = async (index: number) => {

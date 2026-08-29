@@ -31,6 +31,7 @@ import {
   fileDownloadUrl,
   copyTextToClipboard,
   formatClipboardPath,
+  getDroppedUploadFiles,
   joinRemotePath,
   normalizeRemotePath,
   remoteAncestors,
@@ -632,6 +633,11 @@ export const RemoteFileTree = ({
     }
     if (!event.dataTransfer.files.length) return;
     event.preventDefault();
+    const droppedFiles = getDroppedUploadFiles(event.dataTransfer);
+    if (droppedFiles.length === 0) {
+      setDragTarget(null);
+      return;
+    }
     setDragTarget(null);
     closeContextMenu();
     const destination =
@@ -640,7 +646,7 @@ export const RemoteFileTree = ({
         : target.kind === "file"
           ? remoteDirname(target.path)
           : target.path;
-    await uploadFiles(event.dataTransfer.files, destination);
+    await uploadFiles(droppedFiles, destination);
   };
 
   const startInternalDrag = (file: RemoteFileInfo) => {

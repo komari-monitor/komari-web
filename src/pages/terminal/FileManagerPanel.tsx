@@ -48,7 +48,7 @@ import {
   formatClipboardPath,
   fileDownloadUrl,
   copyTextToClipboard,
-
+  getDroppedUploadFiles,
   joinRemotePath,
   normalizeRemotePath,
   remoteBasename,
@@ -665,9 +665,14 @@ const FileManagerPanel = ({ uuid }: FileManagerPanelProps) => {
     }
     if (!event.dataTransfer.files.length) return;
     event.preventDefault();
+    const droppedFiles = getDroppedUploadFiles(event.dataTransfer);
+    if (droppedFiles.length === 0) {
+      setDragTarget(null);
+      return;
+    }
     setDragTarget(null);
     closeContextMenu();
-    await uploadFiles(event.dataTransfer.files, target.kind === "directory" ? target.path : currentPath);
+    await uploadFiles(droppedFiles, target.kind === "directory" ? target.path : currentPath);
   };
 
   const startInternalDrag = (file: RemoteFileInfo): string[] => {

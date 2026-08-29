@@ -144,6 +144,59 @@ export const copyTextToClipboard = async (text: string) => {
   }
 };
 
+type DroppedFileSystemEntry = {
+  isDirectory?: boolean;
+  name?: string;
+};
+
+type DroppedDataTransferItem = DataTransferItem & {
+  webkitGetAsEntry?: () => DroppedFileSystemEntry | null;
+};
+
+type DroppedFile = File & {
+  webkitRelativePath?: string;
+};
+
+/**
+ * Browsers may expose a dropped directory as a zero-byte File alongside the
+ * files inside it. Keep genuine empty files, but discard only placeholders
+ * backed by a directory entry.
+ */
+export const getDroppedUploadFiles = (transfer: DataTransfer): File[] => {
+  const directoryPlaceholders = new WeakSet<File>();
+  const directoryNames = new Set<string>();
+
+  for (const rawItem of Array.from(transfer.items ?? [])) {
+    if (rawItem.kind !== "file") continue;
+    const item = rawItem as DroppedDataTransferItem;
+    let entry: DroppedFileSystemEntry | null = null;
+    try {
+      entry = item.webkitGetAsEntry?.() ?? null;
+    } catch {
+      continue;
+    }
+    if (!entry?.isDirectory) continue;
+    if (entry.name) directoryNames.add(entry.name);
+    let placeholder: File | null = null;
+    try {
+      placeholder = item.getAsFile();
+    } catch {
+      placeholder = null;
+    }
+    if (placeholder) directoryPlaceholders.add(placeholder);
+  }
+
+  return Array.from(transfer.files ?? []).filter((file) => {
+    if (directoryPlaceholders.has(file)) return false;
+    const relativePath = (file as DroppedFile).webkitRelativePath;
+    if (relativePath && relativePath !== file.name && !relativePath.endsWith("/")) return true;
+    if (directoryNames.has(file.name) && (!relativePath || relativePath === file.name || relativePath.endsWith("/"))) {
+      return false;
+    }
+    return file.size !== 0 || !directoryNames.has(file.name);
+  });
+};
+
 export const formatClipboardPath = (value: string) => {
   const normalized = normalizeRemotePath(value);
   const windowsPath = normalized.replace(/^\/([A-Za-z])(?:\/|$)/, (_match, drive: string) => `${drive}:\\`);
@@ -379,6 +432,30 @@ export const fileDownloadUrl = (uuid: string, path: string, inline = false) => {
   return `/api/admin/client/${encodeURIComponent(uuid)}/file/download?${params.toString()}`;
 };
 
+const LOCAL_HOSTNAMES = new Set(["localhost", "127.0.0.1", "[::1]", "::1"]);
+
+// Office Online fetches the source from its own servers. During local Vite
+// development, localhost is not reachable there, so prefer the configured
+// proxy target when it provides a usable external origin.
+const officePreviewSourceOrigin = () => {
+  const browserOrigin = window.location.origin;
+  if (!LOCAL_HOSTNAMES.has(window.location.hostname) || !import.meta.env.VITE_API_TARGET) {
+    return browserOrigin;
+  }
+  try {
+    const configuredOrigin = new URL(import.meta.env.VITE_API_TARGET, browserOrigin);
+    if (
+      (configuredOrigin.protocol === "http:" || configuredOrigin.protocol === "https:") &&
+      !LOCAL_HOSTNAMES.has(configuredOrigin.hostname)
+    ) {
+      return configuredOrigin.origin;
+    }
+  } catch {
+    // Keep the browser origin when the development proxy target is invalid.
+  }
+  return browserOrigin;
+};
+
 export const fetchOfficePreviewUrl = async (uuid: string, path: string) => {
   const tokenParams = new URLSearchParams({ path });
   const tokenResponse = await fetch(
@@ -395,10 +472,19 @@ export const fetchOfficePreviewUrl = async (uuid: string, path: string) => {
   // `src` parameter before requesting it, so embedding a percent-encoded file
   // path here makes non-ASCII paths prone to double-decoding issues. The
   // preview token already binds the client and path on the server.
+  const extension = remoteBasename(path).match(/\.([A-Za-z0-9]+)$/)?.[1]?.toLowerCase() || "bin";
   const downloadParams = new URLSearchParams({
     inline: "1",
     preview_token: tokenPayload.data.token,
+    // Keep an ASCII filename (and its extension) in the URL as well as in
+    // the response headers. Office Online uses it as a fallback when the
+    // original filename contains non-ASCII characters.
+    filename: `komari-preview.${extension}`,
   });
-  const source = `${window.location.origin}/api/preview/client/${encodeURIComponent(uuid)}/file/download?${downloadParams.toString()}`;
+  // Office Online fetches the source from its own servers. During local Vite
+  // development, localhost is not reachable there, so prefer the configured
+  // proxy target when it provides a usable external origin.
+  const sourceOrigin = officePreviewSourceOrigin();
+  const source = `${sourceOrigin}/api/preview/client/${encodeURIComponent(uuid)}/file/download?${downloadParams.toString()}`;
   return `https://view.officeapps.live.com/op/view.aspx?src=${encodeURIComponent(source)}`;
 };
