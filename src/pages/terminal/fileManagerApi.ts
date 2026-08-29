@@ -3,7 +3,87 @@ export const MAX_EDITABLE_FILE_SIZE = 4 * 1024 * 1024;
 export const MAX_IMAGE_PREVIEW_SIZE = 50 * 1024 * 1024;
 export const MAX_AUDIO_PREVIEW_SIZE = 50 * 1024 * 1024;
 export const MAX_VIDEO_PREVIEW_SIZE = 2 * 1024 * 1024 * 1024;
-export const TRANSFER_CHUNK_SIZE = 6 * 1024 * 1024;
+/** Default logical block size for both file uploads and downloads. */
+export const TRANSFER_CHUNK_SIZE = 25 * 1024 * 1024;
+/** Lowest block size used when a proxy rejects a request with HTTP 413. */
+export const MIN_TRANSFER_CHUNK_SIZE = 1 * 1024 * 1024;
+export const MAX_TRANSFER_CHUNK_SIZE = 128 * 1024 * 1024;
+
+export type TransferChunkDirection = "upload" | "download";
+
+const TRANSFER_CHUNK_SIZE_CACHE_KEY = "komari:file-transfer:chunk-size:v1";
+const transferChunkSizeMemoryCache = new Map<string, number>();
+
+const isValidTransferChunkSize = (value: number): value is number =>
+  Number.isSafeInteger(value) &&
+  value >= MIN_TRANSFER_CHUNK_SIZE &&
+  value <= MAX_TRANSFER_CHUNK_SIZE;
+
+const transferChunkSizeCacheEntryKey = (uuid: string, direction: TransferChunkDirection) => {
+  let origin = "local";
+  try {
+    origin = typeof window !== "undefined" && window.location?.origin
+      ? window.location.origin
+      : "local";
+  } catch {
+    // Access to browser globals can be restricted in embedded/private views.
+  }
+  return `${origin}|${direction}|${uuid}`;
+};
+
+/** Read a previously successful chunk size from memory or browser storage. */
+export const getCachedTransferChunkSize = (uuid: string, direction: TransferChunkDirection) => {
+  if (!uuid) return null;
+  const key = transferChunkSizeCacheEntryKey(uuid, direction);
+  const memoryValue = transferChunkSizeMemoryCache.get(key);
+  if (memoryValue !== undefined && isValidTransferChunkSize(memoryValue)) {
+    return memoryValue;
+  }
+  if (typeof window === "undefined") return null;
+  try {
+    const stored = window.localStorage.getItem(TRANSFER_CHUNK_SIZE_CACHE_KEY);
+    if (!stored) return null;
+    const values = JSON.parse(stored) as Record<string, unknown>;
+    const value = Number(values[key]);
+    if (!isValidTransferChunkSize(value)) return null;
+    transferChunkSizeMemoryCache.set(key, value);
+    return value;
+  } catch {
+    return null;
+  }
+};
+
+/** Persist the final successful chunk size for this Agent and transfer direction. */
+export const cacheTransferChunkSize = (
+  uuid: string,
+  direction: TransferChunkDirection,
+  value: number,
+) => {
+  if (!uuid || !isValidTransferChunkSize(value)) return;
+  const key = transferChunkSizeCacheEntryKey(uuid, direction);
+  let valueToStore = value;
+  const memoryValue = transferChunkSizeMemoryCache.get(key);
+  if (memoryValue !== undefined && isValidTransferChunkSize(memoryValue)) {
+    valueToStore = Math.min(valueToStore, memoryValue);
+  }
+  if (typeof window === "undefined") {
+    transferChunkSizeMemoryCache.set(key, valueToStore);
+    return;
+  }
+  try {
+    const stored = window.localStorage.getItem(TRANSFER_CHUNK_SIZE_CACHE_KEY);
+    const values = stored ? JSON.parse(stored) as Record<string, unknown> : {};
+    const storedValue = Number(values[key]);
+    if (isValidTransferChunkSize(storedValue)) {
+      valueToStore = Math.min(valueToStore, storedValue);
+    }
+    values[key] = valueToStore;
+    window.localStorage.setItem(TRANSFER_CHUNK_SIZE_CACHE_KEY, JSON.stringify(values));
+  } catch {
+    // Private browsing and storage-quota errors must not interrupt transfers.
+  }
+  transferChunkSizeMemoryCache.set(key, valueToStore);
+};
 
 export interface RemoteFileInfo {
   name: string;
@@ -22,7 +102,7 @@ export interface RemoteFileInfo {
 }
 
 export interface RemoteFileReadResult {
-  data: string;
+  bytes: Uint8Array;
   size: number;
   modified_at: string;
   content_type: string;
@@ -217,15 +297,6 @@ export const formatFileDate = (value: string) => {
   }).format(date);
 };
 
-export const decodeRemoteBytes = (encoded: string) => {
-  const binary = window.atob(encoded);
-  const bytes = new Uint8Array(binary.length);
-  for (let index = 0; index < binary.length; index += 1) {
-    bytes[index] = binary.charCodeAt(index);
-  }
-  return bytes;
-};
-
 const isSupportedRemoteTextEncoding = (value: string): value is RemoteTextEncoding =>
   REMOTE_TEXT_ENCODINGS.some((encoding) => encoding.value === value);
 
@@ -239,6 +310,57 @@ export const normalizeRemoteTextEncoding = (value: string | null | undefined): R
 
 export const decodeRemoteTextBytes = (bytes: Uint8Array, encoding: RemoteTextEncoding = "utf-8") =>
   new TextDecoder(encoding).decode(bytes);
+
+const looksLikeTextValue = (value: string) => {
+  if (value.length === 0) return false;
+  for (const character of value) {
+    if (character === "\n" || character === "\r" || character === "\t" || character === "\f") {
+      continue;
+    }
+    const codePoint = character.codePointAt(0) ?? 0;
+    if (codePoint < 0x20 || (codePoint >= 0x7f && codePoint <= 0x9f)) {
+      return false;
+    }
+  }
+  return true;
+};
+
+const looksLikeTextBytes = (bytes: Uint8Array) => {
+  try {
+    if (looksLikeTextValue(new TextDecoder("utf-8", { fatal: true }).decode(bytes))) {
+      return true;
+    }
+  } catch {
+    // Try the common legacy encodings below.
+  }
+  for (const encoding of ["gb18030", "big5"] as const) {
+    try {
+      if (looksLikeTextValue(new TextDecoder(encoding, { fatal: true }).decode(bytes))) {
+        return true;
+      }
+    } catch {
+      // The browser may not expose every legacy decoder.
+    }
+  }
+  return false;
+};
+
+/**
+ * Classify a remote file from a small prefix. A readable prefix before a NUL
+ * is intentionally treated as text so custom formats remain editable.
+ */
+export const isLikelyBinaryRemoteContent = (bytes: Uint8Array) => {
+  if (bytes.length === 0) return false;
+  let sample = bytes.slice(0, 512);
+  if (sample[0] === 0xef && sample[1] === 0xbb && sample[2] === 0xbf) {
+    sample = sample.slice(3);
+  }
+  const nul = sample.indexOf(0);
+  if (nul >= 0) {
+    sample = sample.slice(0, nul);
+  }
+  return !looksLikeTextBytes(sample);
+};
 
 const textQualityScore = (value: string) => {
   let score = 0;
@@ -286,9 +408,6 @@ export const detectRemoteTextEncoding = (bytes: Uint8Array): RemoteTextEncoding 
     return detected && detected !== "utf-8" ? detected : detectByCandidateScore(bytes);
   }
 };
-
-export const decodeRemoteText = (encoded: string, encoding: RemoteTextEncoding = "utf-8") =>
-  decodeRemoteTextBytes(decodeRemoteBytes(encoded), encoding);
 
 let legacyEncoderModulePromise: Promise<typeof import("@zxing/text-encoding/es2015/encoding")> | null = null;
 
@@ -429,6 +548,10 @@ export const fileDownloadUrl = (uuid: string, path: string, inline = false) => {
   if (inline) {
     params.set("inline", "1");
   }
+  const cachedChunkSize = getCachedTransferChunkSize(uuid, "download");
+  if (cachedChunkSize) {
+    params.set("chunk_size", String(cachedChunkSize));
+  }
   return `/api/admin/client/${encodeURIComponent(uuid)}/file/download?${params.toString()}`;
 };
 
@@ -481,6 +604,10 @@ export const fetchOfficePreviewUrl = async (uuid: string, path: string) => {
     // original filename contains non-ASCII characters.
     filename: `komari-preview.${extension}`,
   });
+  const cachedChunkSize = getCachedTransferChunkSize(uuid, "download");
+  if (cachedChunkSize) {
+    downloadParams.set("chunk_size", String(cachedChunkSize));
+  }
   // Office Online fetches the source from its own servers. During local Vite
   // development, localhost is not reachable there, so prefer the configured
   // proxy target when it provides a usable external origin.

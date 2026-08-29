@@ -2,6 +2,10 @@ import { useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import {
+  cacheTransferChunkSize,
+  getCachedTransferChunkSize,
+  MAX_TRANSFER_CHUNK_SIZE,
+  MIN_TRANSFER_CHUNK_SIZE,
   TRANSFER_CHUNK_SIZE,
   joinRemotePath,
   normalizeRemotePath,
@@ -57,6 +61,46 @@ class UploadRequestError extends Error {
     this.status = status;
   }
 }
+
+class ChunkTooLargeError extends Error {
+  readonly chunkSize: number;
+  readonly original: unknown;
+
+  constructor(chunkSize: number, original: unknown) {
+    super(original instanceof Error ? original.message : "Upload chunk is too large (413)");
+    this.name = "ChunkTooLargeError";
+    this.chunkSize = chunkSize;
+    this.original = original;
+  }
+}
+
+const isPayloadTooLargeError = (error: unknown) => {
+  if (error instanceof UploadRequestError) {
+    return error.status === 413;
+  }
+  return error instanceof Error && /(?:\b413\b|payload too large|request entity too large)/i.test(error.message);
+};
+
+/** Choose a 1 MiB-aligned midpoint below a rejected request size. */
+const nextReducedTransferChunkSize = (failedSize: number, upperBound: number) => {
+  if (!Number.isFinite(failedSize) || failedSize <= MIN_TRANSFER_CHUNK_SIZE) {
+    return null;
+  }
+  const high = Math.min(
+    failedSize,
+    Number.isFinite(upperBound) && upperBound > 0 ? upperBound : failedSize,
+  );
+  if (high <= MIN_TRANSFER_CHUNK_SIZE) {
+    return MIN_TRANSFER_CHUNK_SIZE;
+  }
+  let candidate = MIN_TRANSFER_CHUNK_SIZE + Math.floor((high - MIN_TRANSFER_CHUNK_SIZE) / 2);
+  candidate = Math.floor(candidate / MIN_TRANSFER_CHUNK_SIZE) * MIN_TRANSFER_CHUNK_SIZE;
+  candidate = Math.max(MIN_TRANSFER_CHUNK_SIZE, candidate);
+  if (candidate >= failedSize) {
+    candidate = Math.max(MIN_TRANSFER_CHUNK_SIZE, failedSize - 1);
+  }
+  return candidate < failedSize ? candidate : null;
+};
 
 const shouldRetryUploadError = (error: unknown) => {
   if (!(error instanceof UploadRequestError)) {
@@ -161,9 +205,14 @@ export const useRemoteFileUpload = (
       abortControllersRef.current.set(taskID, controller);
       activeUploadsRef.current += 1;
       const fileCount = activeUploadsRef.current;
-      let chunkSize = TRANSFER_CHUNK_SIZE;
+      let chunkSize = getCachedTransferChunkSize(uuid!, "upload") ?? TRANSFER_CHUNK_SIZE;
       let chunks = createChunkProgress(file.size, chunkSize);
       let uploadID = "";
+      let adaptiveUpperBound = chunkSize;
+      let resizeRequested = false;
+      let resizeError: ChunkTooLargeError | null = null;
+      let chunkSizeWasAdapted = false;
+      const activeRequests = new Set<XMLHttpRequest>();
       let lastReportTime = performance.now();
       let lastSpeedTime = lastReportTime;
       let lastSpeedBytes = 0;
@@ -264,8 +313,10 @@ export const useRemoteFileUpload = (
       const sendChunk = (index: number, chunk: Blob, onProgress: (sent: number) => void) =>
         new Promise<void>((resolve, reject) => {
           const xhr = new XMLHttpRequest();
+          activeRequests.add(xhr);
           let settled = false;
           const cleanup = () => {
+            activeRequests.delete(xhr);
             controller.signal.removeEventListener("abort", handleAbort);
           };
           const finish = (callback: () => void) => {
@@ -279,7 +330,7 @@ export const useRemoteFileUpload = (
           };
 
           if (controller.signal.aborted) {
-            reject(new DOMException("Upload canceled", "AbortError"));
+            finish(() => reject(new DOMException("Upload canceled", "AbortError")));
             return;
           }
 
@@ -318,6 +369,9 @@ export const useRemoteFileUpload = (
         });
 
       const uploadChunkWithRetry = async (index: number) => {
+        if (resizeRequested) {
+          throw resizeError ?? new ChunkTooLargeError(chunkSize, "upload session is being resized");
+        }
         const offset = index * chunkSize;
         const chunk = file.slice(offset, Math.min(offset + chunkSize, file.size));
         const chunkItem = chunks[index];
@@ -349,6 +403,20 @@ export const useRemoteFileUpload = (
             return;
           } catch (error) {
             if (controller.signal.aborted) throw error;
+            if (resizeRequested) {
+              throw resizeError ?? new ChunkTooLargeError(chunkItem.size, error);
+            }
+            if (isPayloadTooLargeError(error)) {
+              // A proxy has rejected this request body. Abort all sibling
+              // requests so the whole session can be restarted with one
+              // consistent chunk geometry.
+              resizeError ??= new ChunkTooLargeError(chunkItem.size, error);
+              resizeRequested = true;
+              for (const request of [...activeRequests]) {
+                request.abort();
+              }
+              throw resizeError;
+            }
             if (!shouldRetryUploadError(error)) throw error;
             attempts += 1;
             chunkItem.status = "retrying";
@@ -362,53 +430,117 @@ export const useRemoteFileUpload = (
             report(true);
             if (attempts >= MAX_RESUME_ATTEMPTS) throw error;
             await sleep(delay, controller.signal);
+            if (resizeRequested) {
+              throw resizeError ?? new ChunkTooLargeError(chunkItem.size, "upload session is being resized");
+            }
             delay *= 2;
           }
         }
       };
 
+      const cancelSession = async (sessionID: string) => {
+        if (!sessionID) return;
+        const cancelURL = `${uploadEndpoint(uuid!, "cancel")}&upload_id=${encodeURIComponent(sessionID)}`;
+        await fetch(cancelURL, { method: "POST", credentials: "include" }).catch(() => undefined);
+      };
+
       try {
         report(true);
         progressTimer = window.setInterval(() => report(), PROGRESS_INTERVAL_MS);
-        const initBody = JSON.stringify({ path: targetPath, size: file.size, chunk_size: TRANSFER_CHUNK_SIZE });
-        if (file.size === 0) {
-          await send("init", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: initBody,
-          });
-        } else {
-          const session = await send("init", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: initBody,
-          });
-          uploadID = session.upload_id;
-          if (Number.isFinite(session.chunk_size) && session.chunk_size > 0) {
-            chunkSize = session.chunk_size;
-            chunks = createChunkProgress(file.size, chunkSize);
-          }
-          const chunkCount = session.chunk_count;
-          await uploadChunkWithRetry(0);
-          let nextIndex = 1;
-          const workers = Array.from(
-            { length: Math.min(CONCURRENT_CHUNKS, Math.max(0, chunkCount - 1)) },
-            async () => {
-              while (nextIndex < chunkCount && !controller.signal.aborted) {
-                const index = nextIndex;
-                nextIndex += 1;
-                await uploadChunkWithRetry(index);
+        let sessionComplete = false;
+        while (!sessionComplete) {
+          resizeRequested = false;
+          resizeError = null;
+          uploadID = "";
+          chunks = createChunkProgress(file.size, chunkSize);
+          chunkTransferState.clear();
+          chunkSpeedState.clear();
+          try {
+            const initBody = JSON.stringify({ path: targetPath, size: file.size, chunk_size: chunkSize });
+            const session = await send("init", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: initBody,
+            });
+            if (file.size === 0) {
+              sessionComplete = true;
+              break;
+            }
+
+            uploadID = session.upload_id;
+            if (
+              Number.isSafeInteger(session.chunk_size) &&
+              session.chunk_size >= MIN_TRANSFER_CHUNK_SIZE &&
+              session.chunk_size <= MAX_TRANSFER_CHUNK_SIZE
+            ) {
+              chunkSize = session.chunk_size;
+              adaptiveUpperBound = Math.min(adaptiveUpperBound, chunkSize);
+              chunks = createChunkProgress(file.size, chunkSize);
+            }
+            const chunkCount = Number(session.chunk_count);
+            if (!Number.isInteger(chunkCount) || chunkCount <= 0) {
+              throw new Error("Upload session returned an invalid chunk count");
+            }
+            await uploadChunkWithRetry(0);
+            if (chunkSizeWasAdapted) {
+              cacheTransferChunkSize(uuid!, "upload", chunkSize);
+              chunkSizeWasAdapted = false;
+            }
+            let nextIndex = 1;
+            const workers = Array.from(
+              { length: Math.min(CONCURRENT_CHUNKS, Math.max(0, chunkCount - 1)) },
+              async () => {
+                while (nextIndex < chunkCount && !controller.signal.aborted && !resizeRequested) {
+                  const index = nextIndex;
+                  nextIndex += 1;
+                  await uploadChunkWithRetry(index);
+                }
+              },
+            );
+            const workerResults = await Promise.allSettled(workers);
+            if (resizeError) {
+              throw resizeError;
+            }
+            const failedWorker = workerResults.find((result) => result.status === "rejected");
+            if (failedWorker?.status === "rejected") {
+              throw failedWorker.reason;
+            }
+            if (resizeRequested) {
+              throw resizeError ?? new ChunkTooLargeError(chunkSize, "upload session is being resized");
+            }
+            report(true);
+            await send("merge", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ upload_id: uploadID }),
+            });
+            sessionComplete = true;
+          } catch (error) {
+            const tooLarge = error instanceof ChunkTooLargeError || isPayloadTooLargeError(error);
+            if (!tooLarge) {
+              throw error;
+            }
+            const failedSize = error instanceof ChunkTooLargeError ? error.chunkSize : chunkSize;
+            await cancelSession(uploadID);
+            uploadID = "";
+            adaptiveUpperBound = Math.min(adaptiveUpperBound, failedSize);
+            const nextChunkSize = nextReducedTransferChunkSize(failedSize, adaptiveUpperBound);
+            if (!nextChunkSize || nextChunkSize >= chunkSize) {
+              if (error instanceof ChunkTooLargeError && error.original instanceof Error) {
+                throw error.original;
               }
-            },
-          );
-          await Promise.all(workers);
-          report(true);
-          await send("merge", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify({ upload_id: uploadID }),
-          });
+              throw error;
+            }
+            chunkSize = nextChunkSize;
+            chunkSizeWasAdapted = true;
+            resizeRequested = false;
+            chunks = createChunkProgress(file.size, chunkSize);
+            chunkTransferState.clear();
+            chunkSpeedState.clear();
+            report(true);
+          }
         }
+        cacheTransferChunkSize(uuid!, "upload", chunkSize);
         completedFilesRef.current += 1;
         updateProgress({
           id: taskID,

@@ -70,7 +70,6 @@ import { normalizeRemotePath } from "./fileManagerApi";
 import { useRemoteFileUpload } from "./useRemoteFileUpload";
 import type { ContextMenuPosition } from "./terminalTypes";
 import {
-  decodeRemoteBytes,
   decodeRemoteTextBytes,
   detectRemoteTextEncoding,
   encodeRemoteTextBytes,
@@ -540,7 +539,7 @@ const FileEditorDialog = ({
         const result = await fileService.read(file.path);
         const detectedKind = previewKindForFile(file.path, result.content_type);
         const binary = result.binary === true;
-        const sourceBytes = binary ? undefined : decodeRemoteBytes(result.data);
+        const sourceBytes = binary ? undefined : result.bytes;
         const encoding = sourceBytes ? detectRemoteTextEncoding(sourceBytes) : "utf-8";
         const content = sourceBytes ? decodeRemoteTextBytes(sourceBytes, encoding) : "";
         const document: EditorDocument = {
