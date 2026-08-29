@@ -48,6 +48,30 @@ interface ChunkTransferState {
   lastActualTime: number;
 }
 
+class UploadRequestError extends Error {
+  readonly status: number;
+
+  constructor(message: string, status: number) {
+    super(message);
+    this.name = "UploadRequestError";
+    this.status = status;
+  }
+}
+
+const shouldRetryUploadError = (error: unknown) => {
+  if (!(error instanceof UploadRequestError)) {
+    return true;
+  }
+  const message = error.message.toLowerCase();
+  if (message.includes("unsupported file operation") || message.includes("does not support") || message.includes("web control is disabled")) {
+    return false;
+  }
+  // Validation, authentication, protocol-version, and payload errors are
+  // deterministic. Retrying them only repeats the same chunk indefinitely.
+  return error.status === 408 || error.status === 425 || error.status === 429 ||
+    error.status === 500 || error.status === 502 || error.status === 503 || error.status === 504;
+};
+
 const createChunkProgress = (size: number, chunkSize: number): UploadChunkProgress[] =>
   Array.from(
     { length: Math.max(1, Math.ceil(size / chunkSize)) },
@@ -232,7 +256,7 @@ export const useRemoteFileUpload = (
           | { message?: string; data?: Record<string, unknown> }
           | null;
         if (!response.ok || !payload?.data) {
-          throw new Error(payload?.message || `Upload failed (${response.status})`);
+          throw new UploadRequestError(payload?.message || `Upload failed (${response.status})`, response.status);
         }
         return payload.data as unknown as UploadSessionResponse;
       };
@@ -281,7 +305,7 @@ export const useRemoteFileUpload = (
               }
             }
             if (xhr.status < 200 || xhr.status >= 300 || !payload?.data) {
-              finish(() => reject(new Error(payload?.message || `Upload failed (${xhr.status})`)));
+              finish(() => reject(new UploadRequestError(payload?.message || `Upload failed (${xhr.status})`, xhr.status)));
               return;
             }
             finish(resolve);
@@ -325,6 +349,7 @@ export const useRemoteFileUpload = (
             return;
           } catch (error) {
             if (controller.signal.aborted) throw error;
+            if (!shouldRetryUploadError(error)) throw error;
             attempts += 1;
             chunkItem.status = "retrying";
             const retryTime = performance.now();
