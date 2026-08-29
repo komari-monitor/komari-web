@@ -91,7 +91,7 @@ import {
 } from "./fileManagerApi";
 import { monaco } from "./monacoSetup";
 
-type DocumentKind = FilePreviewKind | "binary" | "too-large" | "error";
+type DocumentKind = FilePreviewKind | "too-large" | "error";
 
 interface EditorDocument {
   path: string;
@@ -238,8 +238,6 @@ const EditorTabItem = ({
         <Braces size={14} className="shrink-0 text-[#f48771]" />
       ) : document.kind === "too-large" ? (
         <Braces size={14} className="shrink-0 text-[#d19a66]" />
-      ) : document.kind === "binary" ? (
-        <FileText size={14} className="shrink-0 text-[#d19a66]" />
       ) : (
         <FileText size={14} className="shrink-0 text-[#8da9c4]" />
       )}
@@ -537,11 +535,9 @@ const FileEditorDialog = ({
         setActivePath(placeholder.path);
 
         const result = await fileService.read(file.path);
-        const detectedKind = previewKindForFile(file.path, result.content_type);
-        const binary = result.binary === true;
-        const sourceBytes = binary ? undefined : result.bytes;
-        const encoding = sourceBytes ? detectRemoteTextEncoding(sourceBytes) : "utf-8";
-        const content = sourceBytes ? decodeRemoteTextBytes(sourceBytes, encoding) : "";
+        const sourceBytes = result.bytes;
+        const encoding = detectRemoteTextEncoding(sourceBytes);
+        const content = decodeRemoteTextBytes(sourceBytes, encoding);
         const document: EditorDocument = {
           ...placeholder,
           content,
@@ -549,7 +545,7 @@ const FileEditorDialog = ({
           contentType: result.content_type,
           encoding,
           sourceBytes,
-          kind: binary ? "binary" : detectedKind,
+          kind: "text",
           size: result.size,
           loading: false,
         };
@@ -1818,16 +1814,6 @@ const FileEditorDialog = ({
                       {t("file_manager.loading", "Loading...")}
                     </div>
                   )
-                )}
-                {activeDocument?.kind === "binary" && (
-                  <div className="flex h-full flex-col items-center justify-center gap-3 bg-[#1e1e1e] px-6 text-center text-[#a7a7a7]">
-                    <FileText size={40} strokeWidth={1.25} className="text-[#d19a66]" />
-                    <span className="text-sm">{t("file_manager.editor.binary", "Binary file preview")}</span>
-                    <span className="text-xs text-[#777]">{formatFileSize(activeDocument.size)}</span>
-                    <a href={fileDownloadUrl(uuid, activeDocument.path)} className="text-xs text-[#75beff] hover:underline">
-                      {t("file_manager.download", "Download")}
-                    </a>
-                  </div>
                 )}
                 {activeDocument?.kind === "too-large" && (
                   <div className="flex h-full flex-col items-center justify-center gap-3 text-[#a7a7a7]">

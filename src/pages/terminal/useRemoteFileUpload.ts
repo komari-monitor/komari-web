@@ -81,6 +81,13 @@ const isPayloadTooLargeError = (error: unknown) => {
   return error instanceof Error && /(?:\b413\b|payload too large|request entity too large)/i.test(error.message);
 };
 
+const isChunkTransportError = (error: unknown) => {
+  if (error instanceof UploadRequestError) {
+    return error.status === 408 || error.status === 502 || error.status === 504;
+  }
+  return error instanceof Error && /network|timed out|timeout|broken pipe|connection reset|closed pipe/i.test(error.message);
+};
+
 /** Choose a 1 MiB-aligned midpoint below a rejected request size. */
 const nextReducedTransferChunkSize = (failedSize: number, upperBound: number) => {
   if (!Number.isFinite(failedSize) || failedSize <= MIN_TRANSFER_CHUNK_SIZE) {
@@ -428,7 +435,14 @@ export const useRemoteFileUpload = (
             });
             chunkSpeedState.set(index, { time: retryTime, sent: 0, speed: 0 });
             report(true);
-            if (attempts >= MAX_RESUME_ATTEMPTS) throw error;
+            if (attempts >= MAX_RESUME_ATTEMPTS) {
+              // Some proxies close a large body without returning 413. Let
+              // the session retry with a smaller logical chunk in that case.
+              if (isChunkTransportError(error)) {
+                throw new ChunkTooLargeError(chunkItem.size, error);
+              }
+              throw error;
+            }
             await sleep(delay, controller.signal);
             if (resizeRequested) {
               throw resizeError ?? new ChunkTooLargeError(chunkItem.size, "upload session is being resized");

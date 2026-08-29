@@ -4,7 +4,6 @@ import {
   cacheTransferChunkSize,
   fileDownloadUrl,
   getCachedTransferChunkSize,
-  isLikelyBinaryRemoteContent,
   MAX_EDITABLE_FILE_SIZE,
   type RemoteFileReadResult,
   type RemoteFileInfo,
@@ -157,7 +156,6 @@ export const useRemoteFileService = (uuid: string): RemoteFileService => {
         size: bytes.byteLength,
         modified_at: modifiedAt,
         content_type: response.headers.get("Content-Type") || "",
-        binary: isLikelyBinaryRemoteContent(bytes),
       } satisfies RemoteFileReadResult;
     },
     [uuid],
