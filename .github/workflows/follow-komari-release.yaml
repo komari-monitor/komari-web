@@ -107,7 +107,7 @@ jobs:
           rm -f dist-release.zip
           rm -rf release-package
           mkdir -p release-package
-          cp preview.png release-package/
+          cp preview.webp release-package/
           cp komari-theme.json release-package/
           cp -r dist release-package/
           cd release-package

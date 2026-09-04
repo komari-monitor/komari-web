@@ -92,8 +92,8 @@ verify_files() {
     
     local files_missing=false
     
-    if [ ! -f "preview.png" ]; then
-        print_error "preview.png not found"
+    if [ ! -f "preview.webp" ]; then
+        print_error "preview.webp not found"
         files_missing=true
     fi
     
@@ -132,7 +132,7 @@ create_package() {
     mkdir -p theme-package
     
     # Copy required files
-    cp preview.png theme-package/
+    cp preview.webp theme-package/
     cp komari-theme.json theme-package/
     cp -r dist/ theme-package/
     

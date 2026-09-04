@@ -68,7 +68,7 @@ const osConfigs: OSConfig[] = [
   },
   {
     name: "iStoreOS",
-    image: "/assets/logo/os-istore.png",
+    image: "/assets/logo/os-istore.webp",
     keywords: ["istore", "istoreos", "istore os"],
   },
   {
@@ -148,7 +148,7 @@ const osConfigs: OSConfig[] = [
   },
   {
     name: "Astra Linux",
-    image: "/assets/logo/os-astar.png",
+    image: "/assets/logo/os-astar.webp",
     keywords: ["astra", "astra linux"],
   },
   {
@@ -168,7 +168,7 @@ const osConfigs: OSConfig[] = [
   },
   {
     name: "OpenCloudOS",
-    image: "/assets/logo/os-OpenCloudOS.png",
+    image: "/assets/logo/os-OpenCloudOS.webp",
     keywords: ["opencloud"],
   },
   {

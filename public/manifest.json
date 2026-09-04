@@ -9,7 +9,10 @@
   "orientation": "portrait-primary",
   "scope": "/",
   "lang": "zh-CN",
-  "categories": ["utilities", "productivity"],
+  "categories": [
+    "utilities",
+    "productivity"
+  ],
   "prefer_related_applications": false,
   "icons": [
     {
@@ -25,15 +28,15 @@
       "purpose": "any"
     },
     {
-      "src": "/assets/pwa-icon.png",
+      "src": "/assets/pwa-icon.webp",
       "sizes": "192x192",
-      "type": "image/png",
+      "type": "image/webp",
       "purpose": "maskable any"
     },
     {
-      "src": "/assets/pwa-icon.png",
+      "src": "/assets/pwa-icon.webp",
       "sizes": "512x512",
-      "type": "image/png",
+      "type": "image/webp",
       "purpose": "maskable any"
     }
   ]

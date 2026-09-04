@@ -66,7 +66,7 @@ export default defineConfig(({ mode }) => {
       }),
       VitePWA({
         registerType: "autoUpdate",
-        includeAssets: ["favicon.ico", "assets/pwa-icon.png"],
+        includeAssets: ["favicon.ico", "assets/pwa-icon.webp"],
         manifest: {
           name: "Komari Monitor",
           short_name: "Komari Monitor",
@@ -78,15 +78,15 @@ export default defineConfig(({ mode }) => {
           start_url: base,
           icons: [
             {
-              src: "${base}assets/pwa-icon.png",
+              src: "${base}assets/pwa-icon.webp",
               sizes: "192x192",
-              type: "image/png",
+              type: "image/webp",
               purpose: "maskable any",
             },
             {
-              src: "${base}assets/pwa-icon.png",
+              src: "${base}assets/pwa-icon.webp",
               sizes: "512x512",
-              type: "image/png",
+              type: "image/webp",
               purpose: "maskable any",
             },
           ],

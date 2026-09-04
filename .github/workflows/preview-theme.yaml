@@ -49,7 +49,7 @@ jobs:
     - name: Verify required files exist
       run: |
         echo "Checking required files..."
-        ls -la preview.png || (echo "preview.png not found" && exit 1)
+        ls -la preview.webp || (echo "preview.webp not found" && exit 1)
         ls -la komari-theme.json || (echo "komari-theme.json not found" && exit 1)
         ls -la dist/ || (echo "dist/ directory not found" && exit 1)
         echo "All required files found!"
@@ -60,7 +60,7 @@ jobs:
         mkdir -p theme-package
         
         # Copy required files
-        cp preview.png theme-package/
+        cp preview.webp theme-package/
         cp komari-theme.json theme-package/
         cp -r dist/ theme-package/
         
@@ -80,7 +80,7 @@ jobs:
       with:
         name: komari-theme-v${{ env.VERSION_DATE }}-${{ env.COMMIT_HASH }}
         path: |
-          preview.png
+          preview.webp
           komari-theme.json
           dist/
         retention-days: 90
