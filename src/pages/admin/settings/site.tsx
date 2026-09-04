@@ -135,6 +135,18 @@ export default function SiteSettings() {
         }}
       />
       <SettingCardSwitch
+        title={t("settings.site.ssrf_protection_enabled")}
+        description={t("settings.site.ssrf_protection_enabled_description")}
+        defaultChecked={settings.ssrf_protection_enabled ?? false}
+        onChange={async (checked) => {
+          await updateSettingsWithToast(
+            { ssrf_protection_enabled: checked },
+            t,
+          );
+        }}
+        className="km-setting-card"
+      />
+      <SettingCardSwitch
         title={t("settings.site.send_ip_addr_to_guest")}
         description={t("settings.site.send_ip_addr_to_guest_description")}
         defaultChecked={settings.send_ip_addr_to_guest}
@@ -242,18 +254,6 @@ export default function SiteSettings() {
           </div>
         </div>
       </SettingCardCollapse>
-      <SettingCardSwitch
-        title={t("settings.site.ssrf_protection_enabled")}
-        description={t("settings.site.ssrf_protection_enabled_description")}
-        defaultChecked={settings.ssrf_protection_enabled ?? false}
-        onChange={async (checked) => {
-          await updateSettingsWithToast(
-            { ssrf_protection_enabled: checked },
-            t,
-          );
-        }}
-        className="km-setting-card"
-      />
       <SettingCardLabel>{t("settings.site.custom")}</SettingCardLabel>
       <label className="text-sm text-muted-foreground -mt-4">
         {t("settings.custom.note")}
