@@ -13,6 +13,7 @@ export interface SettingsResponse {
   geo_ip_provider: string;
   o_auth_provider: string;
   o_auth_enabled: boolean;
+  ssrf_protection_enabled: boolean;
   custom_head: string;
   metric_rollup_minute_retention_minutes?: number;
   metric_rollup_five_minute_retention_minutes?: number;
@@ -196,6 +197,7 @@ export function useSettings() {
     geo_ip_provider: "",
     o_auth_provider: "",
     o_auth_enabled: false,
+    ssrf_protection_enabled: false,
     custom_head: "",
     CreatedAt: "",
     UpdatedAt: "",

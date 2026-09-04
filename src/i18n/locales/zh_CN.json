@@ -1345,6 +1345,8 @@
       "script_domain_description": "为安装脚本定义面板的连接地址，方便多个域名的用户，并不会影响其他域名的访问。留空使用当前域名。",
       "send_ip_addr_to_guest": "向访客显示部分IP地址",
       "send_ip_addr_to_guest_description": "未登录的情况下可以通过 common:getNodes 查看部分IP地址信息，形如 9.*.*.* / fe80:*:*:*:*:*:*:*。用于部分主题展示IP。",
+      "ssrf_protection_enabled": "启用 SSRF 防护",
+      "ssrf_protection_enabled_description": "开启后，主题市场和插件市场下载、主题远程导入和更新会拦截内网、本地及其他非公网地址（包括重定向目标），防止 SSRF。关闭后不进行此地址检查。",
       "temporary_share": "临时分享",
       "temporary_share_current_link": "当前临时访问链接",
       "temporary_share_description": "开启私有站点后，可以通过临时分享链接访问站点。",

@@ -1345,6 +1345,8 @@
       "script_domain_description": "為安裝指令碼定義面板的連線地址，方便多個域名的使用者，並不會影響其他域名的訪問。留空使用當前域名。",
       "send_ip_addr_to_guest": "向訪客顯示部分IP地址",
       "send_ip_addr_to_guest_description": "未登入的情況下可以透過 common:getNodes 檢視部分IP地址資訊，形如 9.*.*.* / fe80:*:*:*:*:*:*:*。用於部分主題展示IP。",
+      "ssrf_protection_enabled": "啟用 SSRF 防護",
+      "ssrf_protection_enabled_description": "啟用後，主題市場和外掛市場下載、主題遠端匯入與更新會攔截內網、本機及其他非公開網路位址（包括重新導向目標），防止 SSRF。停用後不會進行此位址檢查。",
       "temporary_share": "臨時分享",
       "temporary_share_current_link": "當前臨時訪問連結",
       "temporary_share_description": "開啟私有站點後，可以透過臨時分享連結訪問站點。",

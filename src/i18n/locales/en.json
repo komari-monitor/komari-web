@@ -1340,6 +1340,8 @@
       "script_domain_description": "Define the connection address for the installation script panel, convenient for users with multiple domains, and will not affect access to other domains. Leave empty to use the current domain.",
       "send_ip_addr_to_guest": "Show partial IP address to guests",
       "send_ip_addr_to_guest_description": "Under non-logged-in conditions, partial IP address information can be viewed through common:getNodes, in the form of 9.*.*.* / fe80:*:*:*:*:*:*:*. Used for displaying IP in some themes.",
+      "ssrf_protection_enabled": "Enable SSRF protection",
+      "ssrf_protection_enabled_description": "When enabled, theme and plugin market downloads, remote theme imports, and theme updates block private, local, and other non-public network addresses, including redirect targets. When disabled, this address check is not performed.",
       "temporary_share": "Temporary Share",
       "temporary_share_current_link": "Current Temporary Access Link",
       "temporary_share_description": "After enabling the private site, you can access the site through a temporary share link.",

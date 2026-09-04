@@ -1345,6 +1345,8 @@
       "script_domain_description": "Tentukan alamat koneksi panel untuk skrip instalasi, memudahkan pengguna dengan beberapa domain, dan tidak akan mempengaruhi akses domain lain. Biarkan kosong untuk menggunakan domain saat ini.",
       "send_ip_addr_to_guest": "Tampilkan sebagian alamat IP kepada pengunjung",
       "send_ip_addr_to_guest_description": "Dalam keadaan tidak login, sebagian informasi alamat IP dapat dilihat melalui common:getNodes, berbentuk 9.*.*.* / fe80:*:*:*:*:*:*:*. Digunakan untuk menampilkan IP pada beberapa tema.",
+      "ssrf_protection_enabled": "Aktifkan proteksi SSRF",
+      "ssrf_protection_enabled_description": "Saat diaktifkan, unduhan pasar tema dan plugin, serta impor dan pembaruan tema jarak jauh, akan memblokir alamat jaringan privat, lokal, dan nonpublik lainnya, termasuk tujuan pengalihan. Saat dinonaktifkan, pemeriksaan alamat ini tidak dilakukan.",
       "temporary_share": "Berbagi sementara",
       "temporary_share_current_link": "Tautan akses sementara saat ini",
       "temporary_share_description": "Setelah mengaktifkan situs pribadi, Anda dapat mengakses situs melalui tautan berbagi sementara.",

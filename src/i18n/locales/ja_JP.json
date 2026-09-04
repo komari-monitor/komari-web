@@ -1345,6 +1345,8 @@
       "script_domain_description": "インストールスクリプトの接続アドレスを定義します。複数のドメインのユーザーに便利で、他のドメインのアクセスには影響しません。空白の場合は現在のドメインを使用します。",
       "send_ip_addr_to_guest": "ゲストに一部のIPアドレスを表示",
       "send_ip_addr_to_guest_description": "未ログインの場合、common:getNodesを通じて一部のIPアドレス情報を確認できます。形式は9.*.*.* / fe80:*:*:*:*:*:*:*です。特定のテーマでIPを表示するために使用されます。",
+      "ssrf_protection_enabled": "SSRF 保護を有効化",
+      "ssrf_protection_enabled_description": "有効にすると、テーマとプラグインのマーケットダウンロード、テーマのリモートインポートと更新で、リダイレクト先を含むプライベート、ローカル、その他の非公開ネットワークアドレスへの接続をブロックします。無効にすると、このアドレスチェックは行いません。",
       "temporary_share": "一時的な共有",
       "temporary_share_current_link": "現在の一時的なアクセスリンク",
       "temporary_share_description": "プライベートサイトを有効にすると、一時的な共有リンクを通じてサイトにアクセスできます。",
