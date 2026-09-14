@@ -3,10 +3,12 @@ import { useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 
 // 插件公开页面（visibility=public）：通过公开路由直接访问，不进导航。
-// 内容来自无需鉴权的 /api/plugin/:short/*filepath。
+// 内容来自无需鉴权的 /api/plugin/:short/* 后端路由。
 export default function PluginPage() {
   const { t } = useTranslation();
-  const { short, filepath } = useParams<{ short: string; filepath: string }>();
+  const params = useParams<{ short: string; "*": string }>();
+  const short = params.short;
+  const filepath = params["*"];
   if (!short || !filepath) {
     return (
       <Callout.Root className="km-plugin-missing">

@@ -11,6 +11,20 @@ import * as fs from "fs";
 import * as path from "path";
 import dotenv from "dotenv";
 
+// Keep the default theme's navigation fallback limited to routes that the
+// bundled React application actually owns. Workbox tests pathname + search.
+const defaultThemeNavigationAllowlist = [
+  /^\/(\?.*)?$/,
+  /^\/instance\/[^/]+\/?(\?.*)?$/,
+  /^\/plugin\/[^/]+(\/[^?]*)?(\?.*)?$/,
+  /^\/install\/?(\?.*)?$/,
+  /^\/database-recovery\/?(\?.*)?$/,
+  /^\/admin\/?(\?.*)?$/,
+  /^\/admin\/(database-migration|dashboard|servers|theme_managed|theme_raw|themes|theme|plugins(\/config)?|plugin-page|market\/(themes|plugins)|sessions|account|settings(\/(site|theme|custom|sign-on|notification|general|xtermjs|metrics))?|notification(\/(channels|offline|load|general|traffic-report))?|ping|about|logs|pprof|exec)\/?(\?.*)?$/,
+  /^\/terminal\/?(\?.*)?$/,
+  /^\/manage(\/[^?]*)?(\?.*)?$/,
+];
+
 function localKomariThemePlugin(): Plugin {
   const themeRequestPath = "/themes/default/komari-theme.json";
   const localThemeFile = path.resolve(__dirname, "komari-theme.json");
@@ -94,6 +108,7 @@ export default defineConfig(({ mode }) => {
         workbox: {
           globPatterns: ["**/*.{js,css,html,ico,png,svg}"],
           maximumFileSizeToCacheInBytes: 6 * 1024 * 1024,
+          navigateFallbackAllowlist: defaultThemeNavigationAllowlist,
           navigateFallbackDenylist: [
             /^\/database-recovery(?:\/|$)/,
             /^\/admin\/(?:database-migration|update\/1\.2\.7|metric-store\/restructure)(?:\/|$)/,

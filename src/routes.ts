@@ -21,7 +21,7 @@ export const routes: RouteObject[] = [
         element: React.createElement(lazy(() => import("./pages/instance"))),
       },
       {
-        path: "plugin/:short/*filepath",
+        path: "plugin/:short/*",
         element: React.createElement(lazy(() => import("./pages/plugin_page"))),
       },
     ],
