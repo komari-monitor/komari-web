@@ -62,11 +62,6 @@
           "labelKey": "loadAlert.title",
           "path": "/admin/notification/load",
           "icon": "TrendingUp"
-        },
-        {
-          "labelKey": "notification.traffic_report.title",
-          "path": "/admin/notification/traffic-report",
-          "icon": "BarChart2"
         }
       ]
     },

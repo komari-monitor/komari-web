@@ -765,24 +765,7 @@
       "tips": "Untuk mencegah notifikasi terlalu sering, kami menggunakan masa tenggang:</br> <b>Masa Tenggang</b>: Jika klien offline dan tidak terhubung kembali dalam waktu ini, notifikasi offline akan dikirim.",
       "title": "Mati"
     },
-    "title": "Notifikasi",
-    "traffic_report": {
-      "daily": "Harian",
-      "deprecation_notice": "Laporan trafik bawaan Komari akan dihapus pada versi 1.5.0. Segera migrasikan ke plugin Scheduled Traffic Reports.",
-      "errors": {
-        "fetch_failed": "Gagal memuat pengaturan laporan trafik",
-        "save_failed": "Gagal menyimpan pengaturan laporan trafik",
-        "select_cadence": "Pilih setidaknya satu periode laporan saat mengaktifkan laporan trafik",
-        "update_failed": "Gagal memperbarui pengaturan laporan trafik"
-      },
-      "full_title": "Laporan Trafik Terjadwal",
-      "monthly": "Bulanan",
-      "report_type": "Tipe Laporan",
-      "separator": ", ",
-      "title": "Laporan Trafik",
-      "visit_plugin_market": "Kunjungi Pasar Plugin",
-      "weekly": "Mingguan"
-    }
+    "title": "Notifikasi"
   },
   "operations": {
     "title": "Operasional",

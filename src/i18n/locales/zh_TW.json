@@ -765,24 +765,7 @@
       "tips": "為了避免頻繁傳送通知，我們設定了寬限期：</br> <b>寬限期</b>：客戶端離線後，如果在這段時間內沒有重新上線，就會傳送離線通知",
       "title": "離線通知"
     },
-    "title": "通知",
-    "traffic_report": {
-      "daily": "日報",
-      "deprecation_notice": "Komari 內建的流量報告將在 1.5.0 版本移除，請儘快遷移至「流量定期報告」外掛。",
-      "errors": {
-        "fetch_failed": "取得流量定時報告設定失敗",
-        "save_failed": "儲存流量定時報告設定失敗",
-        "select_cadence": "啟用流量定時報告時，至少選擇一種報告週期",
-        "update_failed": "更新流量定時報告設定失敗"
-      },
-      "full_title": "流量定時報告設定",
-      "monthly": "月報",
-      "report_type": "定時型別",
-      "separator": "、",
-      "title": "流量定時報告",
-      "visit_plugin_market": "造訪外掛市集",
-      "weekly": "週報"
-    }
+    "title": "通知"
   },
   "operations": {
     "title": "維運",

@@ -269,13 +269,16 @@ export class RPC2Client {
       params,
       id: options.notification ? undefined : this.generateRequestId(),
     };
+    const requestAbort = this.createRequestAbort(
+      options.timeout || this.options.requestTimeout,
+    );
 
     try {
       const response = await fetch(this.baseUrl, {
         method: "POST",
         headers: this.options.headers,
         body: JSON.stringify(request),
-        signal: AbortSignal.timeout(options.timeout || this.options.requestTimeout),
+        signal: requestAbort.signal,
       });
 
       if (!response.ok) {
@@ -298,6 +301,8 @@ export class RPC2Client {
         throw error;
       }
       throw new Error(i18n.t("rpc2.request_failed", { method }));
+    } finally {
+      requestAbort.clear();
     }
   }
 
@@ -315,13 +320,14 @@ export class RPC2Client {
       params: req.params,
       id: req.notification ? undefined : this.generateRequestId(),
     }));
+    const requestAbort = this.createRequestAbort(this.options.requestTimeout);
 
     try {
       const response = await fetch(this.baseUrl, {
         method: "POST",
         headers: this.options.headers,
         body: JSON.stringify(batchRequest),
-        signal: AbortSignal.timeout(this.options.requestTimeout),
+        signal: requestAbort.signal,
       });
 
       if (!response.ok) {
@@ -341,7 +347,35 @@ export class RPC2Client {
         throw error;
       }
       throw new Error(i18n.t("rpc2.batch_request_failed"));
+    } finally {
+      requestAbort.clear();
     }
+  }
+
+  /**
+   * AbortSignal.timeout() is unavailable in older browsers and WebViews.
+   */
+  private createRequestAbort(timeout: number): {
+    signal: AbortSignal;
+    clear: () => void;
+  } {
+    const timeoutSignal = AbortSignal as typeof AbortSignal & {
+      timeout?: (milliseconds: number) => AbortSignal;
+    };
+
+    if (typeof timeoutSignal.timeout === "function") {
+      return {
+        signal: timeoutSignal.timeout(timeout),
+        clear: () => undefined,
+      };
+    }
+
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), timeout);
+    return {
+      signal: controller.signal,
+      clear: () => clearTimeout(timeoutId),
+    };
   }
 
   /**

@@ -760,24 +760,7 @@
       "tips": "To prevent frequent notifications, we use a grace period:</br> <b>Grace Period</b>: If a client goes offline and doesn't reconnect within this time, an offline notification will be sent.",
       "title": "Offline"
     },
-    "title": "Notification",
-    "traffic_report": {
-      "daily": "Daily",
-      "deprecation_notice": "Komari's built-in traffic reports will be removed in version 1.5.0. Please migrate to the Scheduled Traffic Reports plugin as soon as possible.",
-      "errors": {
-        "fetch_failed": "Failed to fetch traffic report notifications",
-        "save_failed": "Failed to save traffic report settings",
-        "select_cadence": "Select at least one report cadence when enabling traffic reports",
-        "update_failed": "Failed to update traffic report notifications"
-      },
-      "full_title": "Scheduled Traffic Report",
-      "monthly": "Monthly",
-      "report_type": "Report Type",
-      "separator": ", ",
-      "title": "Traffic Report",
-      "visit_plugin_market": "Visit Plugin Market",
-      "weekly": "Weekly"
-    }
+    "title": "Notification"
   },
   "operations": {
     "title": "Operations",
