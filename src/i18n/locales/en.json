@@ -627,12 +627,6 @@
     "welcome_title": "Welcome to Komari"
   },
   "just_now": "Just now",
-  "loadAlert": {
-    "metric": "Metric",
-    "ratio": "Ratio",
-    "threshold_placeholder": "'80' for 80%",
-    "title": "Load Alert"
-  },
   "loading": "Loading",
   "log": {
     "title": "Log"
@@ -746,9 +740,6 @@
     },
     "general": {
       "title": "General Events"
-    },
-    "load": {
-      "title": "Load"
     },
     "offline": {
       "cooldown": "Cooldown Period",
@@ -1284,6 +1275,8 @@
       "provider_fields": "Send Settings",
       "provider_fields_description": "Detailed settings for the information sending channel you choose",
       "provider_settings_fetch_failed": "Failed to load notification settings",
+      "channel_unavailable": "This notification channel is not currently registered.",
+      "unavailable": "Unavailable",
       "telegram": {
         "bot_token": "Telegram Bot Token",
         "chat_id": "Chat ID",

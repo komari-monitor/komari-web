@@ -632,12 +632,6 @@
     "welcome_title": "Selamat datang di Komari"
   },
   "just_now": "Baru saja",
-  "loadAlert": {
-    "metric": "Metrik",
-    "ratio": "Rasio",
-    "threshold_placeholder": "'80' untuk 80%",
-    "title": "Peringatan Beban"
-  },
   "loading": "Memuat",
   "log": {
     "title": "Log"
@@ -751,9 +745,6 @@
     },
     "general": {
       "title": "Peristiwa Umum"
-    },
-    "load": {
-      "title": "Beban"
     },
     "offline": {
       "cooldown": "Masa Tunda",
@@ -1289,6 +1280,8 @@
       "provider_fields": "Pengaturan Pengiriman",
       "provider_fields_description": "Pengaturan detail untuk saluran pengiriman informasi yang Anda pilih",
       "provider_settings_fetch_failed": "Gagal memuat pengaturan notifikasi",
+      "channel_unavailable": "Saluran notifikasi ini saat ini tidak terdaftar.",
+      "unavailable": "Tidak tersedia",
       "telegram": {
         "bot_token": "Token Bot Telegram",
         "chat_id": "ID Chat",

@@ -632,12 +632,6 @@
     "welcome_title": "Komari へようこそ"
   },
   "just_now": "たった今",
-  "loadAlert": {
-    "metric": "監視項目",
-    "ratio": "時間の割合",
-    "threshold_placeholder": "パーセンテージ、例えば80は80%を表します",
-    "title": "負荷アラート"
-  },
   "loading": "読み込み中...",
   "log": {
     "title": "ログ"
@@ -751,9 +745,6 @@
     },
     "general": {
       "title": "一般イベント"
-    },
-    "load": {
-      "title": "負荷通知"
     },
     "offline": {
       "cooldown": "クールダウン期間",
@@ -1289,6 +1280,8 @@
       "provider_fields": "送信設定",
       "provider_fields_description": "選択した情報送信チャネルの詳細設定",
       "provider_settings_fetch_failed": "通知設定の読み込みに失敗しました",
+      "channel_unavailable": "この通知チャネルは現在登録されていません。",
+      "unavailable": "利用不可",
       "telegram": {
         "bot_token": "Telegramボットトークン",
         "chat_id": "チャットID",

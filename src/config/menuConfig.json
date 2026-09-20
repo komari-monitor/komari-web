@@ -57,11 +57,6 @@
           "labelKey": "notification.offline.title",
           "path": "/admin/notification/offline",
           "icon": "Unplug"
-        },
-        {
-          "labelKey": "loadAlert.title",
-          "path": "/admin/notification/load",
-          "icon": "TrendingUp"
         }
       ]
     },

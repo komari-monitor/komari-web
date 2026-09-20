@@ -145,6 +145,8 @@ interface ConfigFormTabsProps {
   footer?: ReactNode;
   className?: string;
   formClassName?: string;
+  /** Keep the form in a bounded container with its own scroll area. */
+  fillHeight?: boolean;
 }
 
 const SPY_LINE_OFFSET = 16;
@@ -166,6 +168,7 @@ const ConfigFormTabs = ({
   footer,
   className,
   formClassName,
+  fillHeight = true,
 }: ConfigFormTabsProps) => {
   const { t } = useTranslation();
   const { nodeList } = useNodeList();
@@ -313,13 +316,17 @@ const ConfigFormTabs = ({
     lastTabRef.current = index;
     const el = sectionRefs.current[index];
     const container = scrollRef.current;
-    if (el && container) {
-      const containerRect = container.getBoundingClientRect();
-      const elRect = el.getBoundingClientRect();
-      container.scrollTo({
-        top: container.scrollTop + (elRect.top - containerRect.top),
-        behavior: "smooth",
-      });
+    if (el) {
+      if (fillHeight && container) {
+        const containerRect = container.getBoundingClientRect();
+        const elRect = el.getBoundingClientRect();
+        container.scrollTo({
+          top: container.scrollTop + (elRect.top - containerRect.top),
+          behavior: "smooth",
+        });
+      } else {
+        el.scrollIntoView({ behavior: "smooth", block: "start" });
+      }
     }
     clearScrollEndTimer();
     scrollEndTimerRef.current = setTimeout(resumeSpy, 400);
@@ -470,7 +477,12 @@ const ConfigFormTabs = ({
     ));
 
   return (
-    <Flex direction="column" className={`h-full min-h-0 ${className}`}>
+    <Flex
+      direction="column"
+      className={
+        fillHeight ? `h-full min-h-0 ${className}` : className
+      }
+    >
       {/* titlearea：固定顶部，不随滚动移动 */}
       <Box className="shrink-0 mb-5">
         <Flex direction="column" gap="3">
@@ -501,8 +513,12 @@ const ConfigFormTabs = ({
       {/* scrollview：独立滚动窗口，内容（configarea）在其中滚动 */}
       <Box
         ref={scrollRef}
-        onScroll={handleScroll}
-        className="min-h-0 flex-1 overflow-y-auto overscroll-contain"
+        onScroll={fillHeight ? handleScroll : undefined}
+        className={
+          fillHeight
+            ? "min-h-0 flex-1 overflow-y-auto overscroll-contain"
+            : undefined
+        }
       >
         {notice}
         {sidebar ? (

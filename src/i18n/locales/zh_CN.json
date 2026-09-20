@@ -632,12 +632,6 @@
     "welcome_title": "欢迎使用 Komari"
   },
   "just_now": "刚刚",
-  "loadAlert": {
-    "metric": "监控项",
-    "ratio": "时间占比",
-    "threshold_placeholder": "百分比，例如80代表80%",
-    "title": "负载警报"
-  },
   "loading": "加载中...",
   "log": {
     "title": "日志"
@@ -751,9 +745,6 @@
     },
     "general": {
       "title": "通用事件"
-    },
-    "load": {
-      "title": "负载通知"
     },
     "offline": {
       "cooldown": "冷静期",
@@ -1289,6 +1280,8 @@
       "provider_fields": "发送设置",
       "provider_fields_description": "详细设置您选择的信息发送渠道",
       "provider_settings_fetch_failed": "加载通知设置失败",
+      "channel_unavailable": "当前通知渠道未注册。",
+      "unavailable": "不可用",
       "telegram": {
         "bot_token": "Telegram Bot Token",
         "chat_id": "Chat ID",
