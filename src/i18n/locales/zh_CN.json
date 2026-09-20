@@ -1259,6 +1259,7 @@
     },
     "missing_required_fields": "请填写必填字段: {{fieldNames}}",
     "notification": {
+      "channel_unavailable": "当前通知渠道未注册。",
       "email": {
         "host": "SMTP 服务器",
         "password": "密码",
@@ -1281,8 +1282,6 @@
       "provider_fields": "发送设置",
       "provider_fields_description": "详细设置您选择的信息发送渠道",
       "provider_settings_fetch_failed": "加载通知设置失败",
-      "channel_unavailable": "当前通知渠道未注册。",
-      "unavailable": "不可用",
       "telegram": {
         "bot_token": "Telegram Bot Token",
         "chat_id": "Chat ID",
@@ -1293,7 +1292,8 @@
       "template_description": "Komari 将按照消息通知模板发送通知",
       "test_description": "发送测试消息",
       "test_title": "发送测试消息",
-      "title": "通知"
+      "title": "通知",
+      "unavailable": "不可用"
     },
     "settings_save_failed": "保存设置失败",
     "settings_saved": "设置已保存",
