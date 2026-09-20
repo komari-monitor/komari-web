@@ -269,3 +269,11 @@ body, * {
 .km-file-editor {
   z-index: 10;
 }
+
+.km-login-page {
+  position: relative;
+}
+
+.km-login-card {
+  border-radius: 8px;
+}

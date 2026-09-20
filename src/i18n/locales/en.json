@@ -637,6 +637,7 @@
     "login_with_github": "Login with GitHub",
     "password": "Password",
     "password_placeholder": "Enter your password",
+    "request_failed": "Login failed. Please try again.",
     "title": "Login",
     "two_factor": "Two-Factor Authentication",
     "username": "Username"

@@ -43,6 +43,10 @@ export const routes: RouteObject[] = [
     ),
   },
   {
+    path: "/admin/login",
+    element: React.createElement(lazy(() => import("./pages/admin/login"))),
+  },
+  {
     path: "/admin",
     element: React.createElement(AdminLayout),
     children: [
