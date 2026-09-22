@@ -1,4 +1,27 @@
 {
+  "dashboardLayout": {
+    "workspace": "我的仪表盘", "editing": "编辑布局", "customize": "自定义",
+    "cards": "选择卡片", "selection": "已选择 {{count}} 张卡片",
+    "reset": "恢复默认布局", "width": "卡片宽度", "height": "卡片高度",
+    "visibleNodes": "展示节点数", "visibleNodesCount": "展示 {{count}} 台节点",
+    "compact": "标准", "wide": "加宽", "full": "整行",
+    "short": "紧凑", "normal": "标准", "tall": "加高",
+    "move": "移动{{name}}", "hide": "隐藏{{name}}",
+    "saved": "仪表盘布局已保存", "saveFailed": "保存失败，布局尚未保存，请重试。",
+    "loadFailed": "布局加载失败，重试", "empty": "暂无卡片",
+    "cores": "CPU 核心", "ram": "总内存", "storage": "总磁盘",
+    "capacityCount": "{{count}} 台节点的配置容量",
+    "servers": "服务器管理", "terminal": "远程工作台", "notifications": "通知配置",
+    "keyboard": "按空格键提起卡片，方向键移动，再按空格键放下，Escape 取消。",
+    "picked": "已提起{{name}}", "moved": "{{name}}移至第 {{position}} 位",
+    "dropped": "卡片已放下", "cancelled": "已取消移动",
+    "widgets": {
+      "overview": "在线概览", "database": "数据库用量", "expiry": "到期提醒",
+      "traffic": "24 小时流量", "cpu": "CPU 使用排行", "memory": "内存使用排行",
+      "ping": "网络质量", "resources": "资源容量", "disk": "磁盘压力",
+      "shortcuts": "快捷操作"
+    }
+  },
   "onboarding": {
     "progress": "快速指引 · {{current}} / {{total}}",
     "skip": "跳过指引",

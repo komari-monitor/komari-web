@@ -1,4 +1,27 @@
 {
+  "dashboardLayout": {
+    "workspace": "My dashboard", "editing": "Edit layout", "customize": "Customize",
+    "cards": "Select cards", "selection": "{{count}} cards selected",
+    "reset": "Restore default layout", "width": "Card width", "height": "Card height",
+    "visibleNodes": "Visible nodes", "visibleNodesCount": "Show {{count}} nodes",
+    "compact": "Standard", "wide": "Wide", "full": "Full row",
+    "short": "Compact", "normal": "Standard", "tall": "Tall",
+    "move": "Move {{name}}", "hide": "Hide {{name}}",
+    "saved": "Dashboard layout saved", "saveFailed": "Layout could not be saved. Please retry.",
+    "loadFailed": "Layout failed to load. Retry", "empty": "No cards selected",
+    "cores": "CPU cores", "ram": "Total memory", "storage": "Total disk",
+    "capacityCount": "Configured capacity across {{count}} nodes",
+    "servers": "Manage servers", "terminal": "Remote workbench", "notifications": "Notifications",
+    "keyboard": "Press Space to pick up a card, arrow keys to move, Space to drop, or Escape to cancel.",
+    "picked": "Picked up {{name}}", "moved": "{{name}} moved to position {{position}}",
+    "dropped": "Card dropped", "cancelled": "Move cancelled",
+    "widgets": {
+      "overview": "Online overview", "database": "Database usage", "expiry": "Expiring soon",
+      "traffic": "24h traffic", "cpu": "CPU ranking", "memory": "Memory ranking",
+      "ping": "Network quality", "resources": "Resource capacity", "disk": "Disk pressure",
+      "shortcuts": "Quick actions"
+    }
+  },
   "onboarding": {
     "progress": "Quick tour · {{current}} / {{total}}",
     "skip": "Skip tour",

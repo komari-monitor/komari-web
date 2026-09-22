@@ -1,4 +1,27 @@
 {
+  "dashboardLayout": {
+    "workspace": "我的儀表板", "editing": "編輯佈局", "customize": "自訂",
+    "cards": "選擇卡片", "selection": "已選擇 {{count}} 張卡片",
+    "reset": "恢復預設佈局", "width": "卡片寬度", "height": "卡片高度",
+    "visibleNodes": "顯示節點數", "visibleNodesCount": "顯示 {{count}} 台節點",
+    "compact": "標準", "wide": "加寬", "full": "整行",
+    "short": "精簡", "normal": "標準", "tall": "加高",
+    "move": "移動{{name}}", "hide": "隱藏{{name}}",
+    "saved": "儀表板佈局已儲存", "saveFailed": "儲存失敗，佈局尚未儲存，請重試。",
+    "loadFailed": "佈局載入失敗，重試", "empty": "暫無卡片",
+    "cores": "CPU 核心", "ram": "總記憶體", "storage": "總磁碟",
+    "capacityCount": "{{count}} 台節點的配置容量",
+    "servers": "伺服器管理", "terminal": "遠端工作台", "notifications": "通知設定",
+    "keyboard": "按空白鍵提起卡片，方向鍵移動，再按空白鍵放下，Escape 取消。",
+    "picked": "已提起{{name}}", "moved": "{{name}}移至第 {{position}} 位",
+    "dropped": "卡片已放下", "cancelled": "已取消移動",
+    "widgets": {
+      "overview": "上線概覽", "database": "資料庫用量", "expiry": "到期提醒",
+      "traffic": "24 小時流量", "cpu": "CPU 使用排行", "memory": "記憶體使用排行",
+      "ping": "網路品質", "resources": "資源容量", "disk": "磁碟壓力",
+      "shortcuts": "快捷操作"
+    }
+  },
   "onboarding": {
     "progress": "快速指引 · {{current}} / {{total}}",
     "skip": "跳過指引",
