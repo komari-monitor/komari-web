@@ -1,71 +1,4 @@
 {
-  "dashboardLayout": {
-    "workspace": "我的仪表盘", "editing": "编辑布局", "customize": "自定义",
-    "cards": "选择卡片", "selection": "已选择 {{count}} 张卡片",
-    "reset": "恢复默认布局", "width": "卡片宽度", "height": "卡片高度",
-    "visibleNodes": "展示节点数", "visibleNodesCount": "展示 {{count}} 台节点",
-    "compact": "标准", "wide": "加宽", "full": "整行",
-    "short": "紧凑", "normal": "标准", "tall": "加高",
-    "move": "移动{{name}}", "hide": "隐藏{{name}}",
-    "saved": "仪表盘布局已保存", "saveFailed": "保存失败，布局尚未保存，请重试。",
-    "loadFailed": "布局加载失败，重试", "empty": "暂无卡片",
-    "cores": "CPU 核心", "ram": "总内存", "storage": "总磁盘",
-    "capacityCount": "{{count}} 台节点的配置容量",
-    "servers": "服务器管理", "terminal": "远程工作台", "notifications": "通知配置",
-    "keyboard": "按空格键提起卡片，方向键移动，再按空格键放下，Escape 取消。",
-    "picked": "已提起{{name}}", "moved": "{{name}}移至第 {{position}} 位",
-    "dropped": "卡片已放下", "cancelled": "已取消移动",
-    "widgets": {
-      "overview": "在线概览", "database": "数据库用量", "expiry": "到期提醒",
-      "traffic": "24 小时流量", "cpu": "CPU 使用排行", "memory": "内存使用排行",
-      "ping": "网络质量", "resources": "资源容量", "disk": "磁盘压力",
-      "shortcuts": "快捷操作"
-    }
-  },
-  "onboarding": {
-    "progress": "快速指引 · {{current}} / {{total}}",
-    "skip": "跳过指引",
-    "previous": "上一步",
-    "next": "下一步",
-    "finish": "知道了",
-    "save_failed": "指引记录保存失败，下次进入时可能会再次展示。",
-    "install": {
-      "title": "接入第一台服务器",
-      "description": "还没有服务器，先从「服务器」进入节点管理，为你的服务器添加一个节点。",
-      "add_title": "添加节点，安装 Agent",
-      "add_description": "点击这里创建节点，再通过节点的部署按钮复制安装命令。在目标服务器上运行命令，等待 Agent 上报后，节点就会上线。",
-      "action": "添加节点"
-    },
-    "workbench": {
-      "title": "试试远程工作台",
-      "description": "已有服务器，可以从这里打开工作台。点击工作台中的终端按钮并选择服务器，即可开始远程终端会话。",
-      "files_title": "文件管理也在这里",
-      "files_description": "工作台还提供文件浏览和编辑，可以上传、下载及编辑远程文件。点击工作台按钮选择服务器，就能进入文件工作区。",
-      "action": "打开工作台"
-    },
-    "notifications": {
-      "title": "让服务器主动通知你",
-      "description": "在这里添加并测试通知渠道，将告警发送到你常用的消息服务。",
-      "offline_title": "服务器离线，及时知晓",
-      "offline_description": "在离线通知中配置告警和延迟时间，减少短暂网络波动带来的打扰。",
-      "rules_title": "按需配置通知规则",
-      "rules_description": "通用通知提供其他告警规则的配置入口。先设置好通知渠道，再按需配置规则。",
-      "action": "配置通知"
-    },
-    "markets": {
-      "title": "逛逛主题市场",
-      "description": "在主题市场浏览主题，为监控页面更换外观。安装后可在「主题」菜单中管理。",
-      "plugins_title": "用插件扩展 Komari",
-      "plugins_description": "插件市场提供更多扩展功能。安装后，可从「插件」菜单管理和配置插件。",
-      "action": "浏览插件"
-    },
-    "terminal": {
-      "title": "终端 Tab 还有更多功能",
-      "description": "右键点击终端顶部的 Tab，即可打开更多功能菜单：重命名、复制会话、设置标签颜色，以及关闭其他会话。",
-      "tools_title": "文件、搜索与资源监控",
-      "tools_description": "同一个右键菜单还提供文本搜索、导出终端内容、文件管理、编辑器和资源监控。关闭指引后，右键 Tab 试试吧。"
-    }
-  },
   "about": {
     "ai": "Komari 项目的开发过程得到了人工智能工具的辅助。这些工具被用于执行代码生成、重构和调试等任务，以提高开发效率和代码质量。所有由 AI 生成的代码和建议都经过了人类开发者的审查与验证。",
     "open_source": "Komari 基于 MIT 协议开源，并使用了以下开源软件构建：",
@@ -470,6 +403,54 @@
     "viewChart": "查看24小时图表",
     "yesterday": "昨天"
   },
+  "dashboardLayout": {
+    "cancelled": "已取消移动",
+    "capacityCount": "{{count}} 台节点的配置容量",
+    "cards": "选择卡片",
+    "compact": "标准",
+    "cores": "CPU 核心",
+    "customize": "自定义",
+    "dropped": "卡片已放下",
+    "editing": "编辑布局",
+    "empty": "暂无卡片",
+    "full": "整行",
+    "height": "卡片高度",
+    "hide": "隐藏{{name}}",
+    "keyboard": "按空格键提起卡片，方向键移动，再按空格键放下，Escape 取消。",
+    "loadFailed": "布局加载失败，重试",
+    "move": "移动{{name}}",
+    "moved": "{{name}}移至第 {{position}} 位",
+    "normal": "标准",
+    "notifications": "通知配置",
+    "picked": "已提起{{name}}",
+    "ram": "总内存",
+    "reset": "恢复默认布局",
+    "saved": "仪表盘布局已保存",
+    "saveFailed": "保存失败，布局尚未保存，请重试。",
+    "selection": "已选择 {{count}} 张卡片",
+    "servers": "服务器管理",
+    "short": "紧凑",
+    "storage": "总磁盘",
+    "tall": "加高",
+    "terminal": "远程工作台",
+    "visibleNodes": "展示节点数",
+    "visibleNodesCount": "展示 {{count}} 台节点",
+    "wide": "加宽",
+    "widgets": {
+      "cpu": "CPU 使用排行",
+      "database": "数据库用量",
+      "disk": "磁盘压力",
+      "expiry": "到期提醒",
+      "memory": "内存使用排行",
+      "overview": "在线概览",
+      "ping": "网络质量",
+      "resources": "资源容量",
+      "shortcuts": "快捷操作",
+      "traffic": "24 小时流量"
+    },
+    "width": "卡片宽度",
+    "workspace": "我的仪表盘"
+  },
   "database_migration": {
     "after": "迁移后",
     "before": "迁移前",
@@ -817,6 +798,50 @@
       "title": "离线通知"
     },
     "title": "通知"
+  },
+  "onboarding": {
+    "finish": "知道了",
+    "install": {
+      "action": "添加节点",
+      "add_description": "点击这里创建节点，再通过节点的部署按钮复制安装命令。在目标服务器上运行命令，等待 Agent 上报后，节点就会上线。",
+      "add_title": "添加节点，安装 Agent",
+      "description": "还没有服务器，先从「服务器」进入节点管理，为你的服务器添加一个节点。",
+      "title": "接入第一台服务器"
+    },
+    "markets": {
+      "action": "浏览插件",
+      "description": "在主题市场浏览主题，为监控页面更换外观。安装后可在「主题」菜单中管理。",
+      "plugins_description": "插件市场提供更多扩展功能。安装后，可从「插件」菜单管理和配置插件。",
+      "plugins_title": "用插件扩展 Komari",
+      "title": "逛逛主题市场"
+    },
+    "next": "下一步",
+    "notifications": {
+      "action": "配置通知",
+      "description": "在这里添加并测试通知渠道，将告警发送到你常用的消息服务。",
+      "offline_description": "在离线通知中配置告警和延迟时间，减少短暂网络波动带来的打扰。",
+      "offline_title": "服务器离线，及时知晓",
+      "rules_description": "通用通知提供其他告警规则的配置入口。先设置好通知渠道，再按需配置规则。",
+      "rules_title": "按需配置通知规则",
+      "title": "让服务器主动通知你"
+    },
+    "previous": "上一步",
+    "progress": "快速指引 · {{current}} / {{total}}",
+    "save_failed": "指引记录保存失败，下次进入时可能会再次展示。",
+    "skip": "跳过指引",
+    "terminal": {
+      "description": "右键点击终端顶部的 Tab，即可打开更多功能菜单：重命名、复制会话、设置标签颜色，以及关闭其他会话。",
+      "title": "终端 Tab 还有更多功能",
+      "tools_description": "同一个右键菜单还提供文本搜索、导出终端内容、文件管理、编辑器和资源监控。关闭指引后，右键 Tab 试试吧。",
+      "tools_title": "文件、搜索与资源监控"
+    },
+    "workbench": {
+      "action": "打开工作台",
+      "description": "已有服务器，可以从这里打开工作台。点击工作台中的终端按钮并选择服务器，即可开始远程终端会话。",
+      "files_description": "工作台还提供文件浏览和编辑，可以上传、下载及编辑远程文件。点击工作台按钮选择服务器，就能进入文件工作区。",
+      "files_title": "文件管理也在这里",
+      "title": "试试远程工作台"
+    }
   },
   "operations": {
     "title": "运维",
