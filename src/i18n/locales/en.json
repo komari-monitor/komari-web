@@ -257,14 +257,6 @@
     "violet": "Violet",
     "yellow": "Yellow"
   },
-  "command_clipboard": {
-    "title": "Command Clipboard",
-    "add": "Add Command",
-    "edit": "Edit Command",
-    "delete": "Delete Command",
-    "error_loading": "Error loading commands: {{message}}",
-    "error_generic": "An error occurred"
-  },
   "file_manager": {
     "copy": "Copy",
     "copy_directory_unsupported": "Directory copy is not supported.",

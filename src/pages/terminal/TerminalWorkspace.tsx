@@ -4,8 +4,7 @@ import type {
   TouchEvent as ReactTouchEvent,
 } from "react";
 import { useTranslation } from "react-i18next";
-import { ClipboardList, Code2, Files, PanelRightClose, PanelRightOpen, SquareTerminal } from "lucide-react";
-import CommandClipboardPanel from "./CommandClipboard";
+import { Code2, PanelRightClose, PanelRightOpen, SquareTerminal } from "lucide-react";
 import FileManagerPanel from "./FileManagerPanel";
 import TerminalSession from "./TerminalSession";
 import { TerminalSearchBar } from "./TerminalSearchBar";
@@ -14,8 +13,7 @@ import type { TerminalTab } from "./terminalTypes";
 
 export interface TerminalWorkspaceProps {
   containerRef: RefObject<HTMLDivElement | null>;
-  isClipboardOpen: boolean;
-  sidebarTab: "clipboard" | "files";
+  isSidebarOpen: boolean;
   leftWidth: number;
   tabs: TerminalTab[];
   clientsLoading: boolean;
@@ -37,7 +35,6 @@ export interface TerminalWorkspaceProps {
   onCloseSearch: () => void;
   onApiChange: (id: string, api: TerminalSessionApi | null) => void;
   onToggleSidebar: () => void;
-  onSidebarTabChange: (tab: "clipboard" | "files") => void;
   onStartDragging: (event: ReactMouseEvent | ReactTouchEvent) => void;
   onOpenTerminalMenu: () => void;
   onOpenWorkbenchMenu: () => void;
@@ -59,8 +56,7 @@ const Divider = ({
 
 const TerminalWorkspace = ({
   containerRef,
-  isClipboardOpen,
-  sidebarTab,
+  isSidebarOpen,
   leftWidth,
   tabs,
   clientsLoading,
@@ -82,7 +78,6 @@ const TerminalWorkspace = ({
   onCloseSearch,
   onApiChange,
   onToggleSidebar,
-  onSidebarTabChange,
   onStartDragging,
   onOpenTerminalMenu,
   onOpenWorkbenchMenu,
@@ -97,7 +92,7 @@ const TerminalWorkspace = ({
       <div
         className="km-terminal-main relative flex h-full min-h-0 min-w-[300px] flex-[0_0_auto] overflow-hidden max-[640px]:min-w-0"
         style={{
-          width: isClipboardOpen ? `${leftWidth}px` : "100%",
+          width: isSidebarOpen ? `${leftWidth}px` : "100%",
         }}
       >
         <TerminalSearchBar
@@ -160,60 +155,33 @@ const TerminalWorkspace = ({
         </div>
         <button
           type="button"
-          className="km-terminal-clipboard-toggle absolute right-0 top-1/2 z-[4] flex h-[48px] w-5 -translate-y-1/2 cursor-pointer items-center justify-center rounded-l-[5px] border-0 bg-[#2b2b2b] text-neutral-400 transition-colors hover:bg-[#383838] hover:text-white"
+          className="km-terminal-sidebar-toggle absolute right-0 top-1/2 z-[4] flex h-[48px] w-5 -translate-y-1/2 cursor-pointer items-center justify-center rounded-l-[5px] border-0 bg-[#2b2b2b] text-neutral-400 transition-colors hover:bg-[#383838] hover:text-white"
           onClick={onToggleSidebar}
           aria-label={
-            isClipboardOpen
+            isSidebarOpen
               ? t("common.close", "Close")
-              : sidebarTab === "files"
-                ? t("file_manager.title", "File Manager")
-                : t("command_clipboard.title", "Command Clipboard")
+              : t("file_manager.title", "File Manager")
           }
           title={
-            isClipboardOpen
+            isSidebarOpen
               ? t("common.close", "Close")
-              : sidebarTab === "files"
-                ? t("file_manager.title", "File Manager")
-                : t("command_clipboard.title", "Command Clipboard")
+              : t("file_manager.title", "File Manager")
           }
         >
-          {isClipboardOpen ? <PanelRightClose size={14} /> : <PanelRightOpen size={14} />}
+          {isSidebarOpen ? <PanelRightClose size={14} /> : <PanelRightOpen size={14} />}
         </button>
       </div>
-      {isClipboardOpen && <Divider onMouseDown={onStartDragging} />}
+      {isSidebarOpen && <Divider onMouseDown={onStartDragging} />}
       <aside
         className={`${
-          isClipboardOpen
+          isSidebarOpen
             ? "flex h-full min-w-[300px] flex-1 flex-col overflow-hidden bg-[#121212] max-[640px]:min-w-[220px]"
             : "hidden"
         }`}
       >
-          <div className="flex h-9 shrink-0 items-center gap-1 bg-[#181818] px-1 pb-1">
-            <button
-              type="button"
-              className={`flex h-7 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-[4px] border-0 px-2 text-xs transition-colors ${sidebarTab === "clipboard" ? "bg-[#37373d] text-white" : "bg-transparent text-[#999] hover:bg-[#2a2d2e] hover:text-white"}`}
-              onClick={() => onSidebarTabChange("clipboard")}
-            >
-              <ClipboardList size={14} />
-              <span className="min-w-0 truncate">{t("command_clipboard.title", "Command Clipboard")}</span>
-            </button>
-            <button
-              type="button"
-              className={`flex h-7 min-w-0 flex-1 items-center justify-center gap-1.5 rounded-[4px] border-0 px-2 text-xs transition-colors ${sidebarTab === "files" ? "bg-[#37373d] text-white" : "bg-transparent text-[#999] hover:bg-[#2a2d2e] hover:text-white"}`}
-              onClick={() => onSidebarTabChange("files")}
-            >
-              <Files size={14} />
-              <span className="min-w-0 truncate">{t("file_manager.title", "File Manager")}</span>
-            </button>
-          </div>
-          <div className="min-h-0 flex-1 overflow-hidden">
-            <div className={sidebarTab === "clipboard" ? "h-full overflow-hidden p-2" : "hidden"}>
-              <CommandClipboardPanel showHeader={false} className="h-full w-full" />
-            </div>
-            <div className={sidebarTab === "files" ? "h-full overflow-hidden" : "hidden"}>
-              <FileManagerPanel uuid={tabs.find((tab) => tab.id === activeTabId)?.uuid ?? null} />
-            </div>
-          </div>
+        <div className="min-h-0 flex-1 overflow-hidden">
+          <FileManagerPanel uuid={tabs.find((tab) => tab.id === activeTabId)?.uuid ?? null} />
+        </div>
       </aside>
     </div>
   );

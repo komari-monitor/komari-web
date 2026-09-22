@@ -257,14 +257,6 @@
     "violet": "Violet",
     "yellow": "Kuning"
   },
-  "command_clipboard": {
-    "add": "Tambah Perintah",
-    "delete": "Hapus Perintah",
-    "edit": "Edit Perintah",
-    "error_generic": "Terjadi kesalahan",
-    "error_loading": "Gagal memuat perintah: {{message}}",
-    "title": "Papan Klip Perintah"
-  },
   "common": {
     "about": "Tentang",
     "action": "Aksi",

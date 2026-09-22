@@ -257,14 +257,6 @@
     "violet": "紫罗兰",
     "yellow": "黄色"
   },
-  "command_clipboard": {
-    "add": "添加命令",
-    "delete": "删除命令",
-    "edit": "编辑命令",
-    "error_generic": "发生错误",
-    "error_loading": "加载命令失败：{{message}}",
-    "title": "命令剪贴板"
-  },
   "common": {
     "about": "关于",
     "action": "操作",

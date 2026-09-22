@@ -257,14 +257,6 @@
     "violet": "紫羅蘭",
     "yellow": "黃色"
   },
-  "command_clipboard": {
-    "add": "新增指令",
-    "delete": "刪除指令",
-    "edit": "編輯指令",
-    "error_generic": "發生錯誤",
-    "error_loading": "載入指令失敗：{{message}}",
-    "title": "命令剪貼簿"
-  },
   "common": {
     "about": "關於",
     "action": "操作",

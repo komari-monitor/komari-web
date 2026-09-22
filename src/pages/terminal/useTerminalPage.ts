@@ -52,8 +52,7 @@ export const useTerminalPage = () => {
   const [editingTabId, setEditingTabId] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState("");
   const [serverMenuOpen, setServerMenuOpen] = useState(false);
-  const [isClipboardOpen, setIsClipboardOpen] = useState(false);
-  const [sidebarTab, setSidebarTab] = useState<"clipboard" | "files">("clipboard");
+  const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [leftWidth, setLeftWidth] = useState<number>(window.innerWidth * 0.7);
   const [httpsCalloutOpen, setHttpsCalloutOpen] = useState(
     window.location.protocol !== "https:",
@@ -250,7 +249,7 @@ export const useTerminalPage = () => {
   useEffect(() => {
     const resize = window.setTimeout(() => activeApiRef.current?.fit(), 100);
     return () => window.clearTimeout(resize);
-  }, [activeApi, isClipboardOpen]);
+  }, [activeApi, isSidebarOpen]);
 
   useEffect(() => {
     const terminal = activeApi?.terminal;
@@ -496,8 +495,7 @@ export const useTerminalPage = () => {
     if (id) {
       setActiveTabId(id);
     }
-    setSidebarTab("files");
-    setIsClipboardOpen(true);
+    setIsSidebarOpen(true);
   }, []);
   const openSearch = useCallback((id?: string) => {
     if (id) {
@@ -791,18 +789,7 @@ export const useTerminalPage = () => {
     toggleFullscreen,
   ]);
 
-  const sendCommand = useCallback((command: string) => {
-    const api = activeTabIdRef.current
-      ? sessionApisRef.current.get(activeTabIdRef.current)
-      : undefined;
-    api?.send(`${command}\r`);
-  }, []);
-
   const sessionsReady = twoFaResolved;
-  const contextValue = useMemo(
-    () => ({ terminal: activeApi?.terminal ?? null, sendCommand }),
-    [activeApi, sendCommand],
-  );
 
   return {
     t,
@@ -814,8 +801,7 @@ export const useTerminalPage = () => {
     editingTabId,
     renameDraft,
     serverMenuOpen,
-    isClipboardOpen,
-    sidebarTab,
+    isSidebarOpen,
     leftWidth,
     httpsCalloutOpen,
     twoFaEnabled,
@@ -827,13 +813,11 @@ export const useTerminalPage = () => {
     searchUseRegex,
     resourceMonitorServers,
     containerRef,
-    contextValue,
     sessionsReady,
     setActiveTabId,
     setServerMenuOpen,
     setRenameDraft,
-    setIsClipboardOpen,
-    setSidebarTab,
+    setIsSidebarOpen,
     setHttpsCalloutOpen,
     handleSearchTermChange,
     handleFindNext,

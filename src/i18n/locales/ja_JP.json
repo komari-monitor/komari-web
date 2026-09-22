@@ -257,14 +257,6 @@
     "violet": "バイオレット",
     "yellow": "黄色"
   },
-  "command_clipboard": {
-    "add": "コマンドを追加",
-    "delete": "コマンドを削除",
-    "edit": "コマンドを編集",
-    "error_generic": "エラーが発生しました",
-    "error_loading": "コマンドの読み込みに失敗しました: {{message}}",
-    "title": "コマンドクリップボード"
-  },
   "common": {
     "about": "について",
     "action": "操作",

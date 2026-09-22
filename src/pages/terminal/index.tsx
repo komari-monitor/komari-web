@@ -1,6 +1,5 @@
 import "@xterm/xterm/css/xterm.css";
 import { Theme } from "@radix-ui/themes";
-import { TerminalContext } from "@/contexts/TerminalContext";
 import TerminalNotices from "./TerminalNotices";
 import TerminalResourceMonitor from "./TerminalResourceMonitor";
 import TerminalTabBar from "./TerminalTabBar";
@@ -22,8 +21,7 @@ const TerminalPage = () => {
     editingTabId,
     renameDraft,
     serverMenuOpen,
-    isClipboardOpen,
-    sidebarTab,
+    isSidebarOpen,
     leftWidth,
     httpsCalloutOpen,
     twoFaEnabled,
@@ -35,13 +33,11 @@ const TerminalPage = () => {
     searchUseRegex,
     resourceMonitorServers,
     containerRef,
-    contextValue,
     sessionsReady,
     setActiveTabId,
     setServerMenuOpen,
     setRenameDraft,
-    setIsClipboardOpen,
-    setSidebarTab,
+    setIsSidebarOpen,
     setHttpsCalloutOpen,
     handleSearchTermChange,
     handleFindNext,
@@ -69,7 +65,6 @@ const TerminalPage = () => {
   const [workbenchMenuOpen, setWorkbenchMenuOpen] = useState(false);
 
   return (
-    <TerminalContext.Provider value={contextValue}>
       <Theme
         appearance="dark"
         className="km-page-terminal fixed inset-0 h-screen w-screen overflow-hidden bg-[#1e1e1e]"
@@ -127,8 +122,7 @@ const TerminalPage = () => {
 
           <TerminalWorkspace
             containerRef={containerRef}
-            isClipboardOpen={isClipboardOpen}
-            sidebarTab={sidebarTab}
+            isSidebarOpen={isSidebarOpen}
             leftWidth={leftWidth}
             tabs={tabs}
             clientsLoading={clientsLoading}
@@ -149,11 +143,7 @@ const TerminalPage = () => {
             onToggleUseRegex={handleToggleUseRegex}
             onCloseSearch={closeSearch}
             onApiChange={handleApiChange}
-            onToggleSidebar={() => setIsClipboardOpen((open) => !open)}
-            onSidebarTabChange={(tab) => {
-              setSidebarTab(tab);
-              setIsClipboardOpen(true);
-            }}
+            onToggleSidebar={() => setIsSidebarOpen((open) => !open)}
             onStartDragging={startDragging}
             onOpenTerminalMenu={() => {
               setWorkbenchMenuOpen(false);
@@ -186,7 +176,6 @@ const TerminalPage = () => {
           </Suspense>
         )}
       </Theme>
-    </TerminalContext.Provider>
   );
 };
 
