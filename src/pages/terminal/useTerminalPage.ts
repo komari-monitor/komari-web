@@ -13,12 +13,11 @@ import type {
 } from "react";
 import { useTranslation } from "react-i18next";
 import throttle from "lodash/throttle";
-import {
-  defaultXtermjsSettings,
-  useXtermjsSettings,
-} from "@/hooks/useXtermjsSettings";
-import type { XtermjsSettings } from "@/hooks/useXtermjsSettings";
 import type { TerminalSessionApi } from "./TerminalSession";
+import {
+  DEFAULT_TERMINAL_FONT_FAMILY,
+  DEFAULT_TERMINAL_PADDING,
+} from "./terminalDefaults";
 import {
   createTab,
   createTabId,
@@ -45,11 +44,6 @@ const getTabShortcutIndex = (event: KeyboardEvent) => {
 };
 
 export const useTerminalPage = () => {
-  const {
-    settings,
-    loading: settingsLoading,
-    error: settingsError,
-  } = useXtermjsSettings();
   const { t } = useTranslation();
   const [clients, setClients] = useState<TerminalClient[]>([]);
   const [clientsLoading, setClientsLoading] = useState(true);
@@ -91,18 +85,10 @@ export const useTerminalPage = () => {
   tabsRef.current = tabs;
   activeTabIdRef.current = activeTabId;
 
-  const resolvedSettings: XtermjsSettings = settingsError
-    ? defaultXtermjsSettings
-    : settings;
   const appearance = {
-    "--xterm-padding": `${resolvedSettings.terminalPadding}px`,
-    "--xterm-font-family": resolvedSettings.terminalOptions.fontFamily,
+    "--xterm-padding": `${DEFAULT_TERMINAL_PADDING}px`,
+    "--xterm-font-family": DEFAULT_TERMINAL_FONT_FAMILY,
   } as CSSProperties;
-
-  useEffect(() => {
-    if (!settingsError) return;
-    toast.error(t("terminal.settings_error", { message: settingsError.message }));
-  }, [settingsError, t]);
   const updateTabs = useCallback((next: TerminalTab[]) => {
     tabsRef.current = next;
     setTabs(next);
@@ -200,19 +186,6 @@ export const useTerminalPage = () => {
       setActiveTabId(tabs[0].id);
     }
   }, [activeTabId, tabs]);
-
-  useEffect(() => {
-    if (!resolvedSettings.customCss) {
-      return;
-    }
-    const style = document.createElement("style");
-    style.id = "custom-xtermjs-style";
-    style.textContent = resolvedSettings.customCss;
-    document.head.appendChild(style);
-    return () => {
-      style.remove();
-    };
-  }, [resolvedSettings.customCss]);
 
   useEffect(() => {
     const style = document.createElement("style");
@@ -825,7 +798,7 @@ export const useTerminalPage = () => {
     api?.send(`${command}\r`);
   }, []);
 
-  const sessionsReady = !settingsLoading && twoFaResolved;
+  const sessionsReady = twoFaResolved;
   const contextValue = useMemo(
     () => ({ terminal: activeApi?.terminal ?? null, sendCommand }),
     [activeApi, sendCommand],
@@ -833,8 +806,6 @@ export const useTerminalPage = () => {
 
   return {
     t,
-    settingsError,
-    resolvedSettings,
     appearance,
     clients,
     clientsLoading,

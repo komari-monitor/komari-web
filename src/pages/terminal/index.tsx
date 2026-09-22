@@ -6,6 +6,7 @@ import TerminalResourceMonitor from "./TerminalResourceMonitor";
 import TerminalTabBar from "./TerminalTabBar";
 import TerminalWorkspace from "./TerminalWorkspace";
 import { useTerminalPage } from "./useTerminalPage";
+import { DEFAULT_TERMINAL_FONT_FAMILY } from "./terminalDefaults";
 import { lazy, Suspense, useState } from "react";
 
 const FileEditorDialog = lazy(() => import("./FileEditorDialog"));
@@ -13,7 +14,6 @@ const FileEditorDialog = lazy(() => import("./FileEditorDialog"));
 const TerminalPage = () => {
   const {
     t,
-    resolvedSettings,
     appearance,
     clients,
     clientsLoading,
@@ -134,7 +134,6 @@ const TerminalPage = () => {
             clientsLoading={clientsLoading}
             activeTabId={activeTabId}
             sessionsReady={sessionsReady}
-            settings={resolvedSettings}
             twoFaEnabled={twoFaEnabled}
             disconnectMessage={t("terminal.disconnect")}
             searchOpen={searchOpen}
@@ -179,7 +178,7 @@ const TerminalPage = () => {
               open
               uuid={editorUuid}
               initialFile={null}
-              fontFamily={resolvedSettings.terminalOptions.fontFamily}
+              fontFamily={DEFAULT_TERMINAL_FONT_FAMILY}
               onOpenChange={(open) => {
                 if (!open) setEditorUuid(null);
               }}

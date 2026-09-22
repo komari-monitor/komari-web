@@ -1412,26 +1412,6 @@
       "target": "目标数据库",
       "target_description": "选择本地 SQLite，或将指标数据写入远程 MariaDB / MySQL / PostgreSQL。",
       "title": "监控数据库升级"
-    },
-    "xtermjs": {
-      "convert_eol": "转换 EOL",
-      "cursor_blink": "光标闪烁",
-      "custom_css": "自定义 CSS",
-      "custom_css_description": "编写规则时，建议使用 .terminal-page 或 .terminal-xterm-host 作为前缀。",
-      "font_family": "字体族",
-      "font_size": "字号",
-      "reset_defaults": "恢复本地默认值",
-      "scrollback": "回滚行数",
-      "terminal_padding": "终端内边距",
-      "theme_json": "主题 JSON",
-      "theme_json_description": "这里只编辑 terminalOptions.theme。保存时会过滤未知键。",
-      "theme_json_filtered": "已过滤主题 JSON",
-      "theme_json_invalid": "主题 JSON 无效",
-      "theme_json_must_be_object": "主题 JSON 必须是 JSON 对象",
-      "title": "XtermJS",
-      "transparent_background": "透明背景",
-      "transparent_hint": "仅在容器背景也透明时启用透明效果。",
-      "transparent_theme_hint": "主题背景仍然不透明，请改用 rgba(...) 或 hsla(...)。"
     }
   },
   "status_settings": "状态显示设置",
@@ -1473,7 +1453,6 @@
       "use_regex": "正则表达式"
     },
     "server": "服务器",
-    "settings_error": "xterm 设置加载失败，已使用默认设置：{{message}}",
     "tabs": {
       "choose_server": "选择服务器",
       "connecting": "正在连接...",

@@ -10,7 +10,6 @@ import FileManagerPanel from "./FileManagerPanel";
 import TerminalSession from "./TerminalSession";
 import { TerminalSearchBar } from "./TerminalSearchBar";
 import type { TerminalSessionApi } from "./TerminalSession";
-import type { XtermjsSettings } from "@/hooks/useXtermjsSettings";
 import type { TerminalTab } from "./terminalTypes";
 
 export interface TerminalWorkspaceProps {
@@ -22,7 +21,6 @@ export interface TerminalWorkspaceProps {
   clientsLoading: boolean;
   activeTabId: string | null;
   sessionsReady: boolean;
-  settings: XtermjsSettings;
   twoFaEnabled: boolean;
   disconnectMessage: string;
   searchOpen: boolean;
@@ -68,7 +66,6 @@ const TerminalWorkspace = ({
   clientsLoading,
   activeTabId,
   sessionsReady,
-  settings,
   twoFaEnabled,
   disconnectMessage,
   searchOpen,
@@ -125,7 +122,6 @@ const TerminalWorkspace = ({
                 key={tab.id}
                 uuid={tab.uuid}
                 active={tab.id === activeTabId}
-                settings={settings}
                 twoFaEnabled={twoFaEnabled}
                 disconnectMessage={disconnectMessage}
                 onApiChange={(api) => onApiChange(tab.id, api)}

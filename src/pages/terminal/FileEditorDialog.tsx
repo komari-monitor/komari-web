@@ -55,7 +55,7 @@ import { createPortal } from "react-dom";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useRemoteFileService } from "./useRemoteFileService";
-import { DEFAULT_FONT_FAMILY } from "@/hooks/useXtermjsSettings";
+import { DEFAULT_TERMINAL_FONT_FAMILY } from "./terminalDefaults";
 import EditorResourceMonitor from "./EditorResourceMonitor";
 import EditorTerminalPanel from "./EditorTerminalPanel";
 import TerminalDialog from "./TerminalDialog";
@@ -333,7 +333,7 @@ const FileEditorDialog = ({
   initialFile,
   initialLine = 1,
   refreshToken = 0,
-  fontFamily = DEFAULT_FONT_FAMILY,
+  fontFamily = DEFAULT_TERMINAL_FONT_FAMILY,
   onOpenChange,
   onSaved,
   onChanged,

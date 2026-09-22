@@ -1,17 +1,11 @@
 import {
   useEffect,
-  useMemo,
   useRef,
   useState,
 } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import { Terminal, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import {
-  defaultXtermjsSettings,
-  useXtermjsSettings,
-} from "@/hooks/useXtermjsSettings";
-import type { XtermjsSettings } from "@/hooks/useXtermjsSettings";
 import TerminalSession from "./TerminalSession";
 
 interface EditorTerminalPanelProps {
@@ -22,10 +16,10 @@ interface EditorTerminalPanelProps {
 const MIN_TERMINAL_HEIGHT = 100;
 const MAX_TERMINAL_HEIGHT = 600;
 const EDITOR_TERMINAL_FONT_SIZE = 12;
+const EDITOR_TERMINAL_PADDING = 8;
 
 const EditorTerminalPanel = ({ uuid, onClose }: EditorTerminalPanelProps) => {
   const { t } = useTranslation();
-  const { settings, error } = useXtermjsSettings();
   const [twoFaEnabled, setTwoFaEnabled] = useState(false);
   const [height, setHeight] = useState(180);
   const dragRef = useRef<{
@@ -33,22 +27,6 @@ const EditorTerminalPanel = ({ uuid, onClose }: EditorTerminalPanelProps) => {
     startY: number;
     startHeight: number;
   } | null>(null);
-
-  const resolvedSettings = useMemo<XtermjsSettings>(() => {
-    const baseSettings = error ? defaultXtermjsSettings : settings;
-    return {
-      ...baseSettings,
-      terminalOptions: {
-        ...baseSettings.terminalOptions,
-        fontFamily: baseSettings.terminalOptions.fontFamily,
-        fontSize: Math.min(
-          baseSettings.terminalOptions.fontSize ?? EDITOR_TERMINAL_FONT_SIZE,
-          EDITOR_TERMINAL_FONT_SIZE,
-        ),
-      },
-      terminalPadding: Math.min(baseSettings.terminalPadding, 8),
-    };
-  }, [error, settings]);
 
   useEffect(() => {
     let mounted = true;
@@ -62,17 +40,6 @@ const EditorTerminalPanel = ({ uuid, onClose }: EditorTerminalPanelProps) => {
       mounted = false;
     };
   }, []);
-
-  useEffect(() => {
-    if (!settings.customCss) return;
-    const style = document.createElement("style");
-    style.id = `custom-xtermjs-style-editor-${uuid}`;
-    style.textContent = settings.customCss;
-    document.head.appendChild(style);
-    return () => {
-      style.remove();
-    };
-  }, [settings.customCss, uuid]);
 
   const handleResizeStart = (event: ReactPointerEvent<HTMLDivElement>) => {
     event.preventDefault();
@@ -143,7 +110,8 @@ const EditorTerminalPanel = ({ uuid, onClose }: EditorTerminalPanelProps) => {
         <TerminalSession
           uuid={uuid}
           active
-          settings={resolvedSettings}
+          fontSize={EDITOR_TERMINAL_FONT_SIZE}
+          padding={EDITOR_TERMINAL_PADDING}
           twoFaEnabled={twoFaEnabled}
           disconnectMessage={t("terminal.disconnect", "Connection lost")}
           onApiChange={() => {}}

@@ -120,11 +120,6 @@
           "icon": "CircleArrowRight"
         },
         {
-          "labelKey": "settings.xtermjs.title",
-          "path": "/admin/settings/xtermjs",
-          "icon": "Terminal"
-        },
-        {
           "labelKey": "settings.metrics.title",
           "path": "/admin/settings/metrics",
           "icon": "Database"
