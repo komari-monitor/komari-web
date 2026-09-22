@@ -751,6 +751,50 @@
     },
     "title": "Notifikasi"
   },
+  "onboarding": {
+    "finish": "Mengerti",
+    "install": {
+      "action": "Tambah Node",
+      "add_description": "Klik di sini untuk membuat node, lalu salin perintah instalasi melalui tombol Deploy pada node. Jalankan perintah di server target, tunggu Agent melaporkan, dan node akan online.",
+      "add_title": "Tambah Node, Instal Agent",
+      "description": "Belum ada server? Masuk ke menu 'Server' untuk manajemen node, lalu tambahkan node untuk server Anda.",
+      "title": "Hubungkan Server Pertama"
+    },
+    "markets": {
+      "action": "Jelajahi Plugin",
+      "description": "Jelajahi tema di Pasar Tema untuk mengubah tampilan halaman monitoring. Setelah diinstal, kelola di menu 'Tema'.",
+      "plugins_description": "Pasar Plugin menyediakan lebih banyak fitur ekstensi. Setelah diinstal, kelola dan konfigurasikan plugin dari menu 'Plugin'.",
+      "plugins_title": "Ekstensi Komari dengan Plugin",
+      "title": "Jelajahi Pasar Tema"
+    },
+    "next": "Berikutnya",
+    "notifications": {
+      "action": "Konfigurasi Notifikasi",
+      "description": "Tambahkan dan uji kanal notifikasi di sini untuk mengirim peringatan ke layanan pesan yang biasa Anda gunakan.",
+      "offline_description": "Konfigurasikan peringatan dan waktu tunda di notifikasi offline untuk mengurangi gangguan akibat fluktuasi jaringan sesaat.",
+      "offline_title": "Server Offline, Ketahui Segera",
+      "rules_description": "Notifikasi umum menyediakan akses konfigurasi aturan peringatan lainnya. Atur kanal notifikasi terlebih dahulu, lalu konfigurasikan aturan sesuai kebutuhan.",
+      "rules_title": "Konfigurasikan Aturan Notifikasi Sesuai Kebutuhan",
+      "title": "Biarkan Server Memberi Tahu Anda Secara Proaktif"
+    },
+    "previous": "Sebelumnya",
+    "progress": "Panduan Cepat · {{current}} / {{total}}",
+    "save_failed": "Gagal menyimpan catatan panduan, mungkin akan ditampilkan lagi saat masuk berikutnya.",
+    "skip": "Lewati Panduan",
+    "terminal": {
+      "description": "Klik kanan tab di bagian atas terminal untuk membuka menu fitur lainnya: ganti nama, salin sesi, atur warna label, dan tutup sesi lain.",
+      "title": "Tab Terminal Memiliki Lebih Banyak Fitur",
+      "tools_description": "Menu klik kanan yang sama juga menyediakan pencarian teks, ekspor konten terminal, manajemen file, editor, dan pemantauan sumber daya. Setelah menutup panduan, coba klik kanan tab.",
+      "tools_title": "File, Pencarian, dan Pemantauan Sumber Daya"
+    },
+    "workbench": {
+      "action": "Buka Workbench",
+      "description": "Sudah ada server? Buka workbench dari sini. Klik tombol terminal di workbench dan pilih server untuk memulai sesi terminal jarak jauh.",
+      "files_description": "Workbench juga menyediakan penjelajahan dan pengeditan file, memungkinkan unggah, unduh, dan edit file jarak jauh. Klik tombol workbench untuk memilih server dan masuk ke area kerja file.",
+      "files_title": "Manajemen File Juga Ada di Sini",
+      "title": "Coba Workbench Jarak Jauh"
+    }
+  },
   "operations": {
     "title": "Operasional",
     "workbench": "Area Kerja"
@@ -1251,6 +1295,7 @@
     },
     "missing_required_fields": "Silakan isi kolom yang wajib: {{fieldNames}}",
     "notification": {
+      "channel_unavailable": "Saluran notifikasi ini saat ini tidak terdaftar.",
       "email": {
         "host": "Server SMTP",
         "password": "Kata Sandi",
@@ -1273,8 +1318,6 @@
       "provider_fields": "Pengaturan Pengiriman",
       "provider_fields_description": "Pengaturan detail untuk saluran pengiriman informasi yang Anda pilih",
       "provider_settings_fetch_failed": "Gagal memuat pengaturan notifikasi",
-      "channel_unavailable": "Saluran notifikasi ini saat ini tidak terdaftar.",
-      "unavailable": "Tidak tersedia",
       "telegram": {
         "bot_token": "Token Bot Telegram",
         "chat_id": "ID Chat",
@@ -1285,7 +1328,8 @@
       "template_description": "Komari akan mengirim pemberitahuan sesuai dengan template pemberitahuan pesan",
       "test_description": "Kirim pesan uji coba",
       "test_title": "Kirim pesan uji coba",
-      "title": "Notifikasi"
+      "title": "Notifikasi",
+      "unavailable": "Tidak tersedia"
     },
     "settings_save_failed": "Gagal menyimpan pengaturan",
     "settings_saved": "Pengaturan berhasil disimpan",
