@@ -1,0 +1,75 @@
+.km-guide-layer {
+  position: fixed;
+  inset: 0;
+  z-index: 1000;
+  pointer-events: none;
+  letter-spacing: 0;
+}
+
+.km-guide-overlay {
+  position: fixed;
+  inset: 0;
+  pointer-events: auto;
+  overflow: hidden;
+}
+
+.km-guide-spotlight {
+  position: absolute;
+  border-radius: 6px;
+  box-shadow: 0 0 0 9999px rgba(0, 0, 0, 0.52);
+  outline: 2px solid var(--accent-8);
+  pointer-events: none;
+}
+
+.km-guide-content {
+  position: fixed;
+  box-sizing: border-box;
+  width: min(360px, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  padding: 20px;
+  border: 1px solid var(--gray-6);
+  border-radius: 8px;
+  background: var(--color-panel-solid);
+  color: var(--gray-12);
+  box-shadow: var(--shadow-5);
+  pointer-events: auto;
+  outline: none;
+}
+
+.km-guide-layer[data-ready="false"] {
+  visibility: hidden;
+}
+
+.km-guide-title {
+  margin: 0 0 8px;
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 1.4;
+  overflow-wrap: anywhere;
+}
+
+.km-guide-description {
+  margin: 0;
+  color: var(--gray-11);
+  font-size: 14px;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.km-guide-progress {
+  display: flex;
+  gap: 5px;
+  margin: 20px 0;
+}
+
+.km-guide-progress span {
+  height: 3px;
+  flex: 1;
+  border-radius: 2px;
+  background: var(--gray-5);
+}
+
+.km-guide-progress span[data-current="true"] {
+  background: var(--accent-9);
+}

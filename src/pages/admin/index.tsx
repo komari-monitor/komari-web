@@ -1108,7 +1108,7 @@ const Header = ({
         />
         <Dialog.Root open={dialogOpen} onOpenChange={setDialogOpen}>
           <Dialog.Trigger>
-            <Button onClick={() => setDialogOpen(true)}>
+            <Button data-guide="add-node" onClick={() => setDialogOpen(true)}>
               <Plus size={16} />
               {t("admin.nodeTable.addNode")}
             </Button>

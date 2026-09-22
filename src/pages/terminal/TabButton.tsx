@@ -79,6 +79,7 @@ const TabButton = ({
       className="!bg-[#202020] !text-white"
     >
       <div
+        data-guide={active ? "terminal-tab" : undefined}
         role="tab"
         aria-selected={active}
         className={`group relative flex h-full w-full min-w-0 cursor-pointer items-center gap-2 px-3 select-none transition-colors duration-150 ${

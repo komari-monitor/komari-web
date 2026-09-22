@@ -8,7 +8,7 @@ import {
   Text,
 } from "@radix-ui/themes";
 import { AnimatePresence, motion } from "framer-motion"; // 引入 Framer Motion
-import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { Link, useLocation /*useNavigate*/ } from "react-router-dom";
 import ColorSwitch from "../ColorSwitch";
@@ -28,6 +28,8 @@ import { CircleFadingArrowUp } from "lucide-react";
 import { useRPC2Call } from "@/contexts/RPC2Context";
 import { resolveI18nText } from "@/utils/i18nText";
 import type { PluginInfo } from "@/types/plugin";
+import GuidedTour from "@/components/onboarding/GuidedTour";
+import { useAdminGuide } from "@/components/onboarding/useAdminGuide";
 import {
   getThemeConfigurationType,
   normalizeThemeRedirectTarget,
@@ -47,9 +49,10 @@ interface ExtendedMenuItem extends MenuItem {
 
 interface AdminPanelBarProps {
   content: ReactNode;
+  onboardingReady?: boolean;
 }
 
-const AdminPanelBar = ({ content }: AdminPanelBarProps) => {
+const AdminPanelBar = ({ content, onboardingReady = false }: AdminPanelBarProps) => {
   const { call } = useRPC2Call();
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [openSubMenus, setOpenSubMenus] = useState<{ [key: string]: boolean }>({
@@ -59,6 +62,29 @@ const AdminPanelBar = ({ content }: AdminPanelBarProps) => {
   const ishttps = window.location.protocol === "https:";
   const [t, i18n] = useTranslation();
   const location = useLocation();
+  const onboarding = useAdminGuide(onboardingReady);
+  const sidebarBeforeGuide = useRef<{
+    open: boolean;
+    subMenus: Record<string, boolean>;
+  } | null>(null);
+  useEffect(() => {
+    if (onboarding.guide) {
+      if (!sidebarBeforeGuide.current) {
+        sidebarBeforeGuide.current = { open: sidebarOpen, subMenus: openSubMenus };
+      }
+      const needsSidebar = !(onboarding.guide === "install" && onboarding.step === 1);
+      setSidebarOpen(needsSidebar || !isMobile);
+      if (onboarding.menu) {
+        setOpenSubMenus((previous) => ({ ...previous, [onboarding.menu!]: true }));
+      }
+    } else if (sidebarBeforeGuide.current) {
+      setSidebarOpen(sidebarBeforeGuide.current.open);
+      setOpenSubMenus(sidebarBeforeGuide.current.subMenus);
+      sidebarBeforeGuide.current = null;
+    }
+    // Capture navigation state once before temporarily revealing guide targets.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [onboarding.guide, onboarding.step, onboarding.menu, isMobile]);
   const isConfigFormPage =
     location.pathname === "/admin/theme_managed" ||
     location.pathname === "/admin/plugins/config";
@@ -338,8 +364,9 @@ const AdminPanelBar = ({ content }: AdminPanelBarProps) => {
         });
       }
     });
+    if (onboarding.menu) newState[onboarding.menu] = true;
     setOpenSubMenus(newState);
-  }, [location.pathname, extraMenuItems, mergedBaseMenuItems]);
+  }, [location.pathname, extraMenuItems, mergedBaseMenuItems, onboarding.menu]);
 
   // 侧边栏动画变体
   const sidebarVariants = {
@@ -797,6 +824,19 @@ const AdminPanelBar = ({ content }: AdminPanelBarProps) => {
           </div>
         </motion.div>
       </Grid>
+      {onboarding.guide && (
+        <GuidedTour
+          steps={onboarding.steps}
+          step={onboarding.step}
+          onStepChange={onboarding.changeStep}
+          onDismiss={onboarding.dismiss}
+          onShown={onboarding.onShown}
+          action={{
+            label: t(`onboarding.${onboarding.guide}.action`),
+            onClick: onboarding.act,
+          }}
+        />
+      )}
     </>
   );
 };
@@ -835,6 +875,7 @@ const SidebarItem = ({
   if (openInNewTab || reloadDocument) {
     return (
       <a
+        data-guide-nav={to}
         href={to}
         onClick={onClick}
         target={openInNewTab ? "_blank" : undefined}
@@ -871,6 +912,7 @@ const SidebarItem = ({
 
   return (
     <Link
+      data-guide-nav={to}
       to={to}
       onClick={onClick}
       className="group transition-colors duration-200 hover:bg-accent-3 rounded-md"

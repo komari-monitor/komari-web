@@ -7,11 +7,13 @@ import TerminalWorkspace from "./TerminalWorkspace";
 import { useTerminalPage } from "./useTerminalPage";
 import { DEFAULT_TERMINAL_FONT_FAMILY } from "./terminalDefaults";
 import { lazy, Suspense, useState } from "react";
+import TerminalGuide from "@/components/onboarding/TerminalGuide";
 
 const FileEditorDialog = lazy(() => import("./FileEditorDialog"));
 
 const TerminalPage = () => {
   const {
+    onboardingAuthenticated,
     t,
     appearance,
     clients,
@@ -160,6 +162,11 @@ const TerminalPage = () => {
           clients={clients}
           servers={resourceMonitorServers}
           onRemove={toggleResourceMonitor}
+        />
+        <TerminalGuide
+          authenticated={onboardingAuthenticated}
+          hasTabs={!clientsLoading && tabs.length > 0}
+          blocked={Boolean(editorUuid) || serverMenuOpen || workbenchMenuOpen || Boolean(editingTabId)}
         />
 
         {editorUuid && (

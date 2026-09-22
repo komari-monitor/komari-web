@@ -1,4 +1,48 @@
 {
+  "onboarding": {
+    "progress": "Quick tour · {{current}} / {{total}}",
+    "skip": "Skip tour",
+    "previous": "Previous step",
+    "next": "Next",
+    "finish": "Got it",
+    "save_failed": "Could not save tour progress. This tour may appear again next time.",
+    "install": {
+      "title": "Connect your first server",
+      "description": "No servers yet. Open Servers to add a node and connect it to Komari.",
+      "add_title": "Add a node and install the agent",
+      "add_description": "Create a node with this button, then use its deployment button to copy the install command. Run it on your server and wait for the agent to report online.",
+      "action": "Add node"
+    },
+    "workbench": {
+      "title": "Your remote workbench",
+      "description": "Your servers are ready. Open the workbench here, then choose a server from the terminal button to start a remote session.",
+      "files_title": "Manage files in one place",
+      "files_description": "The workbench also provides a file browser and editor for uploading, downloading and editing remote files. Choose a server from the workbench button to get started.",
+      "action": "Open workbench"
+    },
+    "notifications": {
+      "title": "Keep up with your servers",
+      "description": "Add and test a notification channel here so Komari can send alerts to your preferred service.",
+      "offline_title": "Know when a server goes offline",
+      "offline_description": "Configure offline alerts and their delay here to avoid noise from brief network interruptions.",
+      "rules_title": "Choose what to be notified about",
+      "rules_description": "General notifications let you configure other alert rules. Start by setting up a notification channel.",
+      "action": "Set up notifications"
+    },
+    "markets": {
+      "title": "Explore the theme market",
+      "description": "Browse themes here to change the look of your monitoring page. Installed themes can be managed from the Themes menu.",
+      "plugins_title": "Discover the plugin market",
+      "plugins_description": "Browse plugins to extend Komari. After installation, manage and configure them from the Plugins menu.",
+      "action": "Browse plugins"
+    },
+    "terminal": {
+      "title": "More behind each terminal tab",
+      "description": "Right-click a terminal tab to open its menu. You can rename, duplicate or color the tab, and close other sessions.",
+      "tools_title": "Files, search and monitoring",
+      "tools_description": "The same menu provides text search, terminal export, file management, the editor and resource monitoring. Dismiss this tour and right-click a tab to try it."
+    }
+  },
   "about": {
     "ai": "The development process of the Komari project has been assisted by artificial intelligence tools. These tools are used for tasks such as code generation, refactoring, and debugging to improve development efficiency and code quality. All AI-generated code and suggestions have been reviewed and validated by human developers.",
     "open_source": "Komari is open source under the MIT license and is built using the following open source software:",

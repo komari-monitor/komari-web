@@ -4,6 +4,7 @@ import { usePublicInfo } from "@/contexts/PublicInfoContext";
 import ConfigFormTabs from "@/components/admin/ConfigFormTabs";
 import { toast } from "sonner";
 import Loading from "@/components/loading";
+import { saveThemeSettings } from "@/utils/saveThemeSettings";
 import { useTranslation } from "react-i18next";
 import { resolveI18nText, type I18nText } from "@/utils/i18nText";
 import {
@@ -137,18 +138,7 @@ const ThemeManaged: React.FC = () => {
     console.log("保存前的 payload:", payload);
     setSaving(true);
     try {
-      const resp = await fetch(
-        `/api/admin/theme/settings?theme=${encodeURIComponent(theme)}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(payload),
-        },
-      );
-      if (!resp.ok) {
-        const d = await resp.json().catch(() => ({ message: "unknown" }));
-        throw new Error(d.message || `HTTP ${resp.status}`);
-      }
+      await saveThemeSettings(theme, payload);
       toast.success(t("settings.settings_saved"));
       // 刷新 publicInfo 以反映最新设置
       refresh();
