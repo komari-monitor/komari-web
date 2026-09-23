@@ -78,6 +78,8 @@
       "tokenPlaceholder": "トークンを入力してください",
       "trafficLimit": "トラフィック制限",
       "trafficLimit_description": "ホームページのトラフィック進捗バーに使用され、0 Bに設定すると無効になります。",
+      "trafficLimitInvalid": "値を解析できません。100 GB / 512 MiB / 2T（最大 PB）のような形式に対応しています。",
+      "trafficLimitInvalidSave": "トラフィック閾値の形式を解析できません。先に修正してください。",
       "trafficLimitType": "統計方法",
       "trafficLimitType_down": "ダウンロードのみ",
       "trafficLimitType_max": "最大値を取る",

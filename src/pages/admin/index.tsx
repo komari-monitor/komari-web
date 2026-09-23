@@ -2360,17 +2360,30 @@ function EditButton({ node }: { node: NodeDetail }) {
   const [saving, setSaving] = useState(false);
   const [traffic_limit, setTrafficLimit] = useState(0);
   const [traffic_limit_type, setTrafficLimitType] = useState("sum");
+  const [trafficLimitInput, setTrafficLimitInput] = useState("0 B");
+  const [trafficLimitInvalid, setTrafficLimitInvalid] = useState(false);
 
   React.useEffect(() => {
     setHidden(node.hidden);
     setTrafficLimit(node.traffic_limit || 0);
     setTrafficLimitType(node.traffic_limit_type || "sum");
+    setTrafficLimitInput(formatBytes(node.traffic_limit || 0));
+    setTrafficLimitInvalid(false);
   }, [node.hidden, node.traffic_limit, node.traffic_limit_type]);
 
   const save = async () => {
+    if (trafficLimitInvalid) {
+      toast.error(
+        t(
+          "admin.nodeEdit.trafficLimitInvalidSave",
+          "流量阈值格式无法解析，请先修正"
+        )
+      );
+      return;
+    }
     try {
       setSaving(true);
-      await fetch(`/api/admin/client/${node.uuid}/edit`, {
+      const res = await fetch(`/api/admin/client/${node.uuid}/edit`, {
         method: "POST",
         body: JSON.stringify({
           name: nameRef.current?.value,
@@ -2386,11 +2399,15 @@ function EditButton({ node }: { node: NodeDetail }) {
           "Content-Type": "application/json",
         },
       });
+      if (!res.ok) {
+        throw new Error(`HTTP ${res.status}`);
+      }
       refresh();
       setOpen(false);
       toast.success(t("admin.nodeEdit.saveSuccess", "保存成功"));
     } catch (error) {
       console.error("Error updating client:", error);
+      toast.error(t("admin.nodeEdit.saveError", "保存失败"));
     } finally {
       setSaving(false);
     }
@@ -2519,15 +2536,36 @@ function EditButton({ node }: { node: NodeDetail }) {
               bordless
               title={t("admin.nodeEdit.trafficLimit")}
               description={t("admin.nodeEdit.trafficLimit_description")}
-              defaultValue={formatBytes(traffic_limit || 0)}
+              value={trafficLimitInput}
               showSaveButton={false}
               onChange={(e) => {
-                setTrafficLimit(stringToBytes(e.currentTarget.value));
+                const raw = e.currentTarget.value;
+                setTrafficLimitInput(raw);
+                const bytes = stringToBytes(raw);
+                if (bytes === null) {
+                  // 解析失败：标记错误，保留原值与用户输入，不静默置 0
+                  setTrafficLimitInvalid(true);
+                } else {
+                  setTrafficLimitInvalid(false);
+                  setTrafficLimit(bytes);
+                }
               }}
-              onBlur={(e) => {
-                e.currentTarget.value = formatBytes(traffic_limit);
+              onBlur={() => {
+                // 仅在解析成功时规范显示；解析失败时保留原始输入供用户修正
+                if (!trafficLimitInvalid) {
+                  setTrafficLimitInput(formatBytes(traffic_limit));
+                }
               }}
-            ></SettingCardShortTextInput>
+            >
+              {trafficLimitInvalid ? (
+                <span className="mt-1 text-sm text-red-500">
+                  {t(
+                    "admin.nodeEdit.trafficLimitInvalid",
+                    "无法解析该数值，支持如 100 GB / 512 MiB / 2T（最大 PB）"
+                  )}
+                </span>
+              ) : null}
+            </SettingCardShortTextInput>
           </SettingCardCollapse>
         </div>
         <Flex gap="2" justify={"end"} className="mt-4">

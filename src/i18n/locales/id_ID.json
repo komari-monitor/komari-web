@@ -78,6 +78,8 @@
       "tokenPlaceholder": "Masukkan token",
       "trafficLimit": "Batas Lalu Lintas",
       "trafficLimit_description": "Digunakan untuk menampilkan progres lalu lintas di beranda. Atur ke 0 B untuk menonaktifkan.",
+      "trafficLimitInvalid": "Nilai tidak dapat diparsing. Format yang didukung: 100 GB / 512 MiB / 2T (maks PB).",
+      "trafficLimitInvalidSave": "Format batas trafik tidak dapat diparsing. Perbaiki terlebih dahulu.",
       "trafficLimitType": "Jenis Batas Lalu Lintas",
       "trafficLimitType_down": "Unduh Saja",
       "trafficLimitType_max": "Maksimum",

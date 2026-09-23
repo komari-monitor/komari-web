@@ -78,6 +78,8 @@
       "tokenPlaceholder": "请输入 Token",
       "trafficLimit": "流量阈值",
       "trafficLimit_description": "用于首页流量进度条，设置为 0 B 禁用。",
+      "trafficLimitInvalid": "无法解析该数值，支持如 100 GB / 512 MiB / 2T（最大 PB）",
+      "trafficLimitInvalidSave": "流量阈值格式无法解析，请先修正",
       "trafficLimitType": "统计方式",
       "trafficLimitType_down": "仅下载",
       "trafficLimitType_max": "取最大",

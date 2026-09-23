@@ -145,6 +145,8 @@
       "tokenPlaceholder": "請輸入 Token",
       "trafficLimit": "流量閾值",
       "trafficLimit_description": "用於首頁流量進度條，設定為 0 B 禁用。",
+      "trafficLimitInvalid": "無法解析該數值，支援如 100 GB / 512 MiB / 2T（最大 PB）",
+      "trafficLimitInvalidSave": "流量閾值格式無法解析，請先修正",
       "trafficLimitType": "統計方式",
       "trafficLimitType_down": "僅下載",
       "trafficLimitType_max": "取最大",
