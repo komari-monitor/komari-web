@@ -1,4 +1,7 @@
 import { Cross1Icon, ExitIcon } from "@radix-ui/react-icons";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
+import "github-markdown-css/github-markdown.css";
 import {
   Button,
   Callout,
@@ -488,8 +491,10 @@ const AdminPanelBar = ({ content, onboardingReady = false }: AdminPanelBarProps)
                                 </div>
                               )}
                             </div>
-                            <div className="whitespace-pre-wrap break-words">
-                              {r.body || ""}
+                            <div className="km-update-changelog markdown-body break-words">
+                              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                                {r.body || ""}
+                              </ReactMarkdown>
                             </div>
                             <div
                               style={{
