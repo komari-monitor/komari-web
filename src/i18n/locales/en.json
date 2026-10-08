@@ -1,4 +1,10 @@
 {
+  "notificationUpgrade": {
+    "title": "Notification Channels Have Changed",
+    "description": "You upgraded from a version earlier than 1.6.0. Notification channels have undergone breaking changes. Please reconfigure and test your notification channels to ensure alerts are delivered.",
+    "acknowledge": "Got it",
+    "configure": "Configure channels"
+  },
   "dashboardLayout": {
     "workspace": "My dashboard", "editing": "Edit layout", "customize": "Customize",
     "cards": "Select cards", "selection": "{{count}} cards selected",

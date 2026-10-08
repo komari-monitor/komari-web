@@ -1,4 +1,10 @@
 {
+  "notificationUpgrade": {
+    "title": "通知管道發生破壞性變更",
+    "description": "您是從低於 1.6.0 的版本升級而來。通知管道發生了破壞性變更，需要重新設定。請前往通知管道設定，重新設定並測試，以確保警報正常送達。",
+    "acknowledge": "知道了",
+    "configure": "前往設定"
+  },
   "dashboardLayout": {
     "workspace": "我的儀表板", "editing": "編輯佈局", "customize": "自訂",
     "cards": "選擇卡片", "selection": "已選擇 {{count}} 張卡片",
