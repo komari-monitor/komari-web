@@ -801,6 +801,12 @@
     },
     "title": "Notifikasi"
   },
+  "notificationUpgrade": {
+    "acknowledge": "Mengerti",
+    "configure": "Buka Pengaturan",
+    "description": "Anda telah diperbarui dari versi di bawah 1.6.0. Terjadi perubahan yang tidak kompatibel pada saluran notifikasi, sehingga perlu dikonfigurasi ulang. Silakan buka pengaturan saluran notifikasi, konfigurasi ulang, dan uji untuk memastikan peringatan terkirim dengan benar.",
+    "title": "Perubahan Tidak Kompatibel pada Saluran Notifikasi"
+  },
   "onboarding": {
     "finish": "Mengerti",
     "install": {
