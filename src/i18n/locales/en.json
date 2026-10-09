@@ -1541,6 +1541,7 @@
     "default_no_config": "The default theme has no configurable options.",
     "default_preview": "No preview for default theme",
     "default_theme": "Default Theme",
+    "delete_active_warning": "\"{{themeName}}\" is currently in use. Continuing will switch to the default theme and delete this theme. This action cannot be undone.",
     "delete_failed": "Theme deletion failed",
     "delete_success": "Theme deleted successfully",
     "delete_warning": "Are you sure you want to delete the theme \"{{themeName}}\"? This action cannot be undone.",
