@@ -1571,6 +1571,7 @@
     "default_no_config": "デフォルトテーマには設定オプションがありません。",
     "default_preview": "デフォルトテーマのプレビューはありません",
     "default_theme": "デフォルトテーマ",
+    "delete_active_warning": "テーマ「{{themeName}}」は現在使用中です。続行するとデフォルトテーマに切り替え、このテーマを削除します。この操作は取り消せません。",
     "delete_failed": "テーマの削除に失敗しました",
     "delete_success": "テーマの削除に成功しました",
     "delete_warning": "テーマ \"{{themeName}}\" を削除してもよろしいですか？この操作は取り消せません。",

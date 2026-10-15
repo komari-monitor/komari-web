@@ -1571,6 +1571,7 @@
     "default_no_config": "默认主题没有可配置选项。",
     "default_preview": "默认主题无预览",
     "default_theme": "默认主题",
+    "delete_active_warning": "主题 \"{{themeName}}\" 正在使用。继续删除将切换到默认主题，并删除此主题。此操作不可撤销。",
     "delete_failed": "主题删除失败",
     "delete_success": "主题删除成功",
     "delete_warning": "您确定要删除主题 \"{{themeName}}\" 吗？此操作不可撤销。",

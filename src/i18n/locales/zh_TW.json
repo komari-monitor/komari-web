@@ -1546,6 +1546,7 @@
     "default_no_config": "預設主題沒有可配置選項。",
     "default_preview": "預設主題無預覽",
     "default_theme": "預設主題",
+    "delete_active_warning": "主題「{{themeName}}」正在使用。繼續刪除將切換至預設主題，並刪除此主題。此操作無法復原。",
     "delete_failed": "主題刪除失敗",
     "delete_success": "主題刪除成功",
     "delete_warning": "您確定要刪除主題 \"{{themeName}}\" 嗎？此操作不可撤銷。",

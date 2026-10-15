@@ -1571,6 +1571,7 @@
     "default_no_config": "Tema bawaan tidak memiliki opsi konfigurasi.",
     "default_preview": "Tidak ada pratinjau untuk tema bawaan",
     "default_theme": "Tema Bawaan",
+    "delete_active_warning": "Tema \"{{themeName}}\" sedang digunakan. Jika dilanjutkan, sistem akan beralih ke tema bawaan dan menghapus tema ini. Tindakan ini tidak dapat dibatalkan.",
     "delete_failed": "Gagal menghapus tema",
     "delete_success": "Tema berhasil dihapus",
     "delete_warning": "Apakah Anda yakin ingin menghapus tema \"{{themeName}}\"? Tindakan ini tidak dapat dibatalkan.",
