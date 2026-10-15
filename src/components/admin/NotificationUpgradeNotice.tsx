@@ -55,8 +55,12 @@ export default function NotificationUpgradeNotice({
   };
 
   return (
-    <Dialog.Root open={ready && open} onOpenChange={(next) => { if (!next) dismiss(); }}>
-      <Dialog.Content maxWidth="480px">
+    <Dialog.Root open={ready && open}>
+      <Dialog.Content
+        maxWidth="480px"
+        onInteractOutside={(event) => event.preventDefault()}
+        onEscapeKeyDown={(event) => event.preventDefault()}
+      >
         <Dialog.Title>{t("notificationUpgrade.title")}</Dialog.Title>
         <Dialog.Description>{t("notificationUpgrade.description")}</Dialog.Description>
         <Flex gap="3" justify="end" wrap="wrap" mt="4">
