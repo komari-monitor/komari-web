@@ -58,10 +58,50 @@ export type PingMetricStat = {
   avg?: number | null;
   latest?: number | null;
   p50?: number | null;
+  p95?: number | null;
   p99?: number | null;
   stddev?: number | null;
   p99_p50_ratio?: number;
 };
+
+export type DashboardTrafficPoint = {
+  time: number;
+  upRate: number;
+  downRate: number;
+  upCum: number;
+  downCum: number;
+};
+
+export type DashboardTrafficNodeTotal = {
+  uuid: string;
+  up: number;
+  down: number;
+  total: number;
+  peakRate: number;
+  peakTime: number;
+};
+
+export type DashboardRankItem = {
+  uuid: string;
+  value: number;
+  peak: number;
+  peakTime: number;
+};
+
+export type DashboardSummaryResponse = {
+  start: string;
+  end: string;
+  traffic: {
+    points: DashboardTrafficPoint[];
+    nodeTotals: DashboardTrafficNodeTotal[];
+    totalUp: number;
+    totalDown: number;
+  };
+  top_cpu: DashboardRankItem[];
+  top_mem: DashboardRankItem[];
+};
+
+export type DashboardTrafficSummary = DashboardSummaryResponse["traffic"];
 
 export type PingMetricStatsResponse = {
   start: string;
