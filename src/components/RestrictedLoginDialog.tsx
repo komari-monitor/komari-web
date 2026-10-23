@@ -1,6 +1,7 @@
+import Loading from "@/components/loading";
 import { useState } from "react";
 import { Button, Dialog, Text, TextField } from "@radix-ui/themes";
-import { LoaderCircle, LogIn } from "lucide-react";
+import { LogIn } from "lucide-react";
 import { useTranslation } from "react-i18next";
 
 export type RestrictedAuthStatus = {
@@ -139,12 +140,8 @@ export default function RestrictedLoginDialog({
               className="w-full"
               disabled={busy || !username.trim() || !password}
             >
-              {busy ? (
-                <LoaderCircle size={16} className="animate-spin" />
-              ) : (
-                <LogIn size={16} />
-              )}
-              {busy ? t("loading") : t("login.title")}
+              {!busy && <LogIn size={16} />}
+              {busy ? <Loading compact /> : t("login.title")}
             </Button>
           </form>
         )}

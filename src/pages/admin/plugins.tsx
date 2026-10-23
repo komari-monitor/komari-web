@@ -508,11 +508,13 @@ export default function PluginsPage() {
           <Dialog.Title>
             {t("logs.title", "Logs")} · {logPlugin?.short}
           </Dialog.Title>
-          <pre className="max-h-[60vh] overflow-auto whitespace-pre-wrap rounded-md bg-gray-1 p-3 text-xs">
-            {logsLoading
-              ? t("plugin.loading", "Loading...")
-              : logContent || t("plugin.no_logs", "No logs")}
-          </pre>
+          {logsLoading ? (
+            <Loading compact />
+          ) : (
+            <pre className="max-h-[60vh] overflow-auto whitespace-pre-wrap rounded-md bg-gray-1 p-3 text-xs">
+              {logContent || t("plugin.no_logs", "No logs")}
+            </pre>
+          )}
         </Dialog.Content>
       </Dialog.Root>
 

@@ -1,3 +1,4 @@
+import Loading from "@/components/loading";
 import { formatBytes } from "@/utils/unitHelper";
 import { Button, Dialog, Flex, Text } from "@radix-ui/themes";
 import { DatabaseZap, RefreshCw } from "lucide-react";
@@ -293,9 +294,7 @@ export function DatabaseMaintenanceCard() {
             ) : null}
           </>
         ) : loading ? (
-          <Text size="2" color="gray" className="py-3">
-            {t("loading")}
-          </Text>
+          <Loading compact />
         ) : null}
 
         {loadError ? (

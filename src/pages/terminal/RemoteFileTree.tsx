@@ -1,3 +1,4 @@
+import Loading from "@/components/loading";
 import type { DragEvent as ReactDragEvent, MouseEvent as ReactMouseEvent } from "react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
@@ -810,7 +811,7 @@ export const RemoteFileTree = ({
           {file.is_symlink && (
             <Link2 size={11} className="ml-auto mr-1 shrink-0 text-[#6a9955]" />
           )}
-          {isLoading && <RefreshCw size={11} className="ml-auto shrink-0 animate-spin" />}
+          {isLoading && <span className="ml-auto shrink-0"><Loading compact /></span>}
         </button>
         {file.is_dir && isExpanded &&
           nested

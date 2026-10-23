@@ -113,7 +113,7 @@ const Layout = () => {
     return () => clearInterval(interval);
   }, [nodeDetail]);
 
-  if (isLoading) return <Loading text="" />;
+  if (isLoading) return <Loading />;
   if (error) return <div>{error}</div>;
 
   const isEmpty = Array.isArray(nodeDetail) && nodeDetail.length === 0;
@@ -444,7 +444,7 @@ const AutoDiscoverySection = ({
   if (loading) {
     return (
       <Flex align="center" justify="center" mt="4" py="4">
-        <Loading text="" />
+        <Loading />
       </Flex>
     );
   }

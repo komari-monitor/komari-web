@@ -1,3 +1,4 @@
+import Loading from "@/components/loading";
 import {
   Button,
   Callout,
@@ -401,9 +402,11 @@ export default function PprofPage() {
               value={formatBytes(summary.runtime.memory.sys)}
             />
           </div>
+        ) : summaryLoading ? (
+          <Loading compact />
         ) : (
           <Text size="2" color="gray" className="w-full py-3">
-            {summaryLoading ? t("loading") : t("pprof.summary_unavailable")}
+            {t("pprof.summary_unavailable")}
           </Text>
         )}
       </SettingCard>
@@ -415,9 +418,7 @@ export default function PprofPage() {
           className="km-pprof-output"
         >
           {heapPreviewLoading ? (
-            <Text size="2" color="gray" className="w-full py-3">
-              {t("pprof.loading")}
-            </Text>
+            <Loading compact />
           ) : heapPreview !== null ? (
             <pre className="max-h-[32vh] w-full overflow-auto rounded-md border border-[var(--gray-a5)] p-3 text-xs">
               {heapPreview}

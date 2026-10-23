@@ -1,3 +1,4 @@
+import Loading from "@/components/loading";
 import { Checkbox, DropdownMenu } from "@radix-ui/themes";
 import type { DragEvent as ReactDragEvent, MouseEvent as ReactMouseEvent } from "react";
 import {
@@ -1078,8 +1079,8 @@ const FileManagerPanel = ({ uuid }: FileManagerPanelProps) => {
       </div>
 
       {loading && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 h-0.5 overflow-hidden bg-[#333]">
-          <div className="h-full w-1/3 animate-[pulse_1s_ease-in-out_infinite] bg-[#007acc]" />
+        <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center bg-[#1e1e1e]/90 py-1 text-xs text-[#bbbbbb]">
+          <Loading compact />
         </div>
       )}
       {uploadProgress.length > 0 && (

@@ -223,7 +223,7 @@ const Index = () => {
           ))}
         </div>
       </Card>
-      <Suspense fallback={<div style={{ padding: 16 }}>Loading…</div>}>
+      <Suspense fallback={<Loading />}>
         <NodeDisplay nodes={nodeList ?? []} liveData={liveData} />
       </Suspense>
     </>

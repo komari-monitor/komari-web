@@ -1,3 +1,4 @@
+import Loading from "@/components/loading";
 import Editor, { type OnMount } from "@monaco-editor/react";
 import { DropdownMenu } from "@radix-ui/themes";
 import {
@@ -233,7 +234,7 @@ const EditorTabItem = ({
       title={document.path}
     >
       {loading ? (
-        <RotateCcw size={14} className="shrink-0 animate-spin text-[#8da9c4]" />
+        <Loading compact />
       ) : document.kind === "error" ? (
         <Braces size={14} className="shrink-0 text-[#f48771]" />
       ) : document.kind === "too-large" ? (
@@ -1721,8 +1722,7 @@ const FileEditorDialog = ({
               <div className="relative min-h-0 flex-1">
                 {activeDocument?.loading && (
                   <div className="absolute inset-0 z-10 flex items-center justify-center bg-[#1e1e1e]/90 text-xs text-[#bbbbbb]">
-                    <RotateCcw size={16} className="mr-2 animate-spin" />
-                    {t("file_manager.editor.loading_agent", "Fetching file from agent...")}
+                    <Loading compact />
                   </div>
                 )}
                 {!activeDocument && (
@@ -1810,8 +1810,7 @@ const FileEditorDialog = ({
                     />
                   ) : (
                     <div className="flex h-full items-center justify-center bg-[#1e1e1e] text-xs text-[#bbbbbb]">
-                      <RotateCcw size={16} className="mr-2 animate-spin" />
-                      {t("file_manager.loading", "Loading...")}
+                      <Loading compact />
                     </div>
                   )
                 )}

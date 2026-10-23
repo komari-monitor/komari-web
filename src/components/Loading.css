@@ -8,19 +8,19 @@
   --loading-width: 100px;
 }
 
-.loader {
+.km-loading .loader {
   position: relative;
   margin: 0 auto;
   width: var(--loading-width);
 }
 
-.loader:before {
+.km-loading .loader:before {
   content: "";
   display: block;
   padding-top: 100%;
 }
 
-.circular {
+.km-loading .circular {
   animation: rotate 2s linear infinite;
   height: 100%;
   transform-origin: center center;
@@ -33,7 +33,7 @@
   margin: auto;
 }
 
-.path {
+.km-loading .path {
   stroke-dasharray: 1, 200;
   stroke-dashoffset: 0;
   animation: dash 1.5s ease-in-out infinite, color 6s ease-in-out infinite;
@@ -76,5 +76,10 @@
   90% {
     stroke: var(--loading-yellow);
   }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .km-loading .circular, .km-loading .path { animation: none; }
+  .km-loading .path { stroke: var(--loading-blue); stroke-dasharray: 90, 200; }
 }
 

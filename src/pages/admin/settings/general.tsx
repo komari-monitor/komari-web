@@ -24,7 +24,7 @@ export default function GeneralSettings() {
     null
   );
   if (loading) {
-    return <Loading text="creeper?" />;
+    return <Loading />;
   }
 
   if (error) {

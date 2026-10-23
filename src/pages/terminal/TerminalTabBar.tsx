@@ -1,3 +1,4 @@
+import Loading from "@/components/loading";
 import {
   Fragment,
   useCallback,
@@ -515,8 +516,7 @@ const TerminalTabBar = ({
           >
             {clientsLoading ? (
               <DropdownMenuItem disabled>
-                <Server size={14} />
-                <span>{t("terminal.tabs.loading_servers", "Loading servers...")}</span>
+                <Loading compact />
               </DropdownMenuItem>
             ) : clients.length === 0 ? (
               <DropdownMenuItem disabled>
@@ -577,8 +577,7 @@ const TerminalTabBar = ({
           >
             {clientsLoading ? (
               <DropdownMenuItem disabled>
-                <Server size={14} />
-                <span>{t("terminal.tabs.loading_servers", "Loading servers...")}</span>
+                <Loading compact />
               </DropdownMenuItem>
             ) : clients.length === 0 ? (
               <DropdownMenuItem disabled>

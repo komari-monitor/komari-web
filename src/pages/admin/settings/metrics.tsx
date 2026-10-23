@@ -800,7 +800,7 @@ function MetricRetentionTable({
                 <TableRow>
                   <TableCell colSpan={6} className="text-center text-muted-foreground">
                     {loading
-                      ? t("settings.metrics.loading_metrics")
+                      ? <Loading compact />
                       : t("settings.metrics.no_metrics")}
                   </TableCell>
                 </TableRow>

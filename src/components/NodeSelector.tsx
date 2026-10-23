@@ -1,3 +1,4 @@
+import Loading from "@/components/loading";
 import React from "react";
 import { useNodeDetails } from "@/contexts/NodeDetailsContext";
 import { useTranslation } from "react-i18next";
@@ -26,7 +27,7 @@ const NodeSelector: React.FC<NodeSelectorProps> = ({
       nodeDetail.find((n) => n.uuid === node && !n.is_only_client)
     );
   }
-  if (isLoading) return <div>Loading...</div>;
+  if (isLoading) return <Loading />;
   if (error) return <div>{error}</div>;
 
   return (

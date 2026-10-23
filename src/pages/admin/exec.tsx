@@ -590,12 +590,7 @@ const ExecContent = () => {
                         {/* 轮询状态提示 */}
                         {polling && (
                             <Flex align="center" justify="between" className="text-sm text-gray-500">
-                                <Flex align="center" gap="2">
-                                    <div className="animate-spin rounded-full h-4 w-4 border-2 border-current border-t-transparent" />
-                                    <Text size="2" color="gray">
-                                        {t("exec.status.polling")}
-                                    </Text>
-                                </Flex>
+                                <Loading compact />
                                 <Button
                                     variant="soft"
                                     size="1"

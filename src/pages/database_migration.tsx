@@ -26,6 +26,7 @@ import {
 import { useTranslation } from "react-i18next";
 
 import GuideHeader from "@/components/GuideHeader";
+import Loading from "@/components/loading";
 import { SettingCard, SettingCardLabel } from "@/components/admin/SettingCard";
 import RestrictedLoginDialog, {
   type RestrictedAuthStatus,
@@ -566,10 +567,7 @@ export default function DatabaseMigration() {
 
           {auth?.logged_in && !status && (
             <Callout.Root color="gray" variant="surface">
-              <Callout.Icon>
-                <LoaderCircle size={18} className="animate-spin" />
-              </Callout.Icon>
-              <Callout.Text>{t("loading")}</Callout.Text>
+              <Loading compact />
             </Callout.Root>
           )}
         </Flex>

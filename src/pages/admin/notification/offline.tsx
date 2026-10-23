@@ -176,7 +176,7 @@ const InnerLayout = () => {
   };
 
   if (onLoading || onNodeLoading) {
-    return <Loading text="(o゜▽゜)o☆" />;
+    return <Loading />;
   }
   if (onError || onNodeError) {
     return <div>Error: {onError?.message || onNodeError}</div>;
