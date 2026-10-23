@@ -7,6 +7,8 @@ import { useTranslation } from "react-i18next";
 import { SquareArrowOutUpRight } from "lucide-react";
 import { SegmentedControl } from "@radix-ui/themes";
 import { Apache2_LICENSE, MIT_LICENSE } from "@/utils/field";
+import webDependencies from "@/utils/openSource.web.json";
+import goDependencies from "@/utils/openSource.go.json";
 import { getEula } from "@/utils/eula";
 import { SettingCardCollapse } from "@/components/admin/SettingCard";
 
@@ -22,102 +24,13 @@ export default function AboutPage() {
       .then(setMarkdown);
   }, []);
 
-  const open_source_licenses = {
-    "Apache-2.0 License": [
-      "github.com/pquerna/otp",
-      "github.com/spf13/cobra",
-      "google.golang.org/grpc",
-      "typescript",
-      "github.com/prometheus-community/pro-bing",
-    ],
-    "BSD-2-Clause License": ["github.com/gorilla/websocket", "dotenv"],
-    "BSD-3-Clause License": [
-      "github.com/google/uuid",
-      "google.golang.org/protobuf",
-      "golang.org/x/net",
-      "golang.org/x/crypto",
-      "golang.org/x/sys",
-      "github.com/shirou/gopsutil/v4",
-    ],
-    "MIT License": [
-      "github.com/gin-gonic/gin",
-      "github.com/patrickmn/go-cache",
-      "github.com/stretchr/testify",
-      "gorm.io/driver/mysql",
-      "gorm.io/driver/sqlite",
-      "gorm.io/gorm",
-      "@dnd-kit/core",
-      "@dnd-kit/modifiers",
-      "@dnd-kit/sortable",
-      "@radix-ui/react-checkbox",
-      "@radix-ui/react-dialog",
-      "@radix-ui/react-dropdown-menu",
-      "@radix-ui/react-icons",
-      "@radix-ui/react-label",
-      "@radix-ui/react-slot",
-      "@radix-ui/themes",
-      "@tanstack/react-table",
-      "@types/uuid",
-      "class-variance-authority",
-      "clsx",
-      "github-markdown-css",
-      "http-proxy-middleware",
-      "i18next",
-      "i18next-browser-languagedetector",
-      "motion",
-      "next-themes",
-      "react",
-      "react-dom",
-      "react-i18next",
-      "react-markdown",
-      "react-toastify",
-      "recharts",
-      "remark-gfm",
-      "sonner",
-      "tailwind-merge",
-      "tailwindcss",
-      "@tailwindcss/vite",
-      "twemoji",
-      "uuid",
-      "vaul",
-      "@xterm/xterm",
-      "@xterm/addon-fit",
-      "@xterm/addon-search",
-      "@xterm/addon-web-links",
-      "@eslint/js",
-      "@types/lodash",
-      "@types/react",
-      "@types/react-dom",
-      "@vitejs/plugin-react",
-      "eslint",
-      "eslint-plugin-react-hooks",
-      "eslint-plugin-react-refresh",
-      "globals",
-      "react-router-dom",
-      "rollup-plugin-visualizer",
-      "tw-animate-css",
-      "typescript-eslint",
-      "vite",
-      "vite-plugin-pages",
-      "vite-plugin-pwa",
-      "github.com/UserExistsError/conpty",
-      "github.com/blang/semver",
-      "github.com/creack/pty",
-      "github.com/go-ole/go-ole",
-      "github.com/klauspost/cpuid/v2",
-      "github.com/rhysd/go-github-selfupdate",
-      "gopkg.in/toast.v1",
-    ],
-    "ISC License": ["github.com/oschwald/maxminddb-golang", "lucide-react"],
-    "CC-BY-4.0 License": [
-      "License: https://creativecommons.org/licenses/by/4.0/",
-      "twemoji | Twemoji © Twitter, Inc. and other contributors | Not modified | https://github.com/twitter/twemoji",
-    ],
-  };
-
-  const sortedLicenses = Object.entries(open_source_licenses).sort(([a], [b]) =>
-    a.localeCompare(b)
-  );
+  const dependencies = [
+    ...webDependencies,
+    ...goDependencies.map((entry) => ({ ...entry, dev: false })),
+  ].map((entry) => ({
+    ...entry,
+    license: entry.license === "(Unlicense OR Apache-2.0)" ? "Apache-2.0" : entry.license,
+  })).sort((a, b) => a.name.localeCompare(b.name, "en", { sensitivity: "base" }) || a.version.localeCompare(b.version));
 
   return (
     <div className="km-page-admin-about km-about-content flex flex-col gap-4">
@@ -162,18 +75,16 @@ export default function AboutPage() {
                   {t("about.open_source")}
                 </h2>
                 <div className="km-about-copyright copyright text-sm text-gray-500 dark:text-gray-400">
-                  {sortedLicenses.map(([license, libs]) => (
-                    <div key={license} className="mb-2">
-                      <h3 className="font-black text-lg text-foreground">
-                        {license}
-                      </h3>
-                      <ul className="list-disc list-inside">
-                        {libs.sort().map((lib) => (
-                          <li key={lib}>{lib}</li>
-                        ))}
-                      </ul>
-                    </div>
-                  ))}
+                  <ul className="list-disc list-inside break-words mb-4">
+                    {dependencies.map((entry) => (
+                      <li key={entry.name + "@" + entry.version}>
+                        <a href={entry.url} target="_blank" rel="noreferrer" className="text-accent-11 hover:underline">{entry.name}</a>
+                        {" "}<span>{entry.version.startsWith("v") ? entry.version : `v${entry.version}`}</span>
+                        {" · "}<span>{entry.license}</span>
+                      </li>
+                    ))}
+                  </ul>
+                  <p className="mb-4">Twemoji © Twitter, Inc. and other contributors · {t("about.twemoji_notice")} · <a className="text-accent-11 hover:underline" href="https://creativecommons.org/licenses/by/4.0/" target="_blank" rel="noreferrer">CC-BY-4.0</a></p>
                   {t("about.ai")}
                 </div>
               </>

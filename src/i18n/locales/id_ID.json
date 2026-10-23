@@ -14,6 +14,9 @@
     "extensions": "Tampilan & plugin"
   },
   "about": {
+    "dependency_scope": "Dependensi langsung dalam manifes proyek; Web mencakup dependensi pengembangan dan tidak menghitung referensi ke dirinya sendiri. Dependensi transitif tidak termasuk.",
+    "development_dependency": "Dependensi pengembangan (klasifikasi manifes)",
+    "twemoji_notice": "Kode: MIT; gambar: CC-BY-4.0; gambar tidak diubah",
     "ai": "Proses pengembangan proyek Komari didukung oleh alat kecerdasan buatan. Alat-alat ini digunakan untuk menjalankan tugas seperti pembuatan kode, refactoring, dan debugging, untuk meningkatkan efisiensi pengembangan dan kualitas kode. Semua kode dan saran yang dihasilkan oleh AI telah diperiksa dan divalidasi oleh pengembang manusia.",
     "open_source": "Komari bersifat open source berdasarkan lisensi MIT dan dibangun menggunakan perangkat lunak open source berikut:",
     "open_source_title": "Lisensi Perangkat Lunak Open Source",

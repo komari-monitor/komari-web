@@ -87,6 +87,9 @@
     }
   },
   "about": {
+    "dependency_scope": "Direct dependencies declared in project manifests; Web includes development dependencies and excludes its self-reference. Transitive dependencies are not included in these counts.",
+    "development_dependency": "Development dependency (manifest classification)",
+    "twemoji_notice": "Code: MIT; graphics: CC-BY-4.0; graphics unmodified",
     "ai": "The development process of the Komari project has been assisted by artificial intelligence tools. These tools are used for tasks such as code generation, refactoring, and debugging to improve development efficiency and code quality. All AI-generated code and suggestions have been reviewed and validated by human developers.",
     "open_source": "Komari is open source under the MIT license and is built using the following open source software:",
     "open_source_title": "Open Source Software License",

@@ -1,0 +1,409 @@
+[
+  {
+    "name": "github.com/Calcium-Ion/moejs",
+    "version": "v0.1.0-alpha.9",
+    "license": "Apache-2.0",
+    "projects": [
+      "Server"
+    ],
+    "url": "https://github.com/Calcium-Ion/moejs",
+    "licenseEvidence": {
+      "type": "local-go-module-cache",
+      "path": "$GOMODCACHE/github.com/!calcium-!ion/moejs@v0.1.0-alpha.9/LICENSE"
+    }
+  },
+  {
+    "name": "github.com/gin-gonic/gin",
+    "version": "v1.10.0",
+    "license": "MIT",
+    "projects": [
+      "Server"
+    ],
+    "url": "https://github.com/gin-gonic/gin",
+    "licenseEvidence": {
+      "type": "local-go-module-cache",
+      "path": "$GOMODCACHE/github.com/gin-gonic/gin@v1.10.0/LICENSE"
+    }
+  },
+  {
+    "name": "github.com/go-sql-driver/mysql",
+    "version": "v1.10.0",
+    "license": "MPL-2.0",
+    "projects": [
+      "Server"
+    ],
+    "url": "https://github.com/go-sql-driver/mysql",
+    "licenseEvidence": {
+      "type": "local-go-module-cache",
+      "path": "$GOMODCACHE/github.com/go-sql-driver/mysql@v1.10.0/LICENSE"
+    }
+  },
+  {
+    "name": "github.com/google/uuid",
+    "version": "v1.6.0",
+    "license": "BSD-3-Clause",
+    "projects": [
+      "Server"
+    ],
+    "url": "https://github.com/google/uuid",
+    "licenseEvidence": {
+      "type": "local-go-module-cache",
+      "path": "$GOMODCACHE/github.com/google/uuid@v1.6.0/LICENSE"
+    }
+  },
+  {
+    "name": "github.com/gorilla/websocket",
+    "version": "v1.5.3",
+    "license": "BSD-2-Clause",
+    "projects": [
+      "Server",
+      "Agent"
+    ],
+    "url": "https://github.com/gorilla/websocket",
+    "licenseEvidence": {
+      "type": "local-go-module-cache",
+      "path": "$GOMODCACHE/github.com/gorilla/websocket@v1.5.3/LICENSE"
+    }
+  },
+  {
+    "name": "github.com/jackc/pgx/v5",
+    "version": "v5.10.0",
+    "license": "MIT",
+    "projects": [
+      "Server"
+    ],
+    "url": "https://github.com/jackc/pgx",
+    "licenseEvidence": {
+      "type": "local-go-module-cache",
+      "path": "$GOMODCACHE/github.com/jackc/pgx/v5@v5.10.0/LICENSE"
+    }
+  },
+  {
+    "name": "github.com/klauspost/compress",
+    "version": "v1.17.11",
+    "license": "BSD-3-Clause AND Apache-2.0 AND MIT",
+    "projects": [
+      "Server"
+    ],
+    "url": "https://github.com/klauspost/compress",
+    "licenseEvidence": {
+      "type": "local-go-module-cache",
+      "path": "$GOMODCACHE/github.com/klauspost/compress@v1.17.11/LICENSE",
+      "note": "Mixed component licenses, not alternative licensing: root LICENSE lines 1–28 BSD-3-Clause; lines 32–234 Apache-2.0 for gzhttp/*; lines 238–260 and 296–304 MIT for command internals. zstd/internal/xxhash/LICENSE.txt and snappy/xerial/LICENSE also MIT. This module-wide inventory does not assert all components are linked."
+    }
+  },
+  {
+    "name": "github.com/mattn/go-sqlite3",
+    "version": "v1.14.27",
+    "license": "MIT",
+    "projects": [
+      "Server"
+    ],
+    "url": "https://github.com/mattn/go-sqlite3",
+    "licenseEvidence": {
+      "type": "local-go-module-cache",
+      "path": "$GOMODCACHE/github.com/mattn/go-sqlite3@v1.14.27/LICENSE"
+    }
+  },
+  {
+    "name": "github.com/oschwald/maxminddb-golang",
+    "version": "v1.13.1",
+    "license": "ISC",
+    "projects": [
+      "Server"
+    ],
+    "url": "https://github.com/oschwald/maxminddb-golang",
+    "licenseEvidence": {
+      "type": "local-go-module-cache",
+      "path": "$GOMODCACHE/github.com/oschwald/maxminddb-golang@v1.13.1/LICENSE"
+    }
+  },
+  {
+    "name": "github.com/patrickmn/go-cache",
+    "version": "v2.1.0+incompatible",
+    "license": "MIT",
+    "projects": [
+      "Server"
+    ],
+    "url": "https://github.com/patrickmn/go-cache",
+    "licenseEvidence": {
+      "type": "local-go-module-cache",
+      "path": "$GOMODCACHE/github.com/patrickmn/go-cache@v2.1.0+incompatible/LICENSE"
+    }
+  },
+  {
+    "name": "github.com/pquerna/otp",
+    "version": "v1.5.0",
+    "license": "Apache-2.0",
+    "projects": [
+      "Server"
+    ],
+    "url": "https://github.com/pquerna/otp",
+    "licenseEvidence": {
+      "type": "local-go-module-cache",
+      "path": "$GOMODCACHE/github.com/pquerna/otp@v1.5.0/LICENSE"
+    }
+  },
+  {
+    "name": "github.com/spf13/cobra",
+    "version": "v1.9.1",
+    "license": "Apache-2.0",
+    "projects": [
+      "Server",
+      "Agent"
+    ],
+    "url": "https://github.com/spf13/cobra",
+    "licenseEvidence": {
+      "type": "local-go-module-cache",
+      "path": "$GOMODCACHE/github.com/spf13/cobra@v1.9.1/LICENSE.txt"
+    }
+  },
+  {
+    "name": "github.com/stretchr/testify",
+    "version": "v1.12.1",
+    "license": "MIT",
+    "projects": [
+      "Server"
+    ],
+    "url": "https://github.com/stretchr/testify",
+    "licenseEvidence": {
+      "type": "local-go-module-cache",
+      "path": "$GOMODCACHE/github.com/stretchr/testify@v1.12.1/LICENSE"
+    }
+  },
+  {
+    "name": "golang.org/x/sys",
+    "version": "v0.33.0",
+    "license": "BSD-3-Clause",
+    "projects": [
+      "Server"
+    ],
+    "url": "https://go.googlesource.com/sys",
+    "licenseEvidence": {
+      "type": "local-go-module-cache",
+      "path": "$GOMODCACHE/golang.org/x/sys@v0.33.0/LICENSE"
+    }
+  },
+  {
+    "name": "gorm.io/driver/sqlite",
+    "version": "v1.5.7",
+    "license": "MIT",
+    "projects": [
+      "Server"
+    ],
+    "url": "https://github.com/go-gorm/sqlite",
+    "licenseEvidence": {
+      "type": "local-go-module-cache",
+      "path": "$GOMODCACHE/gorm.io/driver/sqlite@v1.5.7/License"
+    }
+  },
+  {
+    "name": "gorm.io/gorm",
+    "version": "v1.26.1",
+    "license": "MIT",
+    "projects": [
+      "Server"
+    ],
+    "url": "https://github.com/go-gorm/gorm",
+    "licenseEvidence": {
+      "type": "local-go-module-cache",
+      "path": "$GOMODCACHE/gorm.io/gorm@v1.26.1/LICENSE"
+    }
+  },
+  {
+    "name": "golang.org/x/crypto",
+    "version": "v0.39.0",
+    "license": "BSD-3-Clause",
+    "projects": [
+      "Server"
+    ],
+    "url": "https://go.googlesource.com/crypto",
+    "licenseEvidence": {
+      "type": "local-go-module-cache",
+      "path": "$GOMODCACHE/golang.org/x/crypto@v0.39.0/LICENSE"
+    }
+  },
+  {
+    "name": "golang.org/x/net",
+    "version": "v0.41.0",
+    "license": "BSD-3-Clause",
+    "projects": [
+      "Server"
+    ],
+    "url": "https://go.googlesource.com/net",
+    "licenseEvidence": {
+      "type": "local-go-module-cache",
+      "path": "$GOMODCACHE/golang.org/x/net@v0.41.0/LICENSE"
+    }
+  },
+  {
+    "name": "golang.org/x/sync",
+    "version": "v0.19.0",
+    "license": "BSD-3-Clause",
+    "projects": [
+      "Server"
+    ],
+    "url": "https://go.googlesource.com/sync",
+    "licenseEvidence": {
+      "type": "local-go-module-cache",
+      "path": "$GOMODCACHE/golang.org/x/sync@v0.19.0/LICENSE"
+    }
+  },
+  {
+    "name": "golang.org/x/text",
+    "version": "v0.33.0",
+    "license": "BSD-3-Clause",
+    "projects": [
+      "Server"
+    ],
+    "url": "https://go.googlesource.com/text",
+    "licenseEvidence": {
+      "type": "local-go-module-cache",
+      "path": "$GOMODCACHE/golang.org/x/text@v0.33.0/LICENSE"
+    }
+  },
+  {
+    "name": "github.com/UserExistsError/conpty",
+    "version": "v0.1.4",
+    "license": "MIT",
+    "projects": [
+      "Agent"
+    ],
+    "url": "https://github.com/UserExistsError/conpty",
+    "licenseEvidence": {
+      "type": "local-go-module-cache",
+      "path": "$GOMODCACHE/github.com/!user!exists!error/conpty@v0.1.4/LICENSE"
+    }
+  },
+  {
+    "name": "github.com/blang/semver",
+    "version": "v3.5.1+incompatible",
+    "license": "MIT",
+    "projects": [
+      "Agent"
+    ],
+    "url": "https://github.com/blang/semver",
+    "licenseEvidence": {
+      "type": "local-go-module-cache",
+      "path": "$GOMODCACHE/github.com/blang/semver@v3.5.1+incompatible/LICENSE"
+    }
+  },
+  {
+    "name": "github.com/creack/pty",
+    "version": "v1.1.24",
+    "license": "MIT",
+    "projects": [
+      "Agent"
+    ],
+    "url": "https://github.com/creack/pty",
+    "licenseEvidence": {
+      "type": "local-go-module-cache",
+      "path": "$GOMODCACHE/github.com/creack/pty@v1.1.24/LICENSE"
+    }
+  },
+  {
+    "name": "github.com/go-ole/go-ole",
+    "version": "v1.2.6",
+    "license": "MIT",
+    "projects": [
+      "Agent"
+    ],
+    "url": "https://github.com/go-ole/go-ole",
+    "licenseEvidence": {
+      "type": "local-go-module-cache",
+      "path": "$GOMODCACHE/github.com/go-ole/go-ole@v1.2.6/LICENSE"
+    }
+  },
+  {
+    "name": "github.com/inconshreveable/go-update",
+    "version": "v0.0.0-20160112193335-8152e7eb6ccf",
+    "license": "Apache-2.0",
+    "projects": [
+      "Agent"
+    ],
+    "url": "https://github.com/inconshreveable/go-update",
+    "licenseEvidence": {
+      "type": "local-go-module-cache",
+      "path": "$GOMODCACHE/github.com/inconshreveable/go-update@v0.0.0-20160112193335-8152e7eb6ccf/LICENSE"
+    }
+  },
+  {
+    "name": "github.com/klauspost/cpuid/v2",
+    "version": "v2.3.0",
+    "license": "MIT",
+    "projects": [
+      "Agent"
+    ],
+    "url": "https://github.com/klauspost/cpuid",
+    "licenseEvidence": {
+      "type": "local-go-module-cache",
+      "path": "$GOMODCACHE/github.com/klauspost/cpuid/v2@v2.3.0/LICENSE"
+    }
+  },
+  {
+    "name": "github.com/prometheus-community/pro-bing",
+    "version": "v0.7.0",
+    "license": "MIT",
+    "projects": [
+      "Agent"
+    ],
+    "url": "https://github.com/prometheus-community/pro-bing",
+    "licenseEvidence": {
+      "type": "local-go-module-cache",
+      "path": "$GOMODCACHE/github.com/prometheus-community/pro-bing@v0.7.0/LICENSE"
+    }
+  },
+  {
+    "name": "github.com/shirou/gopsutil/v4",
+    "version": "v4.26.4",
+    "license": "BSD-3-Clause",
+    "projects": [
+      "Agent"
+    ],
+    "url": "https://github.com/shirou/gopsutil",
+    "licenseEvidence": {
+      "type": "local-go-module-cache",
+      "path": "$GOMODCACHE/github.com/shirou/gopsutil/v4@v4.26.4/LICENSE"
+    }
+  },
+  {
+    "name": "golang.org/x/net",
+    "version": "v0.38.0",
+    "license": "BSD-3-Clause",
+    "projects": [
+      "Agent"
+    ],
+    "url": "https://go.googlesource.com/net",
+    "licenseEvidence": {
+      "type": "local-go-module-cache",
+      "path": "$GOMODCACHE/golang.org/x/net@v0.38.0/LICENSE"
+    }
+  },
+  {
+    "name": "golang.org/x/sys",
+    "version": "v0.41.0",
+    "license": "BSD-3-Clause",
+    "projects": [
+      "Agent"
+    ],
+    "url": "https://go.googlesource.com/sys",
+    "licenseEvidence": {
+      "type": "local-go-module-cache",
+      "path": "$GOMODCACHE/golang.org/x/sys@v0.41.0/LICENSE"
+    }
+  },
+  {
+    "name": "gopkg.in/toast.v1",
+    "version": "v1.0.0-20180812000517-0a84660828b2",
+    "license": "MIT",
+    "projects": [
+      "Agent"
+    ],
+    "url": "https://gopkg.in/toast.v1",
+    "licenseEvidence": {
+      "type": "local-go-module-cache",
+      "path": "$GOMODCACHE/gopkg.in/toast.v1@v1.0.0-20180812000517-0a84660828b2/LICENSE"
+    }
+  }
+]
+
