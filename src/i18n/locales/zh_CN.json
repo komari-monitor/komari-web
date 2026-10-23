@@ -1,26 +1,12 @@
 {
-  "adminNavigation": {
-    "operations": "监控与运维",
-    "system": "系统设置",
-    "security": "账号与安全",
-    "site": "站点设置",
-    "general": "通用设置",
-    "login": "登录认证",
-    "profile": "个人账户",
-    "sessions": "登录会话",
-    "pluginSettings": "插件设置",
-    "events": "事件通知",
-    "pluginFeatures": "插件功能",
-    "extensions": "外观与插件"
-  },
   "about": {
+    "ai": "Komari 项目的开发过程得到了人工智能工具的辅助。这些工具被用于执行代码生成、重构和调试等任务，以提高开发效率和代码质量。所有由 AI 生成的代码和建议都经过了人类开发者的审查与验证。",
     "dependency_scope": "统计各项目清单中声明的直接依赖；Web 包含开发依赖，不包含本项目的自引用。间接依赖不计入此清单，未声明不代表未被间接使用。",
     "development_dependency": "开发依赖（按清单分类）",
-    "twemoji_notice": "代码采用 MIT，图像采用 CC-BY-4.0；图像未修改",
-    "ai": "Komari 项目的开发过程得到了人工智能工具的辅助。这些工具被用于执行代码生成、重构和调试等任务，以提高开发效率和代码质量。所有由 AI 生成的代码和建议都经过了人类开发者的审查与验证。",
     "open_source": "Komari 基于 MIT 协议开源，并使用了以下开源软件构建：",
     "open_source_title": "开源软件许可协议",
-    "readme_open_in_new_tab": "在新标签页中打开"
+    "readme_open_in_new_tab": "在新标签页中打开",
+    "twemoji_notice": "代码采用 MIT，图像采用 CC-BY-4.0；图像未修改"
   },
   "account": {
     "2fa_disabled": "双重身份验证已禁用",
@@ -179,6 +165,20 @@
       "traffic": "流量用量",
       "traffic_description": "Komari将会在服务器到达指定的流量使用百分比时发送通知，并以5%为梯度持续提醒。如果服务器没有设置流量阈值，不发送通知。设置为0禁用流量提醒。"
     }
+  },
+  "adminNavigation": {
+    "events": "事件通知",
+    "extensions": "外观与插件",
+    "general": "通用设置",
+    "login": "登录认证",
+    "operations": "监控与运维",
+    "pluginFeatures": "插件功能",
+    "pluginSettings": "插件设置",
+    "profile": "个人账户",
+    "security": "账号与安全",
+    "sessions": "登录会话",
+    "site": "站点设置",
+    "system": "系统设置"
   },
   "chart": {
     "addChart": "新增图表",
