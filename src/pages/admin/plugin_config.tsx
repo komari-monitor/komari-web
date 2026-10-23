@@ -194,65 +194,44 @@ export default function PluginConfigPage() {
   const items: PluginConfigItem[] = Array.isArray(configuration?.data)
     ? configuration.data
     : [];
+  const awaitingAutoSelect = !autoSelectDone && configurablePlugins.some(
+    (plugin) => plugin.short === searchParams.get("short"),
+  );
+  const configurationLoading = awaitingAutoSelect || (!!selected && configuration === null && !error);
   const hasItems = items.some((item) => item.type !== "title");
   const hasEditableItems = items.some(
     (item) => item.type !== "title" && item.type !== "textbox",
   );
 
   return (
-    <Box className="km-page-admin-plugin-config h-full min-h-0 p-4">
-      <ConfigFormTabs
-        items={items}
-        values={values}
-        onValueChange={handleValueChange}
-        resolveText={displayText}
-        className="h-full"
-        header={
-          <Flex direction="column" gap="3">
-            <Flex justify="between" align="center" wrap="wrap" gap="3">
-              <Flex align="center" gap="2">
-                <Blocks size={20} />
-                <Heading size="4">{t("plugin.config", "Configuration")}</Heading>
-              </Flex>
-              {selected && !error && hasEditableItems && (
-                <Button onClick={saveAll} disabled={saving}>
-                  {saving
-                    ? selected.enabled
-                      ? t("plugin.saving_and_reloading", "Saving and reloading...")
-                      : t("plugin.saving", "Saving...")
-                    : selected.enabled
-                      ? t("plugin.save_and_reload", "Save and reload")
-                      : t("common.save")}
-                </Button>
-              )}
-            </Flex>
-            {selected && !error && hasItems && (
-              <Text weight="bold">
-                {displayText(selected.name) || selected.short}
-              </Text>
-            )}
-          </Flex>
-        }
-        notice={
-          !selected || error || !hasItems ? (
-            <Box className="mb-4">
-              {!selected ? (
-                <Callout.Root>
-                  <Callout.Text>{t("plugin.config_select_hint", "Select a plugin to configure")}</Callout.Text>
-                </Callout.Root>
-              ) : error ? (
-                <Callout.Root color="red">
-                  <Callout.Text>{error}</Callout.Text>
-                </Callout.Root>
-              ) : (
-                <Callout.Root>
-                  <Callout.Text>{t("plugin.config_no_items", "This plugin has no configuration items")}</Callout.Text>
-                </Callout.Root>
-              )}
-            </Box>
-          ) : undefined
-        }
-        sidebar={
+    <Flex direction="column" className="km-page-admin-plugin-config h-full min-h-0 overflow-hidden p-4">
+      <Flex className="mb-5 shrink-0" justify="between" align="center" wrap="wrap" gap="3">
+        <Flex align="center" gap="2">
+          <Blocks size={20} />
+          <Heading size="4">{t("plugin.config", "Configuration")}</Heading>
+        </Flex>
+        <Button
+          onClick={saveAll}
+          disabled={saving || !selected || !!error || !hasEditableItems}
+          style={{
+            visibility: selected && !error && hasEditableItems ? "visible" : "hidden",
+          }}
+        >
+          {saving
+            ? selected?.enabled
+              ? t("plugin.saving_and_reloading", "Saving and reloading...")
+              : t("plugin.saving", "Saving...")
+            : selected?.enabled
+              ? t("plugin.save_and_reload", "Save and reload")
+              : t("common.save")}
+        </Button>
+      </Flex>
+      <Flex
+        direction={{ initial: "column", md: "row" }}
+        gap="4"
+        className="min-h-0 flex-1 overflow-hidden"
+      >
+        <Box className="max-h-48 w-full shrink-0 overflow-y-auto overscroll-contain md:max-h-full md:w-64">
           <Card>
             <Flex direction="column" gap="1">
               {configurablePlugins.length === 0 && (
@@ -291,8 +270,39 @@ export default function PluginConfigPage() {
               })}
             </Flex>
           </Card>
-        }
-      />
-    </Box>
+        </Box>
+        <ConfigFormTabs
+          items={items}
+          values={values}
+          onValueChange={handleValueChange}
+          resolveText={displayText}
+          className="min-w-0 flex-1 overflow-hidden"
+          header={
+            selected && !error && hasItems && (
+              <Text weight="bold">
+                {displayText(selected.name) || selected.short}
+              </Text>
+            )
+          }
+          notice={
+            configurationLoading ? (
+              <Loading />
+            ) : !selected || error || !hasItems ? (
+              <Box className="mb-4">
+                {error ? (
+                  <Callout.Root color="red">
+                    <Callout.Text>{error}</Callout.Text>
+                  </Callout.Root>
+                ) : (
+                  <Callout.Root>
+                    <Callout.Text>{t("plugin.config_no_items", "This plugin has no configuration items")}</Callout.Text>
+                  </Callout.Root>
+                )}
+              </Box>
+            ) : undefined
+          }
+        />
+      </Flex>
+    </Flex>
   );
 }

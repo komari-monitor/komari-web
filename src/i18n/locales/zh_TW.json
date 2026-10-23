@@ -1,4 +1,18 @@
 {
+  "adminNavigation": {
+    "operations": "監控與維運",
+    "system": "系統設定",
+    "security": "帳號與安全",
+    "site": "站台設定",
+    "general": "一般設定",
+    "login": "登入驗證",
+    "profile": "個人帳戶",
+    "sessions": "登入工作階段",
+    "pluginSettings": "外掛設定",
+    "events": "事件通知",
+    "pluginFeatures": "外掛功能",
+    "extensions": "外觀與外掛"
+  },
   "notificationUpgrade": {
     "title": "通知管道發生破壞性變更",
     "description": "您是從低於 1.6.0 的版本升級而來。通知管道發生了破壞性變更，需要重新設定。請前往通知管道設定，重新設定並測試，以確保警報正常送達。",
@@ -62,7 +76,7 @@
       "title": "逛逛主題市場",
       "description": "在主題市場瀏覽主題，為監控頁面更換外觀。安裝後可在「主題」選單中管理。",
       "plugins_title": "用外掛擴充 Komari",
-      "plugins_description": "外掛市場提供更多擴充功能。安裝後，可從「外掛」選單管理和設定外掛。",
+      "plugins_description": "外掛市場提供更多外掛功能。安裝後，可從「外掛」選單管理和設定外掛。",
       "action": "瀏覽外掛"
     },
     "terminal": {

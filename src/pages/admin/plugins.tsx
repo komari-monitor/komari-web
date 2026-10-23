@@ -8,8 +8,8 @@ import {
   Dialog,
   Flex,
   Heading,
-  Separator,
   Switch,
+  Tabs,
   Text,
 } from "@radix-ui/themes";
 import {
@@ -21,9 +21,10 @@ import {
   Upload,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
-import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
 import Loading from "@/components/loading";
+import PluginConfigDialog from "@/components/admin/PluginConfigDialog";
 import InlineSvgIcon from "@/components/InlineSvgIcon";
 import UploadDialog from "@/components/UploadDialog";
 import { createChunkUploadTask, type ChunkUploadTask } from "@/lib/chunkUpload";
@@ -68,7 +69,7 @@ export default function PluginsPage() {
   const { call } = useRPC2Call();
   const { refreshNavigation } = useAdminNavigation();
   const { t, i18n } = useTranslation();
-  const navigate = useNavigate();
+  const [configPlugin, setConfigPlugin] = useState<PluginInfo | null>(null);
   const language = i18n.resolvedLanguage || i18n.language || "";
   const displayText = useCallback(
     (value: I18nText | undefined) => resolveI18nText(value, language) || "",
@@ -76,6 +77,17 @@ export default function PluginsPage() {
   );
 
   const [plugins, setPlugins] = useState<PluginInfo[]>([]);
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [slideDirection, setSlideDirection] = useState(1);
+  const reduceMotion = useReducedMotion();
+  const filteredPlugins = plugins.filter((plugin) =>
+    statusFilter === "all" || (statusFilter === "running" ? plugin.running : !plugin.running),
+  );
+  const changeStatusFilter = (value: string) => {
+    const order = ["all", "running", "stopped"];
+    setSlideDirection(order.indexOf(value) > order.indexOf(statusFilter) ? 1 : -1);
+    setStatusFilter(value);
+  };
   const [loading, setLoading] = useState(true);
   const [uploading, setUploading] = useState(false);
   const [uploadProgress, setUploadProgress] = useState(0);
@@ -220,6 +232,7 @@ export default function PluginsPage() {
     setDeleting(true);
     try {
       await call("admin:deletePlugin", { short: plugin.short });
+      refreshNavigation();
       toast.success(t("plugin.deleted", "Plugin deleted"));
       setPluginToDelete(null);
       await loadList();
@@ -289,108 +302,143 @@ export default function PluginsPage() {
         </Flex>
       </Flex>
 
-      <Separator size="4" />
+      <Tabs.Root value={statusFilter} onValueChange={changeStatusFilter}>
+        <Tabs.List aria-label={t("common.status", "Status")}>
+          <Tabs.Trigger value="all">{t("common.all", "All")}</Tabs.Trigger>
+          <Tabs.Trigger value="running">{t("exec.status.running", "Running")}</Tabs.Trigger>
+          <Tabs.Trigger value="stopped">{t("plugin.stopped", "Stopped")}</Tabs.Trigger>
+        </Tabs.List>
+      </Tabs.Root>
 
-      {plugins.length === 0 ? (
-        <Callout.Root>
-          <Callout.Text>
-            {t("plugin.no_plugins", "No plugins installed yet")}
-          </Callout.Text>
-        </Callout.Root>
-      ) : (
-        <Flex direction="column" gap="3" className="km-plugins-list">
-          {plugins.map((plugin) => (
-            <Card key={plugin.short} className="km-plugin-card w-full">
-              <Flex direction="column" gap="2">
-                <Flex align="center" justify="between" gap="4">
-                  <Flex align="center" gap="3" className="min-w-0">
-                    {renderPluginIcon(plugin, 20, "h-5 w-5 shrink-0")}
-                    <Flex direction="column" gap="1" className="min-w-0">
-                      <Flex align="center" gap="2" wrap="wrap">
-                        <Text weight="bold">
-                          {displayText(plugin.name) || plugin.short}
-                        </Text>
-                        <Badge color={plugin.running ? "green" : "gray"}>
-                          {plugin.running
-                            ? t("plugin.running", "Running")
-                            : t("plugin.stopped", "Stopped")}
-                        </Badge>
-                        <Text size="2" color="gray">
-                          v{plugin.version}
-                          {displayText(plugin.author)
-                            ? ` · ${displayText(plugin.author)}`
-                            : ""}
-                        </Text>
+      <Box className="overflow-hidden">
+        <AnimatePresence mode="wait" initial={false} custom={slideDirection}>
+          <motion.div
+            key={statusFilter}
+            custom={slideDirection}
+            variants={{
+              enter: (direction: number) => ({ opacity: 0, x: reduceMotion ? 0 : direction * 24 }),
+              center: { opacity: 1, x: 0 },
+              exit: (direction: number) => ({ opacity: 0, x: reduceMotion ? 0 : -direction * 24 }),
+            }}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{ duration: reduceMotion ? 0 : 0.16, ease: "easeOut" }}
+          >
+            {filteredPlugins.length === 0 ? (
+              <Callout.Root>
+                <Callout.Text>
+                  {plugins.length === 0
+                    ? t("plugin.no_plugins", "No plugins installed yet")
+                    : t("common.no_data", "No data")}
+                </Callout.Text>
+              </Callout.Root>
+            ) : (
+              <Flex direction="column" gap="3" className="km-plugins-list">
+                {filteredPlugins.map((plugin) => (
+                  <Card key={plugin.short} className="km-plugin-card w-full">
+                    <Flex direction="column" gap="2">
+                      <Flex align="center" justify="between" gap="4">
+                        <Flex align="center" gap="3" className="min-w-0">
+                          {renderPluginIcon(plugin, 20, "h-5 w-5 shrink-0")}
+                          <Flex direction="column" gap="1" className="min-w-0">
+                            <Flex align="center" gap="2" wrap="wrap">
+                              <Text weight="bold">
+                                {displayText(plugin.name) || plugin.short}
+                              </Text>
+                              <Badge color={plugin.running ? "green" : "gray"}>
+                                {plugin.running
+                                  ? t("plugin.running", "Running")
+                                  : t("plugin.stopped", "Stopped")}
+                              </Badge>
+                              <Text size="2" color="gray">
+                                v{plugin.version}
+                                {displayText(plugin.author)
+                                  ? ` · ${displayText(plugin.author)}`
+                                  : ""}
+                              </Text>
+                            </Flex>
+                            {displayText(plugin.description) && (
+                              <Text size="2" color="gray" className="truncate">
+                                {displayText(plugin.description)}
+                              </Text>
+                            )}
+                          </Flex>
+                        </Flex>
+                        <Flex align="center" gap="3" className="shrink-0">
+                          {hasConfiguration(plugin) && (
+                            <Button
+                              size="1"
+                              variant="soft"
+                              onClick={() => setConfigPlugin(plugin)}
+                            >
+                              <Settings2 size={14} />
+                              {t("plugin.config", "Configuration")}
+                            </Button>
+                          )}
+                          <Button
+                            size="1"
+                            variant="soft"
+                            onClick={() => openLogs(plugin)}
+                          >
+                            <FileText size={14} />
+                            {t("logs.title", "Logs")}
+                          </Button>
+                          <Button
+                            size="1"
+                            variant="ghost"
+                            color="red"
+                            onClick={() => setPluginToDelete(plugin)}
+                            title={t("plugin.delete", "Delete plugin")}
+                            aria-label={t("plugin.delete", "Delete plugin")}
+                          >
+                            <Trash2 size={14} />
+                          </Button>
+                          <Switch
+                            checked={plugin.enabled}
+                            disabled={toggling === plugin.short}
+                            onCheckedChange={(checked) => toggle(plugin, checked)}
+                            aria-label={
+                              plugin.enabled
+                                ? t("plugin.disable", "Disable plugin")
+                                : t("plugin.enable", "Enable plugin")
+                            }
+                            title={
+                              plugin.enabled
+                                ? t("plugin.disable", "Disable plugin")
+                                : t("plugin.enable", "Enable plugin")
+                            }
+                          />
+                        </Flex>
                       </Flex>
-                      {displayText(plugin.description) && (
-                        <Text size="2" color="gray" className="truncate">
-                          {displayText(plugin.description)}
-                        </Text>
+                      {plugin.last_error && (
+                        <Callout.Root color="red" size="1">
+                          <Callout.Text>
+                            {t("plugin.last_error", "Last error")}:{" "}
+                            {plugin.last_error}
+                          </Callout.Text>
+                        </Callout.Root>
                       )}
                     </Flex>
-                  </Flex>
-                  <Flex align="center" gap="3" className="shrink-0">
-                    {hasConfiguration(plugin) && (
-                      <Button
-                        size="1"
-                        variant="soft"
-                        onClick={() =>
-                          navigate(
-                            `/admin/plugins/config?short=${encodeURIComponent(plugin.short)}`,
-                          )
-                        }
-                      >
-                        <Settings2 size={14} />
-                        {t("plugin.config", "Configuration")}
-                      </Button>
-                    )}
-                    <Button
-                      size="1"
-                      variant="soft"
-                      onClick={() => openLogs(plugin)}
-                    >
-                      <FileText size={14} />
-                      {t("logs.title", "Logs")}
-                    </Button>
-                    <Button
-                      size="1"
-                      variant="ghost"
-                      color="red"
-                      onClick={() => setPluginToDelete(plugin)}
-                      title={t("plugin.delete", "Delete plugin")}
-                      aria-label={t("plugin.delete", "Delete plugin")}
-                    >
-                      <Trash2 size={14} />
-                    </Button>
-                    <Switch
-                      checked={plugin.enabled}
-                      disabled={toggling === plugin.short}
-                      onCheckedChange={(checked) => toggle(plugin, checked)}
-                      aria-label={
-                        plugin.enabled
-                          ? t("plugin.disable", "Disable plugin")
-                          : t("plugin.enable", "Enable plugin")
-                      }
-                      title={
-                        plugin.enabled
-                          ? t("plugin.disable", "Disable plugin")
-                          : t("plugin.enable", "Enable plugin")
-                      }
-                    />
-                  </Flex>
-                </Flex>
-                {plugin.last_error && (
-                  <Callout.Root color="red" size="1">
-                    <Callout.Text>
-                      {t("plugin.last_error", "Last error")}:{" "}
-                      {plugin.last_error}
-                    </Callout.Text>
-                  </Callout.Root>
-                )}
+                  </Card>
+                ))}
               </Flex>
-            </Card>
-          ))}
-        </Flex>
+            )}
+
+          </motion.div>
+        </AnimatePresence>
+      </Box>
+
+      {configPlugin && (
+        <PluginConfigDialog
+          key={configPlugin.short}
+          plugin={configPlugin}
+          onClose={() => setConfigPlugin(null)}
+          onSaved={() => {
+            refreshNavigation();
+            void loadList();
+          }}
+        />
       )}
 
       {/* 权限确认弹窗 */}

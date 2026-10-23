@@ -1,4 +1,18 @@
 {
+  "adminNavigation": {
+    "operations": "Monitoring & operations",
+    "system": "System settings",
+    "security": "Account & security",
+    "site": "Site settings",
+    "general": "General settings",
+    "login": "Authentication",
+    "profile": "Profile",
+    "sessions": "Login sessions",
+    "pluginSettings": "Plugin settings",
+    "events": "Event notifications",
+    "pluginFeatures": "Plugin features",
+    "extensions": "Appearance & plugins"
+  },
   "notificationUpgrade": {
     "title": "Notification Channels Have Changed",
     "description": "You upgraded from a version earlier than 1.6.0. Notification channels have undergone breaking changes. Please reconfigure and test your notification channels to ensure alerts are delivered.",

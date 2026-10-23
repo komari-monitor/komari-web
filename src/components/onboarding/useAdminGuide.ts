@@ -77,7 +77,7 @@ export function useAdminGuide(ready: boolean) {
 
   const guideSteps = guide ? steps[guide] ?? [] : [];
   const menu = guide === "notifications" ? "/admin/notification/channels"
-    : guide === "markets" ? (step === 0 ? "/admin/themes" : "/admin/plugins") : null;
+    : guide === "markets" ? "/admin/themes" : null;
 
   return {
     guide,

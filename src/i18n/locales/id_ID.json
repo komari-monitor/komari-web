@@ -1,4 +1,18 @@
 {
+  "adminNavigation": {
+    "operations": "Pemantauan & operasi",
+    "system": "Pengaturan sistem",
+    "security": "Akun & keamanan",
+    "site": "Pengaturan situs",
+    "general": "Pengaturan umum",
+    "login": "Autentikasi",
+    "profile": "Profil",
+    "sessions": "Sesi login",
+    "pluginSettings": "Pengaturan plugin",
+    "events": "Notifikasi peristiwa",
+    "pluginFeatures": "Fitur plugin",
+    "extensions": "Tampilan & plugin"
+  },
   "about": {
     "ai": "Proses pengembangan proyek Komari didukung oleh alat kecerdasan buatan. Alat-alat ini digunakan untuk menjalankan tugas seperti pembuatan kode, refactoring, dan debugging, untuk meningkatkan efisiensi pengembangan dan kualitas kode. Semua kode dan saran yang dihasilkan oleh AI telah diperiksa dan divalidasi oleh pengembang manusia.",
     "open_source": "Komari bersifat open source berdasarkan lisensi MIT dan dibangun menggunakan perangkat lunak open source berikut:",
@@ -819,7 +833,7 @@
     "markets": {
       "action": "Jelajahi Plugin",
       "description": "Jelajahi tema di Pasar Tema untuk mengubah tampilan halaman monitoring. Setelah diinstal, kelola di menu 'Tema'.",
-      "plugins_description": "Pasar Plugin menyediakan lebih banyak fitur ekstensi. Setelah diinstal, kelola dan konfigurasikan plugin dari menu 'Plugin'.",
+      "plugins_description": "Pasar Plugin menyediakan lebih banyak fitur plugin. Setelah diinstal, kelola dan konfigurasikan plugin dari menu 'Plugin'.",
       "plugins_title": "Ekstensi Komari dengan Plugin",
       "title": "Jelajahi Pasar Tema"
     },

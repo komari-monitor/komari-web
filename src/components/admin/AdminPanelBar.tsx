@@ -58,9 +58,17 @@ interface AdminPanelBarProps {
 const AdminPanelBar = ({ content, onboardingReady = false }: AdminPanelBarProps) => {
   const { call } = useRPC2Call();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [openSubMenus, setOpenSubMenus] = useState<{ [key: string]: boolean }>({
-    // 默认所有子菜单关闭
+  const [openSubMenus, setOpenSubMenus] = useState<Record<string, boolean>>(() => {
+    try {
+      const stored: unknown = JSON.parse(localStorage.getItem("komari.admin.submenus") || "{}");
+      if (!stored || typeof stored !== "object" || Array.isArray(stored)) return {};
+      return Object.fromEntries(Object.entries(stored).filter(([, value]) => typeof value === "boolean"));
+    } catch {
+      return {};
+    }
   });
+  const previousMenuRoute = useRef<string | null>(null);
+  const initializedMenuGroups = useRef(new Set<string>());
   const isMobile = useIsMobile();
   const ishttps = window.location.protocol === "https:";
   const [t, i18n] = useTranslation();
@@ -169,7 +177,7 @@ const AdminPanelBar = ({ content, onboardingReady = false }: AdminPanelBarProps)
           t("theme.manage_with_name", {
             name: currentTheme === "default" ? "" : currentTheme,
           });
-        const icon: string = cfg.icon || "Palette"; // fallback icon
+        const icon: string = cfg.icon || "Settings2"; // fallback icon
         const item: ExtendedMenuItem = {
           labelKey: rawLabel,
           rawLabel,
@@ -328,48 +336,68 @@ const AdminPanelBar = ({ content, onboardingReady = false }: AdminPanelBarProps)
     return () => window.removeEventListener("resize", handleResize);
   }, [isMobile]);
 
-  // 主题配置和插件注入页面分别作为“主题”“插件”主菜单的二级菜单。
+  // 外观与插件保留管理入口；插件自定义页面使用独立的插件功能菜单。
   const mergedBaseMenuItems: ExtendedMenuItem[] = useMemo(() => {
-    return baseMenuItems.map((item) => {
-      if (item.labelKey === "theme.menu" && extraMenuItems.length > 0) {
-        return {
-          ...item,
-          children: [...(item.children || []), ...extraMenuItems],
-        };
+    return baseMenuItems.flatMap((item): ExtendedMenuItem[] => {
+      if (item.labelKey === "adminNavigation.extensions") {
+        const children = item.children || [];
+        return [
+          {
+            ...item,
+            children: [
+              ...children.filter((child) => !child.path.includes("/plugins")),
+              ...extraMenuItems,
+              ...children.filter((child) => child.path.includes("/plugins")),
+            ],
+          },
+          ...(pluginMenuItems.length > 0
+            ? [{
+                labelKey: "adminNavigation.pluginFeatures",
+                path: "/admin/plugin-page",
+                icon: "PanelsTopLeft",
+                children: pluginMenuItems,
+              }]
+            : []),
+        ];
       }
-      if (item.labelKey === "plugin.title" && pluginMenuItems.length > 0) {
-        return {
-          ...item,
-          children: [...(item.children || []), ...pluginMenuItems],
-        };
-      }
-      return item;
+      return [item];
     });
   }, [extraMenuItems, pluginMenuItems]);
   const bottomStartPath = mergedBaseMenuItems.find(
     (item) => item.bottom,
   )?.path;
 
-  // 根据路径自动展开子菜单（包含动态扩展项；plugin-page 用 query 定位文件，
-  // 因此子菜单匹配基于 pathname 部分）
+  // 菜单刷新保留手动状态；首次加载或路由切换时展开当前页面所在分组。
   useEffect(() => {
-    const newState: { [key: string]: boolean } = {};
-    const combined: ExtendedMenuItem[] = mergedBaseMenuItems;
-    combined.forEach((item) => {
-      if (item.children) {
-        newState[item.path] = item.children.some((child: MenuItem) => {
-          const childPath = child.path.split("?")[0];
-          return (
-            location.pathname === childPath ||
-            (childPath !== "/" &&
-              location.pathname.startsWith(childPath + "/"))
-          );
+    const route = location.pathname + location.search;
+    const routeChanged = previousMenuRoute.current !== route;
+    previousMenuRoute.current = route;
+    const groups = mergedBaseMenuItems.filter((item) => item.children?.length);
+    const newGroups = new Set(groups.filter((item) => !initializedMenuGroups.current.has(item.path)).map((item) => item.path));
+    groups.forEach((item) => initializedMenuGroups.current.add(item.path));
+    setOpenSubMenus((previous) => {
+      const next = { ...previous };
+      for (const item of groups) {
+        const active = item.children!.some((child) => {
+          if (child.path.includes("?")) return child.path === route;
+          const path = child.path;
+          return location.pathname === path || (path !== "/" && location.pathname.startsWith(path + "/"));
         });
+        if (active && (routeChanged || newGroups.has(item.path))) next[item.path] = true;
       }
+      if (onboarding.menu) next[onboarding.menu] = true;
+      return Object.keys(next).some((key) => next[key] !== previous[key]) ? next : previous;
     });
-    if (onboarding.menu) newState[onboarding.menu] = true;
-    setOpenSubMenus(newState);
-  }, [location.pathname, extraMenuItems, mergedBaseMenuItems, onboarding.menu]);
+  }, [location.pathname, location.search, mergedBaseMenuItems, onboarding.menu]);
+
+  useEffect(() => {
+    if (onboarding.guide) return;
+    try {
+      localStorage.setItem("komari.admin.submenus", JSON.stringify(openSubMenus));
+    } catch {
+      // 存储不可用时仍保留本次会话中的展开状态。
+    }
+  }, [openSubMenus, onboarding.guide]);
 
   // 侧边栏动画变体
   const sidebarVariants = {
@@ -885,15 +913,14 @@ const SidebarItem = ({
         onClick={onClick}
         target={openInNewTab ? "_blank" : undefined}
         rel={openInNewTab ? "noopener noreferrer" : undefined}
-        className="group transition-colors duration-200 hover:bg-accent-3 rounded-md"
+        className="group block w-full rounded-md"
       >
         <Flex
-          className="p-2 gap-2 h-full"
+          className="p-2 gap-2 h-full transition-colors duration-200 group-hover:bg-accent-3 group-focus-visible:bg-accent-3"
           align="center"
           style={{
             borderLeft: "4px solid transparent",
             borderRadius: "6px",
-            backgroundColor: "transparent",
             color: "inherit",
             transition: "background-color 0.2s, border-color 0.2s",
           }}
@@ -920,17 +947,17 @@ const SidebarItem = ({
       data-guide-nav={to}
       to={to}
       onClick={onClick}
-      className="group transition-colors duration-200 hover:bg-accent-3 rounded-md"
+      className="group block w-full rounded-md"
     >
       <Flex
-        className="p-2 gap-2"
+        className={`p-2 gap-2 transition-colors duration-200 ${isActive ? "" : "group-hover:bg-accent-3 group-focus-visible:bg-accent-3"}`}
         align="center"
         style={{
           borderLeft: isActive
             ? "4px solid var(--accent-8)"
             : "4px solid transparent",
           borderRadius: "6px",
-          backgroundColor: isActive ? "var(--accent-4)" : "transparent",
+          backgroundColor: isActive ? "var(--accent-4)" : undefined,
           color: isActive ? "var(--accent-10)" : "inherit",
           transition: "background-color 0.2s, border-color 0.2s",
         }}

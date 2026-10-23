@@ -17,7 +17,7 @@
       "newTab": true
     },
     {
-      "labelKey": "operations.title",
+      "labelKey": "adminNavigation.operations",
       "path": "/admin/ping",
       "icon": "Bolt",
       "children": [
@@ -32,9 +32,14 @@
           "icon": "Code"
         },
         {
-          "labelKey": "sessions.title",
-          "path": "/admin/sessions",
-          "icon": "Users"
+          "labelKey": "logs.title",
+          "path": "/admin/logs",
+          "icon": "FileText"
+        },
+        {
+          "labelKey": "pprof.title",
+          "path": "/admin/pprof",
+          "icon": "BarChart2"
         }
       ]
     },
@@ -49,7 +54,7 @@
           "icon": "MessageCircleMore"
         },
         {
-          "labelKey": "notification.general.title",
+          "labelKey": "adminNavigation.events",
           "path": "/admin/notification/general",
           "icon": "Ellipsis"
         },
@@ -61,31 +66,24 @@
       ]
     },
     {
-      "labelKey": "theme.menu",
+      "labelKey": "adminNavigation.extensions",
       "path": "/admin/themes",
-      "icon": "Palette",
+      "icon": "MonitorCog",
       "children": [
         {
           "labelKey": "theme.title",
           "path": "/admin/themes",
-          "icon": "Palette"
+          "icon": "Paintbrush"
         },
         {
           "labelKey": "market.themes",
           "path": "/admin/market/themes",
-          "icon": "Store"
-        }
-      ]
-    },
-    {
-      "labelKey": "plugin.title",
-      "path": "/admin/plugins",
-      "icon": "Blocks",
-      "children": [
+          "icon": "ShoppingBag"
+        },
         {
           "labelKey": "plugin.manage",
           "path": "/admin/plugins",
-          "icon": "Blocks"
+          "icon": "Package"
         },
         {
           "labelKey": "plugin.market",
@@ -93,65 +91,61 @@
           "icon": "Store"
         },
         {
-          "labelKey": "plugin.config",
+          "labelKey": "adminNavigation.pluginSettings",
           "path": "/admin/plugins/config",
-          "icon": "Settings2"
+          "icon": "SlidersHorizontal"
         }
       ]
     },
     {
-      "labelKey": "system.title",
+      "labelKey": "adminNavigation.system",
       "path": "/admin/settings/site",
-      "icon": "Bolt",
+      "icon": "Settings2",
       "children": [
         {
-          "labelKey": "settings.site.title",
+          "labelKey": "adminNavigation.site",
           "path": "/admin/settings/site",
           "icon": "Home"
         },
         {
-          "labelKey": "settings.general.title",
+          "labelKey": "adminNavigation.general",
           "path": "/admin/settings/general",
           "icon": "Ellipsis"
-        },
-        {
-          "labelKey": "settings.sign_on.title",
-          "path": "/admin/settings/sign-on",
-          "icon": "CircleArrowRight"
         },
         {
           "labelKey": "settings.metrics.title",
           "path": "/admin/settings/metrics",
           "icon": "Database"
-        },
-        {
-          "labelKey": "logs.title",
-          "path": "/admin/logs",
-          "icon": "FileText"
-        },
-        {
-          "labelKey": "pprof.title",
-          "path": "/admin/pprof",
-          "icon": "Activity"
         }
       ]
     },
     {
-      "labelKey": "account.menu",
+      "labelKey": "adminNavigation.security",
       "path": "/admin/account",
       "icon": "UserCircle",
       "children": [
         {
-          "labelKey": "account.title",
+          "labelKey": "adminNavigation.profile",
           "path": "/admin/account",
           "icon": "UserCircle"
         },
         {
-          "labelKey": "common.about",
-          "path": "/admin/about",
-          "icon": "AtSign"
+          "labelKey": "adminNavigation.login",
+          "path": "/admin/settings/sign-on",
+          "icon": "CircleArrowRight"
+        },
+        {
+          "labelKey": "adminNavigation.sessions",
+          "path": "/admin/sessions",
+          "icon": "Users"
         }
       ]
+    },
+    {
+      "labelKey": "common.about",
+      "path": "/admin/about",
+      "icon": "AtSign",
+      "bottom": true
     },
     {
       "labelKey": "common.documentation",

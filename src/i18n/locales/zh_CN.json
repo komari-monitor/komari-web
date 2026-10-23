@@ -1,4 +1,18 @@
 {
+  "adminNavigation": {
+    "operations": "监控与运维",
+    "system": "系统设置",
+    "security": "账号与安全",
+    "site": "站点设置",
+    "general": "通用设置",
+    "login": "登录认证",
+    "profile": "个人账户",
+    "sessions": "登录会话",
+    "pluginSettings": "插件设置",
+    "events": "事件通知",
+    "pluginFeatures": "插件功能",
+    "extensions": "外观与插件"
+  },
   "about": {
     "ai": "Komari 项目的开发过程得到了人工智能工具的辅助。这些工具被用于执行代码生成、重构和调试等任务，以提高开发效率和代码质量。所有由 AI 生成的代码和建议都经过了人类开发者的审查与验证。",
     "open_source": "Komari 基于 MIT 协议开源，并使用了以下开源软件构建：",
@@ -819,7 +833,7 @@
     "markets": {
       "action": "浏览插件",
       "description": "在主题市场浏览主题，为监控页面更换外观。安装后可在「主题」菜单中管理。",
-      "plugins_description": "插件市场提供更多扩展功能。安装后，可从「插件」菜单管理和配置插件。",
+      "plugins_description": "插件市场提供更多插件功能。安装后，可从「插件」菜单管理和配置插件。",
       "plugins_title": "用插件扩展 Komari",
       "title": "逛逛主题市场"
     },
