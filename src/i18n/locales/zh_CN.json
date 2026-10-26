@@ -887,6 +887,15 @@
     "title": "延迟监测"
   },
   "plugin": {
+    "categories": {
+      "integration": "数据与集成",
+      "monitoring": "监控与告警",
+      "network": "网络与域名",
+      "notification": "通知渠道",
+      "security": "登录与安全",
+      "uncategorized": "未分类",
+      "utility": "系统与工具"
+    },
     "config": "配置",
     "config_no_configurable_plugins": "没有带配置项的插件",
     "config_no_items": "该插件没有配置项",
@@ -912,6 +921,7 @@
     "logs_load_failed": "加载日志失败",
     "manage": "插件管理",
     "market": "插件市场",
+    "market_category": "插件分类",
     "market_install": "安装",
     "market_install_success": "插件已安装",
     "market_installing": "安装中...",
@@ -921,16 +931,6 @@
     "market_plugins": "插件",
     "market_refresh_success": "插件源已刷新",
     "market_reinstall": "重新安装",
-    "market_category": "插件分类",
-    "categories": {
-      "notification": "通知渠道",
-      "monitoring": "监控与告警",
-      "network": "网络与域名",
-      "security": "登录与安全",
-      "integration": "数据与集成",
-      "utility": "系统与工具",
-      "uncategorized": "未分类"
-    },
     "market_search": "搜索插件...",
     "market_uninstall_success": "插件已卸载",
     "market_update_required": "需要更新 Komari",
