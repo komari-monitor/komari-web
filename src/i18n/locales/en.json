@@ -891,6 +891,16 @@
     "market_plugins": "plugins",
     "market_refresh_success": "Plugin sources refreshed",
     "market_reinstall": "Reinstall",
+    "market_category": "Plugin category",
+    "categories": {
+      "notification": "Notifications",
+      "monitoring": "Monitoring and alerts",
+      "network": "Network and domains",
+      "security": "Login and security",
+      "integration": "Data and integrations",
+      "utility": "System and utilities",
+      "uncategorized": "Uncategorized"
+    },
     "market_search": "Search plugins...",
     "market_update_required": "Komari update required",
     "market_uninstall_success": "Plugin uninstalled",

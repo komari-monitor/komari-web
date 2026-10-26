@@ -896,6 +896,16 @@
     "market_plugins": "外掛",
     "market_refresh_success": "外掛來源已重新整理",
     "market_reinstall": "重新安裝",
+    "market_category": "外掛分類",
+    "categories": {
+      "notification": "通知管道",
+      "monitoring": "監控與警報",
+      "network": "網路與網域",
+      "security": "登入與安全",
+      "integration": "資料與整合",
+      "utility": "系統與工具",
+      "uncategorized": "未分類"
+    },
     "market_search": "搜尋外掛...",
     "market_uninstall_success": "外掛已卸載",
     "market_update_required": "需要更新 Komari",

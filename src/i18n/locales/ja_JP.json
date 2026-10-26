@@ -921,6 +921,16 @@
     "market_plugins": "プラグイン",
     "market_refresh_success": "プラグインソースを更新しました",
     "market_reinstall": "再インストール",
+    "market_category": "プラグインのカテゴリ",
+    "categories": {
+      "notification": "通知チャンネル",
+      "monitoring": "監視とアラート",
+      "network": "ネットワークとドメイン",
+      "security": "ログインとセキュリティ",
+      "integration": "データと連携",
+      "utility": "システムとツール",
+      "uncategorized": "未分類"
+    },
     "market_search": "プラグインを検索...",
     "market_uninstall_success": "プラグインをアンインストールしました",
     "market_update_required": "Komari の更新が必要です",

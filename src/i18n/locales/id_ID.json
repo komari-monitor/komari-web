@@ -921,6 +921,16 @@
     "market_plugins": "plugin",
     "market_refresh_success": "Sumber plugin disegarkan",
     "market_reinstall": "Pasang Ulang",
+    "market_category": "Kategori plugin",
+    "categories": {
+      "notification": "Saluran notifikasi",
+      "monitoring": "Pemantauan dan peringatan",
+      "network": "Jaringan dan domain",
+      "security": "Login dan keamanan",
+      "integration": "Data dan integrasi",
+      "utility": "Sistem dan utilitas",
+      "uncategorized": "Tanpa kategori"
+    },
     "market_search": "Cari plugin...",
     "market_uninstall_success": "Plugin dihapus",
     "market_update_required": "Komari perlu diperbarui",

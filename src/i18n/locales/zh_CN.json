@@ -921,6 +921,16 @@
     "market_plugins": "插件",
     "market_refresh_success": "插件源已刷新",
     "market_reinstall": "重新安装",
+    "market_category": "插件分类",
+    "categories": {
+      "notification": "通知渠道",
+      "monitoring": "监控与告警",
+      "network": "网络与域名",
+      "security": "登录与安全",
+      "integration": "数据与集成",
+      "utility": "系统与工具",
+      "uncategorized": "未分类"
+    },
     "market_search": "搜索插件...",
     "market_uninstall_success": "插件已卸载",
     "market_update_required": "需要更新 Komari",

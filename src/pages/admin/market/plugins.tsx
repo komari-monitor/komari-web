@@ -12,6 +12,7 @@ import {
   IconButton,
   Separator,
   Switch,
+  Tabs,
   Text,
   TextField,
 } from "@radix-ui/themes";
@@ -31,6 +32,8 @@ import { useTranslation } from "react-i18next";
 import PluginConfigDialog from "@/components/admin/PluginConfigDialog";
 import { useAdminNavigation } from "@/contexts/AdminNavigationContext";
 import { toast } from "sonner";
+import { AnimatePresence, motion, useReducedMotion } from "motion/react";
+import { normalizePluginCategory, pluginCategories } from "@/utils/pluginCategory";
 import Loading from "@/components/loading";
 import { useRPC2Call } from "@/contexts/RPC2Context";
 import { resolveI18nText, type I18nText } from "@/utils/i18nText";
@@ -54,6 +57,7 @@ interface SourceStatus {
 interface MarketPlugin {
   name: I18nText;
   short: string;
+  category?: string;
   description?: I18nText;
   version: string;
   author: I18nText;
@@ -189,6 +193,14 @@ export default function PluginMarketPage() {
     new Map(),
   );
   const [search, setSearch] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("all");
+  const [slideDirection, setSlideDirection] = useState(1);
+  const reduceMotion = useReducedMotion();
+  const changeCategoryFilter = (value: string) => {
+    const order: readonly string[] = ["all", ...pluginCategories];
+    setSlideDirection(order.indexOf(value) > order.indexOf(categoryFilter) ? 1 : -1);
+    setCategoryFilter(value);
+  };
   const [loading, setLoading] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const [installing, setInstalling] = useState<string | null>(null);
@@ -242,9 +254,9 @@ export default function PluginMarketPage() {
 
   const filteredPlugins = useMemo(() => {
     const term = search.trim().toLocaleLowerCase();
-    if (!term) return plugins;
     return plugins.filter((plugin) =>
-      [
+      (categoryFilter === "all" || normalizePluginCategory(plugin.category) === categoryFilter) &&
+      (!term || [
         displayText(plugin.name),
         plugin.short,
         displayText(plugin.author),
@@ -253,9 +265,9 @@ export default function PluginMarketPage() {
       ]
         .join(" ")
         .toLocaleLowerCase()
-        .includes(term),
+        .includes(term)),
     );
-  }, [displayText, search, plugins]);
+  }, [categoryFilter, displayText, search, plugins]);
 
   const refresh = async () => {
     setRefreshing(true);
@@ -508,150 +520,181 @@ export default function PluginMarketPage() {
         </TextField.Slot>
       </TextField.Root>
 
-      {filteredPlugins.length === 0 ? (
-        <Callout.Root>
-          <Callout.Text>
-            {t("plugin.market_no_plugins", "No plugins in the market")}
-          </Callout.Text>
-        </Callout.Root>
-      ) : (
-        <Grid
-          columns={{ initial: "1", sm: "2", lg: "3" }}
-          gap="3"
-          className="km-market-plugins-list"
-        >
-          {filteredPlugins.map((plugin) => {
-            const installedVersion = installed.get(plugin.short);
-            const isInstalled = installedVersion !== undefined;
-            const hasUpdate = Boolean(
-              installedVersion &&
-              isVersionNewer(plugin.version, installedVersion),
-            );
-            const komariCompatible = isKomariCompatible(
-              plugin.komari,
-              currentVersion,
-            );
-            const canConfigure =
-              isInstalled && hasConfiguration(installedInfo.get(plugin.short));
-            const key = `${plugin.source_id}:${plugin.short}`;
-            const busy = toggling.has(plugin.short) || deletingPlugin === plugin.short || installing === key;
-            return (
-              <Card key={key} className="km-market-plugin-card">
-                <Flex direction="column" gap="2" className="h-full">
-                  <Flex align="center" justify="between" gap="2" wrap="wrap">
-                    <Text weight="bold">
-                      {displayText(plugin.name) || plugin.short}
-                    </Text>
-                    <Flex align="center" justify="end" gap="1" wrap="wrap">
-                      {hasUpdate && (
-                        <Badge color="orange" variant="soft">
-                          {t("common.update_available", "New version available")}
-                        </Badge>
-                      )}
-                      {isInstalled && (
-                        <Badge color={installedInfo.get(plugin.short)?.running ? "green" : "blue"} variant="soft">
-                          {installedInfo.get(plugin.short)?.running
-                            ? t("exec.status.running", "Running")
-                            : t("market.installed", "Installed")} v{installedVersion?.replace(/^v/i, "")}
-                        </Badge>
-                      )}
-                      {!isInstalled && (!plugin.installable || !komariCompatible) && (
-                        <Badge color="gray" variant="soft">
-                          {komariCompatible
-                            ? t(
-                                "market.install_unavailable",
-                                "Package unavailable",
-                              )
-                            : t(
-                                "plugin.market_update_required",
-                                "Komari update required",
-                              )}
-                        </Badge>
-                      )}
-                    </Flex>
-                  </Flex>
-                  <Text size="2" color="gray">
-                    {displayText(plugin.author)}
-                    {plugin.komari ? ` · ${plugin.komari}` : ""}
-                  </Text>
-                  {displayText(plugin.description) && (
-                    <Text size="2">{displayText(plugin.description)}</Text>
-                  )}
-                  <Flex align="center" justify="between" gap="2" wrap="wrap" className="mt-auto">
-                    <Text size="1" color="gray">
-                      {plugin.source_name}
-                    </Text>
-                    <Flex align="center" gap="2" wrap="wrap" justify="end">
-                      {isInstalled && installedInfo.has(plugin.short) && (
-                        <Switch
-                          size="1"
-                          checked={installedInfo.get(plugin.short)?.enabled ?? false}
-                          disabled={busy}
-                          onCheckedChange={() => { const info = installedInfo.get(plugin.short); if (info) void togglePlugin(info); }}
-                          aria-label={`${displayText(plugin.name) || plugin.short}: ${installedInfo.get(plugin.short)?.enabled
-                            ? t("plugin.disable", "Disable plugin")
-                            : t("plugin.enable", "Enable plugin")}`}
-                        />
-                      )}
-                      {!isInstalled && plugin.installable && komariCompatible && (
-                        <Button
-                          size="1"
-                          disabled={busy}
-                          onClick={() => installPlugin(plugin)}
-                        >
-                          <Download size={14} />
-                          {installing === key
-                            ? t("plugin.market_installing", "Installing...")
-                            : t("plugin.market_install", "Install")}
-                        </Button>
-                      )}
-                      {isInstalled && hasUpdate && plugin.installable && komariCompatible && (
-                        <Button
-                          size="1"
-                          color="yellow"
-                          variant="soft"
-                          disabled={busy}
-                          onClick={() => installPlugin(plugin)}
-                        >
-                          {installing === key ? (
-                            <RefreshCw size={14} className="animate-spin" />
-                          ) : (
-                            <RefreshCw size={14} />
-                          )}
-                          {t("common.update", "Update")}
-                        </Button>
-                      )}
-                      {canConfigure && (
-                        <Button
-                          size="1"
-                          variant="soft"
-                          disabled={busy}
-                          onClick={() => setConfigPlugin(installedInfo.get(plugin.short) || null)}
-                        >
-                          <Settings2 size={14} />
-                          {t("plugin.config", "Configuration")}
-                        </Button>
-                      )}
-                      {isInstalled && (
-                        <Button
-                          size="1"
-                          variant="soft"
-                          color="red"
-                          disabled={busy}
-                          onClick={() => setPluginToUninstall(plugin)}
-                        >
-                          <Trash2 size={14} />
-                          {t("market.uninstall", "Uninstall")}
-                        </Button>
-                      )}
-                    </Flex>
-                  </Flex>
-                </Flex>
-              </Card>
-            );
-          })}
-        </Grid>
-      )}
+      <Tabs.Root value={categoryFilter} onValueChange={changeCategoryFilter}>
+        <Tabs.List aria-label={t("plugin.market_category")} className="overflow-x-auto">
+          <Tabs.Trigger value="all" className="shrink-0">{t("common.all", "All")}</Tabs.Trigger>
+          {pluginCategories.map((category) => (
+            <Tabs.Trigger key={category} value={category} className="shrink-0">
+              {t(`plugin.categories.${category}`)}
+            </Tabs.Trigger>
+          ))}
+        </Tabs.List>
+      </Tabs.Root>
+
+      <Box className="overflow-hidden">
+        <AnimatePresence mode="wait" initial={false} custom={slideDirection}>
+          <motion.div
+            key={categoryFilter}
+            custom={slideDirection}
+            variants={{
+              enter: (direction: number) => ({ opacity: 0, x: reduceMotion ? 0 : direction * 24 }),
+              center: { opacity: 1, x: 0 },
+              exit: (direction: number) => ({ opacity: 0, x: reduceMotion ? 0 : -direction * 24 }),
+            }}
+            initial="enter"
+            animate="center"
+            exit="exit"
+            transition={{ duration: reduceMotion ? 0 : 0.10, ease: "easeOut" }}
+          >
+            {filteredPlugins.length === 0 ? (
+              <Callout.Root>
+                <Callout.Text>
+                  {plugins.length === 0
+                    ? t("plugin.market_no_plugins", "No plugins in the market")
+                    : t("common.no_data", "No data")}
+                </Callout.Text>
+              </Callout.Root>
+            ) : (
+              <Grid
+                columns={{ initial: "1", sm: "2", lg: "3" }}
+                gap="3"
+                className="km-market-plugins-list"
+              >
+                {filteredPlugins.map((plugin) => {
+                  const installedVersion = installed.get(plugin.short);
+                  const isInstalled = installedVersion !== undefined;
+                  const hasUpdate = Boolean(
+                    installedVersion &&
+                    isVersionNewer(plugin.version, installedVersion),
+                  );
+                  const komariCompatible = isKomariCompatible(
+                    plugin.komari,
+                    currentVersion,
+                  );
+                  const canConfigure =
+                    isInstalled && hasConfiguration(installedInfo.get(plugin.short));
+                  const key = `${plugin.source_id}:${plugin.short}`;
+                  const busy = toggling.has(plugin.short) || deletingPlugin === plugin.short || installing === key;
+                  return (
+                    <Card key={key} className="km-market-plugin-card">
+                      <Flex direction="column" gap="2" className="h-full">
+                        <Flex align="center" justify="between" gap="2" wrap="wrap">
+                          <Text weight="bold">
+                            {displayText(plugin.name) || plugin.short}
+                          </Text>
+                          <Flex align="center" justify="end" gap="1" wrap="wrap">
+                            {hasUpdate && (
+                              <Badge color="orange" variant="soft">
+                                {t("common.update_available", "New version available")}
+                              </Badge>
+                            )}
+                            {isInstalled && (
+                              <Badge color={installedInfo.get(plugin.short)?.running ? "green" : "blue"} variant="soft">
+                                {installedInfo.get(plugin.short)?.running
+                                  ? t("exec.status.running", "Running")
+                                  : t("market.installed", "Installed")} v{installedVersion?.replace(/^v/i, "")}
+                              </Badge>
+                            )}
+                            {!isInstalled && (!plugin.installable || !komariCompatible) && (
+                              <Badge color="gray" variant="soft">
+                                {komariCompatible
+                                  ? t(
+                                      "market.install_unavailable",
+                                      "Package unavailable",
+                                    )
+                                  : t(
+                                      "plugin.market_update_required",
+                                      "Komari update required",
+                                    )}
+                              </Badge>
+                            )}
+                          </Flex>
+                        </Flex>
+                        <Text size="2" color="gray">
+                          {displayText(plugin.author)}
+                          {plugin.komari ? ` · ${plugin.komari}` : ""}
+                        </Text>
+                        {displayText(plugin.description) && (
+                          <Text size="2">{displayText(plugin.description)}</Text>
+                        )}
+                        <Flex align="center" justify="between" gap="2" wrap="wrap" className="mt-auto">
+                          <Text size="1" color="gray">
+                            {plugin.source_name}
+                          </Text>
+                          <Flex align="center" gap="2" wrap="wrap" justify="end">
+                            {isInstalled && installedInfo.has(plugin.short) && (
+                              <Switch
+                                size="1"
+                                checked={installedInfo.get(plugin.short)?.enabled ?? false}
+                                disabled={busy}
+                                onCheckedChange={() => { const info = installedInfo.get(plugin.short); if (info) void togglePlugin(info); }}
+                                aria-label={`${displayText(plugin.name) || plugin.short}: ${installedInfo.get(plugin.short)?.enabled
+                                  ? t("plugin.disable", "Disable plugin")
+                                  : t("plugin.enable", "Enable plugin")}`}
+                              />
+                            )}
+                            {!isInstalled && plugin.installable && komariCompatible && (
+                              <Button
+                                size="1"
+                                disabled={busy}
+                                onClick={() => installPlugin(plugin)}
+                              >
+                                <Download size={14} />
+                                {installing === key
+                                  ? t("plugin.market_installing", "Installing...")
+                                  : t("plugin.market_install", "Install")}
+                              </Button>
+                            )}
+                            {isInstalled && hasUpdate && plugin.installable && komariCompatible && (
+                              <Button
+                                size="1"
+                                color="yellow"
+                                variant="soft"
+                                disabled={busy}
+                                onClick={() => installPlugin(plugin)}
+                              >
+                                {installing === key ? (
+                                  <RefreshCw size={14} className="animate-spin" />
+                                ) : (
+                                  <RefreshCw size={14} />
+                                )}
+                                {t("common.update", "Update")}
+                              </Button>
+                            )}
+                            {canConfigure && (
+                              <Button
+                                size="1"
+                                variant="soft"
+                                disabled={busy}
+                                onClick={() => setConfigPlugin(installedInfo.get(plugin.short) || null)}
+                              >
+                                <Settings2 size={14} />
+                                {t("plugin.config", "Configuration")}
+                              </Button>
+                            )}
+                            {isInstalled && (
+                              <Button
+                                size="1"
+                                variant="soft"
+                                color="red"
+                                disabled={busy}
+                                onClick={() => setPluginToUninstall(plugin)}
+                              >
+                                <Trash2 size={14} />
+                                {t("market.uninstall", "Uninstall")}
+                              </Button>
+                            )}
+                          </Flex>
+                        </Flex>
+                      </Flex>
+                    </Card>
+                  );
+                })}
+              </Grid>
+            )}
+          </motion.div>
+        </AnimatePresence>
+      </Box>
 
       {configPlugin && (
         <PluginConfigDialog

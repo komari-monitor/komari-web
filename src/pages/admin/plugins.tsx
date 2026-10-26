@@ -323,7 +323,7 @@ export default function PluginsPage() {
             initial="enter"
             animate="center"
             exit="exit"
-            transition={{ duration: reduceMotion ? 0 : 0.16, ease: "easeOut" }}
+            transition={{ duration: reduceMotion ? 0 : 0.10, ease: "easeOut" }}
           >
             {filteredPlugins.length === 0 ? (
               <Callout.Root>
