@@ -44,6 +44,8 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import type {
+  DashboardSummaryResponse,
+  DashboardTrafficSummary,
   MetricSeries,
   MetricTags,
   PingMetricStat,
@@ -56,7 +58,6 @@ import {
   metricSeriesColor,
   normalizeMetricSeriesList,
   pingMetricStatKey,
-  pingTaskId,
   pingTaskName,
 } from "@/utils/metricSeries";
 
@@ -70,45 +71,6 @@ const formatSpeed = (bytes: number): string => {
   if (i <= 1) decimals = 0;
   if (size >= 100) decimals = 0;
   return `${size.toFixed(decimals)} ${units[i]}`;
-};
-
-const weightedP95 = (
-  points: { value: number; count?: number }[],
-): number | null => {
-  const valid = points.filter(
-    (point) =>
-      Number.isFinite(point.value) &&
-      point.value >= 0 &&
-      (point.count ?? 1) > 0,
-  );
-  if (valid.length === 0) return null;
-  const total = valid.reduce((sum, point) => sum + (point.count ?? 1), 0);
-  const sorted = [...valid].sort((a, b) => a.value - b.value);
-  let cumulative = 0;
-  for (const point of sorted) {
-    cumulative += point.count ?? 1;
-    if (cumulative >= total * 0.95) return point.value;
-  }
-  return sorted[sorted.length - 1].value;
-};
-
-const weightedAverage = (
-  points: { value: number; count?: number }[],
-): number | null => {
-  const valid = points.filter(
-    (point) => Number.isFinite(point.value) && (point.count ?? 1) > 0,
-  );
-  if (valid.length === 0) return null;
-  const totalCount = valid.reduce(
-    (sum, point) => sum + (point.count ?? 1),
-    0,
-  );
-  return (
-    valid.reduce(
-      (sum, point) => sum + point.value * (point.count ?? 1),
-      0,
-    ) / totalCount
-  );
 };
 
 const formatPeakTime = (t: TFunction, timestamp: number): string => {
@@ -184,15 +146,6 @@ type TopRankItem = {
   peakTime: number;
 };
 
-type TrafficNodeTotals = {
-  uuid: string;
-  up: number;
-  down: number;
-  total: number;
-  peakRate: number;
-  peakTime: number;
-};
-
 type PingRankItem = {
   key: string;
   entityId: string;
@@ -207,197 +160,7 @@ type PingRankItem = {
 const CPU_METRIC_KEYS = ["cpu.usage"];
 const MEM_METRIC_KEYS = ["memory.used"];
 const NET_METRIC_KEYS = ["net.in.rate", "net.out.rate"];
-const NET_TOTAL_METRIC_KEYS = ["net.total.up", "net.total.down"];
 const PING_METRIC_KEYS = [PING_LATENCY_METRIC];
-
-// 首页所有指标卡共用一个 24h 查询（流量/CPU/内存/延迟），
-// 这里从响应中分别派生流量汇总与 TOP p95 排行。
-type TrafficSummary = {
-  points: {
-    time: number;
-    upRate: number;
-    downRate: number;
-    upCum: number;
-    downCum: number;
-  }[];
-  nodeTotals: TrafficNodeTotals[];
-  totalUp: number;
-  totalDown: number;
-};
-
-const computeTrafficSummary = (
-  res: QueryMetricsResponse | null,
-): TrafficSummary | null => {
-  if (!res) return null;
-
-  // The first cumulative counter after a collection gap/reset is a baseline,
-  // not traffic observed during that chart bucket.
-  const discontinuities = new Set<string>();
-  for (const series of res.series ?? []) {
-    if (!NET_TOTAL_METRIC_KEYS.includes(series.metric_key)) continue;
-    const direction = series.metric_key === "net.total.up" ? "up" : "down";
-    let previousValue: number | null = null;
-    let gapAfterValue = false;
-    let reboundBaseline: number | null = null;
-    for (const point of series.points ?? []) {
-      if (point.value == null) {
-        if (previousValue !== null) gapAfterValue = true;
-        continue;
-      }
-      const ts = new Date(point.time).getTime();
-      let discontinuity = gapAfterValue;
-      if (previousValue !== null && point.value < previousValue) {
-        discontinuity = true;
-        reboundBaseline = previousValue;
-      } else if (reboundBaseline !== null) {
-        if (point.value >= reboundBaseline) discontinuity = true;
-        reboundBaseline = null;
-      }
-      if (discontinuity) {
-        discontinuities.add(`${series.entity_id}\0${direction}\0${ts}`);
-      }
-      previousValue = point.value;
-      gapAfterValue = false;
-    }
-  }
-
-  const byTime = new Map<
-    number,
-    { upRate: number; downRate: number; upDelta: number; downDelta: number }
-  >();
-  const byEntity = new Map<string, { up: number; down: number }>();
-  const byEntityRate = new Map<
-    string,
-    Map<number, { up: number; down: number }>
-  >();
-  for (const series of res.series ?? []) {
-    const isRate =
-      series.metric_key === "net.in.rate" ||
-      series.metric_key === "net.out.rate";
-    const isUp =
-      series.metric_key === "net.out.rate" ||
-      series.metric_key === "traffic.up";
-    if (
-      !isRate &&
-      series.metric_key !== "traffic.up" &&
-      series.metric_key !== "traffic.down"
-    ) {
-      continue;
-    }
-    const entity = series.entity_id;
-    for (const point of series.points ?? []) {
-      if (point.value == null) continue;
-      const ts = new Date(point.time).getTime();
-      const entry =
-        byTime.get(ts) ?? { upRate: 0, downRate: 0, upDelta: 0, downDelta: 0 };
-      if (isRate) {
-        if (isUp) entry.upRate += point.value;
-        else entry.downRate += point.value;
-        const rateMap = byEntityRate.get(entity) ?? new Map();
-        const rateEntry = rateMap.get(ts) ?? { up: 0, down: 0 };
-        if (isUp) rateEntry.up += point.value;
-        else rateEntry.down += point.value;
-        rateMap.set(ts, rateEntry);
-        byEntityRate.set(entity, rateMap);
-      } else if (isUp) {
-        if (discontinuities.has(`${entity}\0up\0${ts}`)) continue;
-        entry.upDelta += point.value;
-      } else {
-        if (discontinuities.has(`${entity}\0down\0${ts}`)) continue;
-        entry.downDelta += point.value;
-      }
-      byTime.set(ts, entry);
-      if (!isRate) {
-        const entityEntry = byEntity.get(entity) ?? { up: 0, down: 0 };
-        if (isUp) entityEntry.up += point.value;
-        else entityEntry.down += point.value;
-        byEntity.set(entity, entityEntry);
-      }
-    }
-  }
-  const rate = Array.from(byTime.entries())
-    .map(([time, value]) => ({ time, ...value }))
-    .sort((a, b) => a.time - b.time);
-  const points: TrafficSummary["points"] = [];
-  let totalUp = 0;
-  let totalDown = 0;
-  for (const point of rate) {
-    totalUp += point.upDelta;
-    totalDown += point.downDelta;
-    points.push({
-      time: point.time,
-      upRate: point.upRate,
-      downRate: point.downRate,
-      upCum: totalUp,
-      downCum: totalDown,
-    });
-  }
-  const nodeTotals: TrafficNodeTotals[] = Array.from(byEntity.entries())
-    .map(([uuid, value]) => {
-      let peakRate = 0;
-      let peakTime = 0;
-      for (const [ts, rateEntry] of byEntityRate.get(uuid) ?? []) {
-        const combined = rateEntry.up + rateEntry.down;
-        if (combined > peakRate) {
-          peakRate = combined;
-          peakTime = ts;
-        }
-      }
-      return {
-        uuid,
-        up: value.up,
-        down: value.down,
-        total: value.up + value.down,
-        peakRate,
-        peakTime,
-      };
-    })
-    .sort((a, b) => b.total - a.total);
-  return { points, nodeTotals, totalUp, totalDown };
-};
-
-const computeTopAverageItems = (
-  res: QueryMetricsResponse | null,
-  metricKey: string,
-  nodeNameMap: Map<string, string>,
-  toPercent: (uuid: string, value: number) => number,
-): TopRankItem[] => {
-  if (!res) return [];
-  const bucket = new Map<
-    string,
-    { values: { value: number; count?: number }[]; peak: number; peakTime: number }
-  >();
-  for (const series of res.series ?? []) {
-    if (series.metric_key !== metricKey) continue;
-    const entry =
-      bucket.get(series.entity_id) ?? { values: [], peak: 0, peakTime: 0 };
-    for (const point of series.points ?? []) {
-      if (point.value == null) continue;
-      entry.values.push({ value: point.value, count: point.count });
-      if (point.value > entry.peak) {
-        entry.peak = point.value;
-        entry.peakTime = new Date(point.time).getTime();
-      }
-    }
-    bucket.set(series.entity_id, entry);
-  }
-  const items: TopRankItem[] = [];
-  for (const [uuid, entry] of bucket) {
-    const average = weightedAverage(entry.values);
-    if (average == null) continue;
-    const value = toPercent(uuid, average);
-    if (!Number.isFinite(value)) continue;
-    items.push({
-      uuid,
-      name: nodeNameMap.get(uuid) ?? uuid.slice(0, 8),
-      value,
-      peak: toPercent(uuid, entry.peak),
-      peakTime: entry.peakTime,
-    });
-  }
-  items.sort((a, b) => b.value - a.value);
-  return items;
-};
 
 const miniChartCache = new Map<string, MetricSeries[]>();
 
@@ -416,9 +179,8 @@ const DashboardContent = () => {
     main: number | null;
     monitoring: number | null;
   } | null>(null);
-  const [metricsRes, setMetricsRes] = useState<QueryMetricsResponse | null>(
-    null,
-  );
+  const [dashboardSummary, setDashboardSummary] =
+    useState<DashboardSummaryResponse | null>(null);
   const [pingStats, setPingStats] = useState<PingMetricStat[]>([]);
   const [pingTasks, setPingTasks] = useState<PublicPingTask[]>([]);
   const [renewingUuid, setRenewingUuid] = useState<string | null>(null);
@@ -488,36 +250,23 @@ const DashboardContent = () => {
     }
   }, [call]);
 
-  const fetchMetrics = useCallback(async () => {
-    const now = new Date();
-    const start = new Date(now.getTime() - 24 * 3600 * 1000);
+  const fetchDashboardSummary = useCallback(async () => {
+    const empty: DashboardSummaryResponse = {
+      start: "",
+      end: "",
+      traffic: { points: [], nodeTotals: [], totalUp: 0, totalDown: 0 },
+      top_cpu: [],
+      top_mem: [],
+    };
     try {
-      const res = await call<any, QueryMetricsResponse>("public:queryMetrics", {
-        metric_keys: [
-          ...NET_METRIC_KEYS,
-          ...NET_TOTAL_METRIC_KEYS,
-          "traffic.up",
-          "traffic.down",
-          ...CPU_METRIC_KEYS,
-          ...MEM_METRIC_KEYS,
-          PING_LATENCY_METRIC,
-        ],
-        start: start.toISOString(),
-        end: now.toISOString(),
-        aggregation: "p95",
-        aggregation_by_metric: {
-          "traffic.up": "sum",
-          "traffic.down": "sum",
-          "net.total.up": "last",
-          "net.total.down": "last",
-          "cpu.usage": "avg",
-          "memory.used": "avg",
-        },
-        fill_empty: true,
-      });
-      setMetricsRes(res ?? null);
+      const res = await call<unknown, DashboardSummaryResponse>(
+        "public:getDashboardSummary",
+        { hours: 24 },
+      );
+      setDashboardSummary(res ?? empty);
     } catch (e) {
-      console.error("Failed to fetch dashboard metrics:", e);
+      console.error("Failed to fetch dashboard summary:", e);
+      setDashboardSummary(empty);
     }
   }, [call]);
 
@@ -559,47 +308,55 @@ const DashboardContent = () => {
       await Promise.allSettled([
         refresh(),
         fetchLatest(),
-        fetchMetrics(),
+        fetchDashboardSummary(),
         fetchDbSize(),
         fetchPingStats(),
       ]);
     } finally {
       setRefreshing(false);
     }
-  }, [refresh, fetchLatest, fetchMetrics, fetchDbSize, fetchPingStats]);
+  }, [refresh, fetchLatest, fetchDashboardSummary, fetchDbSize, fetchPingStats]);
 
   useEffect(() => {
     void fetchAll();
   }, [fetchAll]);
 
-  // 由一次 queryMetrics 响应派生各指标卡数据；nodeList 就绪后
-  // nodeNameMap/memTotalMap 变化会自动重算，无需再次请求。
-  const traffic = useMemo(() => computeTrafficSummary(metricsRes), [metricsRes]);
-
-  const topCpu = useMemo<TopRankItem[]>(
-    () =>
-      computeTopAverageItems(
-        metricsRes,
-        CPU_METRIC_KEYS[0],
-        nodeNameMap,
-        (_uuid, value) => value,
-      ),
-    [metricsRes, nodeNameMap],
+  // Overview cards use server-side summaries only. Full series are fetched
+  // per entity when a MiniChartButton is opened.
+  const traffic = useMemo<DashboardTrafficSummary | null>(
+    () => dashboardSummary?.traffic ?? null,
+    [dashboardSummary],
   );
 
-  const topMem = useMemo<TopRankItem[]>(
-    () =>
-      computeTopAverageItems(
-        metricsRes,
-        MEM_METRIC_KEYS[0],
-        nodeNameMap,
-        (uuid, value) => {
-          const totalBytes = memTotalMap.get(uuid) ?? 0;
-          return totalBytes > 0 ? (value / totalBytes) * 100 : 0;
-        },
-      ),
-    [metricsRes, nodeNameMap, memTotalMap],
-  );
+  const topCpu = useMemo<TopRankItem[]>(() => {
+    return (dashboardSummary?.top_cpu ?? [])
+      .map((item) => ({
+        uuid: item.uuid,
+        name: nodeNameMap.get(item.uuid) ?? item.uuid.slice(0, 8),
+        value: item.value,
+        peak: item.peak,
+        peakTime: item.peakTime,
+      }))
+      .filter((item) => Number.isFinite(item.value));
+  }, [dashboardSummary, nodeNameMap]);
+
+  const topMem = useMemo<TopRankItem[]>(() => {
+    return (dashboardSummary?.top_mem ?? [])
+      .map((item) => {
+        const totalBytes = memTotalMap.get(item.uuid) ?? 0;
+        const toPercent = (bytes: number) =>
+          totalBytes > 0 ? (bytes / totalBytes) * 100 : 0;
+        return {
+          uuid: item.uuid,
+          name: nodeNameMap.get(item.uuid) ?? item.uuid.slice(0, 8),
+          value: toPercent(item.value),
+          peak: toPercent(item.peak),
+          peakTime: item.peakTime,
+        };
+      })
+      .filter((item) => Number.isFinite(item.value))
+      .sort((a, b) => b.value - a.value);
+  }, [dashboardSummary, nodeNameMap, memTotalMap]);
 
   const handleRenew = async (node: NodeBasicInfo) => {
     const expiry = computeRenewalDate(
@@ -641,14 +398,16 @@ const DashboardContent = () => {
     if (stats.total === 0) {
       return { level: "empty" as const, color: "gray" as const };
     }
-    if (stats.onlineRate >= 95) {
+    // Only "all online" when offline is exactly 0. A 95% threshold wrongly
+    // showed healthy for 38/40 (exactly 95%) with 2 servers offline.
+    if (stats.offline === 0) {
       return { level: "healthy" as const, color: "green" as const };
     }
     if (stats.onlineRate >= 75) {
       return { level: "warning" as const, color: "orange" as const };
     }
     return { level: "danger" as const, color: "red" as const };
-  }, [stats.total, stats.onlineRate]);
+  }, [stats.total, stats.offline, stats.onlineRate]);
 
   const healthDesc = {
     empty: t("dashboard.health.emptyDesc", "No servers have been added yet."),
@@ -685,24 +444,6 @@ const DashboardContent = () => {
     },
   } satisfies ChartConfig;
 
-  const pingP95Map = useMemo(() => {
-    const map = new Map<string, number>();
-    for (const series of metricsRes?.series ?? []) {
-      const taskId = pingTaskId(series.tags);
-      if (!taskId) continue;
-      const p95 = weightedP95(
-        (series.points ?? []).map((point) => ({
-          value: point.value ?? NaN,
-          count: point.count,
-        })),
-      );
-      if (p95 != null) {
-        map.set(pingMetricStatKey(series.entity_id, taskId), p95);
-      }
-    }
-    return map;
-  }, [metricsRes]);
-
   const pingRankItems = useMemo(() => {
     const taskMap = new Map(
       pingTasks.map((task) => [String(task.id), task]),
@@ -715,20 +456,18 @@ const DashboardContent = () => {
       );
       const nodeName =
         nodeNameMap.get(stat.entity_id) ?? stat.entity_id.slice(0, 8);
-      const p95 =
-        pingP95Map.get(pingMetricStatKey(stat.entity_id, stat.task_id)) ?? null;
       return {
         key: pingMetricStatKey(stat.entity_id, stat.task_id),
         entityId: stat.entity_id,
         taskId: stat.task_id,
         label: `${nodeName} · ${taskName}`,
-        p95,
+        p95: typeof stat.p95 === "number" ? stat.p95 : null,
         volatility: stat.p99_p50_ratio ?? 0,
         loss: stat.loss ?? 0,
         valid: stat.valid,
       } satisfies PingRankItem;
     });
-  }, [pingStats, pingP95Map, pingTasks, nodeNameMap, t]);
+  }, [pingStats, pingTasks, nodeNameMap, t]);
 
   // 无有效延迟样本(如 100% 丢包)的节点波动无意义，不参与稳定性排名
   const stableLatencyItems = useMemo(
