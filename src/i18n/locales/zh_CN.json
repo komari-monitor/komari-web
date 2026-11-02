@@ -899,6 +899,7 @@
     "config": "配置",
     "config_no_configurable_plugins": "没有带配置项的插件",
     "config_no_items": "该插件没有配置项",
+    "config_select_plugin": "请在左侧选择要配置的插件",
     "config_save_failed": "保存配置失败",
     "config_saved": "配置已保存",
     "config_saved_and_reloaded": "配置已保存，插件已重载",

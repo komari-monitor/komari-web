@@ -143,6 +143,8 @@ interface ConfigFormTabsProps {
   sidebar?: ReactNode;
   /** scrollview 底部内容（如底部保存按钮） */
   footer?: ReactNode;
+  /** 与左侧同级列并排时启用：标题区为空则不保留下间距，让内容区顶部与左侧列齐平 */
+  topAligned?: boolean;
   className?: string;
   formClassName?: string;
   /** Keep the form in a bounded container with its own scroll area. */
@@ -166,6 +168,7 @@ const ConfigFormTabs = ({
   notice,
   sidebar,
   footer,
+  topAligned = false,
   className,
   formClassName,
   fillHeight = true,
@@ -260,6 +263,7 @@ const ConfigFormTabs = ({
 
   const currentTab = Math.min(activeTab, Math.max(groups.length - 1, 0));
   const hasTabs = groups.length > 1;
+  const showTitleGap = !topAligned || Boolean(header) || hasTabs;
 
   const updateActiveFromScroll = useCallback(() => {
     const container = scrollRef.current;
@@ -470,7 +474,11 @@ const ConfigFormTabs = ({
             {resolveText(group.title) || t("common.title")}
           </Heading>
         )}
-        <Flex direction="column" gap="3" className="mt-5 mb-3">
+        <Flex
+          direction="column"
+          gap="3"
+          className={group.title ? "mt-5 mb-3" : "mb-3"}
+        >
           {group.items.map(renderField)}
         </Flex>
       </Box>
@@ -484,7 +492,7 @@ const ConfigFormTabs = ({
       }
     >
       {/* titlearea：固定顶部，不随滚动移动 */}
-      <Box className="shrink-0 mb-5">
+      <Box className={showTitleGap ? "shrink-0 mb-5" : "shrink-0"}>
         <Flex direction="column" gap="3">
           {header}
           {hasTabs && (

@@ -890,6 +890,7 @@
     "config": "Konfigurasi",
     "config_no_configurable_plugins": "Tidak ada plugin dengan item konfigurasi",
     "config_no_items": "Plugin ini tidak memiliki item konfigurasi",
+    "config_select_plugin": "Pilih plugin di sebelah kiri untuk dikonfigurasi",
     "config_save_failed": "Gagal menyimpan konfigurasi",
     "config_saved": "Konfigurasi disimpan",
     "config_saved_and_reloaded": "Konfigurasi disimpan dan plugin dimuat ulang",

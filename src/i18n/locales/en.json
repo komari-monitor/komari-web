@@ -860,6 +860,7 @@
     "config": "Configuration",
     "config_no_configurable_plugins": "No plugins with configuration items",
     "config_no_items": "This plugin has no configuration items",
+    "config_select_plugin": "Select a plugin on the left to configure",
     "config_save_failed": "Failed to save configuration",
     "config_saved": "Configuration saved",
     "config_saved_and_reloaded": "Configuration saved and plugin reloaded",

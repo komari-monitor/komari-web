@@ -865,6 +865,7 @@
     "config": "設定",
     "config_no_configurable_plugins": "沒有帶設定項目的外掛",
     "config_no_items": "此外掛沒有設定項目",
+    "config_select_plugin": "請在左側選擇要設定的外掛",
     "config_save_failed": "儲存設定失敗",
     "config_saved": "設定已儲存",
     "config_saved_and_reloaded": "設定已儲存，外掛已重新載入",
