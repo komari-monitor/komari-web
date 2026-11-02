@@ -277,6 +277,7 @@ export default function PluginConfigPage() {
           onValueChange={handleValueChange}
           resolveText={displayText}
           className="min-w-0 flex-1 overflow-hidden"
+          topAligned
           header={
             selected && !error && hasItems && (
               <Text weight="bold">
@@ -287,15 +288,24 @@ export default function PluginConfigPage() {
           notice={
             configurationLoading ? (
               <Loading />
-            ) : !selected || error || !hasItems ? (
+            ) : !selected ? (
+              // 没有可配置插件时左栏已说明，右侧不再重复提示。
+              configurablePlugins.length > 0 ? (
+                <Box className="mb-4">
+                  <Callout.Root size="1">
+                    <Callout.Text size="2">{t("plugin.config_select_plugin", "Select a plugin on the left to configure")}</Callout.Text>
+                  </Callout.Root>
+                </Box>
+              ) : undefined
+            ) : error || !hasItems ? (
               <Box className="mb-4">
                 {error ? (
-                  <Callout.Root color="red">
-                    <Callout.Text>{error}</Callout.Text>
+                  <Callout.Root color="red" size="1">
+                    <Callout.Text size="2">{error}</Callout.Text>
                   </Callout.Root>
                 ) : (
-                  <Callout.Root>
-                    <Callout.Text>{t("plugin.config_no_items", "This plugin has no configuration items")}</Callout.Text>
+                  <Callout.Root size="1">
+                    <Callout.Text size="2">{t("plugin.config_no_items", "This plugin has no configuration items")}</Callout.Text>
                   </Callout.Root>
                 )}
               </Box>
