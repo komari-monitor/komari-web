@@ -665,9 +665,12 @@ const ThemePage = () => {
         <Dialog.Content maxWidth="400px">
           <Dialog.Title>{t("theme.confirm_delete")}</Dialog.Title>
           <Dialog.Description>
-            {t("theme.delete_warning", {
-              themeName: displayText(themeToDelete?.name),
-            })}
+            {t(
+              themeToDelete?.short === currentTheme
+                ? "theme.delete_active_warning"
+                : "theme.delete_warning",
+              { themeName: displayText(themeToDelete?.name) },
+            )}
           </Dialog.Description>
           <Flex gap="3" mt="4" justify="end">
             <Dialog.Close>
