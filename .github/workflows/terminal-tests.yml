@@ -3,7 +3,7 @@ name: Terminal clipboard regression tests
 on:
   pull_request:
   push:
-    branches: [main, fix/terminal-copy]
+    branches: [radix, fix/terminal-copy]
 
 permissions:
   contents: read
