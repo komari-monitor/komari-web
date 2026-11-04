@@ -85,6 +85,9 @@ const TerminalSession = ({
       cursorStyle: "bar",
       cursorInactiveStyle: "bar",
       cursorWidth: 2,
+      // Our right-click action copies the existing selection. xterm's macOS
+      // default would replace it with the word under the pointer first.
+      rightClickSelectsWord: false,
       allowProposedApi: true,
       overviewRuler: { width: 4 },
       theme: themeWithSelection,
@@ -161,12 +164,29 @@ const TerminalSession = ({
       }
       try {
         await navigator.clipboard.writeText(selectedText);
-        if (!disposed) {
-          term.clearSelection();
-          term.focus();
-        }
       } catch {
-        // Clipboard permissions are reported by the existing HTTPS callout.
+        if (disposed) return;
+        // HTTP pages and denied clipboard permissions need the browser's
+        // synchronous copy path, with the full xterm selection as its source.
+        const textarea = document.createElement("textarea");
+        textarea.value = selectedText;
+        textarea.readOnly = true;
+        textarea.style.position = "fixed";
+        textarea.style.opacity = "0";
+        document.body.appendChild(textarea);
+        textarea.select();
+        try {
+          if (!document.execCommand("copy") && !disposed) {
+            toast.error(t("terminal.copy_failed", "Could not copy. Try the browser's copy shortcut."));
+          }
+        } catch {
+          if (!disposed) {
+            toast.error(t("terminal.copy_failed", "Could not copy. Try the browser's copy shortcut."));
+          }
+        } finally {
+          textarea.remove();
+          if (!disposed) term.focus();
+        }
       }
     };
 
@@ -216,16 +236,23 @@ const TerminalSession = ({
         !event.altKey &&
         !event.metaKey &&
         event.key.toLowerCase() === "v";
+      const ctrlShiftC =
+        event.ctrlKey &&
+        event.shiftKey &&
+        !event.altKey &&
+        !event.metaKey &&
+        event.key.toLowerCase() === "c";
 
       if (
         ctrlOnly ||
         ctrlAlt ||
-        ctrlShiftV
+        ctrlShiftV ||
+        ctrlShiftC
       ) {
         const key = event.key.toLowerCase();
         if (key === "c") {
           event.preventDefault();
-          if (term.hasSelection() || ctrlAlt) {
+          if (term.hasSelection() || ctrlAlt || ctrlShiftC) {
             void copySelection();
           } else {
             if (!awaitingOtp) {

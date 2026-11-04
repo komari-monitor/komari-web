@@ -1510,6 +1510,7 @@
   },
   "terminal": {
     "2fa_prompt": "Two-factor authentication required.",
+    "copy_failed": "Could not copy. Try the browser's copy shortcut.",
     "2fa_code_prompt": "Enter 2FA code: ",
     "otp_invalid": "Invalid or expired 2FA code",
     "disconnect": "Disconnected",

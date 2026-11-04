@@ -42,6 +42,19 @@ npm run dev
 npm run build
 ```
 
+### 终端复制与回归测试
+
+选中文字后使用系统复制快捷键（`Ctrl+C` / `Cmd+C`）、`Ctrl+Shift+C`、`Ctrl+Alt+C` 或右键复制；无选区时 `Ctrl+C` 仍向终端发送中断。复制后保留选区，右键不会将已有选区替换成光标下的单词。Clipboard API 不可用时会尝试浏览器兼容复制，失败时显示提示。
+
+```bash
+npx playwright install chromium
+npm run test:terminal
+# 已安装 Chrome 时可复用本机浏览器：
+PLAYWRIGHT_CHROMIUM_CHANNEL=chrome npm run test:terminal
+```
+
+测试使用真实 xterm 组件及本地模拟 WebSocket，不连接服务器或执行远程命令。
+
 ## 主题相关
 
 如果你需要基于本项目进行二次开发，可以参考以下步骤：
