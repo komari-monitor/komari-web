@@ -1540,7 +1540,6 @@
   },
   "terminal": {
     "2fa_code_prompt": "请输入 2FA 验证码: ",
-    "copy_failed": "复制失败，请尝试浏览器的复制快捷键。",
     "2fa_prompt": "需要双因素认证。",
     "clients_load_failed": "服务器加载失败",
     "close_others": "其他",
@@ -1549,6 +1548,7 @@
     "close_to_left": "左侧",
     "close_to_right": "右侧",
     "color_tab": "更改选项卡颜色",
+    "copy_failed": "复制失败，请尝试浏览器的复制快捷键。",
     "default_color": "默认颜色",
     "disconnect": "连接已断开",
     "duplicate_tab": "复制标签页",
