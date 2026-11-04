@@ -29,6 +29,7 @@ test.beforeEach(async ({ page }, testInfo) => {
     });
   });
   await page.goto("/tests/terminal/fixture.html");
+  await page.evaluate(() => navigator.clipboard.writeText("terminal-copy-sentinel"));
   await page.waitForFunction(() => window.terminalApi?.terminal.cols !== 80);
   await page.evaluate(async (text) => {
     const term = window.terminalApi!.terminal;
@@ -75,22 +76,55 @@ test("copy falls back when the Clipboard API is unavailable", async ({ page }) =
   await expect.poll(() => page.evaluate(() => window.terminalApi!.terminal.getSelection())).toBe(expected);
 });
 
-test("mouse selection copies mixed Chinese and ASCII across lines", async ({ page }) => {
-  const screen = await page.locator(".xterm-screen").boundingBox();
-  const { cols, rows } = await page.evaluate(() => {
-    const { cols, rows } = window.terminalApi!.terminal;
-    return { cols, rows };
+for (const shortcut of ["Control+Alt+c", "Control+c", "Meta+c"]) {
+  test(`mouse selection copies mixed Chinese and ASCII across lines with ${shortcut}`, async ({ page }) => {
+    test.skip(shortcut === "Meta+c" && process.platform !== "darwin", "Cmd+C is a native macOS shortcut.");
+    const screen = await page.locator(".xterm-screen").boundingBox();
+    const { cols, rows } = await page.evaluate(() => {
+      const { cols, rows } = window.terminalApi!.terminal;
+      return { cols, rows };
+    });
+    const cellWidth = screen!.width / cols;
+    const cellHeight = screen!.height / rows;
+    await page.mouse.move(screen!.x + cellWidth * 0.1, screen!.y + cellHeight * 0.5);
+    await page.mouse.down();
+    await page.mouse.move(screen!.x + cellWidth * 27.1, screen!.y + cellHeight * 2.5, { steps: 12 });
+    await page.mouse.up();
+    await expect.poll(() => page.evaluate(() => window.terminalApi!.terminal.getSelection())).toBe(expected);
+    await page.keyboard.press(shortcut);
+    await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe(expected);
   });
-  const cellWidth = screen!.width / cols;
-  const cellHeight = screen!.height / rows;
-  await page.mouse.move(screen!.x + cellWidth * 0.1, screen!.y + cellHeight * 0.5);
-  await page.mouse.down();
-  await page.mouse.move(screen!.x + cellWidth * 27.1, screen!.y + cellHeight * 2.5, { steps: 12 });
-  await page.mouse.up();
-  await expect.poll(() => page.evaluate(() => window.terminalApi!.terminal.getSelection())).toBe(expected);
-  await page.keyboard.press("Control+Alt+c");
-  await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe(expected);
-});
+}
+
+for (const shortcut of ["Control+c", "Meta+c"]) {
+  test(`dragging across scrollback copies every selected line with ${shortcut}`, async ({ page }) => {
+    test.skip(shortcut === "Meta+c" && process.platform !== "darwin", "Cmd+C is a native macOS shortcut.");
+    const lines = Array.from({ length: 80 }, (_, i) => `line ${String(i).padStart(3, "0")}: 中文 ABCDEFG ${i === 79 ? "END" : "text"}`);
+    await page.evaluate(async (lines) => {
+      const term = window.terminalApi!.terminal;
+      term.reset();
+      await new Promise<void>((resolve) => term.write(lines.join("\r\n"), resolve));
+      term.scrollToTop();
+    }, lines);
+    const screen = await page.locator(".xterm-screen").boundingBox();
+    const { cols, rows } = await page.evaluate(() => {
+      const { cols, rows } = window.terminalApi!.terminal;
+      return { cols, rows };
+    });
+    const cellWidth = screen!.width / cols;
+    const cellHeight = screen!.height / rows;
+    await page.mouse.move(screen!.x + cellWidth * 0.1, screen!.y + cellHeight * 0.5);
+    await page.mouse.down();
+    await page.mouse.move(screen!.x + cellWidth * 35, screen!.y + screen!.height + 100, { steps: 10 });
+    await expect.poll(() => page.evaluate(() => window.terminalApi!.terminal.buffer.active.viewportY)).toBe(80 - rows);
+    const lastLineCells = lines[79].length + 2;
+    await page.mouse.move(screen!.x + cellWidth * (lastLineCells + 0.1), screen!.y + cellHeight * (rows - 0.5));
+    await page.mouse.up();
+    await expect.poll(() => page.evaluate(() => window.terminalApi!.terminal.getSelection())).toBe(lines.join("\n"));
+    await page.keyboard.press(shortcut);
+    await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe(lines.join("\n"));
+  });
+}
 
 test("system copy shortcut preserves a long soft-wrapped line", async ({ page }) => {
   const text = `START:${"0123456789abcdef".repeat(100)}:END`;

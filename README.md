@@ -51,6 +51,8 @@ npx playwright install chromium
 npm run test:terminal
 # 已安装 Chrome 时可复用本机浏览器：
 PLAYWRIGHT_CHROMIUM_CHANNEL=chrome npm run test:terminal
+# 已安装 Edge 时（macOS 上也验证原生 Cmd+C）：
+PLAYWRIGHT_CHROMIUM_CHANNEL=msedge npm run test:terminal
 ```
 
 测试使用真实 xterm 组件及本地模拟 WebSocket，不连接服务器或执行远程命令。
