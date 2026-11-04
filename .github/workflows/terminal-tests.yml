@@ -11,6 +11,7 @@ permissions:
 jobs:
   terminal:
     strategy:
+      fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest]
     runs-on: ${{ matrix.os }}
@@ -23,3 +24,9 @@ jobs:
       - run: npm ci
       - run: npx playwright install --with-deps chromium
       - run: npm run test:terminal
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: terminal-test-results-${{ matrix.os }}
+          path: test-results/
+          retention-days: 7

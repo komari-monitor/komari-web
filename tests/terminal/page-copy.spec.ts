@@ -36,6 +36,11 @@ for (const shortcut of ["Control+c", "Meta+c"]) {
       });
     });
     await page.goto("/terminal?uuid=test-client");
+    // HTTP is intentional in the local test server. Dismiss the callout so
+    // coordinate-based selection cannot hit its text instead of terminal rows.
+    const notice = page.locator(".km-page-terminal .rt-CalloutRoot");
+    await notice.getByRole("button").click();
+    await expect(notice).toBeHidden();
     await expect(page.locator(".xterm-rows")).toContainText("last line: copy all of this");
     await expect.poll(() => dimensions.cols).toBeGreaterThan(0);
     await page.evaluate(() => navigator.clipboard.writeText("terminal-copy-sentinel"));
@@ -46,6 +51,7 @@ for (const shortcut of ["Control+c", "Meta+c"]) {
     await page.mouse.down();
     await page.mouse.move(screen!.x + cellWidth * 27.1, screen!.y + cellHeight * 2.5, { steps: 12 });
     await page.mouse.up();
+    await expect(page.locator(".xterm-helper-textarea")).toBeFocused();
     await page.keyboard.press(shortcut);
     await expect.poll(() => page.evaluate(() => navigator.clipboard.readText())).toBe(output.replaceAll("\r\n", "\n"));
   });
