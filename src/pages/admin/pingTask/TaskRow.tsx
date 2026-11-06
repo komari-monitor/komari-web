@@ -55,10 +55,6 @@ const TaskRow = ({
   });
 
   const submitEdit = (newForm: typeof form) => {
-    if (!newForm.default_on && newForm.clients.length === 0) {
-      toast.error(t("ping.default_on_description"));
-      return;
-    }
     setEditSaving(true);
     postPingTask(
       "/api/admin/ping/edit",

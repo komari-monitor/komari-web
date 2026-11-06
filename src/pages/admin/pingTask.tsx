@@ -112,10 +112,6 @@ const AddButton: React.FC = () => {
   const [saving, setSaving] = React.useState(false);
   const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    if (!defaultOn && selected.length === 0) {
-      toast.error(t("ping.default_on_description"));
-      return;
-    }
     const payload = {
       name: e.currentTarget.ping_name.value,
       type: selectedType,
