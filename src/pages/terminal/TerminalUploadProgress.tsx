@@ -1,6 +1,14 @@
 import { memo, useEffect, useRef, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import { X } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { AnimatedNumber } from "@/components/motion";
+import {
+  CONTENT_MOTION,
+  FEEDBACK_MOTION,
+  MOTION_SPRING,
+  MOTION_TRANSITION,
+} from "@/lib/motion";
 import type { RemoteUploadProgress, UploadChunkProgress } from "./useRemoteFileUpload";
 import { formatFileSize } from "./fileManagerApi";
 import { formatTransferRate } from "./transferFormat";
@@ -56,8 +64,17 @@ const UploadProgressRow = memo(function UploadProgressRow({ progress, onCancel }
       onMouseEnter={handleEnter}
       onMouseLeave={handleLeave}
     >
+      <AnimatePresence initial={false}>
       {hovered && (
-        <div className="absolute bottom-full left-2 right-2 z-30 mb-1 max-h-[min(420px,60vh)] overflow-y-auto border border-[#3c3c3c] bg-[#252526] p-2 text-[10px] text-[#cccccc] shadow-[0_8px_24px_rgba(0,0,0,0.45)]">
+        <motion.div
+          key="chunk-detail"
+          // overlay 层：从行下方沿弧线浮出
+          initial={{ opacity: 0, y: 8, scale: 0.98 }}
+          animate={{ opacity: 1, y: 0, scale: 1 }}
+          exit={{ opacity: 0, y: 6, scale: 0.98 }}
+          transition={MOTION_SPRING.soft}
+          className="absolute bottom-full left-2 right-2 z-30 mb-1 max-h-[min(420px,60vh)] overflow-y-auto border border-[#3c3c3c] bg-[#252526] p-2 text-[10px] text-[#cccccc] shadow-[0_8px_24px_rgba(0,0,0,0.45)]"
+        >
           <div className="mb-2 flex items-center justify-between gap-2 border-b border-[#3a3a3a] pb-1.5">
             <div className="min-w-0">
               <div className="truncate font-medium text-[#e6e6e6]">{progress.name}</div>
@@ -91,13 +108,20 @@ const UploadProgressRow = memo(function UploadProgressRow({ progress, onCancel }
               );
             })}
           </div>
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
 
       <div className="flex items-center gap-2 text-[10px] text-[#bdbdbd]">
         <span className="min-w-0 flex-1 truncate" title={progress.name}>{progress.name}</span>
         <span className="shrink-0 text-[#c8c8c8]">
-          {formatFileSize(progress.uploadedBytes ?? 0)}/{formatFileSize(progress.size ?? 0)} - {progress.value}%
+          {formatFileSize(progress.uploadedBytes ?? 0)}/{formatFileSize(progress.size ?? 0)} -{" "}
+          <AnimatedNumber
+            value={Math.max(0, Math.min(100, progress.value))}
+            format={(value) => `${value}`}
+            className="inline-block"
+          />
+          %
         </span>
         <span className={`${RATE_WIDTH_CLASS} text-[#a8a8a8]`} title={totalRate}>{totalRate}</span>
         {chunkSummary && <span className="w-[48px] min-w-[48px] shrink-0 text-right tabular-nums text-[#858585]">{chunkSummary}</span>}
@@ -112,9 +136,16 @@ const UploadProgressRow = memo(function UploadProgressRow({ progress, onCancel }
         </button>
       </div>
       <div className="mt-1 h-1 overflow-hidden bg-[#3a3a3a]">
-        <div
-          className="h-full bg-[#007acc] transition-[width]"
-          style={{ width: `${Math.max(0, Math.min(100, progress.value))}%` }}
+        {/* feedback 层：进度用弹簧缩放追赶，连续刷新时是「追着走」而不是硬跳 */}
+        <motion.div
+          className="h-full origin-left bg-[#007acc]"
+          style={{ width: "100%" }}
+          initial={false}
+          animate={{ scaleX: Math.max(0, Math.min(100, progress.value)) / 100 }}
+          transition={{
+            scaleX: { ...MOTION_SPRING.soft, restDelta: 0.0005 },
+            backgroundColor: FEEDBACK_MOTION.number,
+          }}
         />
       </div>
     </div>
@@ -122,16 +153,40 @@ const UploadProgressRow = memo(function UploadProgressRow({ progress, onCancel }
 });
 
 export function TerminalUploadProgress({ progress, onCancel }: TerminalUploadProgressProps) {
-  if (progress.length === 0) return null;
-
   return (
-    <div className="relative shrink-0 border-t border-[#2b2b2b] bg-[#202020]">
-      <div className="flex min-h-[48px] flex-col overflow-visible">
-        {progress.map((item) => (
-          <UploadProgressRow key={item.id} progress={item} onCancel={onCancel} />
-        ))}
-      </div>
-    </div>
+    <AnimatePresence initial={false}>
+      {progress.length > 0 && (
+        <motion.div
+          key="upload-progress-panel"
+          // overlay 层：从底部边缘滑入，取消/完成后收回
+          initial={{ opacity: 0, height: 0 }}
+          animate={{ opacity: 1, height: "auto" }}
+          exit={{ opacity: 0, height: 0 }}
+          transition={MOTION_SPRING.soft}
+          className="relative shrink-0 overflow-hidden border-t border-[#2b2b2b] bg-[#202020]"
+        >
+          <div className="flex min-h-[48px] flex-col overflow-visible">
+            <AnimatePresence initial={false}>
+              {progress.map((item) => (
+                <motion.div
+                  key={item.id}
+                  layout
+                  initial={CONTENT_MOTION.item.initial}
+                  animate={CONTENT_MOTION.item.animate}
+                  exit={CONTENT_MOTION.item.exit}
+                  transition={{
+                    layout: MOTION_SPRING.layout,
+                    opacity: MOTION_TRANSITION.fade,
+                  }}
+                >
+                  <UploadProgressRow progress={item} onCancel={onCancel} />
+                </motion.div>
+              ))}
+            </AnimatePresence>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
   );
 }
 

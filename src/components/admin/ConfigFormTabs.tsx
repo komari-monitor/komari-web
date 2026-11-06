@@ -10,15 +10,18 @@ import { Box, Button, Flex, Heading, Tabs } from "@radix-ui/themes";
 import { useTranslation } from "react-i18next";
 import {
   SettingCard,
+  SettingCardsLoading,
   SettingCardLongTextInput,
   SettingCardSelect,
   SettingCardShortTextInput,
   SettingCardSwitch,
 } from "@/components/admin/SettingCard";
 import SelectorDialog from "@/components/SelectorDialog";
+import { Skeletonize } from "@/components/ui/skeleton";
 import { useNodeList } from "@/contexts/NodeListContext";
 import { useRPC2Call } from "@/contexts/RPC2Context";
 import type { I18nText } from "@/utils/i18nText";
+import { KmTabsList } from "./KmTabsList";
 
 export interface ConfigFormItem {
   key?: string;
@@ -49,6 +52,11 @@ interface PingTaskResponse {
 
 const MAX_SELECTED_NAMES_LENGTH = 50;
 
+/**
+ * 配置表单的骨架占位：真实配置还没到时，用这几项渲染同样的 SettingCard 结构，
+ * 外层包 Skeletonize 就是「按内容长相」的骨架。只有一个分组，不会出现会消失的 Tab 栏。
+ * 这些项只用于展示，调用方在加载中不要把它们的值写回状态。
+ */
 function parseSelectionValue(value: unknown): string[] {
   if (typeof value !== "string") return [];
   try {
@@ -135,7 +143,7 @@ interface ConfigFormTabsProps {
   values: Record<string, any>;
   onValueChange: (key: string, value: any) => void;
   resolveText: (value?: I18nText) => string | undefined;
-  /** titlearea 内容（页面标题 + 保存按钮），固定不动 */
+  /** titlearea 内容（区块标题等），固定不动；页面级标题请放在外层 PageHeader */
   header?: ReactNode;
   /** scrollview 顶部提示（错误/空状态等） */
   notice?: ReactNode;
@@ -143,12 +151,15 @@ interface ConfigFormTabsProps {
   sidebar?: ReactNode;
   /** scrollview 底部内容（如底部保存按钮） */
   footer?: ReactNode;
-  /** 与左侧同级列并排时启用：标题区为空则不保留下间距，让内容区顶部与左侧列齐平 */
-  topAligned?: boolean;
   className?: string;
   formClassName?: string;
   /** Keep the form in a bounded container with its own scroll area. */
   fillHeight?: boolean;
+  /**
+   * 配置还在读取：每张设置卡各自显示同尺寸色块，分组标题变成文字大小的色块（不整页转圈）。
+   * 不传时不包 SettingCardsLoading，DOM 与原来一致（例如插件配置弹窗）。
+   */
+  loading?: boolean;
 }
 
 const SPY_LINE_OFFSET = 16;
@@ -168,10 +179,10 @@ const ConfigFormTabs = ({
   notice,
   sidebar,
   footer,
-  topAligned = false,
   className,
   formClassName,
   fillHeight = true,
+  loading,
 }: ConfigFormTabsProps) => {
   const { t } = useTranslation();
   const { nodeList } = useNodeList();
@@ -184,6 +195,21 @@ const ConfigFormTabs = ({
   const rafRef = useRef<number | null>(null);
   const scrollEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const suppressSpyRef = useRef(false);
+
+  /*
+    占位字段与真实字段的 key 不同：数据到达时真实设置卡是新挂载的，没经历加载状态，会直接「啪」地出现。
+    让它们先以加载中挂载一次，下一次提交再结束，Skeletonize 就会走揭开流程（内容淡入）。
+  */
+  const [prevLoading, setPrevLoading] = useState(loading);
+  const [revealing, setRevealing] = useState(false);
+  if (prevLoading !== loading) {
+    setPrevLoading(loading);
+    setRevealing(prevLoading === true && loading === false);
+  }
+  useEffect(() => {
+    if (revealing) setRevealing(false);
+  }, [revealing]);
+  const cardsLoading = Boolean(loading) || revealing;
 
   const groups = useMemo(() => {
     const result: Group[] = [];
@@ -263,7 +289,8 @@ const ConfigFormTabs = ({
 
   const currentTab = Math.min(activeTab, Math.max(groups.length - 1, 0));
   const hasTabs = groups.length > 1;
-  const showTitleGap = !topAligned || Boolean(header) || hasTabs;
+  // 标题区为空（无 header 且只有一个分组）时不保留下间距，内容区顶部直接与相邻列/页头对齐
+  const showTitleGap = Boolean(header) || hasTabs;
 
   const updateActiveFromScroll = useCallback(() => {
     const container = scrollRef.current;
@@ -462,6 +489,13 @@ const ConfigFormTabs = ({
   };
 
   const renderSections = () =>
+    loading === undefined ? (
+      renderGroups()
+    ) : (
+      <SettingCardsLoading loading={cardsLoading}>{renderGroups()}</SettingCardsLoading>
+    );
+
+  const renderGroups = () =>
     groups.map((group, index) => (
       <Box
         key={index}
@@ -469,16 +503,19 @@ const ConfigFormTabs = ({
           sectionRefs.current[index] = el;
         }}
       >
+        {/* 分组标题贴近自己的字段（group），分组之间由外层栈拉开（section） */}
         {group.title && (
-          <Heading size="3">
-            {resolveText(group.title) || t("common.title")}
+          <Heading size="3" mb="2">
+            {loading === undefined ? (
+              resolveText(group.title) || t("common.title")
+            ) : (
+              <Skeletonize as="span" loading={loading}>
+                {resolveText(group.title) || t("common.title")}
+              </Skeletonize>
+            )}
           </Heading>
         )}
-        <Flex
-          direction="column"
-          gap="3"
-          className={group.title ? "mt-5 mb-3" : "mb-3"}
-        >
+        <Flex direction="column" gap="4">
           {group.items.map(renderField)}
         </Flex>
       </Box>
@@ -492,15 +529,17 @@ const ConfigFormTabs = ({
       }
     >
       {/* titlearea：固定顶部，不随滚动移动 */}
-      <Box className={showTitleGap ? "shrink-0 mb-5" : "shrink-0"}>
-        <Flex direction="column" gap="3">
+      {/* 标题区与它服务的 Tab/表单之间是块内关系：block */}
+      <Box className={showTitleGap ? "shrink-0 mb-km-block" : "shrink-0"}>
+        <Flex direction="column" gap="4">
           {header}
           {hasTabs && (
             <Tabs.Root
               value={String(currentTab)}
               onValueChange={handleTabChange}
             >
-              <Tabs.List className="km-config-form-tabs-list overflow-x-auto">
+              {/* control 性格：选中下划线在标签间弹簧滑动（共享指示器，可被打断） */}
+              <KmTabsList className="km-config-form-tabs-list overflow-x-auto">
                 {groups.map((group, index) => (
                   <Tabs.Trigger
                     key={index}
@@ -512,7 +551,7 @@ const ConfigFormTabs = ({
                       : t("settings.general.title")}
                   </Tabs.Trigger>
                 ))}
-              </Tabs.List>
+              </KmTabsList>
             </Tabs.Root>
           )}
         </Flex>
@@ -538,14 +577,14 @@ const ConfigFormTabs = ({
             <Box className="w-full shrink-0 md:w-64">{sidebar}</Box>
             <Flex
               direction="column"
-              gap="3"
+              gap="5"
               className={`min-w-0 flex-1 ${formClassName}`}
             >
               {renderSections()}
             </Flex>
           </Flex>
         ) : (
-          <Flex direction="column" gap="3" className={formClassName}>
+          <Flex direction="column" gap="5" className={formClassName}>
             {renderSections()}
           </Flex>
         )}

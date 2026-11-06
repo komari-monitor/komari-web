@@ -1,5 +1,7 @@
 import React from "react";
+import { invalidateRouteQueries } from "@/lib/routeData";
 import { toast } from "sonner";
+import { ApiError, api } from "@/lib/http";
 
 /**
  * API utility functions for settings management
@@ -55,11 +57,11 @@ function settingsRestartFrom(responseData: unknown): SettingsRestart | undefined
 function waitForMigrationGuide(guidePath: string) {
   const check = async () => {
     try {
-      const response = await fetch(migrationGuideStatusPath, {
+      const payload = await api.get<unknown>(migrationGuideStatusPath, {
         cache: "no-store",
+        expectSuccess: false,
       });
-      const payload: unknown = await response.json();
-      if (response.ok && isRecord(payload) && payload.status === "success") {
+      if (isRecord(payload) && payload.status === "success") {
         window.location.replace(guidePath);
         return;
       }
@@ -76,16 +78,18 @@ function waitForMigrationGuide(guidePath: string) {
  * Fetch settings from the API
  * @returns Promise containing the settings data
  */
-export async function getSettings(): Promise<SettingsResponse> {
+async function getSettings(): Promise<SettingsResponse> {
   try {
-    const response = await fetch("/api/admin/settings");
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+    let data: unknown;
+    try {
+      data = await api.get<unknown>("/api/admin/settings", { expectSuccess: false });
+    } catch (error) {
+      if (error instanceof ApiError) {
+        throw new Error(`HTTP error! status: ${error.status}`);
+      }
+      throw error;
     }
-
-    const data = await response.json();
-    const settingsPayload = data["data"];
+    const settingsPayload = isRecord(data) ? data["data"] : undefined;
 
     if (
       typeof settingsPayload !== "object" ||
@@ -114,39 +118,27 @@ export async function getSettings(): Promise<SettingsResponse> {
  * @param settings - The settings object to update
  * @returns Promise containing the response
  */
-export async function updateSettings(
+async function updateSettings(
   settings: Partial<SettingsResponse>
 ): Promise<SettingsRestart | undefined> {
-  const response = await fetch("/api/admin/settings", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify(settings),
-  });
-
-  if (!response.ok) {
-    let message = `HTTP error! status: ${response.status}`;
-
-    try {
-      const errorData = await response.json();
-      if (errorData?.message) {
-        message = String(errorData.message);
-      }
-    } catch {
-      // Keep the fallback HTTP status message.
-    }
-
+  let responseData: unknown;
+  try {
+    responseData = await api.post<unknown>("/api/admin/settings", settings, {
+      expectSuccess: false,
+    });
+  } catch (error) {
+    if (!(error instanceof ApiError)) throw error;
+    const errorData = error.body;
+    const message =
+      isRecord(errorData) && errorData.message
+        ? String(errorData.message)
+        : `HTTP error! status: ${error.status}`;
     console.error("Failed to update settings:", message);
     throw new Error(message);
   }
-
-  let responseData: unknown;
-  try {
-    responseData = await response.json();
-  } catch {
-    return undefined;
-  }
+  // 设置已写入：作废还没被页面取走的设置预取（任何页面保存都一样），之后进入设置页一定读到新值
+  invalidateRouteQueries("ops/settings");
+  invalidateRouteQueries("admin/settings");
 
   const restart = settingsRestartFrom(responseData);
   if (restart) {
@@ -176,7 +168,7 @@ export async function updateSettingsWithToast(
  * @param currentSettings - The current settings object (to merge with)
  * @returns Promise containing the response
  */
-export async function updateSingleSetting<K extends keyof SettingsResponse>(
+async function updateSingleSetting<K extends keyof SettingsResponse>(
   key: K,
   value: SettingsResponse[K],
   currentSettings: SettingsResponse

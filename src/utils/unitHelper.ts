@@ -1,3 +1,5 @@
+import type { TFunction } from "i18next";
+
 // 数值部分：仅接受整数/小数的数字字面量（如 1000、1.5、.5）
 const SIZE_NUMBER_PATTERN = /^(?:\d+(?:\.\d*)?|\.\d+)$/;
 
@@ -114,4 +116,32 @@ export function formatBytes(bytes: number): string {
     // 小于等于两位数，显示2位小数
     return `${size.toFixed(2)} ${units[unitIndex]}`;
   }
+}
+
+/** 把秒数格式化为「x 天 x 小时 x 分 x 秒」 */
+export function formatUptime(seconds: number, t: TFunction): string {
+  if (!seconds || seconds < 0) return t("nodeCard.time_second", { val: 0 });
+  const d = Math.floor(seconds / 86400);
+  const h = Math.floor((seconds % 86400) / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  const parts = [];
+  if (d) parts.push(`${d} ${t("nodeCard.time_day")}`);
+  if (h) parts.push(`${h} ${t("nodeCard.time_hour")}`);
+  if (m) parts.push(`${m} ${t("nodeCard.time_minute")}`);
+  if (s || parts.length === 0) parts.push(`${s} ${t("nodeCard.time_second")}`);
+  return parts.join(" ");
+}
+
+/** 速率格式化（字节/秒）：B、KB 不带小数，GB 以上 1 位小数，数值 ≥100 时不带小数 */
+export function formatSpeed(bytes: number): string {
+  if (bytes === 0) return "0 B/s";
+  const units = ["B/s", "KB/s", "MB/s", "GB/s", "TB/s"];
+  const i = Math.floor(Math.log(bytes) / Math.log(1024));
+  const size = bytes / Math.pow(1024, i);
+  let decimals = 2;
+  if (i >= 3) decimals = 1;
+  if (i <= 1) decimals = 0;
+  if (size >= 100) decimals = 0;
+  return `${size.toFixed(decimals)} ${units[i]}`;
 }

@@ -63,6 +63,14 @@
   --radius-md: calc(var(--radius) - 2px);
   --radius-lg: var(--radius);
   --radius-xl: calc(var(--radius) + 4px);
+
+  /* 间距语义档位（见下方「间距系统」）：生成 gap-km-block / p-km-section / mt-km-group … */
+  --spacing-km-inline: var(--space-1);
+  --spacing-km-group: var(--space-2);
+  --spacing-km-block: var(--space-4);
+  --spacing-km-section: var(--space-5);
+  --spacing-km-page: var(--space-6);
+  --spacing-km-hero: var(--space-8);
 }
 
 :root {
@@ -276,4 +284,641 @@ body, * {
 
 .km-login-card {
   border-radius: 8px;
+}
+
+/* ==========================================================================
+   komari-web 间距系统 (Spacing System)
+   --------------------------------------------------------------------------
+   8px 基数，6 个常用档位，数值越大跳得越多（4 → 8 → 16 → 24 → 32 → 48）。
+   不用 12 / 40 / 56 这类与相邻档位差别太小的值做布局间距：
+   相邻两档肉眼必须分得出来，才能靠「远近」表达信息的亲疏。
+
+   档位（Radix scaling=110%，实际像素 ×1.1；Radix 组件 gap/p/m 用括号里的数字）
+     inline  4   (1)  同一元素内部：图标与文字、徽标与标题、标题与说明
+     group   8   (2)  同一组控件之间：按钮组、标签组、表单 label 与输入框
+     block   16  (4)  块内：卡片内边距、卡片里的字段之间；同类卡片之间
+     section 24  (5)  块外：页面标题与内容、不同功能区块之间
+     page    32  (6)  页面级留白：宽屏下页面左右边距、大分区之间
+     hero    48  (8)  低密度页：登录 / 安装 / 空状态 / 404 的上下留白
+
+   规则
+   - 块外间距一定大于块内间距（接近性原则）：卡片之间 ≥ 卡片内字段之间。
+   - 小标题离它下面的内容近、离上一组内容远（上 section，下 group）。
+   - 同一层级、同一类容器在全站用同一档；不要每页各写一个值。
+   - Radix 组件写数字（gap="4"），普通元素写语义类（gap-km-block），
+     两套都来自同一组 --space-N，混用时像素一致。
+   - gap="3"/12px 只用于控件内部的紧凑排列（输入框+按钮、表格单元格），不用于区块之间。
+   - JS 动画里需要像素值时用 src/lib/spacing.ts 的 SPACE，不写魔法数字。
+   ========================================================================== */
+
+/* 后台页面：标题 + 若干区块，区块之间统一 section 档 */
+.km-page {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-5);
+  min-width: 0;
+}
+
+/* 区块内的小标题：上方与前一组拉开（section），下方贴近自己的内容（group） */
+.km-section-title {
+  margin-top: calc(var(--space-5) - var(--km-section-title-gap, var(--space-4)));
+  margin-bottom: calc(var(--space-2) - var(--km-section-title-gap, var(--space-4)));
+}
+.km-section-title:first-child {
+  margin-top: 0;
+}
+
+/* ==========================================================================
+   komari-web 统一动效层 (Motion System)
+   --------------------------------------------------------------------------
+   JS 动画（motion/react）与 CSS 过渡共用下面这套变量，保证全站「同一种动作
+   = 同一条曲线 + 同一个时长」，切换丝滑、风格一致。
+   1) 变量 & 缓动曲线
+   2) 全局微交互（按钮/卡片/行/输入框/图标）
+   3) Radix 弹层统一时序（Popover/Dropdown/Dialog/Select/Tooltip/HoverCard）
+   4) 共享元素 & 页面切换（View Transitions）
+   5) 减少动态效果（prefers-reduced-motion）
+   ========================================================================== */
+
+:root {
+  /* —— 时长 —— */
+  /* 节奏偏快：状态变化要看得清，但不该让人等它演完（与 src/lib/motion.ts 保持一致） */
+  --km-dur-instant: 60ms;
+  --km-dur-fast: 120ms;
+  --km-dur-base: 180ms;
+  --km-dur-slow: 260ms;
+
+  /* —— 缓动 —— */
+  --km-ease-standard: cubic-bezier(0.2, 0, 0, 1);
+  --km-ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --km-ease-in: cubic-bezier(0.4, 0, 1, 1);
+  --km-ease-emphasized: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* —— 组合 —— */
+  --km-transition-colors:
+    color var(--km-dur-fast) var(--km-ease-standard),
+    background-color var(--km-dur-fast) var(--km-ease-standard),
+    border-color var(--km-dur-fast) var(--km-ease-standard),
+    outline-color var(--km-dur-fast) var(--km-ease-standard),
+    box-shadow var(--km-dur-base) var(--km-ease-standard),
+    fill var(--km-dur-fast) var(--km-ease-standard),
+    stroke var(--km-dur-fast) var(--km-ease-standard),
+    opacity var(--km-dur-fast) var(--km-ease-standard);
+  --km-transition-transform:
+    transform var(--km-dur-base) var(--km-ease-emphasized);
+  --km-transition-surface:
+    var(--km-transition-colors),
+    var(--km-transition-transform);
+
+  /* —— 统一底面阴影，hover 抬升用 —— */
+  --km-shadow-1: 0 1px 2px rgb(0 0 0 / 0.06), 0 1px 1px rgb(0 0 0 / 0.04);
+  --km-shadow-2: 0 6px 16px -6px rgb(0 0 0 / 0.18), 0 3px 8px -4px rgb(0 0 0 / 0.12);
+  --km-shadow-3: 0 18px 40px -16px rgb(0 0 0 / 0.28), 0 8px 18px -10px rgb(0 0 0 / 0.16);
+
+  /* —— 视图切换（共享元素）—— */
+  --km-view-transition-duration: 200ms;
+  --km-view-transition-ease: cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.dark {
+  --km-shadow-1: 0 1px 2px rgb(0 0 0 / 0.4), 0 1px 1px rgb(0 0 0 / 0.3);
+  --km-shadow-2: 0 8px 20px -8px rgb(0 0 0 / 0.6), 0 4px 10px -6px rgb(0 0 0 / 0.5);
+  --km-shadow-3: 0 22px 48px -18px rgb(0 0 0 / 0.75), 0 10px 22px -12px rgb(0 0 0 / 0.6);
+}
+
+/* 把 Radix 自带的过渡时长接到统一节奏上（控件内部用它做位移） */
+:root,
+.radix-themes {
+  --segmented-control-transition-duration: var(--km-dur-base);
+}
+
+/* ---------------------------------------------------------------- 2) 微交互 */
+
+/* 交互元素统一颜色/阴影过渡：hover / 选中 / 主题切换都不会生硬跳变 */
+.radix-themes button,
+.radix-themes [role="button"],
+.radix-themes a.rt-Link,
+.km-interactive {
+  transition: var(--km-transition-colors);
+}
+
+/* 让所有可交互的图标按钮具备一致的按下反馈 */
+.radix-themes button:not(:disabled):active,
+.radix-themes [role="button"]:not([aria-disabled="true"]):active {
+  transition-duration: var(--km-dur-instant);
+}
+
+/*
+  卡片：只过渡颜色与阴影。
+  transform / opacity 不能写进 CSS transition：卡片的位移、缩放、淡入都由 motion 每帧写内联样式，
+  CSS 再插值一遍会让卡片拖在动画后面（拖拽、重排、hover 抬升都会显得发黏）。
+*/
+.km-node-card,
+.km-top-card,
+.km-instance-server-item,
+.rt-Card {
+  transition:
+    background-color var(--km-dur-fast) var(--km-ease-standard),
+    border-color var(--km-dur-fast) var(--km-ease-standard),
+    box-shadow var(--km-dur-base) var(--km-ease-standard);
+}
+
+.km-node-card:hover {
+  box-shadow: var(--km-shadow-2);
+}
+
+/* 表格行 / 列表项：hover 高亮统一节奏 */
+.km-ui-table-row,
+.km-node-selector-item,
+.km-instance-server-item,
+.km-setting-card {
+  transition: var(--km-transition-colors);
+}
+
+/* 进度条填充：由 CSS 变量驱动，宽度变化更顺滑 */
+.km-usage-bar-track > div {
+  transition: transform var(--km-dur-slow) var(--km-ease-out),
+    background-color var(--km-dur-base) var(--km-ease-standard);
+  will-change: transform;
+}
+
+/* 可折叠内容通用动画（不依赖 JS 时的降级方案） */
+.km-collapsible {
+  overflow: hidden;
+  transition: height var(--km-dur-base) var(--km-ease-emphasized),
+    opacity var(--km-dur-fast) var(--km-ease-standard);
+}
+
+/* 图标类旋转（展开箭头等）统一曲线 */
+.km-chevron {
+  transition: transform var(--km-dur-base) var(--km-ease-emphasized);
+}
+
+/* ------------------------------------------------- 3) Radix 弹层统一时序 */
+
+/* 遮罩淡入淡出 */
+.rt-BaseDialogOverlay,
+.km-ui-drawer-overlay {
+  transition: opacity var(--km-dur-base) var(--km-ease-standard);
+}
+
+/* 弹层内容：保留 Radix 的方向性滑动，但统一为更顺滑的时长与曲线 */
+@media (prefers-reduced-motion: no-preference) {
+  .rt-PopperContent,
+  .rt-DropdownMenuContent,
+  .rt-SelectContent,
+  .rt-TooltipContent,
+  .rt-HoverCardContent {
+    animation-timing-function: var(--km-ease-out) !important;
+  }
+  .rt-PopperContent:where([data-state="open"]),
+  .rt-DropdownMenuContent:where([data-state="open"]),
+  .rt-SelectContent:where([data-state="open"]),
+  .rt-TooltipContent:where([data-state="open"]),
+  .rt-HoverCardContent:where([data-state="open"]) {
+    animation-duration: var(--km-dur-fast) !important;
+  }
+  .rt-PopperContent:where([data-state="closed"]),
+  .rt-DropdownMenuContent:where([data-state="closed"]),
+  .rt-SelectContent:where([data-state="closed"]),
+  .rt-TooltipContent:where([data-state="closed"]),
+  .rt-HoverCardContent:where([data-state="closed"]) {
+    animation-duration: var(--km-dur-instant) !important;
+    animation-timing-function: var(--km-ease-in) !important;
+  }
+}
+
+/* 弹层内部的菜单项：hover 高亮带过渡，不会一闪一跳 */
+.rt-BaseMenuItem,
+.rt-DropdownMenuItem,
+.rt-SelectItem {
+  transition: background-color var(--km-dur-fast) var(--km-ease-standard),
+    color var(--km-dur-fast) var(--km-ease-standard);
+}
+
+/* 开关：滑块位移使用同一曲线 */
+.rt-SwitchThumb {
+  transition: transform var(--km-dur-base) var(--km-ease-emphasized),
+    background-color var(--km-dur-fast) var(--km-ease-standard);
+}
+
+/* ------------------------------------------------- 3.5) 加载占位 */
+/*
+  节奏与 src/lib/motion.ts 的 SKELETON_MOTION 对齐。
+  Skeletonize：最外层的加载区域变成一张半透明主题色卡片，内容在原位隐藏（不改布局）。
+  三个注册过的变量驱动全部视觉，状态切换时只动变量，色卡、内容、提示走同一条曲线：
+    --km-sk-card  色卡不透明度 0..1
+    --km-sk-hide  内容隐藏程度 0（可见）..1（隐藏）
+    --km-sk-p     呼吸 0..1
+*/
+:root {
+  --km-skeleton-delay: 150ms;
+  /* 浅一些的主题色：只提示「这里在加载」，不抢内容的风头 */
+  --km-sk-fill: var(--accent-a3, rgb(99 102 241 / 0.08));
+  --km-sk-fill-low: var(--accent-a2, rgb(99 102 241 / 0.04));
+}
+
+@property --km-sk-card {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+@property --km-sk-hide {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+@property --km-sk-p {
+  syntax: "<number>";
+  inherits: true;
+  initial-value: 0;
+}
+
+.km-skeletonize[data-skeleton] {
+  position: relative;
+  -webkit-text-fill-color: color-mix(in srgb, currentcolor calc(100% - var(--km-sk-hide) * 100%), transparent);
+  user-select: none;
+}
+.km-skeletonize[data-skeleton]:not([data-skeleton^="reveal"]) {
+  pointer-events: none;
+}
+/* 子元素用 opacity 隐藏（边框、背景、图标、图片一起）；文字填充色还原成自己的颜色 */
+.km-skeletonize[data-skeleton] > :not(.km-skeleton-label) {
+  opacity: calc(1 - var(--km-sk-hide)) !important;
+  -webkit-text-fill-color: currentcolor;
+}
+
+/* 色卡：覆盖宿主的整个盒子；块级区域是圆角卡片，行内小块是胶囊 */
+/* --km-sk-inset：内容自带内边距时（例如网格 padding）把色卡收进来，与可见内容对齐 */
+.km-skeletonize[data-skeleton]::before {
+  content: "";
+  position: absolute;
+  inset: var(--km-sk-inset, 0);
+  z-index: 1;
+  border-radius: var(--radius-4, 12px);
+  background-color: color-mix(in srgb, var(--km-sk-fill-low) calc(var(--km-sk-p) * 100%), var(--km-sk-fill));
+  opacity: var(--km-sk-card);
+  pointer-events: none;
+}
+span.km-skeletonize[data-skeleton]::before {
+  inset: 0.08em -0.1em;
+  border-radius: 6px;
+}
+
+/* 显示「加载中」转圈的大区域不画色卡：只有转圈和文字，内容原位隐藏 */
+.km-skeletonize-labeled[data-skeleton]::before {
+  display: none;
+}
+
+/* 嵌套：外层已经是色卡时，里层不再画卡片和提示 */
+.km-skeletonize[data-skeleton] .km-skeletonize[data-skeleton]::before,
+.km-skeletonize[data-skeleton] .km-skeletonize[data-skeleton] > .km-skeleton-label {
+  display: none;
+}
+
+/*
+  大区域的「加载中」：原来的转圈 + 文案。
+  外层铺满色卡并裁切；内层高度取 min(100%, 320px)，提示在色卡里居中，
+  超高区域（整页设置）则落在顶部 320px 的中间，保证在视口里。
+*/
+.km-skeleton-label {
+  position: absolute;
+  z-index: 2;
+  inset: var(--km-sk-inset, 0);
+  overflow: hidden;
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+  pointer-events: none;
+  -webkit-text-fill-color: currentcolor;
+  opacity: var(--km-sk-card);
+}
+.km-skeleton-label-box {
+  height: min(100%, 320px);
+  display: flex;
+  align-items: center;
+}
+
+/* 独立的「加载中」（路由切换、Suspense、对话框）：只有转圈和文字，不加背景色，稍等一下再淡入 */
+.km-loading-card {
+  width: 100%;
+  animation: km-skeleton-appear var(--km-dur-slow) var(--km-ease-standard) 120ms both;
+}
+/* 接力上一个 Loading（见 loading.tsx）：直接可见，不再淡入一次 */
+.km-loading-card.km-loading-continue {
+  animation: none;
+}
+
+/* 挂载即加载：内容从第一帧起隐藏，色卡稍后浮现（快请求只会看到一瞬空白，不会闪出占位数据） */
+.km-skeletonize[data-skeleton="mount"] {
+  --km-sk-hide: 1;
+  animation:
+    km-sk-card-in var(--km-dur-slow) var(--km-ease-standard) 120ms both,
+    km-sk-pulse 1.6s cubic-bezier(0.37, 0, 0.63, 1) 380ms infinite;
+}
+/* 重新加载：旧内容先留着，超过 delay 才交叉淡化成色卡 */
+.km-skeletonize[data-skeleton="update"] {
+  animation:
+    km-sk-cross-in var(--km-dur-slow) var(--km-ease-standard) var(--km-skeleton-delay) both,
+    km-sk-pulse 1.6s cubic-bezier(0.37, 0, 0.63, 1) calc(var(--km-skeleton-delay) + var(--km-dur-slow)) infinite;
+}
+/* 内容到达：色卡淡出、内容淡入 */
+.km-skeletonize[data-skeleton="reveal"] {
+  animation: km-sk-reveal var(--km-dur-slow) var(--km-ease-standard) both;
+}
+/* 色卡还没浮现就到了：只淡入内容 */
+.km-skeletonize[data-skeleton="reveal-content"] {
+  animation: km-sk-reveal-content var(--km-dur-base) var(--km-ease-out) both;
+}
+
+@keyframes km-sk-card-in {
+  from { --km-sk-card: 0; }
+  to { --km-sk-card: 1; }
+}
+@keyframes km-sk-cross-in {
+  from { --km-sk-card: 0; --km-sk-hide: 0; }
+  to { --km-sk-card: 1; --km-sk-hide: 1; }
+}
+@keyframes km-sk-pulse {
+  0%, 100% { --km-sk-card: 1; --km-sk-hide: 1; --km-sk-p: 0; }
+  50% { --km-sk-card: 1; --km-sk-hide: 1; --km-sk-p: 1; }
+}
+@keyframes km-sk-reveal {
+  from { --km-sk-card: 1; --km-sk-hide: 1; }
+  to { --km-sk-card: 0; --km-sk-hide: 0; }
+}
+@keyframes km-sk-reveal-content {
+  from { --km-sk-card: 0; --km-sk-hide: 1; }
+  to { --km-sk-card: 0; --km-sk-hide: 0; }
+}
+
+/* 独立的小色块（Skeleton 原语，少数地方直接用） */
+.km-skeleton-group {
+  animation: km-skeleton-appear var(--km-dur-slow) var(--km-ease-out) var(--km-skeleton-delay) both;
+}
+.km-skeleton {
+  display: block;
+  background-color: var(--km-sk-fill);
+  border-radius: 6px;
+  animation: km-skeleton-pulse 1.6s cubic-bezier(0.37, 0, 0.63, 1) infinite;
+}
+.km-skeleton-card {
+  border-radius: var(--radius-4, 12px);
+  background-color: var(--km-sk-fill-low);
+}
+/* 旧的占位形状：色卡已覆盖整个区域，不再显示 */
+.km-skeleton-shape {
+  display: none !important;
+}
+@keyframes km-skeleton-appear {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+@keyframes km-skeleton-pulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.6; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .km-skeleton { animation: none !important; }
+  .km-skeletonize[data-skeleton="mount"],
+  .km-skeletonize[data-skeleton="update"] { animation: none !important; --km-sk-card: 1; --km-sk-hide: 1; }
+  .km-skeletonize[data-skeleton^="reveal"] { animation: none !important; --km-sk-card: 0; --km-sk-hide: 0; }
+}
+
+/* ------------------------------------------------- 4) 页面切换（View Transitions） */
+
+/* 页面切换时的顶层淡入（React 侧 motion 动画的兜底） */
+.km-page-enter {
+  animation: km-page-enter var(--km-dur-base) var(--km-ease-out) both;
+}
+
+@keyframes km-page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* ------------------------------------------- 5) 减少动态效果（可访问性） */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  .km-node-card,
+  .km-top-card,
+  .rt-Card {
+    will-change: auto;
+  }
+}
+
+
+/* ==========================================================================
+   动效性格分层（配合 src/lib/motion.ts）
+   surface / content / control / feedback / overlay 五类各自有明确的时长与曲线，
+   让「不同部分有不同设计特点」，但整体节奏仍然统一。
+   ========================================================================== */
+
+/* 侧边栏导航项：高亮块用 layout 动画在项之间滑动，左侧色条随激活状态弹性伸缩 */
+.km-sidebar-item {
+  --km-sidebar-bar-width: 4px;
+  position: relative;
+  isolation: isolate;
+  border-radius: 6px;
+  overflow: hidden;
+}
+.km-sidebar-active-bar {
+  position: absolute;
+  left: 0;
+  top: 6px;
+  bottom: 6px;
+  width: var(--km-sidebar-bar-width);
+  border-radius: 0 2px 2px 0;
+  transform-origin: center;
+  pointer-events: none;
+  z-index: 1;
+}
+
+/*
+  侧边栏 hover 高亮：用 CSS 伪类而不是 JS 内联样式。
+  JS 写法（whileHover）会把 background-color 留在元素 style 上，
+  路由切换后指针已经离开，内联值却不会自动清掉，看起来像「hover 没清除」。
+  CSS 的 :hover 随指针状态自动复位，且能跟随键盘焦点。
+*/
+.km-sidebar-item {
+  transition: background-color var(--km-dur-fast) var(--km-ease-standard);
+}
+.km-sidebar-item:hover,
+.km-sidebar-item:focus-visible {
+  background-color: var(--gray-a3);
+}
+/* 激活项自身已有高亮块，不要再叠一层 hover 色 */
+.km-sidebar-item[data-active="true"]:hover,
+.km-sidebar-item[data-active="true"]:focus-visible {
+  background-color: transparent;
+}
+
+/* 视图切换：SegmentedControl 自带的滑动指示块，把时长接到统一节奏上 */
+.km-view-switch {
+  position: relative;
+  isolation: isolate;
+}
+.km-view-switch .rt-SegmentedControlIndicator {
+  transition-duration: var(--km-dur-base);
+  transition-timing-function: var(--km-ease-emphasized);
+}
+.km-view-switch-button {
+  position: relative;
+  transition: color var(--km-dur-fast) var(--km-ease-standard);
+}
+
+/* 表格展开行：高度用弹簧展开，先快后慢，收起可被打断 */
+.km-node-table-expand {
+  overflow: hidden;
+}
+
+/* 节点卡片：hover 时的「先行抬升」由 JS 处理，这里只补阴影的地面感（Solid Drawing） */
+.km-node-card {
+  border-radius: var(--radius-3, 10px);
+  will-change: transform;
+  transform: translateZ(0);
+}
+
+/* 控件按压反馈：按钮、图标按钮统一「压扁一点点」（Squash & Stretch） */
+.km-pressable {
+  transition: transform var(--km-dur-instant) var(--km-ease-emphasized),
+    box-shadow var(--km-dur-fast) var(--km-ease-standard);
+}
+.km-pressable:active {
+  transform: scaleX(1.02) scaleY(0.96);
+}
+
+/* 数值类文本一律等宽数字，滚动时不会左右抖动 */
+.km-tabular-nums,
+.km-node-card .rt-Badge,
+.km-usage-bar {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 弹层进入：先「预备」一点点缩放（Anticipation 的微观版本） */
+@media (prefers-reduced-motion: no-preference) {
+  [data-radix-popper-content-wrapper] > * {
+    will-change: transform, opacity;
+  }
+}
+
+
+/* ==========================================================================
+   全局细节：焦点环、可点击反馈、滚动进入
+   让「所有操作」都有反馈，同时不喧宾夺主（Staging）。
+   ========================================================================== */
+
+/* 焦点环：与主题色一致的柔性过渡，键盘操作时才有 */
+.radix-themes :is(button, a, [role="button"], [role="menuitem"], input, textarea):focus-visible {
+  outline-color: var(--accent-8);
+  transition: outline-color var(--km-dur-fast) var(--km-ease-standard),
+    box-shadow var(--km-dur-fast) var(--km-ease-standard);
+}
+
+/* 所有 Radix 按钮：按下时颜色过渡更快，松开后回到标准节奏 */
+.radix-themes .rt-Button:not(:disabled),
+.radix-themes .rt-IconButton:not(:disabled) {
+  transition: var(--km-transition-colors);
+}
+.radix-themes .rt-Button:active,
+.radix-themes .rt-IconButton:active {
+  transition-duration: var(--km-dur-instant);
+}
+
+/* 卡片 hover 时不抖动：只在支持 hover 的设备上抬升 */
+@media (hover: hover) and (pointer: fine) {
+  .km-node-card-motion:hover .km-node-card {
+    box-shadow: var(--km-shadow-2);
+  }
+}
+
+/* 数值 / 徽标：等宽数字，滚动时不跳 */
+.km-node-status,
+.km-node-name,
+.rt-Badge {
+  font-variant-numeric: tabular-nums;
+}
+
+/* 详情页主标题与列表卡片共享元素：切换时不做文字模糊，保持清晰（Solid Drawing） */
+.km-instance-title .rt-Text,
+.km-node-name {
+  backface-visibility: hidden;
+}
+
+
+/* ==========================================================================
+   共享元素（View Transitions）
+   --------------------------------------------------------------------------
+   列表卡片中的节点名 与 详情页标题 使用同一个 view-transition-name，
+   浏览器据此把两者当成「同一个东西」做位置 + 尺寸补间。
+   ========================================================================== */
+
+/* 页面默认交叉淡化：来去都很快，不拖泥带水 */
+::view-transition-old(root),
+::view-transition-new(root) {
+  animation-duration: var(--km-dur-fast);
+  animation-timing-function: var(--km-ease-standard);
+}
+
+/* 顶部导航/页脚等常驻元素不参与过渡，避免「整页闪一下」 */
+::view-transition-old(km-navbar),
+::view-transition-new(km-navbar) {
+  animation: none;
+  mix-blend-mode: normal;
+}
+
+/* 共享元素补间：稍长一些，让「这个东西在移动」被感知到 */
+::view-transition-group(km-node-hero) {
+  animation-duration: 220ms;
+  animation-timing-function: var(--km-view-transition-ease);
+}
+
+/* 共享元素的进出不做淡入淡出，只做几何补间（Solid Drawing：同一个物体不闪） */
+::view-transition-old(km-node-hero),
+::view-transition-new(km-node-hero) {
+  animation-duration: 220ms;
+  animation-timing-function: var(--km-view-transition-ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  ::view-transition-group(*),
+  ::view-transition-old(*),
+  ::view-transition-new(*) {
+    animation: none !important;
+  }
+}
+
+
+/* 页面切换的顶部细进度条（NavigationProgress） */
+.km-route-progress {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  z-index: 2147483000;
+  pointer-events: none;
+  transform-origin: 0 50%;
+  background-color: var(--accent-9);
+  box-shadow: 0 0 6px var(--accent-a8);
+}
+
+/* 设置卡逐卡骨架（SettingCardsLoading）：色块圆角与设置卡一致 */
+.km-setting-card-skeleton[data-skeleton]::before {
+  border-radius: var(--radius-3, 8px);
 }

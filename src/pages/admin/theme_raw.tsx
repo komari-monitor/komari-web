@@ -1,66 +1,40 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo } from "react";
 import { Callout, Box } from "@radix-ui/themes";
-import Loading from "@/components/loading";
+import { Skeletonize } from "@/components/ui/skeleton";
 import { usePublicInfo } from "@/contexts/PublicInfoContext";
-import {
-  getRawThemeHtml,
-  type ThemeConfiguration,
-} from "@/utils/themeConfiguration";
-
-interface ThemeConfigResponse {
-  configuration?: ThemeConfiguration;
-}
+import { getRawThemeHtml } from "@/utils/themeConfiguration";
+import { useRouteQuery } from "@/lib/routeData";
+import { rememberActiveTheme, themeManifestQuery } from "@/routeQueries/appearance";
 
 const ThemeRaw = () => {
-  const { publicInfo } = usePublicInfo();
+  const { publicInfo, isLoading: publicInfoLoading } = usePublicInfo();
   const theme = publicInfo?.theme;
-  const [html, setHtml] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  // 主题清单：主题已知时切换页面前就已预取（见 routeQueries/appearance.ts）
+  const manifestQuery = useMemo(() => (theme ? themeManifestQuery(theme) : null), [theme]);
+  const manifest = useRouteQuery(manifestQuery);
+  useEffect(() => rememberActiveTheme(theme), [theme]);
+  // 原来首帧就是加载中：公共信息还没到（主题未知）时也先转圈
+  const loading = manifest.loading || (!theme && publicInfoLoading);
+  const rawHtml = theme && manifest.data ? getRawThemeHtml(manifest.data.configuration) : "";
+  const error = !theme
+    ? null
+    : manifest.error
+      ? manifest.error instanceof Error
+        ? manifest.error.message
+        : "Failed to load raw theme"
+      : manifest.data && !rawHtml.trim()
+        ? "Raw theme content is empty"
+        : null;
+  const html = error ? "" : rawHtml;
 
-  useEffect(() => {
-    let cancelled = false;
-
-    async function load() {
-      if (!theme) {
-        setHtml("");
-        setLoading(false);
-        return;
-      }
-
-      setLoading(true);
-      setError(null);
-
-      try {
-        const resp = await fetch(`/themes/${theme}/komari-theme.json`, {
-          cache: "no-cache",
-        });
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-
-        const data: ThemeConfigResponse = await resp.json();
-        const rawHtml = getRawThemeHtml(data.configuration);
-        if (!rawHtml.trim()) {
-          throw new Error("Raw theme content is empty");
-        }
-
-        if (!cancelled) setHtml(rawHtml);
-      } catch (e) {
-        if (!cancelled) {
-          setHtml("");
-          setError(e instanceof Error ? e.message : "Failed to load raw theme");
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    }
-
-    load();
-    return () => {
-      cancelled = true;
-    };
-  }, [theme]);
-
-  if (loading) return <Loading />;
+  // 加载中：iframe 舞台的位置先是一大块色块（不再整页转圈）
+  if (loading) {
+    return (
+      <Skeletonize loading className="km-setting-card-skeleton min-h-[calc(100vh-96px)]">
+        <div />
+      </Skeletonize>
+    );
+  }
 
   if (error) {
     return (
@@ -72,6 +46,11 @@ const ThemeRaw = () => {
 
   return (
     <Box className="km-page-admin-theme-raw h-full min-h-[calc(100vh-96px)]">
+      {/*
+        surface 性格：主题原文是一整块 iframe「舞台」，路由进场已由外层 AdminPanelBar 做过淡入落位，
+        这里不再按 theme 加 key + AnimatePresence：key 变化会卸载重挂 iframe（整页重新加载），
+        且退场与进场两个 iframe 会短暂上下叠在一起把页面撑高。
+      */}
       <iframe
         title="Theme raw content"
         srcDoc={html}

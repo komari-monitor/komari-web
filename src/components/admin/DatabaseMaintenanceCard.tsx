@@ -1,4 +1,5 @@
-import Loading from "@/components/loading";
+import { Skeletonize, skeletonText } from "@/components/ui/skeleton";
+import { AutoHeight, Collapse } from "@/components/motion";
 import { formatBytes } from "@/utils/unitHelper";
 import { Button, Dialog, Flex, Text } from "@radix-ui/themes";
 import { DatabaseZap, RefreshCw } from "lucide-react";
@@ -7,6 +8,9 @@ import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { z } from "zod";
 import { SettingCard } from "./SettingCard";
+import { ApiError, requestJson, type RequestOptions } from "@/lib/http";
+import { useRouteQuery } from "@/lib/routeData";
+import { databaseOverviewQuery, type DatabaseOverviewRaw } from "@/routeQueries/settings";
 
 const maintenanceActionSchema = z.enum([
   "vacuum",
@@ -50,34 +54,34 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === "object" && value !== null && !Array.isArray(value);
 }
 
+// 响应体必须是 { status: "success", data }；否则优先用服务器 message，再退回 fallbackMessage。
 async function requestAdminData(
-  input: RequestInfo | URL,
+  input: string,
   fallbackMessage: string,
-  init?: RequestInit,
+  init?: RequestOptions,
 ): Promise<unknown> {
-  const response = await fetch(input, init);
   let payload: unknown;
-
+  let ok = true;
   try {
-    payload = await response.json();
-  } catch {
-    throw new Error(fallbackMessage);
+    payload = await requestJson(input, init);
+  } catch (error) {
+    if (!(error instanceof ApiError)) throw error;
+    payload = error.body;
+    ok = false;
   }
 
-  const message =
+  return unwrapAdminData({ ok, payload }, fallbackMessage);
+}
+
+function unwrapAdminData({ ok, payload }: DatabaseOverviewRaw, fallbackMessage: string): unknown {
+  if (ok && isRecord(payload) && payload.status === "success" && "data" in payload) {
+    return payload.data;
+  }
+  throw new Error(
     isRecord(payload) && typeof payload.message === "string"
       ? payload.message
-      : fallbackMessage;
-  if (
-    !response.ok ||
-    !isRecord(payload) ||
-    payload.status !== "success" ||
-    !("data" in payload)
-  ) {
-    throw new Error(message);
-  }
-
-  return payload.data;
+      : fallbackMessage,
+  );
 }
 
 function driverLabel(driver: string): string {
@@ -95,7 +99,28 @@ function driverLabel(driver: string): string {
   }
 }
 
-function DatabaseSummaryRow({ label, info }: { label: string; info: DatabaseInfo }) {
+/** 首次加载时的占位：与真实概览同结构，由 Skeletonize 画成等宽的条 */
+const PLACEHOLDER_INFO: DatabaseInfo = {
+  driver: skeletonText(6),
+  location: "local",
+  size: null,
+  action: "vacuum",
+};
+const PLACEHOLDER_OVERVIEW: DatabaseOverview = {
+  main: PLACEHOLDER_INFO,
+  monitoring: PLACEHOLDER_INFO,
+  local_total: 0,
+};
+
+function DatabaseSummaryRow({
+  label,
+  info,
+  placeholder = false,
+}: {
+  label: string;
+  info: DatabaseInfo;
+  placeholder?: boolean;
+}) {
   const { t } = useTranslation();
 
   return (
@@ -105,7 +130,9 @@ function DatabaseSummaryRow({ label, info }: { label: string; info: DatabaseInfo
           {label}
         </Text>
         <Text as="div" size="1" color="gray">
-          {driverLabel(info.driver)} / {t(`settings.database.locations.${info.location}`)}
+          {placeholder
+            ? skeletonText(14)
+            : `${driverLabel(info.driver)} / ${t(`settings.database.locations.${info.location}`)}`}
         </Text>
         {info.error ? (
           <Text as="div" size="1" color="red" className="break-words">
@@ -114,13 +141,17 @@ function DatabaseSummaryRow({ label, info }: { label: string; info: DatabaseInfo
         ) : null}
       </div>
       <Text size="2" weight="medium" className="whitespace-nowrap">
-        {info.size === null ? t("common.unknown") : formatBytes(info.size)}
+        {placeholder
+          ? skeletonText(7)
+          : info.size === null
+            ? t("common.unknown")
+            : formatBytes(info.size)}
       </Text>
     </div>
   );
 }
 
-function LocalDatabaseTotalRow({ size }: { size: number }) {
+function LocalDatabaseTotalRow({ size, placeholder = false }: { size: number; placeholder?: boolean }) {
   const { t } = useTranslation();
 
   return (
@@ -134,7 +165,7 @@ function LocalDatabaseTotalRow({ size }: { size: number }) {
         </Text>
       </div>
       <Text size="2" weight="bold" className="whitespace-nowrap">
-        {formatBytes(size)}
+        {placeholder ? skeletonText(7) : formatBytes(size)}
       </Text>
     </div>
   );
@@ -194,45 +225,59 @@ function maintenanceFailureDescription(
 
 export function DatabaseMaintenanceCard() {
   const { t } = useTranslation();
-  const [overview, setOverview] = React.useState<DatabaseOverview | null>(null);
-  const [loading, setLoading] = React.useState(true);
-  const [loadError, setLoadError] = React.useState<string | null>(null);
+  const [overviewState, setOverview] = React.useState<DatabaseOverview | null>(null);
+  const [loadingState, setLoading] = React.useState(true);
+  const [loadErrorState, setLoadError] = React.useState<string | null>(null);
+  let overview = overviewState;
+  let loading = loadingState;
+  let loadError = loadErrorState;
   const [maintaining, setMaintaining] = React.useState(false);
   const [confirmOpen, setConfirmOpen] = React.useState(false);
 
+  // 首次读取来自页面切换时的预取（routeQueries/settings.ts），数据先到就不闪骨架；
+  // 维护完成后的刷新仍走 fetchOverview，之后以本地状态为准。
+  const initial = useRouteQuery(databaseOverviewQuery);
+  const [refetched, setRefetched] = React.useState(false);
+
+  /** 把原始响应解析成概览或错误文字（与原来的校验、文案一致） */
+  const resolveOverview = React.useCallback(
+    (raw: DatabaseOverviewRaw | undefined, error: unknown): { overview: DatabaseOverview | null; error: string | null } => {
+      const fallbackMessage = t("settings.database.load_error");
+      try {
+        if (error !== undefined) throw error;
+        const data = unwrapAdminData(raw!, fallbackMessage);
+        const parsed = databaseOverviewSchema.safeParse(data);
+        if (!parsed.success) {
+          throw new Error(t("settings.database.invalid_response"));
+        }
+        return { overview: parsed.data, error: null };
+      } catch (cause) {
+        const message = cause instanceof Error ? cause.message : String(cause);
+        return {
+          overview: null,
+          error: message === fallbackMessage ? fallbackMessage : `${fallbackMessage}: ${message}`,
+        };
+      }
+    },
+    [t],
+  );
+
   const fetchOverview = React.useCallback(async () => {
+    setRefetched(true);
     setLoading(true);
     setLoadError(null);
-    const fallbackMessage = t("settings.database.load_error");
-
+    let raw: DatabaseOverviewRaw | undefined;
+    let error: unknown;
     try {
-      const data = await requestAdminData(
-        "/api/admin/database/size",
-        fallbackMessage,
-      );
-      const parsed = databaseOverviewSchema.safeParse(data);
-      if (!parsed.success) {
-        throw new Error(t("settings.database.invalid_response"));
-      }
-
-      setOverview(parsed.data);
-      setLoadError(null);
-    } catch (error) {
-      const message = error instanceof Error ? error.message : String(error);
-      setOverview(null);
-      setLoadError(
-        message === fallbackMessage
-          ? fallbackMessage
-          : `${fallbackMessage}: ${message}`,
-      );
-    } finally {
-      setLoading(false);
+      raw = await databaseOverviewQuery.fetch();
+    } catch (cause) {
+      error = cause;
     }
-  }, [t]);
-
-  React.useEffect(() => {
-    void fetchOverview();
-  }, [fetchOverview]);
+    const result = resolveOverview(raw, error);
+    setOverview(result.overview);
+    setLoadError(result.error);
+    setLoading(false);
+  }, [resolveOverview]);
 
   const handleMaintenance = async () => {
     if (!overview || maintaining) return;
@@ -270,7 +315,18 @@ export function DatabaseMaintenanceCard() {
     }
   };
 
+  if (!refetched) {
+    // 还没手动刷新过：直接从预取结果派生，不经过 effect（避免多画一帧骨架）
+    const result = initial.loading ? null : resolveOverview(initial.data, initial.error ?? undefined);
+    overview = result?.overview ?? null;
+    loadError = result?.error ?? null;
+    loading = initial.loading;
+  }
+
   const actionDisabled = loading || maintaining;
+  // 首次加载（还没有概览）：用占位概览渲染同结构，外层 Skeletonize 画骨架
+  const placeholder = !overview && loading;
+  const shown = overview ?? (placeholder ? PLACEHOLDER_OVERVIEW : null);
 
   return (
     <SettingCard
@@ -278,32 +334,38 @@ export function DatabaseMaintenanceCard() {
       description={t("settings.database.maintenance_description")}
       className="km-admin-db-maintenance-card"
     >
-      <Flex direction="column" className="w-full pt-2" gap="0">
-        {overview ? (
+      {/* 骨架 -> 概览 / 概览 -> 错误：内容行数变化时卡片高度弹簧过渡 */}
+      <AutoHeight className="w-full">
+      <Flex direction="column" className="w-full pt-km-group" gap="0">
+        <Skeletonize loading={placeholder}>
+        {shown ? (
           <>
             <DatabaseSummaryRow
               label={t("settings.database.main")}
-              info={overview.main}
+              info={shown.main}
+              placeholder={placeholder}
             />
             <DatabaseSummaryRow
               label={t("settings.database.monitoring")}
-              info={overview.monitoring}
+              info={shown.monitoring}
+              placeholder={placeholder}
             />
-            {overview.local_total !== null ? (
-              <LocalDatabaseTotalRow size={overview.local_total} />
+            {shown.local_total !== null ? (
+              <LocalDatabaseTotalRow size={shown.local_total} placeholder={placeholder} />
             ) : null}
           </>
-        ) : loading ? (
-          <Loading compact />
         ) : null}
+        </Skeletonize>
 
-        {loadError ? (
-          <Text size="2" color="red" className="break-words py-3">
+        <Collapse open={Boolean(loadError)}>
+          <Text as="div" size="2" color="red" className="break-words py-3">
             {loadError}
           </Text>
-        ) : null}
+        </Collapse>
 
-        <Flex justify="end" className="pt-3">
+        <Flex justify="end" className="pt-km-block">
+          {/* 同一个 Skeletonize 包住按钮位：占位按钮 -> 真实按钮时文字原地淡入，不换外壳 */}
+          <Skeletonize loading={placeholder} as="span">
           {!overview && loadError ? (
             <Button
               variant="soft"
@@ -315,6 +377,12 @@ export function DatabaseMaintenanceCard() {
                 className={loading ? "animate-spin" : undefined}
               />
               {t("common.retry")}
+            </Button>
+          ) : placeholder ? (
+            // 按钮位置占好：数据到达时按钮原地出现，卡片不变高
+            <Button variant="solid" color="orange" disabled>
+              <DatabaseZap size={16} />
+              {t("settings.database.maintenance_button")}
             </Button>
           ) : overview ? (
             <Dialog.Root open={confirmOpen} onOpenChange={setConfirmOpen}>
@@ -338,7 +406,7 @@ export function DatabaseMaintenanceCard() {
                   {t("settings.database.confirm_description")}
                 </Dialog.Description>
 
-                <Flex direction="column" mt="3">
+                <Flex direction="column" mt="4">
                   <MaintenanceActionRow
                     label={t("settings.database.main")}
                     info={overview.main}
@@ -349,7 +417,7 @@ export function DatabaseMaintenanceCard() {
                   />
                 </Flex>
 
-                <Flex gap="3" mt="4" justify="end">
+                <Flex gap="2" mt="5" justify="end">
                   <Dialog.Close>
                     <Button variant="soft" color="gray">
                       {t("common.cancel")}
@@ -367,8 +435,10 @@ export function DatabaseMaintenanceCard() {
               </Dialog.Content>
             </Dialog.Root>
           ) : null}
+          </Skeletonize>
         </Flex>
       </Flex>
+      </AutoHeight>
     </SettingCard>
   );
 }

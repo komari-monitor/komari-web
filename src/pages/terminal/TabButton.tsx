@@ -78,6 +78,12 @@ const TabButton = ({
       delayDuration={300}
       className="!bg-[#202020] !text-white"
     >
+      {/*
+        标签本身不加缩放/位移类反馈：tab 是贴着窗口顶边的整块区域，
+        任何 scale 都会让它看起来被压扁或拉伸（还会带动内部图标和文字模糊）。
+        选中/悬停的反馈已经由下面那层背景的 opacity + 颜色过渡完成，
+        新增/关闭/重排的补位动画由 TerminalTabBar 的 layout 负责。
+      */}
       <div
         data-guide={active ? "terminal-tab" : undefined}
         role="tab"
@@ -103,7 +109,6 @@ const TabButton = ({
             }`}
             style={tabBackgroundStyle}
           />
-
         <img
           src={getOSImage(client?.os || "")}
           alt=""

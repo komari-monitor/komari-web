@@ -2,6 +2,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
 import { useTranslation } from "react-i18next";
 import { ArrowDown, ArrowUp, Gauge, X } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import {
+  CONTROL_MOTION,
+  MOTION_SPRING,
+  MOTION_TRANSITION,
+} from "@/lib/motion";
 import { useRPC2Call } from "@/contexts/RPC2Context";
 import { useNodeList } from "@/contexts/NodeListContext";
 import { getOSImage } from "@/utils/osImageHelper";
@@ -324,6 +330,7 @@ const TerminalResourceMonitor = ({
             {t("terminal.resource_monitor.load_error", "实时数据加载失败")}
           </p>
         )}
+        <AnimatePresence initial={false}>
         {servers.map((uuid) => {
           const client = clientByUuid.get(uuid);
           const node = nodeByUuid.get(uuid);
@@ -332,8 +339,22 @@ const TerminalResourceMonitor = ({
           const diskPercent = usagePercent(sample?.diskUsed ?? 0, node?.disk_total ?? 0);
 
           return (
-            <article
+            /*
+              不用 layout：小窗拖动时每次 pointermove 都改 left/top，layout 会把这次位移
+              当成布局变化再补间一遍，卡片就拖在窗口后面「再播一次」。
+              增删时用高度弹簧收放，下面的卡片随真实布局补位。
+            */
+            <motion.article
               key={uuid}
+              initial={{ opacity: 0, height: 0, scale: 0.985 }}
+              animate={{ opacity: 1, height: "auto", scale: 1 }}
+              exit={{ opacity: 0, height: 0, scale: 0.985 }}
+              transition={{
+                height: MOTION_SPRING.soft,
+                scale: MOTION_SPRING.snappy,
+                opacity: MOTION_TRANSITION.fade,
+              }}
+              style={{ overflow: "hidden" }}
               className="rounded-[5px] border border-neutral-800/80 bg-[#111111] p-2"
             >
               <div className="mb-2 flex items-center gap-2">
@@ -346,14 +367,16 @@ const TerminalResourceMonitor = ({
                 <h3 className="min-w-0 flex-1 truncate text-xs font-medium text-neutral-100">
                   {client?.name || node?.name || uuid}
                 </h3>
-                <button
+                <motion.button
                   type="button"
+                  whileTap={CONTROL_MOTION.tap}
+                  transition={CONTROL_MOTION.transition}
                   className="inline-flex h-4 w-4 shrink-0 cursor-pointer items-center justify-center rounded-[3px] text-neutral-500 transition-colors hover:bg-white/15 hover:text-neutral-100"
                   onClick={() => onRemove(uuid)}
                   aria-label={t("common.close", "Close")}
                 >
                   <X size={11} strokeWidth={2.2} />
-                </button>
+                </motion.button>
               </div>
 
               {!sample ? (
@@ -403,9 +426,10 @@ const TerminalResourceMonitor = ({
                   </div>
                 </div>
               )}
-            </article>
+            </motion.article>
           );
         })}
+        </AnimatePresence>
       </div>
     </section>
   );

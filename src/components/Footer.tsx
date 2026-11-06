@@ -1,7 +1,10 @@
 import { Flex, Text } from "@radix-ui/themes";
-import { useEffect, useState } from "react";
+import { useEffect, useState, type CSSProperties } from "react";
+import { motion } from "motion/react";
 import { useRPC2Call } from "@/contexts/RPC2Context";
 import { usePublicInfo } from "@/contexts/PublicInfoContext";
+import { MOTION_DURATION, MOTION_EASE, MOTION_SPRING } from "@/lib/motion";
+import { Skeletonize, skeletonText } from "./ui/skeleton";
 
 const Footer = () => {
   //const currentYear = new Date().getFullYear();
@@ -28,9 +31,19 @@ const Footer = () => {
     hash: string;
     version: string;
   } | null>(null);
+  const [versionFailed, setVersionFailed] = useState(false);
   const { call } = useRPC2Call();
   const { publicInfo } = usePublicInfo();
   const customFooterHtml = publicInfo?.theme_settings?.customFooterHtml || "";
+  // 页脚内容与 main 同宽、同左右安全边距，左边缘和页面内容对齐（边框仍铺满整行）
+  const mainContentWidth = publicInfo?.theme_settings?.mainContentWidth ?? 100;
+  const innerStyle: CSSProperties = {
+    width: `${mainContentWidth}vw`,
+    maxWidth: "100%",
+    marginLeft: "auto",
+    marginRight: "auto",
+  };
+  const innerClass = "box-border px-km-block md:px-km-section";
   useEffect(() => {
     const fetchVersionInfo = async () => {
       try {
@@ -38,6 +51,7 @@ const Footer = () => {
         const data = await call("common:getVersion");
         setVersionInfo({ hash: data.hash?.slice(0, 7), version: data.version });
       } catch (error) {
+        setVersionFailed(true);
         console.error("Failed to fetch version info:", error);
       }
     };
@@ -46,14 +60,24 @@ const Footer = () => {
   }, []);
 
   return (
-    <div className="km-footer footer p-2 border-t-1 border-t-[var(--gray-7)]">
+    <motion.div
+      className="km-footer footer py-km-block border-t-1 border-t-[var(--gray-7)]"
+      // surface 层：页脚是页面的一部分，随页面一起轻轻落位
+      initial={{ opacity: 0, y: 6 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{
+        y: MOTION_SPRING.soft,
+        opacity: { duration: MOTION_DURATION.base, ease: MOTION_EASE.out },
+      }}
+    >
       {/* Copyright and ICP Filing */}
 
       {customFooterHtml ? (
         <Text
           size="1"
           color="gray"
-          className="flex flex-col justify-center items-center"
+          className={"flex flex-col justify-center items-center " + innerClass}
+          style={innerStyle}
         >
           <span
             dangerouslySetInnerHTML={{
@@ -70,14 +94,12 @@ const Footer = () => {
           justify="between"
           align={{ initial: "center", md: "start" }}
           gap="4"
-          style={{
-            maxWidth: "1200px",
-            margin: "0 auto",
-          }}
+          className={innerClass}
+          style={innerStyle}
         >
           <Flex
             direction="column"
-            gap="2"
+            gap="1"
             align={{ initial: "center", md: "start" }}
           >
             <Text size="2" color="gray">
@@ -89,12 +111,19 @@ const Footer = () => {
               </Text>
             )}
             <Text size="1" color="gray">
-              {versionInfo && `${versionInfo.version} (${versionInfo.hash})`}
+              {/* 版本号异步到达：先是一条与「1.2.3 (abcdef0)」等宽的小骨架，到达后原位淡入 */}
+              <Skeletonize as="span" loading={!versionInfo && !versionFailed}>
+                {versionInfo
+                  ? `${versionInfo.version} (${versionInfo.hash})`
+                  : versionFailed
+                    ? null
+                    : skeletonText(15)}
+              </Skeletonize>
             </Text>
           </Flex>
         </Flex>
       )}
-    </div>
+    </motion.div>
   );
 };
 

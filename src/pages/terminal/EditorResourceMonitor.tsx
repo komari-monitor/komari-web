@@ -1,6 +1,8 @@
 import { useEffect, useMemo, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import { ArrowDown, ArrowUp, Gauge } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { MOTION_SPRING } from "@/lib/motion";
 import { useNodeList } from "@/contexts/NodeListContext";
 import { useRPC2Call } from "@/contexts/RPC2Context";
 import { getOSImage } from "@/utils/osImageHelper";
@@ -53,12 +55,16 @@ const UsageMetric = ({
       <span className="min-w-0 truncate font-medium text-neutral-100">{detail}</span>
     </div>
     <div className="mt-0.5 h-[3px] overflow-hidden rounded-full bg-neutral-800">
-      <div
-        className="h-full rounded-full transition-[width] duration-500"
+      {/* feedback 层：用弹簧缩放追赶数值，2s 轮询不会每帧重放 */}
+      <motion.div
+        className="h-full origin-left rounded-full"
         style={{
           backgroundColor: usageColor(normalizePercent(percent)),
-          width: `${normalizePercent(percent)}%`,
+          width: "100%",
         }}
+        initial={false}
+        animate={{ scaleX: normalizePercent(percent) / 100 }}
+        transition={{ scaleX: { ...MOTION_SPRING.soft, restDelta: 0.0005 } }}
       />
     </div>
   </div>
@@ -140,11 +146,20 @@ const EditorResourceMonitor = ({ uuid }: EditorResourceMonitorProps) => {
       </div>
 
       <div className="space-y-1.5 px-2 pb-2">
+        <AnimatePresence initial={false}>
         {loadError && (
-          <p className="text-[10px] text-red-300">
+          <motion.p
+            key="load-error"
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
+            transition={MOTION_SPRING.snappy}
+            className="text-[10px] text-red-300"
+          >
             {t("terminal.resource_monitor.load_error", "实时数据加载失败")}
-          </p>
+          </motion.p>
         )}
+        </AnimatePresence>
         {!sample ? (
           <p className="pb-0.5 text-[10px] text-neutral-500">
             {t("terminal.resource_monitor.waiting", "等待数据...")}
@@ -154,7 +169,12 @@ const EditorResourceMonitor = ({ uuid }: EditorResourceMonitorProps) => {
             {t("nodeCard.offline", "离线")}
           </p>
         ) : (
-          <>
+          <motion.div
+            key="resource-metrics"
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={MOTION_SPRING.soft}
+          >
             <UsageMetric
               label="CPU"
               detail={`${sample.cpuUsage.toFixed(1)}%`}
@@ -190,7 +210,7 @@ const EditorResourceMonitor = ({ uuid }: EditorResourceMonitorProps) => {
                 </p>
               </div>
             </div>
-          </>
+          </motion.div>
         )}
       </div>
     </section>

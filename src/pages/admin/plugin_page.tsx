@@ -16,6 +16,8 @@ export default function PluginPage() {
     );
   }
   const src = `/api/admin/plugin/${encodeURIComponent(short)}/${file}`;
+  // surface 层：进场落位已由外层 AdminPanelBar 按路由区块完成，这里不再叠一层 PageMotion（否则位移翻倍为 16px）。
+  // 切换不同插件页（只改 query）时 iframe 原地换 src，不重挂载。
   return (
     <Box className="km-page-admin-plugin h-full min-h-[calc(100vh-96px)]">
       <iframe

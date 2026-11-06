@@ -1,4 +1,6 @@
 import React from "react";
+import { useRouteQuery } from "@/lib/routeData";
+import { offlineNotificationsQuery } from "@/routeQueries/ops";
 
 export type OfflineNotification = {
   client: string;
@@ -16,36 +18,24 @@ interface OfflineNotificationContextType {
 }
 
 const NotificationContext = React.createContext<OfflineNotificationContextType | undefined>(undefined);
+const NO_NOTIFICATIONS: OfflineNotification[] = [];
 
 export const OfflineNotificationProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const [offlineNotification, setOfflineNotification] = React.useState<OfflineNotification[]>([]);
-  const [loading, setLoading] = React.useState<boolean>(false);
-  const firstLoad = React.useRef(true);
-  const [error, setError] = React.useState<Error | null>(null);
-
-  const refresh = async () => {
-    if (firstLoad.current) setLoading(true);
-    try {
-      const response = await fetch("/api/admin/notification/offline");
-      if (!response.ok) {
-        throw new Error("Failed to fetch offline notifications");
-      }
-      const data = await response.json();
-      setOfflineNotification(data.data || []);
-    } catch (error) {
-      console.error("Error fetching offline notifications:", error);
-      setError(error instanceof Error ? error : new Error(String(error)));
-    } finally {
-      if (firstLoad.current) {
-        setLoading(false);
-        firstLoad.current = false;
-      }
-    }
-  };
-
+  // 离线通知配置由 routePreload 在切换页面时提前请求（src/routeQueries/ops.ts）
+  const result = useRouteQuery(offlineNotificationsQuery);
   React.useEffect(() => {
-    refresh();
-  }, []);
+    if (result.error) console.error("Error fetching offline notifications:", result.error);
+  }, [result.error]);
+  // 与原实现一致：错误一直保留（之后的刷新成功也不清空）；loading 只表示首次加载
+  const [lastError, setLastError] = React.useState<{ source: unknown; error: Error } | null>(null);
+  if (result.error && result.error !== lastError?.source) {
+    const source = result.error;
+    setLastError({ source, error: source instanceof Error ? source : new Error(String(source)) });
+  }
+  const error = lastError?.error ?? null;
+  const loading = result.data === undefined && !error;
+  const offlineNotification = result.data ?? NO_NOTIFICATIONS;
+  const refresh = result.reload;
 
   return (
     <NotificationContext.Provider value={{ offlineNotification, refresh, loading, error }}>

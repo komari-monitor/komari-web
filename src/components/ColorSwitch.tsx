@@ -1,8 +1,10 @@
-import { DropdownMenu, IconButton, Text } from "@radix-ui/themes";
+import { DropdownMenu, Text } from "@radix-ui/themes";
 import { useContext, type ReactNode } from "react";
 import { ThemeContext } from "../contexts/ThemeContext";
 import { BlendingModeIcon } from "@radix-ui/react-icons";
 import { useTranslation } from "react-i18next";
+import { CONTROL_MOTION } from "@/lib/motion";
+import { MotionIconButton } from "./ui/motion-radix";
 
 interface ColorSwitchProps {
   icon?: ReactNode;
@@ -12,13 +14,18 @@ const ColorSwitch = ({ icon }: ColorSwitchProps = {}) => {
   const { setColor } = useContext(ThemeContext);
   const { t } = useTranslation();
   const trigger = icon ?? (
-    <IconButton
+    // control 层：只有按下反馈；整站换色的颜色过渡由 global.css 的过渡层负责，这里不重复。
+    // 按钮本身是 motion 元素（不额外包 div），Trigger 的属性/焦点直接落在按钮上
+    <MotionIconButton
       variant="soft"
       title={t("common.color", "Accent color")}
       aria-label={t("common.color", "Accent color")}
+      whileHover={CONTROL_MOTION.hover}
+      whileTap={CONTROL_MOTION.tap}
+      transition={CONTROL_MOTION.transition}
     >
       <BlendingModeIcon />
-    </IconButton>
+    </MotionIconButton>
   );
 
   return (

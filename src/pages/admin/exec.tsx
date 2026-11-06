@@ -1,4 +1,4 @@
-import { useState, useRef, useEffect, useLayoutEffect, useMemo, type CSSProperties, type KeyboardEvent } from "react";
+import { useState, useRef, useEffect, type KeyboardEvent } from "react";
 import Loading from "@/components/loading";
 import { NodeDetailsProvider, useNodeDetails } from "@/contexts/NodeDetailsContext";
 import { useTranslation } from "react-i18next";
@@ -7,80 +7,23 @@ import {
     Card,
     Flex,
     Text,
-    Separator,
-    Badge,
     TextField
 } from "@radix-ui/themes";
-import { Play, AlertCircle, CheckCircle2, Copy, Clock } from "lucide-react";
+import { Play } from "lucide-react";
 import { toast } from "sonner";
 import NodeSelector from "@/components/NodeSelector";
 import { SettingCardCollapse } from "@/components/admin/SettingCard";
-
-interface TaskResult {
-    task_id: string;
-    client: string;
-    client_info: {
-        uuid: string;
-        name: string;
-        [key: string]: any;
-    };
-    result: string;
-    exit_code: number | null;
-    finished_at: string | null;
-    created_at: string;
-}
-
-interface ExecResponse {
-    success?: boolean;
-    task_id?: string;
-    clients?: string[];
-    message?: string;
-    // 新的响应格式
-    status?: string;
-    data?: {
-        task_id: string;
-    };
-}
-
-interface TaskResultResponse {
-    success?: boolean;
-    results?: TaskResult[];
-    message?: string;
-    // 新的响应格式
-    status?: string;
-    data?: TaskResult[];
-}
-
-const COMMAND_EDITOR_ID = "remote-exec-command-editor";
-const COMMAND_EDITOR_COLLAPSED_LINES = 3;
-const COMMAND_EDITOR_LINE_HEIGHT_VAR = "--command-editor-line-height";
-const COMMAND_EDITOR_VERTICAL_PADDING_VAR = "--command-editor-vertical-padding";
-const COMMAND_EDITOR_COLLAPSED_HEIGHT = `calc(${COMMAND_EDITOR_COLLAPSED_LINES} * var(${COMMAND_EDITOR_LINE_HEIGHT_VAR}) + var(${COMMAND_EDITOR_VERTICAL_PADDING_VAR}))`;
-const COMMAND_EDITOR_LINE_NUMBER_LIMIT = 500;
-// 客户端标记“执行超时”的内部结果（避免在 UI 中展示硬编码中文）
-const TIMEOUT_RESULT_MARKER = "__komari_exec_timeout__";
-
-const parsePixelValue = (value: string) => {
-    const parsedValue = Number.parseFloat(value);
-    return Number.isFinite(parsedValue) ? parsedValue : 0;
-};
-
-const getCommandEditorBorderHeight = (element: HTMLElement | null) => {
-    if (!element) {
-        return 0;
-    }
-
-    const style = window.getComputedStyle(element);
-    return parsePixelValue(style.borderTopWidth) + parsePixelValue(style.borderBottomWidth);
-};
-
-const getCommandEditorCollapsedHeight = (textarea: HTMLTextAreaElement, editor: HTMLElement | null) => {
-    const style = window.getComputedStyle(textarea);
-    const lineHeight = parsePixelValue(style.lineHeight);
-    const verticalPadding = parsePixelValue(style.paddingTop) + parsePixelValue(style.paddingBottom);
-
-    return COMMAND_EDITOR_COLLAPSED_LINES * lineHeight + verticalPadding + getCommandEditorBorderHeight(editor);
-};
+import { AnimatePresence, motion } from "motion/react";
+import { MOTION_SPRING, MOTION_TRANSITION } from "@/lib/motion";
+import { AutoHeight, Collapse, PresenceBox } from "@/components/motion";
+import PageHeader from "@/components/PageHeader";
+import { useRouteQuery } from "@/lib/routeData";
+import { execMeQuery } from "@/routeQueries/system";
+import CommandEditor from "./exec/CommandEditor";
+import TaskResultCard from "./exec/TaskResultCard";
+import { COMMAND_EDITOR_ID } from "./exec/editorLayout";
+import { execTask, fetchTaskResult } from "./exec/api";
+import { TIMEOUT_RESULT_MARKER, type TaskResult } from "./exec/types";
 
 const ExecPage = () => {
     return (
@@ -92,59 +35,19 @@ const ExecPage = () => {
 
 const ExecContent = () => {
     const { t } = useTranslation();
-    const { nodeDetail, isLoading, error } = useNodeDetails();
+    // 节点列表的加载/错误由 NodeSelector 自己显示（只有列表区是骨架），页面其余部分直接渲染
+    const { nodeDetail } = useNodeDetails();
     const [command, setCommand] = useState("");
     const [selectedNodes, setSelectedNodes] = useState<string[]>([]);
     const [executing, setExecuting] = useState(false);
     const [results, setResults] = useState<TaskResult[]>([]);
     const [taskId, setTaskId] = useState<string | null>(null);
     const [polling, setPolling] = useState(false);
-    const [commandFocused, setCommandFocused] = useState(false);
-    const [commandEditorHeight, setCommandEditorHeight] = useState(COMMAND_EDITOR_COLLAPSED_HEIGHT);
-    const [twoFaEnabled, setTwoFaEnabled] = useState(false);
     const [twoFaCode, setTwoFaCode] = useState("");
 
     // 使用 useRef 来保存轮询相关的引用
     const pollingIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const pollingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-    const commandTextareaRef = useRef<HTMLTextAreaElement | null>(null);
-    const commandEditorRef = useRef<HTMLDivElement | null>(null);
-    const commandLineGutterRef = useRef<HTMLDivElement | null>(null);
-
-    const commandLineCount = useMemo(() => {
-        return command === "" ? 1 : command.split("\n").length;
-    }, [command]);
-
-    const commandLineLabels = useMemo(() => {
-        if (commandFocused) {
-            const renderedLineCount = Math.min(commandLineCount, COMMAND_EDITOR_LINE_NUMBER_LIMIT);
-            const labels = Array.from({ length: renderedLineCount }, (_, index) => String(index + 1));
-
-            if (commandLineCount > renderedLineCount) {
-                labels.push(`+${commandLineCount - renderedLineCount}`);
-            }
-
-            return labels;
-        }
-
-        if (commandLineCount <= COMMAND_EDITOR_COLLAPSED_LINES) {
-            return Array.from({ length: commandLineCount }, (_, index) => String(index + 1));
-        }
-
-        const visibleNumberedLines = COMMAND_EDITOR_COLLAPSED_LINES - 1;
-        const remainingLines = commandLineCount - visibleNumberedLines;
-        return [
-            ...Array.from({ length: visibleNumberedLines }, (_, index) => String(index + 1)),
-            `+${remainingLines}`,
-        ];
-    }, [commandFocused, commandLineCount]);
-
-    const commandEditorStyle = useMemo<CSSProperties>(() => ({
-        [COMMAND_EDITOR_LINE_HEIGHT_VAR]: "1.5rem",
-        [COMMAND_EDITOR_VERTICAL_PADDING_VAR]: "1.5rem",
-        height: commandEditorHeight,
-        maxHeight: commandFocused ? "60vh" : COMMAND_EDITOR_COLLAPSED_HEIGHT,
-    }), [commandEditorHeight, commandFocused]);
 
     // 清理轮询的函数
     const clearPolling = () => {
@@ -166,58 +69,14 @@ const ExecContent = () => {
         };
     }, []);
 
-    useEffect(() => {
-        fetch("/api/me")
-            .then((response) => response.json())
-            .then((data) => {
-                setTwoFaEnabled(Boolean(data?.["2fa_enabled"]));
-            })
-            .catch(() => {
-                setTwoFaEnabled(false);
-            });
-    }, []);
-
-    useLayoutEffect(() => {
-        const textarea = commandTextareaRef.current;
-        if (!textarea) {
-            return;
-        }
-
-        if (!commandFocused) {
-            textarea.scrollTop = 0;
-            if (commandLineGutterRef.current) {
-                commandLineGutterRef.current.scrollTop = 0;
-            }
-            setCommandEditorHeight(COMMAND_EDITOR_COLLAPSED_HEIGHT);
-            return;
-        }
-
-        textarea.style.height = "0px";
-
-        const measuredHeight = textarea.scrollHeight + getCommandEditorBorderHeight(commandEditorRef.current);
-        const collapsedHeight = getCommandEditorCollapsedHeight(textarea, commandEditorRef.current);
-
-        setCommandEditorHeight(`${Math.max(collapsedHeight, measuredHeight)}px`);
-        textarea.style.height = "100%";
-    }, [command, commandFocused]);
-
-    if (isLoading) {
-        return <Loading />;
-    }
-
-    if (error) {
-        return <div className="text-red-500">{error}</div>;
-    }
+    // 是否需要 2FA：切换页面时已由 routePreload 提前请求；请求失败按未开启处理
+    const me = useRouteQuery(execMeQuery);
+    const twoFaEnabled = !me.error && Boolean(me.data?.["2fa_enabled"]);
 
     // 轮询任务结果
     const pollTaskResult = async (taskId: string) => {
         try {
-            const response = await fetch(`/api/admin/task/${taskId}/result`);
-            if (!response.ok) {
-                throw new Error(`HTTP error! status: ${response.status}`);
-            }
-
-            const data: TaskResultResponse = await response.json();
+            const data = await fetchTaskResult(taskId);
             let taskResults: TaskResult[] | undefined;
 
             // 支持旧格式和新格式
@@ -297,25 +156,12 @@ const ExecContent = () => {
         setTaskId(null);
 
         try {
-            const response = await fetch("/api/admin/task/exec", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                },
-                body: JSON.stringify({
-                    // Remote exec treats whitespace as script content, so preserve the user's exact input.
-                    command,
-                    clients: selectedNodes,
-                    "2fa_code": twoFaCode,
-                }),
+            const data = await execTask({
+                // Remote exec treats whitespace as script content, so preserve the user's exact input.
+                command,
+                clients: selectedNodes,
+                "2fa_code": twoFaCode,
             });
-
-            if (!response.ok) {
-                const errorData = await response.json().catch(() => ({}));
-                throw new Error(errorData.message || `HTTP error! status: ${response.status}`);
-            }
-
-            const data: ExecResponse = await response.json();
 
             if (data.success && data.task_id) {
                 setTaskId(data.task_id);
@@ -349,11 +195,6 @@ const ExecContent = () => {
         }
     };
 
-    const copyOutput = (output: string) => {
-        navigator.clipboard.writeText(output);
-        toast.success(t("common.success"));
-    };
-
     const getSelectedNodeNames = () => {
         return selectedNodes.map(uuid => {
             const node = nodeDetail.find(n => n.uuid === uuid);
@@ -361,87 +202,23 @@ const ExecContent = () => {
         }).join(", ");
     };
 
-    // 超时标记结果展示为本地化文案
-    const displayResultText = (result: TaskResult) =>
-        result.result === TIMEOUT_RESULT_MARKER ? t("exec.status.timeout") : result.result;
-
-    const getTaskStatus = (result: TaskResult) => {
-        if (result.finished_at === null) {
-            return { status: "running", color: "blue" as const, text: t("exec.status.running") };
-        }
-        if (result.result === TIMEOUT_RESULT_MARKER) {
-            return { status: "timeout", color: "orange" as const, text: t("exec.status.timeout", "超时") };
-        }
-        if (result.exit_code === 0) {
-            return { status: "success", color: "green" as const, text: t("common.success") };
-        }
-        return { status: "failed", color: "red" as const, text: t("common.error") };
-    };
-
     return (
-        <div className="km-page-admin-exec km-exec-header p-4 flex flex-col gap-3">
-            {/* 页面标题 */}
-            <div>
-                <h1 className="text-2xl font-bold">{t("exec.title")}</h1>
-                <Text size="2" color="gray" className="mt-1">
-                    {t("exec.description")}
-                </Text>
-            </div>
-
-            <Separator size="4" />
+        <div className="km-page km-page-admin-exec km-exec-header">
+            {/* 页面标题：与其它后台页一致，页头与内容之间由 km-page 的 section 档拉开，不再加分隔线 */}
+            <PageHeader title={t("exec.title")} description={t("exec.description")} />
 
             {/* 命令输入区域 */}
-            <Card className="km-exec-editor-card p-6">
+            <Card className="km-exec-editor-card p-km-block">
                 <Flex direction="column" gap="4">
 
                     <label htmlFor={COMMAND_EDITOR_ID} className="text-xl font-bold">
                         {t("exec.command")}
                     </label>
-                    <div
-                        ref={commandEditorRef}
-                        className="grid grid-cols-[3.75rem_minmax(0,1fr)] overflow-hidden rounded-md border border-[var(--gray-a7)] bg-[var(--color-surface)] transition-[height,border-color,box-shadow] duration-200 focus-within:border-[var(--accent-8)] focus-within:shadow-[0_0_0_1px_var(--accent-8)]"
-                        style={commandEditorStyle}
-                    >
-                        <div
-                            ref={commandLineGutterRef}
-                            aria-hidden="true"
-                            className="km-exec-editor-gutter select-none overflow-hidden border-r border-[var(--gray-a5)] bg-[var(--gray-2)] px-2 text-right font-mono text-xs text-[var(--gray-11)] [line-height:var(--command-editor-line-height)] [padding-bottom:calc(var(--command-editor-vertical-padding)/2)] [padding-top:calc(var(--command-editor-vertical-padding)/2)]"
-                        >
-                            {commandLineLabels.map((label, index) => (
-                                <div
-                                    key={`${label}-${index}`}
-                                    className={label.startsWith("+") ? "font-medium text-[var(--accent-11)]" : undefined}
-                                >
-                                    {label}
-                                </div>
-                            ))}
-                        </div>
-                        <textarea
-                            id={COMMAND_EDITOR_ID}
-                            ref={commandTextareaRef}
-                            value={command}
-                            onChange={(e) => setCommand(e.target.value)}
-                            onFocus={() => setCommandFocused(true)}
-                            onBlur={() => setCommandFocused(false)}
-                            onKeyDown={handleCommandKeyDown}
-                            onScroll={(event) => {
-                                if (commandLineGutterRef.current) {
-                                    commandLineGutterRef.current.scrollTop = event.currentTarget.scrollTop;
-                                }
-                            }}
-                            placeholder={t("exec.commandPlaceholder")}
-                            rows={COMMAND_EDITOR_COLLAPSED_LINES}
-                            wrap="soft"
-                            spellCheck={false}
-                            className="km-exec-editor-input h-full w-full resize-none border-0 bg-transparent px-3 font-mono text-sm text-[var(--gray-12)] outline-none placeholder:text-[var(--gray-9)] [line-height:var(--command-editor-line-height)] [padding-bottom:calc(var(--command-editor-vertical-padding)/2)] [padding-top:calc(var(--command-editor-vertical-padding)/2)]"
-                            style={{
-                                maxHeight: commandFocused ? "60vh" : COMMAND_EDITOR_COLLAPSED_HEIGHT,
-                                overflowY: commandFocused ? "auto" : "hidden",
-                                overflowWrap: "break-word",
-                                whiteSpace: "pre-wrap",
-                            }}
-                        />
-                    </div>
+                    <CommandEditor
+                        command={command}
+                        onCommandChange={setCommand}
+                        onKeyDown={handleCommandKeyDown}
+                    />
 
 
                     <div>
@@ -452,15 +229,27 @@ const ExecContent = () => {
                                 className="min-h-[200px]"
                             />
                         </SettingCardCollapse>
-                        {selectedNodes.length > 0 && (
-                            <Text size="2" color="gray" className="mt-2">
-                                {t("exec.selectedNodes", "已选择节点")}: {getSelectedNodeNames()}
+                        {/* feedback 层：已选节点说明展开/收起用高度弹簧，下方按钮不跳 */}
+                        <Collapse open={selectedNodes.length > 0} aria-hidden={selectedNodes.length === 0 || undefined}>
+                            <Text as="p" size="2" color="gray" className="pt-2">
+                                {selectedNodes.length > 0 && (
+                                    <>{t("exec.selectedNodes", "已选择节点")}: {getSelectedNodeNames()}</>
+                                )}
                             </Text>
-                        )}
+                        </Collapse>
                     </div>
 
                     <Flex justify="end" gap="2">
+                        {/* control 层：/api/me 返回后才知道要不要 2FA，输入框淡入，不突然插进来 */}
+                        <AnimatePresence initial={false}>
                         {twoFaEnabled ? (
+                            <motion.div
+                                key="two-fa"
+                                initial={{ opacity: 0, x: 8 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                exit={{ opacity: 0, x: 8 }}
+                                transition={{ x: MOTION_SPRING.snappy, opacity: MOTION_TRANSITION.fade }}
+                            >
                             <TextField.Root
                                 className="w-32"
                                 type="number"
@@ -468,7 +257,9 @@ const ExecContent = () => {
                                 value={twoFaCode}
                                 onChange={(e) => setTwoFaCode((e.target as HTMLInputElement).value)}
                             />
+                            </motion.div>
                         ) : null}
+                        </AnimatePresence>
                         <Button
                             onClick={executeCommand}
                             disabled={executing || !command.trim() || selectedNodes.length === 0 || (twoFaEnabled && !twoFaCode.trim())}
@@ -489,9 +280,11 @@ const ExecContent = () => {
                 </Flex>
             </Card>
 
-            {/* 执行结果区域 */}
+            {/* 执行结果区域：content 层，结果出现时淡入上浮，整页不抖 */}
+            <AnimatePresence initial={false}>
             {results.length > 0 && (
-                <Card className="km-exec-output p-6">
+                <PresenceBox key="km-exec-output">
+                <Card className="km-exec-output p-km-block">
                     <Flex direction="column" gap="4">
                         <Flex justify="between" align="center">
                             <Text size="4" weight="medium">
@@ -504,91 +297,30 @@ const ExecContent = () => {
                             )}
                         </Flex>
 
-                        <div className="space-y-4">
-                            {results.map((result) => {
-                                const status = getTaskStatus(result);
-                                return (
-                                    <Card key={result.client} className="p-4">
-                                        <Flex direction="column" gap="3">
-                                            {/* 节点信息和状态 */}
-                                            <label className="text-xl font-medium">
-                                                {nodeDetail.find(n => n.uuid === result.client)?.name || result.client}
-                                            </label>
-                                            <Flex justify="between" align="center">
-                                                <Flex align="center" gap="2">
-                                                    <Text weight="medium">{result.client_info.name}</Text>
-                                                    <Badge
-                                                        color={status.color}
-                                                        variant="soft"
-                                                    >
-                                                        {status.status === "running" ? (
-                                                            <>
-                                                                <div className="animate-spin rounded-full h-3 w-3 border-2 border-current border-t-transparent" />
-                                                                {status.text}
-                                                            </>
-                                                        ) : status.status === "success" ? (
-                                                            <>
-                                                                <CheckCircle2 size={12} />
-                                                                {status.text}
-                                                            </>
-                                                        ) : status.status === "timeout" ? (
-                                                            <>
-                                                                <Clock size={12} />
-                                                                {status.text}
-                                                            </>
-                                                        ) : (
-                                                            <>
-                                                                <AlertCircle size={12} />
-                                                                {status.text}
-                                                            </>
-                                                        )}
-                                                    </Badge>
-                                                    {result.exit_code !== null && (
-                                                        <Text size="1" color="gray">
-                                                            Exit Code: {result.exit_code}
-                                                        </Text>
-                                                    )}
-                                                </Flex>
-
-                                                {result.result && (
-                                                    <Button
-                                                        variant="ghost"
-                                                        size="1"
-                                                        onClick={() => copyOutput(displayResultText(result))}
-                                                        title={t("common.copy", "Copy")}
-                                                        aria-label={t("common.copy", "Copy")}
-                                                    >
-                                                        <Copy size={14} />
-                                                    </Button>
-                                                )}
-                                            </Flex>
-
-                                            {/* 时间信息 */}
-                                            {/* <Flex gap="4" className="text-sm text-gray-500">
-                                                <Text size="1" color="gray">
-                                                    创建时间: {new Date(result.created_at).toLocaleString()}
-                                                </Text>
-                                                {result.finished_at && (
-                                                    <Text size="1" color="gray">
-                                                        完成时间: {new Date(result.finished_at).toLocaleString()}
-                                                    </Text>
-                                                )}
-                                            </Flex> */}
-
-                                            {/* 输出内容 */}
-                                            {result.result && (
-                                                <div className="bg-[var(--gray-2)] rounded-md p-3 font-mono text-sm overflow-x-auto">
-                                                    <pre className="whitespace-pre-wrap">{displayResultText(result)}</pre>
-                                                </div>
-                                            )}
-                                        </Flex>
-                                    </Card>
-                                );
-                            })}
+                        {/*
+                          content 层：结果列表随轮询增长（新节点结果、输出变长、轮询提示出现/消失），
+                          外层高度由 AutoHeight 弹簧跟随；大段输出文字不做 layout 尺寸补间。
+                        */}
+                        <AutoHeight>
+                        <div className="flex flex-col gap-km-block">
+                        <div className="space-y-km-block">
+                            {/* content 层：每个节点的结果卡片 layout 跟随 + 进出场 */}
+                            <AnimatePresence initial={false}>
+                            {results.map((result, index) => (
+                                <TaskResultCard
+                                    key={result.client}
+                                    result={result}
+                                    index={index}
+                                    nodeName={nodeDetail.find(n => n.uuid === result.client)?.name || result.client}
+                                />
+                            ))}
+                            </AnimatePresence>
                         </div>
 
-                        {/* 轮询状态提示 */}
+                        {/* 轮询状态提示：content 层，出现/消失都过渡 */}
+                        <AnimatePresence initial={false}>
                         {polling && (
+                            <PresenceBox key="km-exec-polling">
                             <Flex align="center" justify="between" className="text-sm text-gray-500">
                                 <Loading compact />
                                 <Button
@@ -599,10 +331,16 @@ const ExecContent = () => {
                                     {t("exec.stopPolling")}
                                 </Button>
                             </Flex>
+                            </PresenceBox>
                         )}
+                        </AnimatePresence>
+                        </div>
+                        </AutoHeight>
                     </Flex>
                 </Card>
+                </PresenceBox>
             )}
+            </AnimatePresence>
         </div>
     );
 };

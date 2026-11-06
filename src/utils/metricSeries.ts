@@ -3,6 +3,7 @@ import type {
   MetricSeries,
   MetricTagged,
   MetricTags,
+  PingMetricStat,
   PublicPingTask,
 } from "@/types/metrics";
 
@@ -154,6 +155,26 @@ export const pingMetricStatKey = (entityId: string, taskId: string) =>
   `${entityId}:${taskId}`;
 
 export type MetricChartRow = Record<string, string | number | null>;
+
+/** 序列里数值点的个数（点少时折线上画圆点） */
+export const countMetricPoints = (series: Pick<MetricSeries, "points">) =>
+  (series.points ?? []).reduce(
+    (count, point) => count + (typeof point.value === "number" ? 1 : 0),
+    0,
+  );
+
+/** 图表行按 time 升序排列（原地排序并返回同一个数组） */
+export const sortMetricChartRows = <TRow extends { time?: unknown }>(rows: TRow[]) =>
+  rows.sort(
+    (left, right) =>
+      new Date(String(left.time)).getTime() - new Date(String(right.time)).getTime(),
+  );
+
+export const toPingTaskMap = (tasks: readonly PublicPingTask[]) =>
+  new Map(tasks.map((task) => [String(task.id), task]));
+
+export const toPingMetricStatMap = (stats: readonly PingMetricStat[]) =>
+  new Map(stats.map((stat) => [pingMetricStatKey(stat.entity_id, stat.task_id), stat]));
 
 export const trimMetricChartBoundaryRows = (
   rows: MetricChartRow[],

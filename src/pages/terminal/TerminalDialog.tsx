@@ -1,5 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
+import { AnimatePresence, motion } from "motion/react";
+import { MOTION_DURATION, MOTION_EASE, MOTION_SPRING } from "@/lib/motion";
 
 const dialogSurface =
   "w-full overflow-visible rounded-[6px] border border-[#454545] bg-[#252526] text-[#cccccc] shadow-2xl";
@@ -91,14 +93,18 @@ export function TerminalDialog({
     return () => document.removeEventListener("keydown", handleEscape, true);
   }, [onCancel, open]);
 
-  if (!open) {
-    return null;
-  }
-
   const isInput = fields.length > 0;
 
   return createPortal(
-    <div
+    <AnimatePresence initial={false}>
+      {open && (
+    <motion.div
+      key="terminal-dialog"
+      // overlay 层：遮罩先淡入，面板再沿触发方向落位（Anticipation + Arc）
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={{ opacity: { duration: MOTION_DURATION.fast, ease: MOTION_EASE.standard } }}
       className="fixed inset-0 z-[100010] flex items-start justify-center bg-black/60 px-4"
       onKeyDown={(event) => {
         if (event.key === "Enter" && !isInput && !submitting) {
@@ -138,12 +144,20 @@ export function TerminalDialog({
         }
       }}
     >
-      <div
+      <motion.div
         className={`mt-[12vh] h-fit w-full ${isInput ? "max-w-[440px]" : "max-w-[320px]"} ${dialogSurface} max-w-[92vw]`}
         onMouseDown={(event) => event.stopPropagation()}
         role={isInput ? "dialog" : "alertdialog"}
         aria-modal="true"
         aria-label={title}
+        initial={{ opacity: 0, scale: 0.96, y: -8 }}
+        animate={{ opacity: 1, scale: 1, y: 0 }}
+        exit={{ opacity: 0, scale: 0.97, y: -4 }}
+        transition={{
+          scale: MOTION_SPRING.soft,
+          y: MOTION_SPRING.soft,
+          opacity: { duration: MOTION_DURATION.fast, ease: MOTION_EASE.standard },
+        }}
       >
         <div className="px-4 pb-3 pt-4">
           <h2 className="text-sm font-medium text-[#eeeeee]">{title}</h2>
@@ -219,18 +233,33 @@ export function TerminalDialog({
               {secondaryLabel}
             </button>
           )}
-          <button
+          <motion.button
             ref={isInput ? undefined : confirmRef}
             type="button"
             disabled={submitting}
             className={destructive && !isInput && !onSecondary ? dangerButton : primaryButton}
             onClick={onSubmit}
+            whileTap={submitting ? undefined : { scale: 0.97 }}
+            transition={MOTION_SPRING.snappy}
           >
-            {confirmLabel}
-          </button>
+            {submitting ? (
+              <motion.span
+                className="inline-flex items-center gap-1.5"
+                initial={{ opacity: 0.6 }}
+                animate={{ opacity: 1 }}
+                transition={{ repeat: Infinity, repeatType: "reverse", duration: MOTION_DURATION.slow, ease: MOTION_EASE.standard }}
+              >
+                {confirmLabel}
+              </motion.span>
+            ) : (
+              confirmLabel
+            )}
+          </motion.button>
         </div>
-      </div>
-    </div>,
+      </motion.div>
+    </motion.div>
+      )}
+    </AnimatePresence>,
     document.body,
   );
 }

@@ -1,3 +1,45 @@
+import type { ReactNode } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import { MOTION_DURATION, MOTION_EASE, MOTION_SPRING } from "@/lib/motion";
+
+/**
+ * PWA 提示条外壳（overlay 层）：从屏幕边缘滑入 / 原路滑出。
+ * 提示条内容被停用时外壳不渲染任何东西；将来恢复提示条时直接复用它，
+ * 保证进出场与全站弹层节奏一致（不用再手写 duration）。
+ */
+export const PwaPromptShell = ({
+  open,
+  from = "bottom",
+  children,
+}: {
+  open: boolean;
+  from?: "bottom" | "top" | "left" | "right";
+  children?: ReactNode;
+}) => {
+  const offset =
+    from === "top" ? { y: -16 } : from === "left" ? { x: -16 } : from === "right" ? { x: 16 } : { y: 16 };
+  return (
+    <AnimatePresence initial={false}>
+      {open && (
+        <motion.div
+          key="km-pwa-prompt"
+          initial={{ opacity: 0, ...offset, scale: 0.98 }}
+          animate={{ opacity: 1, x: 0, y: 0, scale: 1 }}
+          exit={{ opacity: 0, ...offset, scale: 0.98 }}
+          transition={{
+            x: MOTION_SPRING.soft,
+            y: MOTION_SPRING.soft,
+            scale: MOTION_SPRING.soft,
+            opacity: { duration: MOTION_DURATION.base, ease: MOTION_EASE.out },
+          }}
+        >
+          {children}
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+};
+
 // import { useState, useEffect } from 'react';
 // import { Button } from './ui/button';
 // import { Download, X } from 'lucide-react';

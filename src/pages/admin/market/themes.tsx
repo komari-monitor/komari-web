@@ -1,163 +1,129 @@
-import Loading from "@/components/loading";
+import { skeletonText } from "@/components/ui/skeleton";
+import { placeholderCard } from "@/components/ui/placeholderCard";
 import { useAdminNavigation } from "@/contexts/AdminNavigationContext";
 import { usePublicInfo } from "@/contexts/PublicInfoContext";
-import { useSettings } from "@/lib/api";
 import { resolveI18nText, type I18nText } from "@/utils/i18nText";
 import {
   Badge,
   Box,
   Button,
-  Callout,
   Card,
   Dialog,
   Flex,
   Grid,
   IconButton,
-  Separator,
-  Switch,
   Text,
-  TextField,
 } from "@radix-ui/themes";
 import {
-  AlertTriangle,
   Download,
   ExternalLink,
   Image as ImageIcon,
-  Pencil,
-  Plus,
   RefreshCw,
-  Search,
   Settings2,
   Trash2,
 } from "lucide-react";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { AnimatePresence, motion } from "motion/react";
+import {
+  CONTENT_MOTION,
+  MOTION_SPRING,
+  MOTION_TRANSITION,
+} from "@/lib/motion";
+import { useKmReducedMotion } from "@/components/motion/MotionProvider";
+import { AutoHeight, StatusFeedback } from "@/components/motion";
+import PageHeader from "@/components/PageHeader";
+import { useRouteQuery } from "@/lib/routeData";
+import {
+  currentThemeQuery,
+  fetchCurrentTheme,
+  fetchThemeMarket,
+  marketSourcesQuery,
+  rememberActiveTheme,
+  themeMarketQuery,
+} from "@/routeQueries/appearance";
+import {
+  installFromMarket,
+  marketRequest,
+  toastError,
+} from "./shared/api";
+import type { MarketTheme } from "./themes/types";
+import { isVersionNewer } from "./shared/version";
+import { useMarketSources } from "./shared/useMarketSources";
+import { useMarketPage } from "./shared/useMarketPage";
+import { MarketHeaderActions, MarketSearch, MarketSourceErrors } from "./shared/MarketControls";
+import MarketSourcesDialog, { MarketSourceDeleteDialog } from "./shared/MarketSourcesDialog";
+import MarketConfirmDialog from "./shared/MarketConfirmDialog";
 
-interface MarketSource {
-  id: string;
-  name: string;
-  url: string;
-  enabled: boolean;
-}
+const EMPTY_THEMES: MarketTheme[] = [];
+const EMPTY_INSTALLED = new Map<string, string>();
 
-interface MarketSourceStatus {
-  id: string;
-  name: string;
-  url: string;
-  count: number;
-  error?: string;
-}
+/** Radix Card 提升为 motion 组件：动画不额外增加 DOM 层级（content 层专用）。 */
+const MotionThemeCard = motion.create(Card);
 
-interface MarketTheme {
-  name: I18nText;
-  short: string;
-  description: I18nText;
-  version: string;
-  author: I18nText;
-  url: string;
-  preview: string;
-  download: string;
-  sha256: string;
-  installable: boolean;
-  source_id: string;
-  source_name: string;
-}
-
-interface InstalledTheme {
-  short: string;
-  version: string;
-}
-
-interface APIResponse<T> {
-  status: string;
-  message?: string;
-  data: T;
-}
-
-const emptySource = (): Omit<MarketSource, "id"> => ({
-  name: "",
+/** 卡片骨架：一屏常见的主题数量；只用于展示（Skeletonize 期间 inert） */
+const PLACEHOLDER_THEMES: MarketTheme[] = Array.from({ length: 8 }, (_, index) => ({
+  name: skeletonText(9 + (index % 3) * 3),
+  short: `__km_placeholder_${index}`,
+  description: skeletonText(40 - (index % 2) * 12),
+  version: skeletonText(5),
+  author: skeletonText(7),
   url: "",
-  enabled: true,
-});
-
-function isVersionNewer(candidate: string, installed: string) {
-  const parse = (value: string) => {
-    const match = value.trim().replace(/^v/i, "").match(/^(\d+)(?:\.(\d+))?(?:\.(\d+))?/);
-    return match ? [Number(match[1]), Number(match[2] || 0), Number(match[3] || 0)] : null;
-  };
-  const next = parse(candidate);
-  const current = parse(installed);
-  if (!next || !current) return candidate !== installed;
-  for (let index = 0; index < next.length; index += 1) {
-    if (next[index] !== current[index]) return next[index] > current[index];
-  }
-  return false;
-}
-
-async function request<T>(input: RequestInfo | URL, init?: RequestInit) {
-  const response = await fetch(input, init);
-  const payload = (await response.json().catch(() => null)) as APIResponse<T> | null;
-  if (!response.ok || !payload || payload.status === "error") {
-    throw new Error(payload?.message || `HTTP ${response.status}`);
-  }
-  return payload;
-}
+  preview: "",
+  download: "",
+  sha256: "",
+  installable: false,
+  source_id: "__km_placeholder",
+  source_name: "",
+}));
 
 export default function ThemeMarketPage() {
   const { t, i18n } = useTranslation();
-  const [themes, setThemes] = useState<MarketTheme[]>([]);
-  const [sourceStatuses, setSourceStatuses] = useState<MarketSourceStatus[]>([]);
-  const [sources, setSources] = useState<MarketSource[]>([]);
-  const [installed, setInstalled] = useState<Map<string, string>>(new Map());
+  // 页面切换时目录、源、当前主题已由 routePreload 提前请求；等待预算内到达直接显示，否则骨架
+  const catalogResult = useRouteQuery(themeMarketQuery);
+  const sourcesResult = useRouteQuery(marketSourcesQuery("theme"));
+  const settingsResult = useRouteQuery(currentThemeQuery);
+  const themes = catalogResult.data?.themes ?? EMPTY_THEMES;
+  const sourceStatuses = catalogResult.data?.sources ?? [];
+  const installed = catalogResult.data?.installed ?? EMPTY_INSTALLED;
   const [search, setSearch] = useState("");
-  const [loading, setLoading] = useState(true);
-  const [refreshing, setRefreshing] = useState(false);
   const [installing, setInstalling] = useState<string | null>(null);
-  const [sourcesOpen, setSourcesOpen] = useState(false);
-  const [editingID, setEditingID] = useState<string | null>(null);
-  const [sourceForm, setSourceForm] = useState(emptySource());
-  const [savingSource, setSavingSource] = useState(false);
   const [selectedTheme, setSelectedTheme] = useState<MarketTheme | null>(null);
   const [themeToUninstall, setThemeToUninstall] = useState<MarketTheme | null>(null);
-  const [sourceToDelete, setSourceToDelete] = useState<MarketSource | null>(null);
   const [settingTheme, setSettingTheme] = useState<string | null>(null);
   const [deletingTheme, setDeletingTheme] = useState<string | null>(null);
-  const { settings, refetch: refetchSettings } = useSettings();
+  const setSettings = settingsResult.setData;
+  // 与 useSettings().refetch 一致：失败时抛出（调用处 toast）
+  const refetchSettings = useCallback(async () => {
+    setSettings(await fetchCurrentTheme());
+  }, [setSettings]);
   const { refresh: refreshPublicInfo } = usePublicInfo();
   const { refreshNavigation } = useAdminNavigation();
-  const currentTheme = settings?.theme;
+  const currentTheme = settingsResult.data?.theme;
+  useEffect(() => rememberActiveTheme(currentTheme), [currentTheme]);
+  const reducedMotion = useKmReducedMotion();
   const language = i18n.resolvedLanguage || i18n.language;
   const displayText = useCallback(
     (value: I18nText) => resolveI18nText(value, language) || "",
     [language],
   );
 
-  const loadSources = useCallback(async () => {
-    const payload = await request<MarketSource[]>("/api/admin/theme/market/sources");
-    setSources(payload.data || []);
-  }, []);
-
+  // 安装、卸载、源变化后的刷新：直接请求（不挂起、不显示骨架），结果写回 catalogResult
+  const setCatalog = catalogResult.setData;
   const loadCatalog = useCallback(async (force = false) => {
-    const suffix = force ? "?refresh=true" : "";
-    const [catalogPayload, installedPayload] = await Promise.all([
-      request<{ themes: MarketTheme[]; sources: MarketSourceStatus[] }>(
-        `/api/admin/theme/market/catalog${suffix}`,
-      ),
-      request<InstalledTheme[]>("/api/admin/theme/list"),
-    ]);
-    setThemes(catalogPayload.data?.themes || []);
-    setSourceStatuses(catalogPayload.data?.sources || []);
-    setInstalled(
-      new Map((installedPayload.data || []).map((theme) => [theme.short, theme.version])),
-    );
-  }, []);
+    setCatalog(await fetchThemeMarket(force));
+  }, [setCatalog]);
 
-  useEffect(() => {
-    Promise.all([loadCatalog(), loadSources()])
-      .catch((error) => toast.error(error instanceof Error ? error.message : String(error)))
-      .finally(() => setLoading(false));
-  }, [loadCatalog, loadSources]);
+  const sourcesState = useMarketSources("theme", sourcesResult, loadCatalog);
+  const { loading: catalogLoading, refreshing, refresh } = useMarketPage(
+    catalogResult,
+    sourcesResult,
+    loadCatalog,
+    t("market.refresh_success", "Theme sources refreshed"),
+  );
+  // 当前主题决定「已启用」徽标与「设为主题」按钮：一起等它，避免先闪错的状态（失败时照常显示）
+  const loading = catalogLoading || (settingsResult.data === undefined && !settingsResult.error);
 
   const filteredThemes = useMemo(() => {
     const term = search.trim().toLocaleLowerCase();
@@ -170,27 +136,24 @@ export default function ThemeMarketPage() {
     );
   }, [displayText, search, themes]);
 
-  const refresh = async () => {
-    setRefreshing(true);
-    try {
-      await loadCatalog(true);
-      toast.success(t("market.refresh_success", "Theme sources refreshed"));
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : String(error));
-    } finally {
-      setRefreshing(false);
-    }
+  /** 卡片与详情弹窗共用的安装 / 更新 / 启用状态 */
+  const themeState = (theme: MarketTheme) => {
+    const installedVersion = installed.get(theme.short);
+    return {
+      key: `${theme.source_id}:${theme.short}`,
+      installedVersion,
+      isInstalled: Boolean(installedVersion),
+      hasUpdate: Boolean(installedVersion && isVersionNewer(theme.version, installedVersion)),
+      isActive: currentTheme === theme.short,
+      isInstallable: theme.installable,
+    };
   };
 
   const installTheme = async (theme: MarketTheme) => {
     const key = `${theme.source_id}:${theme.short}`;
     setInstalling(key);
     try {
-      const payload = await request("/api/admin/theme/market/install", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ source_id: theme.source_id, short: theme.short }),
-      });
+      const payload = await installFromMarket("theme", theme.source_id, theme.short);
       toast.success(payload.message || t("market.install_success", "Theme installed"));
       await loadCatalog();
       if (currentTheme === theme.short) {
@@ -198,7 +161,7 @@ export default function ThemeMarketPage() {
         refreshNavigation();
       }
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : String(error));
+      toastError(error);
     } finally {
       setInstalling(null);
     }
@@ -207,13 +170,13 @@ export default function ThemeMarketPage() {
   const setActiveTheme = async (theme: MarketTheme) => {
     setSettingTheme(theme.short);
     try {
-      await request(`/api/admin/theme/set?theme=${encodeURIComponent(theme.short)}`);
+      await marketRequest(`/api/admin/theme/set?theme=${encodeURIComponent(theme.short)}`);
       await refetchSettings();
       await refreshPublicInfo();
       refreshNavigation();
       toast.success(t("theme.set_success", "Theme activated"));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : String(error));
+      toastError(error);
     } finally {
       setSettingTheme(null);
     }
@@ -224,13 +187,9 @@ export default function ThemeMarketPage() {
     try {
       const wasActive = currentTheme === theme.short;
       if (wasActive) {
-        await request("/api/admin/theme/set?theme=default");
+        await marketRequest("/api/admin/theme/set?theme=default");
       }
-      await request("/api/admin/theme/delete", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ short: theme.short }),
-      });
+      await marketRequest("/api/admin/theme/delete", { json: { short: theme.short } });
       await Promise.all([loadCatalog(), refetchSettings()]);
       if (wasActive) {
         await refreshPublicInfo();
@@ -239,138 +198,91 @@ export default function ThemeMarketPage() {
       setSelectedTheme(null);
       toast.success(t("market.uninstall_success", "Theme uninstalled"));
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : String(error));
+      toastError(error);
     } finally {
       setDeletingTheme(null);
     }
   };
 
-  const startCreateSource = () => {
-    setEditingID(null);
-    setSourceForm(emptySource());
-  };
-
-  const startEditSource = (source: MarketSource) => {
-    setEditingID(source.id);
-    setSourceForm({ name: source.name, url: source.url, enabled: source.enabled });
-  };
-
-  const saveSource = async () => {
-    if (!sourceForm.name.trim() || !sourceForm.url.trim()) return;
-    setSavingSource(true);
-    try {
-      await request(
-        editingID
-          ? `/api/admin/theme/market/sources/${encodeURIComponent(editingID)}`
-          : "/api/admin/theme/market/sources",
-        {
-          method: editingID ? "PUT" : "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify(sourceForm),
-        },
-      );
-      toast.success(
-        editingID
-          ? t("market.source_updated", "Source updated")
-          : t("market.source_created", "Source created"),
-      );
-      startCreateSource();
-      await Promise.all([loadSources(), loadCatalog(true)]);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : String(error));
-    } finally {
-      setSavingSource(false);
-    }
-  };
-
-  const updateSourceEnabled = async (source: MarketSource, enabled: boolean) => {
-    try {
-      await request(`/api/admin/theme/market/sources/${encodeURIComponent(source.id)}`, {
-        method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ ...source, enabled }),
-      });
-      await Promise.all([loadSources(), loadCatalog(true)]);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : String(error));
-    }
-  };
-
-  const deleteSource = async (source: MarketSource) => {
-    try {
-      await request(`/api/admin/theme/market/sources/${encodeURIComponent(source.id)}`, {
-        method: "DELETE",
-      });
-      if (editingID === source.id) startCreateSource();
-      toast.success(t("market.source_deleted", "Source deleted"));
-      await Promise.all([loadSources(), loadCatalog(true)]);
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : String(error));
-    }
-  };
-
-  if (loading) return <Loading />;
+  // 页头、搜索直接渲染；目录未到时用占位主题渲染同样的卡片网格，每张卡片是一块色块
+  const listThemes = loading ? PLACEHOLDER_THEMES : filteredThemes;
 
   return (
-    <Box className="km-page-admin-market-themes p-4 md:p-6 space-y-5">
-      <Flex justify="between" align="center" gap="3" wrap="wrap">
-        <Box>
-          <Text as="div" size="6" weight="bold">
-            {t("market.themes", "Theme Market")}
-          </Text>
-          <Text as="div" size="2" color="gray" mt="1">
-            {t("market.description", "Find and install themes from the internet.")}
-          </Text>
-        </Box>
-        <Flex gap="2">
-          <Button variant="soft" onClick={() => setSourcesOpen(true)}>
-            <Settings2 size={16} />
-            {t("market.manage_sources", "Manage sources")}
-          </Button>
-          <IconButton variant="soft" onClick={refresh} disabled={refreshing} title={t("common.refresh", "Refresh")}>
-            <RefreshCw size={17} className={refreshing ? "animate-spin" : ""} />
-          </IconButton>
-        </Flex>
-      </Flex>
+    // 外边距由后台内容区统一提供；页头 / 源错误 / 搜索+网格 之间 section
+    <div className="km-page km-page-admin-market-themes">
+      <PageHeader
+        title={t("market.themes", "Theme Market")}
+        description={t("market.description", "Find and install themes from the internet.")}
+        actions={
+          <MarketHeaderActions
+            onManageSources={() => sourcesState.setSourcesOpen(true)}
+            onRefresh={refresh}
+            refreshing={refreshing}
+            manageIconSize={16}
+            refreshIconSize={17}
+          />
+        }
+      />
 
-      {sourceStatuses.filter((source) => source.error).map((source) => (
-        <Callout.Root key={source.id} color="red" size="1">
-          <Callout.Icon><AlertTriangle size={16} /></Callout.Icon>
-          <Callout.Text>{source.name}: {source.error}</Callout.Text>
-        </Callout.Root>
-      ))}
+      {/* feedback 层：源错误在刷新后出现/消失时高度展开/收起，下方网格不跳 */}
+      <MarketSourceErrors statuses={sourceStatuses} />
 
-      <TextField.Root
+      {/* 搜索与它过滤的网格是同一区块：block */}
+      <Flex direction="column" gap="4">
+      <MarketSearch
         value={search}
-        onChange={(event) => setSearch(event.target.value)}
+        onChange={setSearch}
         placeholder={t("market.search_placeholder", "Search themes, authors or sources")}
         size="3"
         className="km-market-themes-toolbar"
-      >
-        <TextField.Slot><Search size={17} /></TextField.Slot>
-      </TextField.Root>
+        iconSize={17}
+      />
 
-      {filteredThemes.length === 0 ? (
-        <Flex direction="column" align="center" justify="center" className="py-16" gap="2">
+      {/* 占位卡片数 -> 真实主题数、搜索过滤：网格高度弹簧过渡（卡片 layout 只补位置） */}
+      <AutoHeight>
+      {listThemes.length === 0 ? (
+        <Flex direction="column" align="center" justify="center" className="py-km-hero" gap="2">
           <ImageIcon size={42} className="text-gray-400" />
           <Text color="gray">{t("market.no_themes", "No themes found")}</Text>
         </Flex>
       ) : (
         <Grid columns={{ initial: "1", sm: "2", lg: "3", xl: "4" }} gap="4" className="km-market-themes-list">
-          {filteredThemes.map((theme) => {
-            const key = `${theme.source_id}:${theme.short}`;
-            const installedVersion = installed.get(theme.short);
-            const isInstalled = Boolean(installedVersion);
-            const hasUpdate = Boolean(installedVersion && isVersionNewer(theme.version, installedVersion));
-            const isActive = currentTheme === theme.short;
-            const isInstallable = theme.installable;
-            return (
-              <Card
+          {/* content 层：过滤/搜索时卡片 layout 跟随，进出场淡入淡出 */}
+          <AnimatePresence initial={false} mode="popLayout">
+          {listThemes.map((theme, index) => {
+            const { key, isInstalled, hasUpdate, isActive, isInstallable } = themeState(theme);
+            // 占位卡片包成同尺寸的色块；真实卡片直接是列表子元素
+            return placeholderCard(loading, key, (
+              // content 层：卡片 layout 跟随过滤，hover 先行抬升，DOM 仍是单张 Card
+              <MotionThemeCard
                 key={key}
-                className="km-market-theme-card overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+                // 只补间位置：卡片含预览图与文字，尺寸补间会拉伸
+                layout="position"
+                // .rt-Card 的全局 transition 含 transform：motion 每帧写 transform 时会被 CSS 再插值一次（拖尾）。
+                    // 内联只保留颜色/阴影过渡，位移完全交给 motion 的弹簧。
+                    style={{ transition: "box-shadow var(--km-dur-base) var(--km-ease-standard), background-color var(--km-dur-fast) var(--km-ease-standard)" }}
+                className="km-market-theme-card h-full overflow-hidden cursor-pointer hover:shadow-md transition-shadow"
+                initial={reducedMotion ? false : { ...CONTENT_MOTION.item.initial }}
+                animate={CONTENT_MOTION.item.animate}
+                // 占位卡片没有退场：数据到达的那一帧直接让位给真实卡片，网格不会短暂多出几排
+                exit={loading ? undefined : { opacity: 0, scale: 0.97 }}
+                transition={{
+                  layout: MOTION_SPRING.layout,
+                  opacity: MOTION_TRANSITION.fadeIn,
+                  scale: MOTION_SPRING.layout,
+                  y: MOTION_SPRING.layout,
+                  delay: reducedMotion ? 0 : CONTENT_MOTION.stagger(index),
+                }}
+                whileHover={
+                  reducedMotion || loading
+                    ? undefined
+                    : { ...CONTENT_MOTION.hover, transition: MOTION_SPRING.snappy }
+                }
                 onClick={() => setSelectedTheme(theme)}
               >
                 <Box className="aspect-video bg-gray-3 overflow-hidden relative">
+                  {/* 预览区骨架形状：只在骨架期间可见 */}
+                  <span aria-hidden className="km-skeleton-shape absolute inset-0" style={{ backgroundColor: "currentColor" }} />
                   {theme.preview ? (
                     <img
                       src={theme.preview}
@@ -385,7 +297,7 @@ export default function ThemeMarketPage() {
                   )}
                   {isActive && <Badge className="absolute top-2 right-2" color="green" variant="solid">{t("theme.active", "Active")}</Badge>}
                 </Box>
-                <Flex direction="column" gap="3" p="4">
+                <Flex direction="column" gap="2" p="4">
                   <Box>
                     <Flex justify="between" align="start" gap="2">
                       <Text weight="bold" size="3">{displayText(theme.name)}</Text>
@@ -403,11 +315,14 @@ export default function ThemeMarketPage() {
                   <Flex justify="between" align="center" gap="2" wrap="wrap">
                     <Box>
                       {isInstalled && (
-                        <Badge color={hasUpdate ? "orange" : "green"} variant="soft">
-                          {hasUpdate
-                            ? t("market.update_available", "Update available")
-                            : t("market.installed", "Installed")}
-                        </Badge>
+                        // feedback 层：安装/更新状态真的翻转时才翻一下
+                        <StatusFeedback state={hasUpdate}>
+                          <Badge color={hasUpdate ? "orange" : "green"} variant="soft">
+                            {hasUpdate
+                              ? t("market.update_available", "Update available")
+                              : t("market.installed", "Installed")}
+                          </Badge>
+                        </StatusFeedback>
                       )}
                       {!isInstalled && !isInstallable && (
                         <Badge color="gray" variant="soft">{t("market.install_unavailable", "Package unavailable")}</Badge>
@@ -439,26 +354,24 @@ export default function ThemeMarketPage() {
                     </Flex>
                   </Flex>
                 </Flex>
-              </Card>
-            );
+              </MotionThemeCard>
+            ));
           })}
+          </AnimatePresence>
         </Grid>
       )}
+      </AutoHeight>
+      </Flex>
 
       <Dialog.Root open={Boolean(selectedTheme)} onOpenChange={(open) => { if (!open) setSelectedTheme(null); }}>
         <Dialog.Content maxWidth="820px">
           <Dialog.Title>{selectedTheme ? displayText(selectedTheme.name) : ""}</Dialog.Title>
           <Dialog.Description className="sr-only">{selectedTheme ? displayText(selectedTheme.description) : ""}</Dialog.Description>
           {selectedTheme && (() => {
-            const key = `${selectedTheme.source_id}:${selectedTheme.short}`;
-            const installedVersion = installed.get(selectedTheme.short);
-            const isInstalled = Boolean(installedVersion);
-            const hasUpdate = Boolean(installedVersion && isVersionNewer(selectedTheme.version, installedVersion));
-            const isActive = currentTheme === selectedTheme.short;
-            const isInstallable = selectedTheme.installable;
+            const { key, installedVersion, isInstalled, hasUpdate, isActive, isInstallable } = themeState(selectedTheme);
             return (
               <>
-                <Box className="aspect-video bg-gray-3 overflow-hidden mt-4">
+                <Box className="aspect-video bg-gray-3 overflow-hidden">
                   {selectedTheme.preview ? (
                     <img src={selectedTheme.preview} alt={displayText(selectedTheme.name)} referrerPolicy="no-referrer" className="w-full h-full object-contain" />
                   ) : (
@@ -507,97 +420,24 @@ export default function ThemeMarketPage() {
         </Dialog.Content>
       </Dialog.Root>
 
-      <Dialog.Root open={sourcesOpen} onOpenChange={setSourcesOpen}>
-        <Dialog.Content maxWidth="760px">
-          <Dialog.Title>{t("market.manage_sources", "Manage sources")}</Dialog.Title>
-          <Dialog.Description className="sr-only">{t("market.manage_sources", "Manage sources")}</Dialog.Description>
-          <Flex direction="column" gap="3" mt="4">
-            {sources.length === 0 ? (
-              <Text color="gray">{t("market.no_sources", "No sources configured")}</Text>
-            ) : sources.map((source, index) => (
-              <Box key={source.id}>
-                {index > 0 && <Separator size="4" mb="3" />}
-                <Flex justify="between" align="center" gap="3">
-                  <Box className="min-w-0">
-                    <Text as="div" weight="medium">{source.name}</Text>
-                    <Text as="div" size="1" color="gray" className="truncate">{source.url}</Text>
-                  </Box>
-                  <Flex align="center" gap="2" className="shrink-0">
-                    <Switch checked={source.enabled} onCheckedChange={(checked) => updateSourceEnabled(source, checked)} />
-                    <IconButton variant="ghost" onClick={() => startEditSource(source)} title={t("common.edit", "Edit")}><Pencil size={16} /></IconButton>
-                    <IconButton variant="ghost" color="red" onClick={() => setSourceToDelete(source)} title={t("common.delete", "Delete")}><Trash2 size={16} /></IconButton>
-                  </Flex>
-                </Flex>
-              </Box>
-            ))}
-          </Flex>
+      <MarketSourcesDialog state={sourcesState} />
 
-          <Separator size="4" my="5" />
-          <Flex justify="between" align="center" mb="3">
-            <Text weight="bold">{editingID ? t("market.edit_source", "Edit source") : t("market.add_source", "Add source")}</Text>
-            {editingID && <Button size="1" variant="ghost" onClick={startCreateSource}><Plus size={14} />{t("market.add_source", "Add source")}</Button>}
-          </Flex>
-          <Flex direction="column" gap="3">
-            <TextField.Root value={sourceForm.name} onChange={(event) => setSourceForm((current) => ({ ...current, name: event.target.value }))} placeholder={t("market.source_name", "Source name")} />
-            <TextField.Root value={sourceForm.url} onChange={(event) => setSourceForm((current) => ({ ...current, url: event.target.value }))} placeholder="https://raw.githubusercontent.com/owner/repo/main/v1.json" />
-            <Flex justify="between" align="center">
-              <Flex align="center" gap="2"><Switch checked={sourceForm.enabled} onCheckedChange={(enabled) => setSourceForm((current) => ({ ...current, enabled }))} /><Text size="2">{t("market.enabled", "Enabled")}</Text></Flex>
-              <Button onClick={saveSource} disabled={savingSource || !sourceForm.name.trim() || !sourceForm.url.trim()}>
-                {savingSource && <RefreshCw size={15} className="animate-spin" />}
-                {editingID ? t("common.save", "Save") : t("common.add", "Add")}
-              </Button>
-            </Flex>
-          </Flex>
-          <Flex justify="end" mt="5"><Dialog.Close><Button variant="soft">{t("common.close", "Close")}</Button></Dialog.Close></Flex>
-        </Dialog.Content>
-      </Dialog.Root>
+      <MarketConfirmDialog
+        open={Boolean(themeToUninstall)}
+        onClose={() => setThemeToUninstall(null)}
+        title={t("market.uninstall", "Uninstall")}
+        description={t("market.uninstall_confirm", "Uninstall {{name}}?", { name: themeToUninstall ? displayText(themeToUninstall.name) : "" })}
+        confirmText={t("market.uninstall", "Uninstall")}
+        disabled={!themeToUninstall || deletingTheme === themeToUninstall.short}
+        spinning={Boolean(deletingTheme)}
+        onConfirm={async () => {
+          if (!themeToUninstall) return;
+          await uninstallTheme(themeToUninstall);
+          setThemeToUninstall(null);
+        }}
+      />
 
-      <Dialog.Root open={Boolean(themeToUninstall)} onOpenChange={(open) => { if (!open) setThemeToUninstall(null); }}>
-        <Dialog.Content maxWidth="420px">
-          <Dialog.Title>{t("market.uninstall", "Uninstall")}</Dialog.Title>
-          <Dialog.Description>
-            {t("market.uninstall_confirm", "Uninstall {{name}}?", { name: themeToUninstall ? displayText(themeToUninstall.name) : "" })}
-          </Dialog.Description>
-          <Flex justify="end" gap="2" mt="4">
-            <Dialog.Close><Button variant="soft" color="gray">{t("common.cancel", "Cancel")}</Button></Dialog.Close>
-            <Button
-              color="red"
-              disabled={!themeToUninstall || deletingTheme === themeToUninstall.short}
-              onClick={async () => {
-                if (!themeToUninstall) return;
-                await uninstallTheme(themeToUninstall);
-                setThemeToUninstall(null);
-              }}
-            >
-              {deletingTheme && <RefreshCw size={15} className="animate-spin" />}
-              {t("market.uninstall", "Uninstall")}
-            </Button>
-          </Flex>
-        </Dialog.Content>
-      </Dialog.Root>
-
-      <Dialog.Root open={Boolean(sourceToDelete)} onOpenChange={(open) => { if (!open) setSourceToDelete(null); }}>
-        <Dialog.Content maxWidth="420px">
-          <Dialog.Title>{t("common.delete", "Delete")}</Dialog.Title>
-          <Dialog.Description>
-            {t("market.delete_source_confirm", "Delete source {{name}}?", { name: sourceToDelete?.name })}
-          </Dialog.Description>
-          <Flex justify="end" gap="2" mt="4">
-            <Dialog.Close><Button variant="soft" color="gray">{t("common.cancel", "Cancel")}</Button></Dialog.Close>
-            <Button
-              color="red"
-              disabled={!sourceToDelete}
-              onClick={async () => {
-                if (!sourceToDelete) return;
-                await deleteSource(sourceToDelete);
-                setSourceToDelete(null);
-              }}
-            >
-              {t("common.delete", "Delete")}
-            </Button>
-          </Flex>
-        </Dialog.Content>
-      </Dialog.Root>
-    </Box>
+      <MarketSourceDeleteDialog state={sourcesState} />
+    </div>
   );
 }

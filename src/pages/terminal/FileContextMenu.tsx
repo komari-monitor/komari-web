@@ -2,7 +2,9 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { ChevronRight } from "lucide-react";
 import { createPortal } from "react-dom";
+import { AnimatePresence, motion } from "motion/react";
 import type { ReactNode } from "react";
+import { MOTION_DURATION, MOTION_EASE, MOTION_SPRING } from "@/lib/motion";
 import type { ContextMenuPosition } from "./terminalTypes";
 
 export interface ContextMenuItemConfig {
@@ -53,43 +55,58 @@ export function FileContextMenu({ open, position, items, onOpenChange }: FileCon
 
   useLayoutEffect(() => {
     if (!open || !position || !menuRef.current) return;
-    const rect = menuRef.current.getBoundingClientRect();
+    // 用未变换的布局尺寸测宽高：进场动画里的 scale 不会影响落位计算
+    const { offsetWidth, offsetHeight } = menuRef.current;
     setCoords({
-      x: Math.max(4, Math.min(position.x, window.innerWidth - rect.width - 4)),
-      y: Math.max(4, Math.min(position.y, window.innerHeight - rect.height - 4)),
+      x: Math.max(4, Math.min(position.x, window.innerWidth - offsetWidth - 4)),
+      y: Math.max(4, Math.min(position.y, window.innerHeight - offsetHeight - 4)),
     });
   }, [items, open, position]);
 
-  if (!open || !position) {
-    return null;
-  }
-
   return (
     createPortal(
-      <div
-        ref={menuRef}
-        role="menu"
-        className={`pointer-events-auto fixed z-[100000] min-w-[170px] rounded-md border border-neutral-800 bg-[#161616] p-1 text-neutral-200 shadow-2xl backdrop-blur-md ${
-          hasSubmenus
-            ? "overflow-visible"
-            : "max-h-[min(70vh,620px)] overflow-y-auto overscroll-contain"
-        }`}
-        style={{ left: coords?.x ?? position.x, top: coords?.y ?? position.y }}
-        onClick={(event) => event.stopPropagation()}
-        onPointerDown={(event) => event.stopPropagation()}
-        onContextMenu={(event) => {
-          event.preventDefault();
-          event.stopPropagation();
-        }}
-      >
-        {items.map((item) => (
-          <ContextMenuItem
-            key={item.key}
-            item={item}
-            onOpenChange={onOpenChange}
-          />
-        ))}
-      </div>,
+      <AnimatePresence initial={false}>
+        {open && position && (
+          <motion.div
+            key="file-context-menu"
+            ref={menuRef}
+            role="menu"
+            // overlay 层：从右键位置「长出来」，先预缩再落位（Anticipation + Arc）
+            initial={{ opacity: 0, scale: 0.96, y: -4 }}
+            animate={{ opacity: 1, scale: 1, y: 0 }}
+            exit={{ opacity: 0, scale: 0.97, y: -2 }}
+            transition={{
+              scale: MOTION_SPRING.soft,
+              y: MOTION_SPRING.soft,
+              opacity: { duration: MOTION_DURATION.fast, ease: MOTION_EASE.standard },
+            }}
+            style={{
+              left: coords?.x ?? position.x,
+              top: coords?.y ?? position.y,
+              transformOrigin: "top left",
+            }}
+            className={`pointer-events-auto fixed z-[100000] min-w-[170px] rounded-md border border-neutral-800 bg-[#161616] p-1 text-neutral-200 shadow-2xl backdrop-blur-md ${
+              hasSubmenus
+                ? "overflow-visible"
+                : "max-h-[min(70vh,620px)] overflow-y-auto overscroll-contain"
+            }`}
+            onClick={(event) => event.stopPropagation()}
+            onPointerDown={(event) => event.stopPropagation()}
+            onContextMenu={(event) => {
+              event.preventDefault();
+              event.stopPropagation();
+            }}
+          >
+            {items.map((item) => (
+              <ContextMenuItem
+                key={item.key}
+                item={item}
+                onOpenChange={onOpenChange}
+              />
+            ))}
+          </motion.div>
+        )}
+      </AnimatePresence>,
       document.body,
     )
   );
@@ -209,35 +226,48 @@ function ContextMenuItem({
         <span className="min-w-0 flex-1 truncate">{item.label}</span>
         <ChevronRight size={12} />
       </button>
-      {expanded && (
-        <div
-          className="absolute z-[100001]"
-          style={{
-            top: submenuPlacement?.top ?? -5,
-            ...(submenuPlacement?.side === "left"
-              ? { right: "calc(100% + 4px)", paddingRight: 4 }
-              : { left: "calc(100% + 4px)", paddingLeft: 4 }),
-            visibility: submenuPlacement ? "visible" : "hidden",
-          }}
-          onMouseEnter={openSubmenu}
-          onMouseLeave={scheduleCloseSubmenu}
-        >
-          <div
-            ref={submenuRef}
-            role="menu"
-            className="relative max-h-[min(70vh,620px)] min-w-[130px] overflow-y-auto overscroll-contain rounded-md border border-neutral-800 bg-[#161616] p-1 shadow-2xl backdrop-blur-md"
+      <AnimatePresence initial={false}>
+        {expanded && (
+          <motion.div
+            key="submenu"
+            className="absolute z-[100001]"
+            style={{
+              top: submenuPlacement?.top ?? -5,
+              ...(submenuPlacement?.side === "left"
+                ? { right: "calc(100% + 4px)", paddingRight: 4 }
+                : { left: "calc(100% + 4px)", paddingLeft: 4 }),
+              visibility: submenuPlacement ? "visible" : "hidden",
+              transformOrigin:
+                submenuPlacement?.side === "left" ? "top right" : "top left",
+            }}
+            initial={{ opacity: 0, scale: 0.97, x: submenuPlacement?.side === "left" ? 4 : -4 }}
+            animate={{ opacity: 1, scale: 1, x: 0 }}
+            exit={{ opacity: 0, scale: 0.98, x: submenuPlacement?.side === "left" ? 2 : -2 }}
+            transition={{
+              scale: MOTION_SPRING.snappy,
+              x: MOTION_SPRING.snappy,
+              opacity: { duration: MOTION_DURATION.fast, ease: MOTION_EASE.standard },
+            }}
+            onMouseEnter={openSubmenu}
+            onMouseLeave={scheduleCloseSubmenu}
           >
-            {item.submenu.map((child) => (
-              <ContextMenuItem
-                key={child.key}
-                item={child}
-                depth={depth + 1}
-                onOpenChange={onOpenChange}
-              />
-            ))}
-          </div>
-        </div>
-      )}
+            <div
+              ref={submenuRef}
+              role="menu"
+              className="relative max-h-[min(70vh,620px)] min-w-[130px] overflow-y-auto overscroll-contain rounded-md border border-neutral-800 bg-[#161616] p-1 shadow-2xl backdrop-blur-md"
+            >
+              {item.submenu.map((child) => (
+                <ContextMenuItem
+                  key={child.key}
+                  item={child}
+                  depth={depth + 1}
+                  onOpenChange={onOpenChange}
+                />
+              ))}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

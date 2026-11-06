@@ -12,46 +12,44 @@ import { Activity } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import NumberPicker from "@/components/ui/number-picker";
-import Loading from "@/components/loading";
+import { Skeletonize, skeletonText } from "@/components/ui/skeleton";
+import { AutoHeight } from "@/components/motion";
+import { AnimatePresence, motion } from "motion/react";
+import { MOTION_TRANSITION } from "@/lib/motion";
+import PageHeader from "@/components/PageHeader";
+import { useRouteQuery } from "@/lib/routeData";
+import { LOGS_DEFAULT_LIMIT, logsQuery, type LogEntry } from "@/routeQueries/ops";
 
-interface Log {
-  id: number;
-  ip: string;
-  uuid: string;
-  message: string;
-  msg_type: string;
-  time: string;
-}
+const NO_LOGS: LogEntry[] = [];
+/** 骨架行：与真实行同样的 5 列（ID、IP、类型、消息、时间） */
+const LogPlaceholderRow = ({ row }: { row: number }) => (
+  <TableRow>
+    <TableCell>{skeletonText(3)}</TableCell>
+    <TableCell>{skeletonText(13)}</TableCell>
+    <TableCell>{skeletonText(6)}</TableCell>
+    <TableCell>{skeletonText(40 - (row % 3) * 8)}</TableCell>
+    <TableCell>{skeletonText(18)}</TableCell>
+  </TableRow>
+);
+
 const LogPage = () => {
-  const [loading, setLoading] = React.useState<boolean>(true);
-  const [logs, setLogs] = React.useState<Log[]>([]);
-  const [error, setError] = React.useState<string | null>(null);
   const [page, setPage] = React.useState<number>(1);
-  const [total, setTotal] = React.useState<number>(1);
-  const [limit, setLimit] = React.useState<number>(10);
+  const [limit, setLimit] = React.useState<number>(LOGS_DEFAULT_LIMIT);
+  // 与原实现一致：只有翻页才重新请求，请求时带上当时的 limit（单改 limit 不请求）
+  const [request, setRequest] = React.useState({ page, limit });
+  if (request.page !== page) setRequest({ page, limit });
   const [t] = useTranslation();
   const navigate = useNavigate();
-  React.useEffect(() => {
-    const fetchLogs = async () => {
-      setLoading(true);
-      try {
-        const response = await fetch(
-          `/api/admin/logs?limit=${limit}&page=${page}`
-        );
-        if (!response.ok) {
-          throw new Error("Failed to fetch logs");
-        }
-        const data = await response.json();
-        setLogs(data.data.logs);
-        setTotal(data.data.total);
-      } catch (err) {
-        setError(err instanceof Error ? err.message : "Unknown error");
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchLogs();
-  }, [page]);
+  // 首屏由 routePreload 在切换页面时提前请求（src/routeQueries/ops.ts）；翻页时保留旧行、显示骨架
+  const logsResult = useRouteQuery(logsQuery(request.limit, request.page));
+  const loading = logsResult.loading;
+  const logs = logsResult.data?.logs ?? NO_LOGS;
+  const total = logsResult.data?.total ?? 1;
+  // 与原实现一致：出错后一直显示错误
+  const [error, setError] = React.useState<string | null>(null);
+  if (logsResult.error && !error) {
+    setError(logsResult.error instanceof Error ? logsResult.error.message : "Unknown error");
+  }
 
   const totalPages = Math.ceil(total / limit);
   // 计算分页页码，显示当前页及前后1页，两端省略号
@@ -82,32 +80,40 @@ const LogPage = () => {
   // 始终包含最后一页（如果大于1）
   if (totalPages > 1) pageNumbers.push(totalPages);
 
-  if (loading) {
-    return <Loading />;
-  }
   if (error) {
     return <div>Error: {error}</div>;
   }
 
+  // 首次加载：表格是占位行画成的色块；翻页：保留旧行，表格淡成色块，新行到达后淡入
+  const firstLoading = loading && logs.length === 0;
+
   return (
-    <div className="km-page-admin-log flex flex-col gap-2 p-4">
-      <div className="km-log-toolbar flex justify-between items-center">
-        <h1 className="text-2xl font-bold">{t("logs.title")}</h1>
-        <div className="flex items-center gap-2">
-          <Button variant="soft" onClick={() => navigate("/admin/pprof")}>
-            <Activity size={16} />
-            {t("pprof.title")}
-          </Button>
-          Limit
-          <NumberPicker
-            defaultValue={limit}
-            onChange={setLimit}
-            min={1}
-            max={100}
-          />
-        </div>
-      </div>
-      <div className="km-log-output rounded-lg overflow-hidden">
+    // 页头直接渲染；只有表格（和依赖总数的分页）在加载中显示色块
+    <div className="km-page km-page-admin-log">
+      <PageHeader
+        className="km-log-toolbar"
+        title={t("logs.title")}
+        actions={
+          <>
+            <Button variant="soft" onClick={() => navigate("/admin/pprof")}>
+              <Activity size={16} />
+              {t("pprof.title")}
+            </Button>
+            Limit
+            <NumberPicker
+              defaultValue={limit}
+              onChange={setLimit}
+              min={1}
+              max={100}
+            />
+          </>
+        }
+      />
+      {/* 表格 + 分页是一个区块：两者之间 block，页头与区块之间由 km-page 给 section */}
+      <div className="flex flex-col gap-km-block">
+      {/* 行数变化（最后一页更短）时表格高度弹簧过渡 */}
+      <AutoHeight>
+      <Skeletonize loading={loading} className="km-log-output km-setting-card-skeleton rounded-lg overflow-hidden">
         <Table>
           <TableHeader>
             <TableRow>
@@ -119,8 +125,25 @@ const LogPage = () => {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {logs.map((log) => (
-              <TableRow key={log.id}>
+            {firstLoading
+              ? Array.from({ length: limit }, (_, row) => <LogPlaceholderRow key={row} row={row} />)
+              : null}
+            {/*
+              content 层：翻页时新一批行淡入。旧行不做退场：退场期间新旧两批行同时在 tbody 里，
+              表格会瞬间变成两倍高再缩回去。
+            */}
+            <AnimatePresence initial={false}>
+            {logs.map((log, index) => (
+              <motion.tr
+                key={log.id}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                transition={{
+                  ...MOTION_TRANSITION.fadeIn,
+                  delay: Math.min(index * 0.015, 0.12),
+                }}
+                className="km-ui-table-row transition-colors border-b border-[var(--accent-2)] hover:bg-[var(--accent-2)]"
+              >
                 <TableCell>
                   <Dialog.Root>
                     <Dialog.Trigger>
@@ -146,7 +169,7 @@ const LogPage = () => {
                           {new Date(log.time).toLocaleString()}
                         </label>
                       </Flex>
-                      <Flex justify={"end"}>
+                      <Flex gap="2" justify="end" mt="5">
                         <Dialog.Close>
                           <Button variant="soft">{t("common.close")}</Button>
                         </Dialog.Close>
@@ -162,13 +185,16 @@ const LogPage = () => {
                     : log.message}
                 </TableCell>
                 <TableCell>{new Date(log.time).toLocaleString()}</TableCell>
-              </TableRow>
+              </motion.tr>
             ))}
+            </AnimatePresence>
           </TableBody>
         </Table>
-      </div>
-      {/* 分页数字按钮 */}
-      <div className="flex justify-center items-center space-x-2 mt-4 gap-2">
+      </Skeletonize>
+      </AutoHeight>
+      {/* 分页数字按钮：首次加载时总页数未知，画成一小块色块 */}
+      <Skeletonize loading={firstLoading} className="km-setting-card-skeleton self-center">
+      <div className="flex justify-center items-center gap-2">
         <Button
           disabled={page === 1}
           onClick={() => setPage((p) => Math.max(1, p - 1))}
@@ -200,6 +226,8 @@ const LogPage = () => {
         >
           {">"}
         </Button>
+      </div>
+      </Skeletonize>
       </div>
     </div>
   );

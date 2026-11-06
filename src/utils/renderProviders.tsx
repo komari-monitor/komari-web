@@ -191,13 +191,13 @@ export const renderProviderInputs = ({
                 description={description}
                 defaultOpen={true}
             >
-                <div className="flex gap-4 flex-col">
+                <div className="flex gap-km-block flex-col">
                     {/* 按照服务器传来的顺序渲染所有字段 */}
                     {fields.map((f: any) => renderField(f))}
 
                     {/* 底部说明 */}
                     {footer && (
-                        <label className="text-sm text-muted-foreground mt-2 block">
+                        <label className="text-sm text-muted-foreground block">
                             {footer}
                         </label>
                     )}

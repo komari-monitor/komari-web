@@ -1,5 +1,6 @@
 import React from "react";
 import defaultTheme from "../../komari-theme.json";
+import { ApiError, api } from "@/lib/http";
 //import { useRPC2Call } from "./RPC2Context";
 
 type ThemeField = {
@@ -71,7 +72,8 @@ export const PublicInfoProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const [publicInfo, setPublicInfo] = React.useState<PublicInfo | null>(null);
-  const [isLoading, setIsLoading] = React.useState<boolean>(false);
+  // 挂载即发起首次请求，所以初始就是加载中（否则首帧会被当成「已加载但没有数据」）
+  const [isLoading, setIsLoading] = React.useState<boolean>(true);
   const [error, setError] = React.useState<string | null>(null);
   //const { call } = useRPC2Call();
   // 公共信息使用public，避免在私有站点的情况下RPC返回401
@@ -79,11 +81,11 @@ export const PublicInfoProvider: React.FC<{ children: React.ReactNode }> = ({
     setError(null);
     setIsLoading(true);
     try {
-      const response = await fetch("/api/public");
-      if (!response.ok) {
-        throw new Error("Failed to fetch public info");
-      }
-      const resp = (await response.json()) as Response;
+      const resp = await api
+        .get<Response | null>("/api/public", { expectSuccess: false })
+        .catch((error) => {
+          throw error instanceof ApiError ? new Error("Failed to fetch public info") : error;
+        });
       if (resp && resp.data) {
         setPublicInfo(withThemeDefaults(resp.data));
       } else {

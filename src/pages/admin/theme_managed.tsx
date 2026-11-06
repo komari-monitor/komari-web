@@ -1,17 +1,24 @@
 import React, { useEffect, useMemo, useState } from "react";
-import { Flex, Heading, Callout, Button } from "@radix-ui/themes";
+import { Callout, Button } from "@radix-ui/themes";
+import PageHeader from "@/components/PageHeader";
 import { usePublicInfo } from "@/contexts/PublicInfoContext";
 import ConfigFormTabs from "@/components/admin/ConfigFormTabs";
+import {
+  buildConfigInitialValues,
+  CONFIG_FORM_PLACEHOLDER_ITEMS,
+} from "@/components/admin/configFormValues";
 import { toast } from "sonner";
-import Loading from "@/components/loading";
 import { saveThemeSettings } from "@/utils/saveThemeSettings";
 import { useTranslation } from "react-i18next";
 import { resolveI18nText, type I18nText } from "@/utils/i18nText";
 import {
   getThemeConfigurationType,
   THEME_CONFIGURATION_MANAGED,
-  type ThemeConfiguration,
 } from "@/utils/themeConfiguration";
+import { useRouteQuery } from "@/lib/routeData";
+import { rememberActiveTheme, themeManifestQuery } from "@/routeQueries/appearance";
+import { AnimatePresence, motion } from "motion/react";
+import { CONTROL_MOTION, MOTION_VARIANTS } from "@/lib/motion";
 
 interface ThemeFieldBase {
   name?: I18nText; // 显示名（字符串或多语言字典）
@@ -32,15 +39,11 @@ interface ThemeFieldBase {
   required?: boolean;
 }
 
-interface ThemeConfigResponse {
-  configuration?: ThemeConfiguration;
-  [k: string]: any;
-}
-
 const ThemeManaged: React.FC = () => {
-  const { publicInfo, refresh } = usePublicInfo();
+  const { publicInfo, isLoading: publicInfoLoading, refresh } = usePublicInfo();
   const theme = publicInfo?.theme;
-  const themeSettings = publicInfo?.theme_settings || {}; // 当前值
+  const rawThemeSettings = publicInfo?.theme_settings;
+  const themeSettings = useMemo(() => rawThemeSettings || {}, [rawThemeSettings]); // 当前值
   const { t, i18n } = useTranslation();
 
   const currentLanguage =
@@ -48,66 +51,38 @@ const ThemeManaged: React.FC = () => {
     i18n.language ||
     (typeof navigator !== "undefined" ? navigator.language : "");
 
-  const [loading, setLoading] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [fields, setFields] = useState<ThemeFieldBase[]>([]);
-  const [values, setValues] = useState<Record<string, any>>({});
-  const [error, setError] = useState<string | null>(null);
-  const [firstLoading, setFirstLoading] = useState(true);
 
-  // 拉取主题配置
-  useEffect(() => {
-    async function load() {
-      if (!theme) {
-        setFields([]);
-        setValues({});
-        return;
-      }
-      setLoading(true);
-      setError(null);
-      try {
-        const resp = await fetch(`/themes/${theme}/komari-theme.json`, {
-          cache: "no-cache",
-        });
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        const data: ThemeConfigResponse = await resp.json();
-        const configuration = data.configuration;
-        if (
-          getThemeConfigurationType(configuration) !==
-            THEME_CONFIGURATION_MANAGED ||
-          !Array.isArray(configuration?.data)
-        ) {
-          setFields([]);
-          setValues({});
-          return;
-        }
-        const ds = configuration.data;
-        setFields(ds);
-        // 初始值：优先 publicInfo.theme_settings，其次 default
-        const init: Record<string, any> = {};
-        ds.forEach((f) => {
-          if (f.type !== "title" && f.type !== "textbox" && f.key) {
-            const selection = f.type === "nodes" || f.type === "pingtasks";
-            const saved = themeSettings?.[f.key];
-            init[f.key] =
-              saved !== undefined
-                ? selection
-                  ? JSON.stringify(saved)
-                  : saved
-                : f.default ??
-                  (selection ? "[]" : undefined);
-          }
-        });
-        setValues(init);
-      } catch (e: any) {
-        setError(e.message || t("theme.load_config_failed"));
-      } finally {
-        setLoading(false);
-        setFirstLoading(false);
-      }
+  // 拉取主题配置：主题已知时切换页面前就已预取（见 routeQueries/appearance.ts），等待预算内到达直接显示
+  const manifestQuery = useMemo(() => (theme ? themeManifestQuery(theme) : null), [theme]);
+  const manifest = useRouteQuery(manifestQuery);
+  useEffect(() => rememberActiveTheme(theme), [theme]);
+  const loading = manifest.loading;
+  const manifestData = theme ? manifest.data : undefined;
+  const fields = useMemo<ThemeFieldBase[]>(() => {
+    const configuration = manifestData?.configuration;
+    if (
+      getThemeConfigurationType(configuration) !== THEME_CONFIGURATION_MANAGED ||
+      !Array.isArray(configuration?.data)
+    ) {
+      return [];
     }
-    load();
-  }, [theme, themeSettings, t]);
+    return configuration.data as ThemeFieldBase[];
+  }, [manifestData]);
+  const manifestError = manifest.error as { message?: string } | undefined;
+  const error = theme && manifestError ? manifestError.message || t("theme.load_config_failed") : null;
+
+  // 初始值：优先 publicInfo.theme_settings，其次 default；配置或已保存的值变化（例如保存后刷新）时重置
+  const initialValues = useMemo(
+    () => buildConfigInitialValues(fields, themeSettings),
+    [fields, themeSettings],
+  );
+  const [values, setValues] = useState<Record<string, any>>(initialValues);
+  const [valuesFor, setValuesFor] = useState(initialValues);
+  if (valuesFor !== initialValues) {
+    setValuesFor(initialValues);
+    setValues(initialValues);
+  }
 
   const handleValueChange = (key: string, val: any) => {
     setValues((v) => ({ ...v, [key]: val }));
@@ -149,63 +124,99 @@ const ThemeManaged: React.FC = () => {
     }
   };
 
+  // 首次拉取配置前：用占位字段渲染同样的表单结构，每张设置卡显示色块。
+  // 换主题后重新请求期间保留旧表单（与原来一致），只有还没有任何结果时才显示色块。
+  // 公共信息还没到（还不知道当前主题）时也先显示色块，不先闪「无配置」提示。
+  const showSkeleton = theme
+    ? !error && manifestData === undefined
+    : publicInfoLoading;
+  const formFields = showSkeleton ? CONFIG_FORM_PLACEHOLDER_ITEMS : fields;
+  const pageTitle = theme
+    ? t("theme.manage_with_name", {
+        name: theme === "default" ? "" : theme,
+      })
+    : t("theme.title");
+
   return (
-    <Flex
-      direction="column"
-      gap="4"
-      className="km-page-admin-theme-managed h-full min-h-0 p-2 md:p-4"
-    >
-      {error && (
-        <Callout.Root color="red">
-          <Callout.Text>{error}</Callout.Text>
-        </Callout.Root>
-      )}
-      {loading && firstLoading && <Loading />}
-      {!loading && !error && fields.length === 0 && theme !== "default" && (
-        <Callout.Root>
-          <Callout.Text>{t("theme.no_config")}</Callout.Text>
-        </Callout.Root>
-      )}
-      {fields.length > 0 ? (
+    // 页面骨架：页头固定在顶部，表单在下方 flex-1 内独立滚动；外边距由后台内容区统一提供
+    <div className="km-page km-page-admin-theme-managed h-full min-h-0">
+      <PageHeader
+        className="shrink-0"
+        title={pageTitle}
+        actions={
+          formFields.length > 0 ? (
+            // control 性格：保存是「提交类」控件，按压回弹 + 保存中轻微压暗
+            <motion.div
+              whileTap={saving ? undefined : CONTROL_MOTION.tap}
+              animate={saving ? { scale: 0.98, opacity: 0.75 } : { scale: 1, opacity: 1 }}
+              transition={CONTROL_MOTION.transition}
+            >
+              <Button onClick={saveAll} disabled={saving || showSkeleton}>
+                {t("common.save")}
+              </Button>
+            </motion.div>
+          ) : undefined
+        }
+      />
+      {/* feedback 性格：错误 / 无配置提示出现时高度展开，下方表单被平滑推开 */}
+      <AnimatePresence initial={false}>
+        {error && (
+          <motion.div
+            key="theme-managed-error"
+            className="shrink-0"
+            variants={MOTION_VARIANTS.collapse}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+          >
+            <Callout.Root color="red">
+              <Callout.Text>{error}</Callout.Text>
+            </Callout.Root>
+          </motion.div>
+        )}
+        {!showSkeleton && !loading && !error && fields.length === 0 && theme !== "default" && (
+          <motion.div
+            key="theme-managed-empty"
+            className="shrink-0"
+            variants={MOTION_VARIANTS.collapse}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+          >
+            <Callout.Root>
+              <Callout.Text>{t("theme.no_config")}</Callout.Text>
+            </Callout.Root>
+          </motion.div>
+        )}
+      </AnimatePresence>
+      {formFields.length > 0 ? (
+        // 配置表单页：外层 flex 撑满，内部 ConfigFormTabs 才能保留独立滚动区；加载中逐卡色块
+        <div className="flex min-h-0 flex-1 flex-col">
         <ConfigFormTabs
-          items={fields}
-          values={values}
+          items={formFields}
+          loading={showSkeleton}
+          values={showSkeleton ? {} : values}
           onValueChange={handleValueChange}
           resolveText={(v) => resolveI18nText(v, currentLanguage)}
           className="km-admin-theme-managed-config min-h-0 flex-1"
           formClassName="km-theme-managed-form"
-          header={
-            <Flex justify="between" align="center" wrap="wrap" gap="3">
-              <Heading size="4">
-                {theme
-                  ? t("theme.manage_with_name", {
-                      name: theme === "default" ? "" : theme,
-                    })
-                  : t("theme.title")}
-              </Heading>
-              <Button onClick={saveAll} disabled={saving}>
-                {t("common.save")}
-              </Button>
-            </Flex>
-          }
           footer={
-            <Flex className="mt-4">
-              <Button onClick={saveAll} disabled={saving}>
-                {t("common.save")}
-              </Button>
-            </Flex>
+            <div className="mt-km-section flex">
+              <motion.div
+                whileTap={saving ? undefined : CONTROL_MOTION.tap}
+                animate={saving ? { scale: 0.98, opacity: 0.75 } : { scale: 1, opacity: 1 }}
+                transition={CONTROL_MOTION.transition}
+              >
+                <Button onClick={saveAll} disabled={saving || showSkeleton}>
+                  {t("common.save")}
+                </Button>
+              </motion.div>
+            </div>
           }
         />
-      ) : (
-        <Heading size="4">
-          {theme
-            ? t("theme.manage_with_name", {
-                name: theme === "default" ? "" : theme,
-              })
-            : t("theme.title")}
-        </Heading>
-      )}
-    </Flex>
+        </div>
+      ) : null}
+    </div>
   );
 };
 

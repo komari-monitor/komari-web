@@ -3,7 +3,10 @@ import { Button, Callout, Dialog, Flex } from "@radix-ui/themes";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import ConfigFormTabs from "./ConfigFormTabs";
-import Loading from "@/components/loading";
+import { buildConfigInitialValues, CONFIG_FORM_PLACEHOLDER_ITEMS } from "./configFormValues";
+import { Skeletonize } from "@/components/ui/skeleton";
+import { AnimatePresence, motion } from "motion/react";
+import { MOTION_VARIANTS } from "@/lib/motion";
 import { useRPC2Call } from "@/contexts/RPC2Context";
 import { resolveI18nText } from "@/utils/i18nText";
 import type { PluginConfiguration, PluginInfo } from "@/types/plugin";
@@ -33,15 +36,7 @@ export default function PluginConfigDialog({ plugin, onClose, onSaved }: Props) 
     ).then((result) => {
       if (ignore) return;
       const config = result?.configuration || {};
-      const initial: Record<string, unknown> = {};
-      for (const item of config.data || []) {
-        if (!item.key || item.type === "title" || item.type === "textbox") continue;
-        const saved = result?.data?.[item.key];
-        const selection = item.type === "nodes" || item.type === "pingtasks";
-        initial[item.key] = saved !== undefined
-          ? selection ? JSON.stringify(saved) : saved
-          : item.default ?? (selection ? "[]" : undefined);
-      }
+      const initial = buildConfigInitialValues(config.data || [], result?.data);
       setConfiguration(config);
       setValues(initial);
     }).catch((e: unknown) => {
@@ -88,22 +83,42 @@ export default function PluginConfigDialog({ plugin, onClose, onSaved }: Props) 
         <Dialog.Title className="shrink-0">
           {resolveI18nText(plugin.name, language) || plugin.short} · {t("plugin.config", "Configuration")}
         </Dialog.Title>
-        <Flex direction="column" gap="3" className="min-h-0 flex-1">
-          {error && <Callout.Root color="red" className="shrink-0"><Callout.Text>{error}</Callout.Text></Callout.Root>}
-          {loading ? <Loading /> : configuration && (
-            <ConfigFormTabs
-              items={configuration.data || []}
-              values={values}
-              onValueChange={(key, value) => setValues((current) => ({ ...current, [key]: value }))}
-              resolveText={(value) => resolveI18nText(value, language) || ""}
-              className="min-h-0 flex-1 overflow-hidden"
-              notice={!configuration.data?.some((item) => item.type !== "title")
-                ? <Callout.Root><Callout.Text>{t("plugin.config_no_items", "This plugin has no configuration items")}</Callout.Text></Callout.Root>
-                : undefined}
-            />
+        <Flex direction="column" gap="4" className="min-h-0 flex-1">
+          {/* feedback 层：保存/加载失败的提示高度展开，下方表单被平滑推开 */}
+          <AnimatePresence initial={false}>
+            {error && (
+              <motion.div
+                key="error"
+                className="shrink-0"
+                variants={MOTION_VARIANTS.collapse}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+              >
+                <Callout.Root color="red"><Callout.Text>{error}</Callout.Text></Callout.Root>
+              </motion.div>
+            )}
+          </AnimatePresence>
+          {/*
+            对话框内的局部加载：用占位字段渲染同样的表单，Skeletonize 原地淡成真实字段。
+            不用整页 Loading（它会让背后整页的 RevealBoundary 重播一次淡入）。
+          */}
+          {(loading || configuration) && (
+            <Skeletonize loading={loading} label className="flex min-h-0 flex-1 flex-col">
+              <ConfigFormTabs
+                items={loading ? CONFIG_FORM_PLACEHOLDER_ITEMS : configuration?.data || []}
+                values={loading ? {} : values}
+                onValueChange={(key, value) => setValues((current) => ({ ...current, [key]: value }))}
+                resolveText={(value) => resolveI18nText(value, language) || ""}
+                className="min-h-0 flex-1 overflow-hidden"
+                notice={!loading && !configuration?.data?.some((item) => item.type !== "title")
+                  ? <Callout.Root><Callout.Text>{t("plugin.config_no_items", "This plugin has no configuration items")}</Callout.Text></Callout.Root>
+                  : undefined}
+              />
+            </Skeletonize>
           )}
         </Flex>
-        <Flex justify="end" gap="3" mt="4" className="shrink-0">
+        <Flex justify="end" gap="2" mt="5" className="shrink-0">
           <Button variant="soft" color="gray" disabled={saving} onClick={onClose}>{t("common.cancel", "Cancel")}</Button>
           <Button disabled={loading || saving || !editable} onClick={save}>
             {saving

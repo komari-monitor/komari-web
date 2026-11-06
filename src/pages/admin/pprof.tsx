@@ -1,4 +1,4 @@
-import Loading from "@/components/loading";
+import { Skeletonize } from "@/components/ui/skeleton";
 import {
   Button,
   Callout,
@@ -7,285 +7,96 @@ import {
   SegmentedControl,
   Text,
 } from "@radix-ui/themes";
-import { AlertTriangle, Download, Eye, LoaderCircle, RefreshCw } from "lucide-react";
+import { AlertTriangle, RefreshCw } from "lucide-react";
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { z } from "zod";
-import { SettingCard, SettingCardLabel } from "@/components/admin/SettingCard";
+import { GapCollapse, SettingCard } from "@/components/admin/SettingCard";
+import PageHeader from "@/components/PageHeader";
 import { formatBytes } from "@/utils/unitHelper";
-
-const pprofProfileNameSchema = z.enum([
-  "cpu",
-  "trace",
-  "allocs",
-  "block",
-  "goroutine",
-  "heap",
-  "mutex",
-  "threadcreate",
-]);
-const pprofEndpointSchema = z.string().refine(
-  (value) => value.startsWith("/api/admin/pprof/"),
-  "invalid pprof endpoint",
-);
-const pprofProfileSchema = z.object({
-  name: pprofProfileNameSchema,
-  endpoint: pprofEndpointSchema,
-  samples: z.number().int().nonnegative().optional(),
-  timed: z.boolean().optional(),
-  preview: pprofEndpointSchema.optional(),
-});
-const pprofSummarySchema = z.object({
-  profiles: z.array(pprofProfileSchema),
-  runtime: z.object({
-    goroutines: z.number().int().nonnegative(),
-    memory: z.object({
-      heap_alloc: z.number().finite().nonnegative(),
-      heap_inuse: z.number().finite().nonnegative(),
-      heap_objects: z.number().int().nonnegative(),
-      sys: z.number().finite().nonnegative(),
-    }),
-  }),
-  duration: z.object({
-    default_seconds: z.number().int().min(1).max(30),
-    min_seconds: z.number().int().min(1).max(30),
-    max_seconds: z.number().int().min(1).max(30),
-  }),
-});
-const pprofSummaryResponseSchema = z.object({
-  status: z.literal("success"),
-  data: pprofSummarySchema,
-});
-
-type PprofProfile = z.infer<typeof pprofProfileSchema>;
-type PprofSummary = z.infer<typeof pprofSummarySchema>;
-type PprofPreview = {
-  profile: PprofProfile;
-  text: string;
-};
-
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === "object" && value !== null && !Array.isArray(value);
-}
-
-function captureDurations(summary: PprofSummary): number[] {
-  return Array.from(
-    new Set([
-      summary.duration.min_seconds,
-      summary.duration.default_seconds,
-      summary.duration.max_seconds,
-    ]),
-  ).sort((left, right) => left - right);
-}
-
-function pprofDownloadURL(profile: PprofProfile, seconds: number): string {
-  if (!profile.timed) return profile.endpoint;
-
-  const url = new URL(profile.endpoint, window.location.origin);
-  url.searchParams.set("seconds", String(seconds));
-  return url.pathname + url.search;
-}
-
-function pprofFilename(profile: PprofProfile): string {
-  return profile.name === "trace" ? "trace.out" : `${profile.name}.pprof`;
-}
-
-async function responseError(response: Response, fallback: string): Promise<string> {
-  try {
-    const payload: unknown = await response.json();
-    if (isRecord(payload) && typeof payload.message === "string") {
-      return payload.message;
-    }
-  } catch {
-    // Diagnostic downloads are binary on success and may be plain text on errors.
-  }
-  return `${fallback} (${response.status})`;
-}
-
-function OverviewMetric({ label, value }: { label: string; value: string }) {
-  return (
-    <div className="min-w-0 border-b border-[var(--gray-a5)] py-3 last:border-b-0">
-      <Text as="div" size="1" color="gray">
-        {label}
-      </Text>
-      <Text as="div" size="3" weight="medium" className="break-words">
-        {value}
-      </Text>
-    </div>
-  );
-}
-
-function ProfileRow({
-  profile,
-  busy,
-  activeAction,
-  onPreview,
-  onDownload,
-}: {
-  profile: PprofProfile;
-  busy: boolean;
-  activeAction: string | null;
-  onPreview: (profile: PprofProfile) => void;
-  onDownload: (profile: PprofProfile) => void;
-}) {
-  const { t } = useTranslation();
-  const previewing = activeAction === `${profile.name}:preview`;
-  const downloading = activeAction === `${profile.name}:download`;
-  const profileKey = `pprof.profiles.${profile.name}`;
-
-  return (
-    <div className="grid grid-cols-1 gap-3 border-b border-[var(--gray-a5)] py-3 last:border-b-0 sm:grid-cols-[minmax(0,1fr)_auto] sm:items-center">
-      <div className="min-w-0">
-        <Text as="div" size="2" weight="medium">
-          {t(`${profileKey}.title`)}
-        </Text>
-        <Text as="div" size="1" color="gray" className="break-words">
-          {t(`${profileKey}.description`)}
-        </Text>
-        <Text as="div" size="1" color="gray" className="pt-1">
-          {profile.timed
-            ? t("pprof.timed_profile")
-            : t("pprof.sample_count", { samples: profile.samples ?? 0 })}
-        </Text>
-      </div>
-      <Flex gap="2" wrap="wrap" className="sm:justify-end">
-        {profile.preview ? (
-          <Button
-            variant="soft"
-            disabled={busy}
-            onClick={() => onPreview(profile)}
-          >
-            {previewing ? (
-              <LoaderCircle size={16} className="animate-spin" />
-            ) : (
-              <Eye size={16} />
-            )}
-            {previewing ? t("pprof.loading") : t("pprof.view")}
-          </Button>
-        ) : null}
-        <Button
-          variant="soft"
-          disabled={busy}
-          onClick={() => onDownload(profile)}
-        >
-          {downloading ? (
-            <LoaderCircle size={16} className="animate-spin" />
-          ) : (
-            <Download size={16} />
-          )}
-          {downloading ? t("pprof.loading") : t("pprof.download")}
-        </Button>
-      </Flex>
-    </div>
-  );
-}
+import { AnimatePresence } from "motion/react";
+import { AutoHeight, PresenceBox } from "@/components/motion";
+import {
+  HEAP_PREVIEW_PLACEHOLDER,
+  PLACEHOLDER_SUMMARY,
+  captureDurations,
+  pprofDownloadURL,
+  pprofFilename,
+  type PprofPreview,
+  type PprofProfile,
+  type PprofSummary,
+} from "./pprof/model";
+import {
+  parsePprofSummary,
+  previewErrorMessage,
+  responseError,
+  summaryErrorMessage,
+} from "./pprof/api";
+import { useRouteQuery } from "@/lib/routeData";
+import { fetchPprofPreviewText, pprofSummaryQuery } from "@/routeQueries/system";
+import { MetricValue, OverviewMetric } from "./pprof/OverviewMetric";
+import ProfileRow from "./pprof/ProfileRow";
 
 export default function PprofPage() {
   const { t } = useTranslation();
-  const [summary, setSummary] = React.useState<PprofSummary | null>(null);
-  const [summaryLoading, setSummaryLoading] = React.useState(true);
-  const [summaryError, setSummaryError] = React.useState<string | null>(null);
   const [captureSeconds, setCaptureSeconds] = React.useState(10);
   const [activeAction, setActiveAction] = React.useState<string | null>(null);
   const [actionError, setActionError] = React.useState<string | null>(null);
   const [preview, setPreview] = React.useState<PprofPreview | null>(null);
-  const [heapPreview, setHeapPreview] = React.useState<string | null>(null);
-  const [heapPreviewLoading, setHeapPreviewLoading] = React.useState(false);
-  const [heapPreviewError, setHeapPreviewError] = React.useState<string | null>(null);
-  const heapPreviewRequestRef = React.useRef(0);
+
+  // 概要与堆预览：切换页面时已由 routePreload 提前请求（堆预览在概要到达后接着请求）；
+  // 等待预算内到达直接显示，否则数据区显示骨架
+  const summaryResult = useRouteQuery(pprofSummaryQuery);
+  const summaryLoading = summaryResult.loading;
+  const parsed = React.useMemo(() => {
+    if (summaryResult.error) {
+      return { summary: null, error: summaryErrorMessage(summaryResult.error, t) };
+    }
+    if (!summaryResult.data) return { summary: null, error: null };
+    try {
+      return { summary: parsePprofSummary(summaryResult.data.payload, t), error: null };
+    } catch (cause) {
+      return { summary: null, error: cause instanceof Error ? cause.message : String(cause) };
+    }
+  }, [summaryResult.data, summaryResult.error, t]);
+  const summary = parsed.summary;
+  // 刷新开始时先清掉旧错误（与原来一致），结果出来再显示
+  const summaryError = summaryLoading ? null : parsed.error;
+
+  // 只有概要通过校验且带堆预览地址时才读堆预览
+  const hasHeapPreview = Boolean(
+    summary?.profiles.find((profile) => profile.name === "heap")?.preview,
+  );
+  const heapResult = useRouteQuery(
+    hasHeapPreview ? (summaryResult.data?.heapPreview ?? null) : null,
+  );
+  const heapPreview = hasHeapPreview && !heapResult.error ? (heapResult.data ?? null) : null;
+  const heapPreviewLoading = hasHeapPreview && heapResult.loading;
+  const heapPreviewError =
+    hasHeapPreview && heapResult.error
+      ? previewErrorMessage(heapResult.error, t("pprof.request_failed"))
+      : null;
+
+  // 每次拿到新概要：当前采集时长不在可选项里就换成默认值
+  const [syncedSummary, setSyncedSummary] = React.useState<PprofSummary | null>(null);
+  if (summary && summary !== syncedSummary) {
+    setSyncedSummary(summary);
+    const options = captureDurations(summary);
+    if (!options.includes(captureSeconds)) setCaptureSeconds(summary.duration.default_seconds);
+  }
 
   const readProfilePreview = React.useCallback(
     async (profile: PprofProfile): Promise<string> => {
       if (!profile.preview) {
         throw new Error(t("pprof.preview_unavailable"));
       }
-
-      const response = await fetch(profile.preview, {
-        cache: "no-store",
-        credentials: "same-origin",
-        headers: { Accept: "text/plain" },
-      });
-      if (!response.ok) {
-        throw new Error(await responseError(response, t("pprof.request_failed")));
+      try {
+        return await fetchPprofPreviewText(profile.preview);
+      } catch (cause) {
+        throw new Error(previewErrorMessage(cause, t("pprof.request_failed")));
       }
-      return response.text();
     },
     [t],
   );
-
-  const loadHeapPreview = React.useCallback(
-    async (profile: PprofProfile | undefined) => {
-      const requestID = ++heapPreviewRequestRef.current;
-      if (!profile?.preview) {
-        setHeapPreview(null);
-        setHeapPreviewError(null);
-        setHeapPreviewLoading(false);
-        return;
-      }
-
-      setHeapPreviewLoading(true);
-      setHeapPreviewError(null);
-      try {
-        const text = await readProfilePreview(profile);
-        if (requestID === heapPreviewRequestRef.current) {
-          setHeapPreview(text);
-        }
-      } catch (cause) {
-        if (requestID === heapPreviewRequestRef.current) {
-          setHeapPreview(null);
-          setHeapPreviewError(cause instanceof Error ? cause.message : String(cause));
-        }
-      } finally {
-        if (requestID === heapPreviewRequestRef.current) {
-          setHeapPreviewLoading(false);
-        }
-      }
-    },
-    [readProfilePreview],
-  );
-
-  const loadSummary = React.useCallback(async () => {
-    setSummaryLoading(true);
-    setSummaryError(null);
-    heapPreviewRequestRef.current++;
-    setHeapPreview(null);
-    setHeapPreviewError(null);
-    setHeapPreviewLoading(false);
-    try {
-      const response = await fetch("/api/admin/pprof/summary", {
-        cache: "no-store",
-        credentials: "same-origin",
-      });
-      if (!response.ok) {
-        throw new Error(await responseError(response, t("pprof.summary_load_failed")));
-      }
-
-      const parsed = pprofSummaryResponseSchema.safeParse(await response.json());
-      if (!parsed.success) {
-        throw new Error(t("pprof.invalid_summary"));
-      }
-
-      setSummary(parsed.data.data);
-      void loadHeapPreview(
-        parsed.data.data.profiles.find((profile) => profile.name === "heap"),
-      );
-      setCaptureSeconds((current) => {
-        const options = captureDurations(parsed.data.data);
-        return options.includes(current)
-          ? current
-          : parsed.data.data.duration.default_seconds;
-      });
-    } catch (cause) {
-      setSummary(null);
-      setSummaryError(cause instanceof Error ? cause.message : String(cause));
-    } finally {
-      setSummaryLoading(false);
-    }
-  }, [loadHeapPreview, t]);
-
-  React.useEffect(() => {
-    void loadSummary();
-  }, [loadSummary]);
 
   const downloadProfile = async (profile: PprofProfile) => {
     setActiveAction(`${profile.name}:download`);
@@ -334,22 +145,30 @@ export default function PprofPage() {
   };
 
   const busy = activeAction !== null;
-  const durationOptions = summary ? captureDurations(summary) : [];
+  // 首次加载（还没有概要）：用占位概要渲染同结构的卡片；卡片标题、说明直接显示，只有数据区是骨架；
+  // 刷新时保留旧数据并淡成骨架（Skeletonize 延迟期内保持可见）
+  const firstLoading = summaryLoading && !summary;
+  const shownSummary = summary ?? (summaryLoading ? PLACEHOLDER_SUMMARY : null);
+  const durationOptions = shownSummary ? captureDurations(shownSummary) : [];
 
   return (
-    <Flex direction="column" gap="3" className="km-page-admin-pprof">
-      <Flex justify="between" align="center" gap="2" wrap="wrap">
-        <SettingCardLabel>{t("pprof.title")}</SettingCardLabel>
-        <Button
-          variant="soft"
-          disabled={summaryLoading}
-          onClick={() => void loadSummary()}
-        >
-          <RefreshCw size={16} className={summaryLoading ? "animate-spin" : undefined} />
-          {t("common.refresh")}
-        </Button>
-      </Flex>
+    <div className="km-page km-page-admin-pprof">
+      <PageHeader
+        title={t("pprof.title")}
+        actions={
+          <Button
+            variant="soft"
+            disabled={summaryLoading}
+            onClick={() => void summaryResult.reload()}
+          >
+            <RefreshCw size={16} className={summaryLoading ? "animate-spin" : undefined} />
+            {t("common.refresh")}
+          </Button>
+        }
+      />
 
+      {/* 警告、错误提示与三张卡片是同一区块：彼此之间 block（GapCollapse 默认 gap 就是 SPACE.block） */}
+      <div className="flex flex-col gap-km-block">
       <Callout.Root color="orange" variant="surface">
         <Callout.Icon>
           <AlertTriangle size={16} />
@@ -357,53 +176,58 @@ export default function PprofPage() {
         <Callout.Text>{t("pprof.warning")}</Callout.Text>
       </Callout.Root>
 
-      {summaryError ? (
+      {/* feedback 层：错误提示出现/消失时高度展开/收起，下方卡片被平滑推开 */}
+      <GapCollapse show={Boolean(summaryError)}>
         <Callout.Root color="red" variant="surface">
           <Callout.Icon>
             <AlertTriangle size={16} />
           </Callout.Icon>
           <Callout.Text>{summaryError}</Callout.Text>
         </Callout.Root>
-      ) : null}
-
-      {actionError ? (
+      </GapCollapse>
+      <GapCollapse show={Boolean(actionError)}>
         <Callout.Root color="red" variant="surface">
           <Callout.Icon>
             <AlertTriangle size={16} />
           </Callout.Icon>
           <Callout.Text>{actionError}</Callout.Text>
         </Callout.Root>
-      ) : null}
+      </GapCollapse>
 
+      <div className="flex flex-col gap-km-block">
       <SettingCard
         title={t("pprof.runtime_overview_title")}
         description={t("pprof.runtime_overview_description")}
       >
-        {summary ? (
-          <div className="grid w-full grid-cols-1 gap-x-6 sm:grid-cols-2 lg:grid-cols-5">
+        {shownSummary ? (
+          <div className="grid w-full grid-cols-1 gap-x-km-section sm:grid-cols-2 lg:grid-cols-5">
+            {/* feedback 层：刷新后数值滚动，不整块重画 */}
             <OverviewMetric
               label={t("pprof.goroutines")}
-              value={summary.runtime.goroutines.toLocaleString()}
+              loading={summaryLoading}
+              value={<MetricValue placeholder={!summary} value={shownSummary.runtime.goroutines} />}
             />
             <OverviewMetric
               label={t("pprof.heap_alloc")}
-              value={formatBytes(summary.runtime.memory.heap_alloc)}
+              loading={summaryLoading}
+              value={<MetricValue placeholder={!summary} value={shownSummary.runtime.memory.heap_alloc} format={formatBytes} />}
             />
             <OverviewMetric
               label={t("pprof.heap_inuse")}
-              value={formatBytes(summary.runtime.memory.heap_inuse)}
+              loading={summaryLoading}
+              value={<MetricValue placeholder={!summary} value={shownSummary.runtime.memory.heap_inuse} format={formatBytes} />}
             />
             <OverviewMetric
               label={t("pprof.heap_objects")}
-              value={summary.runtime.memory.heap_objects.toLocaleString()}
+              loading={summaryLoading}
+              value={<MetricValue placeholder={!summary} value={shownSummary.runtime.memory.heap_objects} />}
             />
             <OverviewMetric
               label={t("pprof.runtime_sys")}
-              value={formatBytes(summary.runtime.memory.sys)}
+              loading={summaryLoading}
+              value={<MetricValue placeholder={!summary} value={shownSummary.runtime.memory.sys} format={formatBytes} />}
             />
           </div>
-        ) : summaryLoading ? (
-          <Loading compact />
         ) : (
           <Text size="2" color="gray" className="w-full py-3">
             {t("pprof.summary_unavailable")}
@@ -411,41 +235,57 @@ export default function PprofPage() {
         )}
       </SettingCard>
 
-      {summary ? (
+      {shownSummary ? (
         <SettingCard
           title={t("pprof.heap_preview_title")}
           description={t("pprof.heap_preview_description")}
           className="km-pprof-output"
         >
-          {heapPreviewLoading ? (
-            <Loading compact />
-          ) : heapPreview !== null ? (
-            <pre className="max-h-[32vh] w-full overflow-auto rounded-md border border-[var(--gray-a5)] p-3 text-xs">
-              {heapPreview}
-            </pre>
-          ) : (
-            <Text
-              size="2"
-              color={heapPreviewError ? "red" : "gray"}
-              className="w-full py-3 break-words"
-            >
-              {heapPreviewError ?? t("pprof.preview_unavailable")}
-            </Text>
-          )}
+          {/*
+            content 层：堆预览加载中是同一个 pre 里的几行骨架，到达后原地淡入；
+            预览 <-> 空/错误 之间才做交叉淡入，高度由 AutoHeight 弹簧跟随。
+          */}
+          <AutoHeight className="w-full mt-km-group">
+          <AnimatePresence mode="popLayout" initial={false}>
+            {heapPreviewLoading || firstLoading || heapPreview !== null ? (
+              <PresenceBox key="preview" className="w-full">
+                <Skeletonize loading={heapPreviewLoading || summaryLoading}>
+                  <pre className="max-h-[32vh] w-full overflow-auto rounded-md border border-[var(--gray-a5)] p-3 text-xs">
+                    {heapPreview ?? HEAP_PREVIEW_PLACEHOLDER}
+                  </pre>
+                </Skeletonize>
+              </PresenceBox>
+            ) : (
+              <PresenceBox key="empty" className="w-full">
+                <Skeletonize loading={summaryLoading}>
+                  <Text
+                    size="2"
+                    color={heapPreviewError ? "red" : "gray"}
+                    className="w-full py-3 break-words"
+                  >
+                    {heapPreviewError ?? t("pprof.preview_unavailable")}
+                  </Text>
+                </Skeletonize>
+              </PresenceBox>
+            )}
+          </AnimatePresence>
+          </AutoHeight>
         </SettingCard>
       ) : null}
 
-      {summary ? (
+      {shownSummary ? (
         <SettingCard
           title={t("pprof.profiles_title")}
           description={t("pprof.profiles_description")}
           className="km-pprof-form"
         >
-          <Flex direction="column" gap="3" className="w-full pt-3">
-            <Flex direction="column" gap="1">
+          <Flex direction="column" gap="4" className="w-full mt-km-group">
+            <Flex direction="column" gap="2">
               <Text size="2" weight="medium">
                 {t("pprof.capture_duration")}
               </Text>
+              {/* 列方向 flex：控件与原来一样被拉伸，色块与控件同宽 */}
+              <Skeletonize loading={summaryLoading} className="flex flex-col">
               <SegmentedControl.Root
                 value={String(captureSeconds)}
                 onValueChange={(value) => {
@@ -462,12 +302,17 @@ export default function PprofPage() {
                   </SegmentedControl.Item>
                 ))}
               </SegmentedControl.Root>
+              </Skeletonize>
             </Flex>
 
+            <Skeletonize loading={summaryLoading}>
             <Flex direction="column" gap="0">
-              {summary.profiles.map((profile) => (
+              {/* content 层：分析项逐条淡入，行间用 layout 跟随 */}
+              <AnimatePresence initial={false}>
+              {shownSummary.profiles.map((profile, index) => (
                 <ProfileRow
                   key={profile.name}
+                  index={index}
                   profile={profile}
                   busy={busy}
                   activeAction={activeAction}
@@ -475,10 +320,14 @@ export default function PprofPage() {
                   onDownload={downloadProfile}
                 />
               ))}
+              </AnimatePresence>
             </Flex>
+            </Skeletonize>
           </Flex>
         </SettingCard>
       ) : null}
+      </div>
+      </div>
 
       <Dialog.Root
         open={preview !== null}
@@ -497,10 +346,10 @@ export default function PprofPage() {
           <Dialog.Description size="2">
             {t("pprof.preview_description")}
           </Dialog.Description>
-          <pre className="mt-3 max-h-[65vh] overflow-auto rounded-md border border-[var(--gray-a5)] p-3 text-xs">
-            {preview?.text}
-          </pre>
-          <Flex justify="end" mt="3">
+            <pre className="mt-km-block max-h-[65vh] overflow-auto rounded-md border border-[var(--gray-a5)] p-3 text-xs">
+              {preview?.text}
+            </pre>
+          <Flex gap="2" justify="end" mt="5">
             <Dialog.Close>
               <Button variant="soft" color="gray">
                 {t("common.close")}
@@ -509,6 +358,6 @@ export default function PprofPage() {
           </Flex>
         </Dialog.Content>
       </Dialog.Root>
-    </Flex>
+    </div>
   );
 }

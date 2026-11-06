@@ -1,87 +1,97 @@
 // routes.js
-import { lazy } from "react";
+import { lazy, use, useState, type ComponentType } from "react";
 import type { RouteObject } from "react-router-dom";
 import React from "react";
 import { Navigate } from "react-router-dom";
+import { currentNavigationSeq, pendingNavigationGate } from "@/lib/routeData";
 
-const Index = lazy(() => import("./pages/Index"));
-const AdminLayout = lazy(() => import("./pages/admin/_layout"));
-const Admin = lazy(() => import("./pages/admin"));
-const Dashboard = lazy(() => import("./pages/admin/dashboard"));
-const NotFound = lazy(() => import("./pages/404"));
+/**
+ * 页面切换时等数据：随某次导航挂载的路由元素，在这次导航登记的请求到达（或 ROUTE_DATA_BUDGET_MS 预算用完）前挂起，
+ * transition 让旧页面继续显示。只有挂载时所属的那次导航会挂起：已挂载的布局之后再重渲染不会挂起，
+ * 同步更新也就不会意外露出 Suspense 的 fallback。这里只有一个 hook，use() 放在最后。
+ */
+const RouteGate = ({ component: Component }: { component: ComponentType }) => {
+  const [seq] = useState(currentNavigationSeq);
+  const gate = pendingNavigationGate(seq);
+  if (gate) use(gate);
+  return React.createElement(Component);
+};
+
+/**
+ * 懒加载页面：element 用 React.lazy，handle.preload 指向同一个 import()，
+ * 悬停 / 点击时 routePreload 按地址匹配并提前下载代码块（同一模块只下载一次）。
+ */
+const page = (importer: () => Promise<{ default: ComponentType }>) => {
+  const Component = lazy(importer);
+  return { element: React.createElement(RouteGate, { component: Component }), handle: { preload: importer } };
+};
+
+const Index = page(() => import("./pages/Index"));
+const AdminLayout = page(() => import("./pages/admin/_layout"));
+const Admin = page(() => import("./pages/admin"));
+const Dashboard = page(() => import("./pages/admin/dashboard"));
+const NotFound = page(() => import("./pages/404"));
 
 export const routes: RouteObject[] = [
   {
     path: "/",
-    element: React.createElement(lazy(() => import("./pages/_layout"))),
+    ...page(() => import("./pages/_layout")),
     children: [
-      { index: true, element: React.createElement(Index) },
+      { index: true, ...Index },
       {
         path: "instance/:uuid",
-        element: React.createElement(lazy(() => import("./pages/instance"))),
+        ...page(() => import("./pages/instance")),
       },
       {
         path: "plugin/:short/*",
-        element: React.createElement(lazy(() => import("./pages/plugin_page"))),
+        ...page(() => import("./pages/plugin_page")),
       },
     ],
   },
   {
     path: "/admin/database-migration",
-    element: React.createElement(
-      lazy(() => import("./pages/database_migration")),
-    ),
+    ...page(() => import("./pages/database_migration")),
   },
   {
     path: "/install",
-    element: React.createElement(lazy(() => import("./pages/install"))),
+    ...page(() => import("./pages/install")),
   },
   {
     path: "/database-recovery",
-    element: React.createElement(
-      lazy(() => import("./pages/database_recovery")),
-    ),
+    ...page(() => import("./pages/database_recovery")),
   },
   {
     path: "/admin/login",
-    element: React.createElement(lazy(() => import("./pages/admin/login"))),
+    ...page(() => import("./pages/admin/login")),
   },
   {
     path: "/admin",
-    element: React.createElement(AdminLayout),
+    ...AdminLayout,
     children: [
       { index: true, element: React.createElement(Navigate, { to: "/admin/dashboard", replace: true }) },
       {
         path: "dashboard",
-        element: React.createElement(Dashboard),
+        ...Dashboard,
       },
       {
         path: "servers",
-        element: React.createElement(Admin),
+        ...Admin,
       },
       {
         path: "theme_managed",
-        element: React.createElement(
-          lazy(() => import("./pages/admin/theme_managed.tsx"))
-        ),
+        ...page(() => import("./pages/admin/theme_managed.tsx")),
       },
       {
         path: "theme_raw",
-        element: React.createElement(
-          lazy(() => import("./pages/admin/theme_raw.tsx"))
-        ),
+        ...page(() => import("./pages/admin/theme_raw.tsx")),
       },
       {
         path: "themes",
-        element: React.createElement(
-          lazy(() => import("./pages/admin/settings/_layout"))
-        ),
+        ...page(() => import("./pages/admin/settings/_layout")),
         children: [
           {
             index: true,
-            element: React.createElement(
-              lazy(() => import("./pages/admin/themes"))
-            ),
+            ...page(() => import("./pages/admin/themes")),
           },
         ],
       },
@@ -94,51 +104,35 @@ export const routes: RouteObject[] = [
       },
       {
         path: "plugins",
-        element: React.createElement(
-          lazy(() => import("./pages/admin/plugins"))
-        ),
+        ...page(() => import("./pages/admin/plugins")),
       },
       {
         path: "plugins/config",
-        element: React.createElement(
-          lazy(() => import("./pages/admin/plugin_config"))
-        ),
+        ...page(() => import("./pages/admin/plugin_config")),
       },
       {
         path: "plugin-page",
-        element: React.createElement(
-          lazy(() => import("./pages/admin/plugin_page"))
-        ),
+        ...page(() => import("./pages/admin/plugin_page")),
       },
       {
         path: "market/themes",
-        element: React.createElement(
-          lazy(() => import("./pages/admin/market/themes"))
-        ),
+        ...page(() => import("./pages/admin/market/themes")),
       },
       {
         path: "market/plugins",
-        element: React.createElement(
-          lazy(() => import("./pages/admin/market/plugins"))
-        ),
+        ...page(() => import("./pages/admin/market/plugins")),
       },
       {
         path: "sessions",
-        element: React.createElement(
-          lazy(() => import("./pages/admin/sessions"))
-        ),
+        ...page(() => import("./pages/admin/sessions")),
       },
       {
         path: "account",
-        element: React.createElement(
-          lazy(() => import("./pages/admin/account"))
-        ),
+        ...page(() => import("./pages/admin/account")),
       },
       {
         path: "settings",
-        element: React.createElement(
-          lazy(() => import("./pages/admin/settings/_layout"))
-        ),
+        ...page(() => import("./pages/admin/settings/_layout")),
         children: [
           {
             index: true,
@@ -149,9 +143,7 @@ export const routes: RouteObject[] = [
           },
           {
             path: "site",
-            element: React.createElement(
-              lazy(() => import("./pages/admin/settings/site"))
-            ),
+            ...page(() => import("./pages/admin/settings/site")),
           },
           {
             path: "theme",
@@ -162,15 +154,11 @@ export const routes: RouteObject[] = [
           },
           {
             path: "custom",
-            element: React.createElement(
-              lazy(() => import("./pages/admin/settings/custom"))
-            ),
+            ...page(() => import("./pages/admin/settings/custom")),
           },
           {
             path: "sign-on",
-            element: React.createElement(
-              lazy(() => import("./pages/admin/settings/sign-on"))
-            ),
+            ...page(() => import("./pages/admin/settings/sign-on")),
           },
           {
             path: "notification",
@@ -181,15 +169,11 @@ export const routes: RouteObject[] = [
           },
           {
             path: "general",
-            element: React.createElement(
-              lazy(() => import("./pages/admin/settings/general"))
-            ),
+            ...page(() => import("./pages/admin/settings/general")),
           },
           {
             path: "metrics",
-            element: React.createElement(
-              lazy(() => import("./pages/admin/settings/metrics"))
-            ),
+            ...page(() => import("./pages/admin/settings/metrics")),
           },
         ],
       },
@@ -205,64 +189,54 @@ export const routes: RouteObject[] = [
           },
           {
             path: "channels",
-            element: React.createElement(
-              lazy(() => import("./pages/admin/settings/_layout"))
-            ),
+            ...page(() => import("./pages/admin/settings/_layout")),
             children: [
               {
                 index: true,
-                element: React.createElement(
-                  lazy(() => import("./pages/admin/notification/channels"))
-                ),
+                ...page(() => import("./pages/admin/notification/channels")),
               },
             ],
           },
           {
             path: "offline",
-            element: React.createElement(
-              lazy(() => import("./pages/admin/notification/offline"))
-            ),
+            ...page(() => import("./pages/admin/notification/offline")),
           },
           {
             path: "general",
-            element: React.createElement(
-              lazy(() => import("./pages/admin/notification/general"))
-            ),
+            ...page(() => import("./pages/admin/notification/general")),
           },
         ],
       },
       {
         path: "ping",
-        element: React.createElement(
-          lazy(() => import("./pages/admin/pingTask"))
-        ),
+        ...page(() => import("./pages/admin/pingTask")),
       },
       {
         path: "about",
-        element: React.createElement(lazy(() => import("./pages/admin/about"))),
+        ...page(() => import("./pages/admin/about")),
       },
       {
         path: "logs",
-        element: React.createElement(lazy(() => import("./pages/admin/log"))),
+        ...page(() => import("./pages/admin/log")),
       },
       {
         path: "pprof",
-        element: React.createElement(lazy(() => import("./pages/admin/pprof"))),
+        ...page(() => import("./pages/admin/pprof")),
       },
       {
         path: "exec",
-        element: React.createElement(lazy(() => import("./pages/admin/exec"))),
+        ...page(() => import("./pages/admin/exec")),
       }
     ],
   },
   {
     path: "/terminal",
-    element: React.createElement(lazy(() => import("./pages/terminal"))),
+    ...page(() => import("./pages/terminal")),
   },
   {
     path: "/manage/*",
-    element: React.createElement(lazy(() => import("./pages/manage"))),
+    ...page(() => import("./pages/manage")),
   },
   // Catch-all 404 route
-  { path: "*", element: React.createElement(NotFound) },
+  { path: "*", ...NotFound },
 ];

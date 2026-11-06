@@ -1,68 +1,63 @@
 import { useTranslation } from "react-i18next";
 import {
   Text,
-  Card,
   Button,
   Grid,
-  Box,
   Flex,
-  Dialog,
-  Badge,
-  IconButton,
-  TextField,
-  Callout,
-  Separator,
 } from "@radix-ui/themes";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { AnimatePresence, motion } from "motion/react";
+import {
+  CONTENT_MOTION,
+  CONTROL_MOTION,
+  MOTION_SPRING,
+  MOTION_TRANSITION,
+} from "@/lib/motion";
+import { Skeletonize } from "@/components/ui/skeleton";
 import {
   Upload,
   Settings,
   Image as ImageIcon,
-  RefreshCw,
-  SquareArrowOutUpRight,
   Download,
-  Search,
-  AlertTriangle,
-  Loader2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 import { useAdminNavigation } from "@/contexts/AdminNavigationContext";
 import { usePublicInfo } from "@/contexts/PublicInfoContext";
-import Loading from "@/components/loading";
-import { useSettings } from "@/lib/api";
-import UploadDialog from "@/components/UploadDialog";
-import { createChunkUploadTask, type ChunkUploadTask } from "@/lib/chunkUpload";
+import { useRouteQuery } from "@/lib/routeData";
 import {
-  getThemeConfigurationType,
-  THEME_CONFIGURATION_MANAGED,
-} from "@/utils/themeConfiguration";
+  currentThemeQuery,
+  fetchCurrentTheme,
+  installedThemesQuery,
+  rememberActiveTheme,
+} from "@/routeQueries/appearance";
+import UploadDialog from "@/components/UploadDialog";
+import { useZipUpload } from "@/components/useZipUpload";
 import { resolveI18nText, type I18nText } from "@/utils/i18nText";
-
-interface Theme {
-  id: string;
-  name: I18nText;
-  short: string;
-  description?: I18nText;
-  author?: I18nText;
-  version: string;
-  preview?: string;
-  url?: string;
-  active: boolean;
-  createdAt: string;
-  configuration?: any;
-}
+import PageHeader from "@/components/PageHeader";
+import { PLACEHOLDER_THEMES, type Theme, type ThemeImportPreview } from "./themes/types";
+import {
+  deleteInstalledTheme,
+  fetchInstalledThemes,
+  importThemeFromUrl,
+  setThemeActive,
+  updateThemeFromSource,
+} from "./themes/api";
+import { useActiveThemeHasConfig } from "./themes/useActiveThemeHasConfig";
+import ThemeCard from "./themes/ThemeCard";
+import ThemePreviewDialog from "./themes/ThemePreviewDialog";
+import ThemeDeleteDialog from "./themes/ThemeDeleteDialog";
+import ThemeUpdateDialog from "./themes/ThemeUpdateDialog";
+import ThemeImportDialog from "./themes/ThemeImportDialog";
 
 const ThemePage = () => {
   const { t, i18n } = useTranslation();
-  const [themes, setThemes] = useState<Theme[]>([]);
-  const [themesLoading, setThemesLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const uploadTaskRef = useRef<ChunkUploadTask | null>(null);
+  // 页面切换时主题列表与当前主题已由 routePreload 提前请求；等待预算内到达直接显示，否则骨架
+  const themesResult = useRouteQuery(installedThemesQuery);
+  const settingsResult = useRouteQuery(currentThemeQuery);
+  const setInstalledThemes = themesResult.setData;
   const [settingTheme, setSettingTheme] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const [reloadError, setReloadError] = useState<string | null>(null);
   const [selectedTheme, setSelectedTheme] = useState<Theme | null>(null);
   const [previewDialogOpen, setPreviewDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
@@ -74,126 +69,68 @@ const ThemePage = () => {
   const [importUrl, setImportUrl] = useState("");
   const [importChecking, setImportChecking] = useState(false);
   const [importInstalling, setImportInstalling] = useState(false);
-  const [importPreview, setImportPreview] = useState<{
-    theme: Omit<Theme, "id" | "active" | "createdAt">;
-    exists: boolean;
-  } | null>(null);
+  const [importPreview, setImportPreview] = useState<ThemeImportPreview | null>(null);
   const [importError, setImportError] = useState<string | null>(null);
-  const {
-    settings,
-    loading: settingsLoading,
-    refetch: refetchSettings,
-  } = useSettings();
-  const currentTheme = settings?.theme;
+  const setSettings = settingsResult.setData;
+  // 与 useSettings().refetch 一致：失败时抛出（调用处 toast）
+  const refetchSettings = useCallback(async () => {
+    setSettings(await fetchCurrentTheme());
+  }, [setSettings]);
+  // 设置读取失败时与原来一样按「没有当前主题」处理
+  const settingsLoading = settingsResult.data === undefined && !settingsResult.error;
+  const currentTheme = settingsResult.data?.theme;
+  useEffect(() => rememberActiveTheme(currentTheme), [currentTheme]);
+  // 活跃状态由当前主题派生（原来在列表和设置变化后各同步一次）
+  const themes = useMemo(
+    () =>
+      (themesResult.data ?? []).map((theme: Theme) => ({
+        ...theme,
+        active: theme.short === currentTheme,
+      })),
+    [themesResult.data, currentTheme],
+  );
+  const themesLoading = themesResult.data === undefined && !themesResult.error;
+  const firstLoadError = themesResult.error
+    ? themesResult.error instanceof Error
+      ? themesResult.error.message
+      : "Failed to fetch themes"
+    : null;
+  const error = reloadError ?? firstLoadError;
   const navigate = useNavigate();
   const { publicInfo, refresh: refreshPublicInfo } = usePublicInfo();
   const { refreshNavigation } = useAdminNavigation();
-  const [activeThemeHasConfig, setActiveThemeHasConfig] = useState(false);
+  const activeThemeHasConfig = useActiveThemeHasConfig(currentTheme, publicInfo?.theme);
   const language = i18n.resolvedLanguage || i18n.language || "";
   const displayText = useCallback(
     (value: I18nText | undefined) => resolveI18nText(value, language) || "",
     [language],
   );
 
-  // 当 currentTheme 或 publicInfo.theme 变化时重新检测当前主题是否有配置文件
-  useEffect(() => {
-    let cancelled = false;
-    async function check() {
-      const themeShort = currentTheme || publicInfo?.theme;
-      if (!themeShort) {
-        setActiveThemeHasConfig(false);
-        return;
-      }
-      try {
-        // 强制不缓存
-        const resp = await fetch(`/themes/${themeShort}/komari-theme.json`, {
-          cache: "no-cache",
-        });
-        if (!resp.ok) {
-          setActiveThemeHasConfig(false);
-          return;
-        }
-        const data = await resp.json().catch(() => null);
-        if (
-          !cancelled &&
-          data &&
-          data.configuration &&
-          getThemeConfigurationType(data.configuration) ===
-            THEME_CONFIGURATION_MANAGED &&
-          Array.isArray(data.configuration.data) &&
-          data.configuration.data.length > 0
-        ) {
-          setActiveThemeHasConfig(true);
-        } else if (!cancelled) {
-          setActiveThemeHasConfig(false);
-        }
-      } catch {
-        if (!cancelled) setActiveThemeHasConfig(false);
-      }
-    }
-    check();
-    return () => {
-      cancelled = true;
-    };
-  }, [currentTheme, publicInfo?.theme]);
-
-  const loading = themesLoading || settingsLoading || !currentTheme;
-  // 获取主题列表
+  const loading = themesLoading || settingsLoading;
+  // 上传、更新、删除、导入后重新获取主题列表（直接请求，不显示骨架）
   const fetchThemes = async () => {
     try {
-      const response = await fetch("/api/admin/theme/list");
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
-      const data = await response.json();
-      const themeList = data.data || [];
-
-      // 根据 settings 中的 theme 设置活跃状态
-      const updatedThemes = themeList.map((theme: Theme) => ({
-        ...theme,
-        active: theme.short === currentTheme,
-      }));
-
-      setThemes(updatedThemes);
+      setInstalledThemes(await fetchInstalledThemes());
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Failed to fetch themes");
-    } finally {
-      setThemesLoading(false);
+      setReloadError(err instanceof Error ? err.message : "Failed to fetch themes");
     }
   };
 
   // 上传主题
-  const uploadTheme = async (file: File) => {
-    if (!file.name.endsWith(".zip")) {
-      toast.error(t("theme.invalid_file_type"));
-      return;
-    }
-
-    setUploading(true);
-    setUploadProgress(0);
-    const task = createChunkUploadTask("/api/admin/upload");
-    uploadTaskRef.current = task;
-    try {
-      await task.upload("theme", file, setUploadProgress);
-      toast.success(t("theme.upload_success"));
-      setUploadDialogOpen(false);
-      setUploadProgress(0);
-      await fetchThemes();
-    } catch (error) {
-      if (!(error instanceof DOMException && error.name === "AbortError")) {
-        toast.error(t("theme.upload_failed") + ": " + (error instanceof Error ? error.message : String(error)));
-      }
-    } finally {
-      setUploading(false);
-      uploadTaskRef.current = null;
-    }
-  };
-
-  // 取消上传
-  const cancelUpload = () => {
-    uploadTaskRef.current?.cancel();
-    setUploadProgress(0);
-  };
+  const {
+    uploading,
+    uploadProgress,
+    uploadDialogOpen,
+    setUploadDialogOpen,
+    upload: uploadTheme,
+    cancelUpload,
+  } = useZipUpload({
+    purpose: "theme",
+    invalidTypeText: t("theme.invalid_file_type"),
+    successText: t("theme.upload_success"),
+    failedText: t("theme.upload_failed"),
+    onUploaded: fetchThemes,
+  });
 
   // 设置主题
   const setActiveTheme = async (themeShort: string) => {
@@ -201,23 +138,14 @@ const ThemePage = () => {
       setSettingTheme(themeShort);
 
       // 先调用 API 设置主题
-      const response = await fetch(`/api/admin/theme/set?theme=${themeShort}`);
-      if (!response.ok) {
-        throw new Error(`HTTP error! status: ${response.status}`);
-      }
+      await setThemeActive(themeShort);
 
       // 刷新 settings 以获取最新的主题设置
       await refetchSettings();
       await refreshPublicInfo();
       refreshNavigation();
 
-      // 更新主题列表中的活跃状态
-      setThemes((prevThemes) =>
-        prevThemes.map((theme) => ({
-          ...theme,
-          active: theme.short === themeShort,
-        })),
-      );
+      // 列表中的活跃状态随 refetchSettings 后的当前主题更新
 
       toast.success(t("theme.set_success"));
     } catch (err) {
@@ -236,20 +164,7 @@ const ThemePage = () => {
     try {
       setUpdating(true);
 
-      const requestBody = { short: themeShort, useOriginalUrl: true };
-
-      const response = await fetch("/api/admin/theme/update", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify(requestBody),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Update failed");
-      }
+      await updateThemeFromSource(themeShort);
 
       // 重新获取主题列表
       await fetchThemes();
@@ -281,18 +196,7 @@ const ThemePage = () => {
         await refetchSettings();
       }
 
-      const response = await fetch("/api/admin/theme/delete", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ short: themeShort }),
-      });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || "Delete failed");
-      }
+      await deleteInstalledTheme(themeShort);
 
       // 重新获取主题列表
       await fetchThemes();
@@ -316,17 +220,8 @@ const ThemePage = () => {
     setImportPreview(null);
     setImportError(null);
     try {
-      const response = await fetch("/api/admin/theme/import?preview=true", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: importUrl.trim() }),
-      });
-      const data = await response.json();
-      if (!response.ok || data.status === "error") {
-        setImportError(data.message || t("theme.import_failed"));
-        return;
-      }
-      setImportPreview(data.data);
+      const data = await importThemeFromUrl(importUrl.trim(), true, t("theme.import_failed"));
+      setImportPreview(data?.data ?? null);
     } catch (err) {
       setImportError(
         err instanceof Error ? err.message : t("theme.import_failed"),
@@ -341,17 +236,8 @@ const ThemePage = () => {
     if (!importUrl.trim()) return;
     setImportInstalling(true);
     try {
-      const response = await fetch("/api/admin/theme/import", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ url: importUrl.trim() }),
-      });
-      const data = await response.json();
-      if (!response.ok || data.status === "error") {
-        toast.error(data.message || t("theme.import_failed"));
-        return;
-      }
-      toast.success(data.message || t("theme.import_success"));
+      const data = await importThemeFromUrl(importUrl.trim(), false, t("theme.import_failed"));
+      toast.success(data?.message || t("theme.import_success"));
       setImportDialogOpen(false);
       setImportUrl("");
       setImportPreview(null);
@@ -366,38 +252,30 @@ const ThemePage = () => {
     }
   };
 
-  // 同步活跃状态
-  useEffect(() => {
-    fetchThemes();
-  }, [currentTheme]);
-
-  useEffect(() => {
-    if (!settingsLoading && themes.length > 0) {
-      setThemes((prevThemes) =>
-        prevThemes.map((theme) => ({
-          ...theme,
-          active: theme.short === currentTheme,
-        })),
-      );
-    }
-  }, [currentTheme, settingsLoading, themes.length]);
-
-  if (loading) {
-    return <Loading />;
-  }
-
   if (error) {
     return <Text color="red">{error}</Text>;
   }
 
+  // 页头直接渲染；主题未到时用占位主题渲染同样的卡片网格，每张卡片是一块色块，数据到达后真实卡片入场
+  const listThemes = loading ? PLACEHOLDER_THEMES : themes;
+
   return (
-    <Box className="km-page-admin-settings-theme p-6 space-y-6">
-      <Flex justify="between" align="center" gap="3" wrap="wrap">
-        <Text size="6" weight="bold">
-          {t("theme.title")}
-        </Text>
-        <Flex gap="2">
+    // 外边距由后台内容区统一提供（与 settings/_layout 一样不再自带 padding），区块之间 section
+    <div className="km-page km-page-admin-settings-theme">
+      <PageHeader
+        title={t("theme.title")}
+        actions={
+          <>
+          {/* control 层：当前主题有配置时「主题设置」按钮弹出（检测是异步的，不再突然插进工具栏） */}
+          <AnimatePresence initial={false}>
           {activeThemeHasConfig && (
+            <motion.div
+              key="theme-settings"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={{ scale: CONTROL_MOTION.transition, opacity: MOTION_TRANSITION.fade }}
+            >
             <Button
               variant="soft"
               className="gap-2"
@@ -406,7 +284,9 @@ const ThemePage = () => {
               <Settings size={16} />
               {t("theme.settings_with_name", { name: currentTheme })}
             </Button>
+            </motion.div>
           )}
+          </AnimatePresence>
           <Button onClick={() => setUploadDialogOpen(true)} className="gap-2">
             <Upload size={16} />
             {t("theme.upload")}
@@ -424,112 +304,68 @@ const ThemePage = () => {
             <Download size={16} />
             {t("theme.import")}
           </Button>
-        </Flex>
-      </Flex>
+          </>
+        }
+      />
 
       {/* 主题卡片网格 */}
-      {themes.length === 0 ? (
-        <Box className="text-center py-12">
-          <ImageIcon size={64} className="mx-auto text-gray-400 mb-4" />
-          <Text size="4" color="gray" className="mb-2">
+      {listThemes.length === 0 ? (
+        <Flex direction="column" align="center" gap="2" className="text-center py-km-hero">
+          <ImageIcon size={64} className="text-gray-400 mb-km-group" />
+          <Text size="4" color="gray">
             {t("theme.no_themes")}
           </Text>
           <Text size="2" color="gray">
             {t("theme.upload_first_theme")}
           </Text>
-        </Box>
+        </Flex>
       ) : (
         <Grid columns={{ initial: "1", sm: "2", md: "3", lg: "4" }} gap="4">
-          {themes.map((theme) => (
-            <Card
+          {/*
+            content 性格：主题卡片网格。父级带 layout，子卡片进场/退场用同一套弹簧；
+            上传、删除、更新后列表变化时，其余卡片会先平移让位（Follow-through），
+            而不是整块网格重新闪现。popLayout 让退场卡片脱离文档流，避免网格抖动。
+          */}
+          <AnimatePresence initial={false} mode="popLayout">
+          {listThemes.map((theme, index) => (
+            <motion.div
               key={theme.id}
-              className="relative group hover:shadow-lg transition-all duration-200"
+              // 只补间位置：卡片里有大段文字与预览图，尺寸补间会把它们拉伸
+              layout="position"
+              initial={CONTENT_MOTION.item.initial}
+              animate={{
+                ...CONTENT_MOTION.item.animate,
+                transition: {
+                  y: MOTION_SPRING.layout,
+                  scale: MOTION_SPRING.layout,
+                  opacity: MOTION_TRANSITION.fade,
+                  // 错峰有上限：主题很多时最后几张也不排队（Timing）
+                  delay: Math.min(index * CONTENT_MOTION.stagger(1), 0.22),
+                },
+              }}
+              // 占位卡片没有退场：数据到达的那一帧直接让位给真实卡片（真实卡片入场），网格不会短暂多出一排
+              exit={loading ? undefined : {
+                ...CONTENT_MOTION.item.exit,
+                transition: CONTENT_MOTION.exitTransition,
+              }}
+              whileHover={loading ? undefined : { y: CONTENT_MOTION.hover.y, transition: CONTROL_MOTION.transition }}
+              // 不对整张大卡片做按压缩放：大面积 scale 会让标题与预览图发虚（反馈交给 hover 抬升 + 阴影）
+              className="h-full"
             >
-              <Box
-                onClick={() => {
-                  setPreviewDialogOpen(true);
-                  setSelectedTheme(theme);
-                }}
-                className="aspect-video bg-gradient-to-br rounded-t-lg overflow-hidden relative "
-              >
-                {theme.preview ? (
-                  <img
-                    src={`/themes/${theme.short}/${theme.preview}`}
-                    alt={displayText(theme.name)}
-                    className="w-full h-full object-cover"
-                    onError={(e) => {
-                      e.currentTarget.style.display = "none";
-                      e.currentTarget.nextElementSibling?.classList.remove(
-                        "hidden",
-                      );
-                    }}
-                  />
-                ) : null}
-                <Flex
-                  align="center"
-                  justify="center"
-                  className={`w-full h-full ${theme.preview ? "hidden" : ""}`}
-                >
-                  <ImageIcon size={48} className="text-gray-400" />
-                </Flex>
-                {/* 覆盖层 */}
-                <Box className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
-                  <Flex gap="2">{/* 预留操作位 */}</Flex>
-                </Box>
-
-                {/* 活跃状态指示器 */}
-                {theme.active && (
-                  <Badge
-                    color="green"
-                    className="absolute top-2 right-2 px-2 py-1 text-xs"
-                  >
-                    {t("theme.active")}
-                  </Badge>
-                )}
-              </Box>
-
-              <Flex
-                onClick={() => {
-                  setPreviewDialogOpen(true);
-                  setSelectedTheme(theme);
-                }}
-                direction="column"
-                className="p-4 space-y-2"
-              >
-                <Text weight="bold" size="3">
-                  {displayText(theme.name)}
-                </Text>
-                <Flex justify="between" align="center">
-                  <Text size="1" color="gray">
-                    by {displayText(theme.author)}
-                  </Text>
-                  <Text size="1" color="gray">
-                    v{theme.version}
-                  </Text>
-                </Flex>
-              </Flex>
-              <Flex justify="end" align="center">
-                {!theme.active && (
-                  <IconButton
-                    size="2"
-                    variant="ghost"
-                    onClick={() => setActiveTheme(theme.short)}
-                    disabled={settingTheme === theme.short}
-                    title={t("theme.set_active", "Set as Active Theme")}
-                    aria-label={t("theme.set_active", "Set as Active Theme")}
-                  >
-                    {settingTheme === theme.short ? (
-                      <Box className="animate-spin">
-                        <Settings size={16} />
-                      </Box>
-                    ) : (
-                      <Settings size={16} />
-                    )}
-                  </IconButton>
-                )}
-              </Flex>
-            </Card>
+            {/* 占位卡片：同尺寸的色块（motion.div 仍是列表的直接子元素） */}
+            <Skeletonize loading={loading} className="km-setting-card-skeleton h-full">
+            <ThemeCard
+              theme={theme}
+              displayText={displayText}
+              settingTheme={settingTheme}
+              setPreviewDialogOpen={setPreviewDialogOpen}
+              setSelectedTheme={setSelectedTheme}
+              setActiveTheme={setActiveTheme}
+            />
+            </Skeletonize>
+            </motion.div>
           ))}
+          </AnimatePresence>
         </Grid>
       )}
 
@@ -553,330 +389,55 @@ const ThemePage = () => {
       />
 
       {/* 预览对话框 */}
-      <Dialog.Root open={previewDialogOpen} onOpenChange={setPreviewDialogOpen}>
-        <Dialog.Content maxWidth="800px">
-          <Dialog.Title>{displayText(selectedTheme?.name)}</Dialog.Title>
-
-          <Box className="space-y-4 mt-4">
-            <Box className="aspect-video bg-gray-100 dark:bg-gray-800 rounded-lg overflow-hidden relative">
-              {selectedTheme?.preview ? (
-                <img
-                  src={`/themes/${selectedTheme.short}/${selectedTheme.preview}`}
-                  alt={displayText(selectedTheme.name)}
-                  className="w-full h-full object-cover"
-                />
-              ) : (
-                <Flex align="center" justify="center" className="w-full h-full">
-                  <ImageIcon size={64} className="text-gray-400" />
-                </Flex>
-              )}
-            </Box>
-
-            <Flex direction="column">
-              <Flex gap="2" justify="start" align="center">
-                <Text size="2" weight="bold" color="gray" wrap="nowrap">
-                  {t("theme.author")}
-                </Text>
-                <Text size="3">{displayText(selectedTheme?.author)}</Text>
-              </Flex>
-              <Flex gap="2" justify="start" align="center">
-                <Text size="2" weight="bold" color="gray" wrap="nowrap">
-                  {t("theme.version")}
-                </Text>
-                <Text size="3">{selectedTheme?.version}</Text>
-              </Flex>
-              <Flex gap="2" justify="start" align="center">
-                <Text size="2" weight="bold" color="gray" wrap="nowrap">
-                  {t("common.description")}
-                </Text>
-                <Text size="3">{displayText(selectedTheme?.description)}</Text>
-              </Flex>
-              {selectedTheme?.url && (
-                <Flex gap="2" justify="start" align="center">
-                  <Text size="2" weight="bold" color="gray" wrap="nowrap">
-                    URL
-                  </Text>
-                  <Text size="1" className="overflow-hidden text-ellipsis">
-                    {selectedTheme?.url}
-                  </Text>
-                  <a
-                    href={selectedTheme.url}
-                    target="_blank"
-                    rel="noreferrer"
-                    title={t("theme.theme_url", "Theme URL")}
-                    aria-label={t("theme.theme_url", "Theme URL")}
-                  >
-                    <SquareArrowOutUpRight size={12} />
-                  </a>
-                </Flex>
-              )}
-            </Flex>
-          </Box>
-
-          <Flex gap="3" mt="4" justify="end">
-            <Dialog.Close>
-              <Button variant="soft" color="gray">
-                {t("common.close")}
-              </Button>
-            </Dialog.Close>
-            {selectedTheme && !selectedTheme.active && (
-              <Button
-                onClick={() => {
-                  setActiveTheme(selectedTheme.short);
-                  setPreviewDialogOpen(false);
-                }}
-              >
-                {t("theme.set_active")}
-              </Button>
-            )}
-            {selectedTheme && selectedTheme.short !== "default" && (
-              <Button
-                variant="soft"
-                color="blue"
-                onClick={() => {
-                  setThemeToUpdate(selectedTheme);
-                  setUpdateDialogOpen(true);
-                }}
-                className="gap-2"
-              >
-                <RefreshCw size={16} />
-                {t("theme.update")}
-              </Button>
-            )}
-            {selectedTheme && selectedTheme.short !== "default" && (
-              <Button
-                size="2"
-                variant="solid"
-                color="red"
-                onClick={() => {
-                  setThemeToDelete(selectedTheme);
-                  setDeleteDialogOpen(true);
-                }}
-              >
-                {t("common.delete")}
-              </Button>
-            )}
-          </Flex>
-        </Dialog.Content>
-      </Dialog.Root>
+      <ThemePreviewDialog
+        previewDialogOpen={previewDialogOpen}
+        setPreviewDialogOpen={setPreviewDialogOpen}
+        selectedTheme={selectedTheme}
+        displayText={displayText}
+        setActiveTheme={setActiveTheme}
+        setThemeToUpdate={setThemeToUpdate}
+        setUpdateDialogOpen={setUpdateDialogOpen}
+        setThemeToDelete={setThemeToDelete}
+        setDeleteDialogOpen={setDeleteDialogOpen}
+      />
 
       {/* 删除确认对话框 */}
-      <Dialog.Root open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
-        <Dialog.Content maxWidth="400px">
-          <Dialog.Title>{t("theme.confirm_delete")}</Dialog.Title>
-          <Dialog.Description>
-            {t(
-              themeToDelete?.short === currentTheme
-                ? "theme.delete_active_warning"
-                : "theme.delete_warning",
-              { themeName: displayText(themeToDelete?.name) },
-            )}
-          </Dialog.Description>
-          <Flex gap="3" mt="4" justify="end">
-            <Dialog.Close>
-              <Button variant="soft" color="gray">
-                {t("common.cancel")}
-              </Button>
-            </Dialog.Close>
-            <Button
-              color="red"
-              onClick={async () => {
-                if (themeToDelete) {
-                  await deleteTheme(themeToDelete.short);
-                  setDeleteDialogOpen(false);
-                  setThemeToDelete(null);
-                }
-              }}
-            >
-              {t("common.delete")}
-            </Button>
-          </Flex>
-        </Dialog.Content>
-      </Dialog.Root>
+      <ThemeDeleteDialog
+        deleteDialogOpen={deleteDialogOpen}
+        setDeleteDialogOpen={setDeleteDialogOpen}
+        themeToDelete={themeToDelete}
+        setThemeToDelete={setThemeToDelete}
+        currentTheme={currentTheme}
+        displayText={displayText}
+        deleteTheme={deleteTheme}
+      />
 
       {/* 更新主题对话框 */}
-      <Dialog.Root open={updateDialogOpen} onOpenChange={setUpdateDialogOpen}>
-        <Dialog.Content maxWidth="500px">
-          <Dialog.Title>{t("theme.update")}</Dialog.Title>
-          <Dialog.Description>
-            {t("theme.update_description")}
-          </Dialog.Description>
-
-          <Box className="space-y-4 mt-4">
-            {/* Auto Mode Explanation */}
-            <Flex direction="column" gap="2">
-              <Text size="2" color="gray" className="mt-2">
-                {t("theme.update_mode_auto_description")}
-              </Text>
-            </Flex>
-          </Box>
-
-          <Flex gap="3" mt="4" justify="end">
-            <Dialog.Close>
-              <Button variant="soft" color="gray">
-                {t("common.cancel")}
-              </Button>
-            </Dialog.Close>
-            <Button
-              color="blue"
-              disabled={updating}
-              onClick={async () => {
-                if (themeToUpdate) {
-                  await updateTheme(themeToUpdate.short);
-                  setUpdateDialogOpen(false);
-                  setThemeToUpdate(null);
-                }
-              }}
-            >
-              {updating ? (
-                <Box className="animate-spin mr-2">
-                  <RefreshCw size={16} />
-                </Box>
-              ) : null}
-              {t("theme.update")}
-            </Button>
-          </Flex>
-        </Dialog.Content>
-      </Dialog.Root>
+      <ThemeUpdateDialog
+        updateDialogOpen={updateDialogOpen}
+        setUpdateDialogOpen={setUpdateDialogOpen}
+        themeToUpdate={themeToUpdate}
+        setThemeToUpdate={setThemeToUpdate}
+        updating={updating}
+        updateTheme={updateTheme}
+      />
 
       {/* 导入主题对话框 */}
-      <Dialog.Root
-        open={importDialogOpen}
-        onOpenChange={(open) => {
-          setImportDialogOpen(open);
-          if (!open) {
-            setImportUrl("");
-            setImportPreview(null);
-            setImportError(null);
-          }
-        }}
-      >
-        <Dialog.Content maxWidth="520px">
-          <Dialog.Title>{t("theme.import_title")}</Dialog.Title>
-          <Dialog.Description>
-            {t("theme.import_description")}
-          </Dialog.Description>
-
-          <Box className="space-y-4 mt-4">
-            <Flex gap="2">
-              <Box className="flex-1">
-                <TextField.Root
-                  placeholder="https://github.com/owner/repo"
-                  value={importUrl}
-                  onChange={(e) => setImportUrl(e.target.value)}
-                  onKeyDown={(e) => {
-                    if (e.key === "Enter" && !importChecking) {
-                      previewImportTheme();
-                    }
-                  }}
-                  disabled={importChecking || importInstalling}
-                />
-              </Box>
-              <Button
-                onClick={previewImportTheme}
-                disabled={
-                  !importUrl.trim() || importChecking || importInstalling
-                }
-                className="gap-2"
-              >
-                {importChecking ? (
-                  <Loader2 size={16} className="animate-spin" />
-                ) : (
-                  <Search size={16} />
-                )}
-                {t("theme.import_check")}
-              </Button>
-            </Flex>
-
-            {importError && (
-              <Callout.Root color="red" size="1">
-                <Callout.Icon>
-                  <AlertTriangle size={16} />
-                </Callout.Icon>
-                <Callout.Text>{importError}</Callout.Text>
-              </Callout.Root>
-            )}
-
-            {importPreview && (
-              <Box>
-                <Separator size="4" className="my-3" />
-                <Card className="p-4">
-                  <Flex direction="column" gap="2">
-                    <Flex gap="2" align="center">
-                      <Text size="2" weight="bold" color="gray" wrap="nowrap">
-                        {t("theme.name")}
-                      </Text>
-                      <Text size="3" weight="bold">
-                        {displayText(importPreview.theme.name)}
-                      </Text>
-                    </Flex>
-                    <Flex gap="2" align="center">
-                      <Text size="2" weight="bold" color="gray" wrap="nowrap">
-                        {t("theme.version")}
-                      </Text>
-                      <Text size="3">{importPreview.theme.version}</Text>
-                    </Flex>
-                    <Flex gap="2" align="center">
-                      <Text size="2" weight="bold" color="gray" wrap="nowrap">
-                        {t("theme.author")}
-                      </Text>
-                      <Text size="3">
-                        {displayText(importPreview.theme.author)}
-                      </Text>
-                    </Flex>
-                    {importPreview.theme.description && (
-                      <Flex gap="2" align="center">
-                        <Text
-                          size="2"
-                          weight="bold"
-                          color="gray"
-                          wrap="nowrap"
-                        >
-                          {t("common.description")}
-                        </Text>
-                        <Text size="3">
-                          {displayText(importPreview.theme.description)}
-                        </Text>
-                      </Flex>
-                    )}
-                  </Flex>
-
-                  {importPreview.exists && (
-                    <Callout.Root color="orange" size="1" className="mt-3">
-                      <Callout.Icon>
-                        <AlertTriangle size={16} />
-                      </Callout.Icon>
-                      <Callout.Text>
-                        {t("theme.import_exists_warning")}
-                      </Callout.Text>
-                    </Callout.Root>
-                  )}
-                </Card>
-              </Box>
-            )}
-          </Box>
-
-          <Flex gap="3" mt="4" justify="end">
-            <Dialog.Close>
-              <Button variant="soft" color="gray">
-                {t("common.cancel")}
-              </Button>
-            </Dialog.Close>
-            {importPreview && (
-              <Button
-                onClick={confirmImportTheme}
-                disabled={importInstalling}
-                className="gap-2"
-              >
-                {importInstalling && (
-                  <Loader2 size={16} className="animate-spin" />
-                )}
-                {t("theme.import_confirm")}
-              </Button>
-            )}
-          </Flex>
-        </Dialog.Content>
-      </Dialog.Root>
+      <ThemeImportDialog
+        importDialogOpen={importDialogOpen}
+        setImportDialogOpen={setImportDialogOpen}
+        importUrl={importUrl}
+        setImportUrl={setImportUrl}
+        importPreview={importPreview}
+        setImportPreview={setImportPreview}
+        importError={importError}
+        setImportError={setImportError}
+        importChecking={importChecking}
+        importInstalling={importInstalling}
+        previewImportTheme={previewImportTheme}
+        confirmImportTheme={confirmImportTheme}
+        displayText={displayText}
+      />
 
       <label className="text-muted-foreground text-sm">
         {t("theme.find_more")}
@@ -887,7 +448,7 @@ const ThemePage = () => {
           {t("market.themes")}
         </a>
       </label>
-    </Box>
+    </div>
   );
 };
 

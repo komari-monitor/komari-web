@@ -1,4 +1,6 @@
 import Loading from "@/components/loading";
+import { AnimatePresence, motion } from "motion/react";
+import { CONTROL_MOTION, MOTION_SPRING, MOTION_TRANSITION } from "@/lib/motion";
 import type {
   MouseEvent as ReactMouseEvent,
   RefObject,
@@ -123,8 +125,16 @@ const TerminalWorkspace = ({
                 onApiChange={(api) => onApiChange(tab.id, api)}
               />
             ))}
+          <AnimatePresence initial={false}>
           {tabs.length === 0 && (
-            <div className="km-terminal-empty-state flex h-full w-full flex-col items-center justify-center gap-3">
+            <motion.div
+              key="terminal-empty-state"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={MOTION_SPRING.soft}
+              className="km-terminal-empty-state flex h-full w-full flex-col items-center justify-center gap-3"
+            >
               {clientsLoading ? (
                 <Loading compact />
               ) : (
@@ -146,16 +156,28 @@ const TerminalWorkspace = ({
                   {t("terminal.tabs.open_workbench", "Open workbench")}
                 </button>
               </div>
-            </div>
+            </motion.div>
           )}
+          </AnimatePresence>
+          <AnimatePresence initial={false}>
           {tabs.length > 0 && !sessionsReady && (
-            <div className="km-terminal-loading-state absolute inset-0 z-[3] flex flex-col items-center justify-center gap-2.5 text-sm text-neutral-400">
+            <motion.div
+              key="terminal-loading-state"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={MOTION_SPRING.soft}
+              className="km-terminal-loading-state absolute inset-0 z-[3] flex flex-col items-center justify-center gap-2.5 text-sm text-neutral-400"
+            >
               <Loading compact />
-            </div>
+            </motion.div>
           )}
+          </AnimatePresence>
         </div>
-        <button
+        <motion.button
           type="button"
+          whileTap={CONTROL_MOTION.tap}
+          transition={CONTROL_MOTION.transition}
           className="km-terminal-sidebar-toggle absolute right-0 top-1/2 z-[4] flex h-[48px] w-5 -translate-y-1/2 cursor-pointer items-center justify-center rounded-l-[5px] border-0 bg-[#2b2b2b] text-neutral-400 transition-colors hover:bg-[#383838] hover:text-white"
           onClick={onToggleSidebar}
           aria-label={
@@ -170,10 +192,18 @@ const TerminalWorkspace = ({
           }
         >
           {isSidebarOpen ? <PanelRightClose size={14} /> : <PanelRightOpen size={14} />}
-        </button>
+        </motion.button>
       </div>
       {isSidebarOpen && <Divider onMouseDown={onStartDragging} />}
-      <aside
+      {/*
+        文件栏始终挂载、收起时只隐藏（与原实现一致）：用 AnimatePresence 卸载会让
+        FileManagerPanel 每次打开都重新拉目录、丢失当前路径与展开状态。
+        surface 层：打开时从右侧轻推入；同一个元素用 animate 驱动，快速开合可被打断。
+      */}
+      <motion.aside
+        initial={false}
+        animate={isSidebarOpen ? { opacity: 1, x: 0 } : { opacity: 0, x: 16 }}
+        transition={{ x: MOTION_SPRING.soft, opacity: MOTION_TRANSITION.fade }}
         className={`${
           isSidebarOpen
             ? "flex h-full min-w-[300px] flex-1 flex-col overflow-hidden bg-[#121212] max-[640px]:min-w-[220px]"
@@ -183,7 +213,7 @@ const TerminalWorkspace = ({
         <div className="min-h-0 flex-1 overflow-hidden">
           <FileManagerPanel uuid={tabs.find((tab) => tab.id === activeTabId)?.uuid ?? null} />
         </div>
-      </aside>
+      </motion.aside>
     </div>
   );
 };

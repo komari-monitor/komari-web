@@ -1,12 +1,13 @@
 import type { TFunction } from "i18next";
+import { motion } from "motion/react";
+import { MOTION_SPRING } from "@/lib/motion";
+import { formatMilliseconds } from "@/components/metricChartShared";
 import type { PingMetricStat } from "@/types/metrics";
 
 type PingMetricStatContentProps = {
   stat: PingMetricStat;
   t: TFunction;
 };
-
-const formatMilliseconds = (value: number) => `${Math.round(value)} ms`;
 
 const PingMetricStatContent = ({ stat, t }: PingMetricStatContentProps) => {
   const rows: Array<[string, string]> = [
@@ -37,12 +38,29 @@ const PingMetricStatContent = ({ stat, t }: PingMetricStatContentProps) => {
 
   return (
     <div className="km-ping-metric-stat grid grid-cols-[max-content_1fr] gap-x-3 gap-y-1">
-      {rows.map(([label, value]) => (
-        <div key={label} className="contents">
-          <span className="text-muted-foreground">{label}</span>
-          <span className="text-right font-mono tabular-nums">{value}</span>
-        </div>
-      ))}
+      {rows.map(([label, value], index) => {
+        const transition = { ...MOTION_SPRING.snappy, delay: Math.min(index * 0.015, 0.12) };
+        return (
+          <div key={label} className="contents">
+            <motion.span
+              className="text-muted-foreground"
+              initial={{ opacity: 0, x: -4 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={transition}
+            >
+              {label}
+            </motion.span>
+            <motion.span
+              className="text-right font-mono tabular-nums"
+              initial={{ opacity: 0, x: 4 }}
+              animate={{ opacity: 1, x: 0 }}
+              transition={transition}
+            >
+              {value}
+            </motion.span>
+          </div>
+        );
+      })}
     </div>
   );
 };

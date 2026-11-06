@@ -13,6 +13,22 @@ export const getThemeConfigurationType = (
   configuration?: ThemeConfiguration,
 ) => (configuration?.type || THEME_CONFIGURATION_MANAGED).trim().toLowerCase();
 
+/** 主题包里的 komari-theme.json（静态文件，强制不缓存） */
+export const THEME_MANIFEST_URL = (theme: string) => `/themes/${theme}/komari-theme.json`;
+
+/** 请求主题清单，返回原始 Response（调用方自行处理 !ok） */
+export const fetchThemeManifest = (theme: string) =>
+  fetch(THEME_MANIFEST_URL(theme), { cache: "no-cache" });
+
+/** 读取主题清单：HTTP 失败抛出 "HTTP <status>"，JSON 解析失败照常抛出 */
+export async function loadThemeManifest<T = { configuration?: ThemeConfiguration }>(
+  theme: string,
+): Promise<T> {
+  const resp = await fetchThemeManifest(theme);
+  if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+  return (await resp.json()) as T;
+}
+
 export const getRawThemeHtml = (configuration?: ThemeConfiguration) =>
   getThemeConfigurationType(configuration) === THEME_CONFIGURATION_RAW &&
   typeof configuration?.data === "string"

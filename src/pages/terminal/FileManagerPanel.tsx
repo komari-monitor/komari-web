@@ -38,11 +38,22 @@ import {
 } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { AnimatePresence, motion } from "motion/react";
+import {
+  CONTENT_MOTION,
+  CONTROL_MOTION,
+  MOTION_SPRING,
+  MOTION_TRANSITION,
+} from "@/lib/motion";
 import { useRemoteFileService } from "./useRemoteFileService";
 import ConfirmDialog from "./ConfirmDialog";
 import { FileContextMenu, useContextMenu, type ContextMenuItemConfig } from "./FileContextMenu";
 import TerminalDialog from "./TerminalDialog";
 import TerminalUploadProgress from "./TerminalUploadProgress";
+import { Skeletonize, skeletonText } from "@/components/ui/skeleton";
+
+/** 目录加载中的占位行（文件名宽度，按数字宽计） */
+const FILE_PLACEHOLDER_ROWS = [14, 10, 18, 12, 9, 16];
 import {
   formatFileDate,
   formatFileSize,
@@ -114,7 +125,7 @@ type ClipboardState = {
 } | null;
 
 const toolbarButton =
-  "inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-[4px] border-0 bg-transparent text-[#b8b8b8] transition-colors hover:bg-[#343434] hover:text-white disabled:cursor-default disabled:opacity-35";
+  "km-pressable inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-[4px] border-0 bg-transparent text-[#b8b8b8] transition-colors hover:bg-[#343434] hover:text-white disabled:cursor-default disabled:opacity-35";
 
 const fileIcon = (file: RemoteFileInfo) => {
   if (file.is_dir) {
@@ -867,10 +878,36 @@ const FileManagerPanel = ({ uuid }: FileManagerPanelProps) => {
             )}
           </div>
         ) : (
-          <div className="py-1">
+          /*
+            content 层：目录还没列出来（首次打开 / 切换节点后为空）时，用与真实行同高同结构的占位行骨架化；
+            Skeletonize 常驻挂载，真实行到达时同一容器揭开，文字随之淡入。已有内容的刷新不进骨架（原地更新）。
+            正在新建条目时不进骨架（inert 会让输入框失焦并触发提交）。
+          */
+          <Skeletonize
+            loading={loading && files.length === 0 && !creatingEntry}
+            className="py-1"
+          >
+            {loading && files.length === 0 && !creatingEntry && FILE_PLACEHOLDER_ROWS.map((width, index) => (
+              <div key={index} className="my-0.5 flex h-11 min-w-0 items-center gap-2 rounded-[4px] px-2">
+                <span className="h-[17px] w-[17px] shrink-0" />
+                <div className="min-w-0 flex-1">
+                  <div className="truncate text-xs">{skeletonText(width)}</div>
+                  <div className="flex gap-2 text-[10px]">
+                    <span>{skeletonText(5)}</span>
+                    <span>{skeletonText(10)}</span>
+                  </div>
+                </div>
+              </div>
+            ))}
+            <AnimatePresence initial={false}>
             {creatingEntry && (
-              <div
+              <motion.div
+                key="creating-entry"
                 data-create-entry=""
+                initial={CONTENT_MOTION.item.initial}
+                animate={CONTENT_MOTION.item.animate}
+                exit={CONTENT_MOTION.item.exit}
+                transition={MOTION_SPRING.snappy}
                 className="my-0.5 flex h-11 min-w-0 items-center gap-2 rounded-[4px] bg-[#37373d] px-2"
               >
                 <span className="shrink-0">
@@ -893,8 +930,9 @@ const FileManagerPanel = ({ uuid }: FileManagerPanelProps) => {
                   }}
                   className="h-6 min-w-0 flex-1 rounded-[4px] border border-[#007acc] bg-[#1e1e1e] px-1 text-xs text-[#eeeeee] outline-none"
                 />
-              </div>
+              </motion.div>
             )}
+            </AnimatePresence>
             {currentPath && remoteDirname(currentPath) !== currentPath && (
               <div
                 data-parent-entry=""
@@ -925,14 +963,27 @@ const FileManagerPanel = ({ uuid }: FileManagerPanelProps) => {
                 <span className="min-w-0 truncate">..</span>
               </div>
             )}
+            <AnimatePresence initial={false}>
             {files.map((file) => {
               const selected = selectedPathsRef.current.has(file.path);
               return (
-                <div
+                <motion.div
                   key={file.path}
+                  layout
+                  initial={CONTENT_MOTION.item.initial}
+                  animate={CONTENT_MOTION.item.animate}
+                  exit={CONTENT_MOTION.item.exit}
+                  transition={{
+                    layout: MOTION_SPRING.layout,
+                    y: MOTION_SPRING.snappy,
+                    scale: MOTION_SPRING.snappy,
+                    opacity: MOTION_TRANSITION.fade,
+                  }}
+                >
+                <div
                   data-file-path={file.path}
                   draggable={!marqueeActiveRef.current && marqueeRange === null && renamingPath !== file.path}
-                  className={`group my-0.5 flex h-11 min-w-0 items-center gap-2 rounded-[4px] px-2 ${
+                  className={`group my-0.5 w-full flex h-11 min-w-0 items-center gap-2 rounded-[4px] px-2 ${
                     selected ? "bg-[#37373d]" : dragTarget?.kind === "directory" && dragTarget.path === file.path ? "bg-[#20364a]" : "hover:bg-[#2a2d2e]"
                   }`}
                   onDragStart={(event) => {
@@ -1015,8 +1066,10 @@ const FileManagerPanel = ({ uuid }: FileManagerPanelProps) => {
                   )}
                   <DropdownMenu.Root>
                     <DropdownMenu.Trigger>
-                      <button
+                      <motion.button
                         type="button"
+                        whileTap={CONTROL_MOTION.tap}
+                        transition={CONTROL_MOTION.transition}
                         className={`${toolbarButton} opacity-0 group-hover:opacity-100 ${selected ? "opacity-100" : ""}`}
                         onClick={(event) => {
                           event.stopPropagation();
@@ -1025,7 +1078,7 @@ const FileManagerPanel = ({ uuid }: FileManagerPanelProps) => {
                         title={t("common.more", "More")}
                       >
                         <Ellipsis size={15} />
-                      </button>
+                      </motion.button>
                     </DropdownMenu.Trigger>
                     <DropdownMenu.Content size="1" color="gray" highContrast>
                       {!file.is_dir && (
@@ -1059,12 +1112,14 @@ const FileManagerPanel = ({ uuid }: FileManagerPanelProps) => {
                     </DropdownMenu.Content>
                   </DropdownMenu.Root>
                 </div>
+                </motion.div>
               );
             })}
+            </AnimatePresence>
             {!loading && files.length === 0 && (
               <div className="px-4 py-10 text-center text-xs text-[#777]">{t("file_manager.empty", "This directory is empty")}</div>
             )}
-          </div>
+          </Skeletonize>
         )}
         {marqueeRange && (
           <div
@@ -1078,14 +1133,22 @@ const FileManagerPanel = ({ uuid }: FileManagerPanelProps) => {
         )}
       </div>
 
-      {loading && (
-        <div className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center bg-[#1e1e1e]/90 py-1 text-xs text-[#bbbbbb]">
-          <Loading compact />
-        </div>
-      )}
-      {uploadProgress.length > 0 && (
-        <TerminalUploadProgress progress={uploadProgress} onCancel={cancelUpload} />
-      )}
+      <AnimatePresence initial={false}>
+        {loading && (
+          <motion.div
+            key="file-manager-loading"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 8 }}
+            transition={MOTION_SPRING.snappy}
+            className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center bg-[#1e1e1e]/90 py-1 text-xs text-[#bbbbbb]"
+          >
+            <Loading compact />
+          </motion.div>
+        )}
+      </AnimatePresence>
+      {/* 常驻挂载：TerminalUploadProgress 内部用 AnimatePresence 收起，外面再条件渲染会把退场动画截掉 */}
+      <TerminalUploadProgress progress={uploadProgress} onCancel={cancelUpload} />
 
       <TerminalDialog
         open={action !== null}

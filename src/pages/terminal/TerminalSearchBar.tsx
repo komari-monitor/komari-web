@@ -1,6 +1,9 @@
 import React, { useEffect, useRef } from "react";
 import { useTranslation } from "react-i18next";
 import { ArrowUp, ArrowDown, CaseSensitive, Regex, X } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import { TogglePop } from "@/components/motion";
+import { CONTROL_MOTION, MOTION_SPRING } from "@/lib/motion";
 
 interface TerminalSearchBarProps {
   open: boolean;
@@ -41,10 +44,6 @@ export const TerminalSearchBar: React.FC<TerminalSearchBarProps> = ({
     }
   }, [open]);
 
-  if (!open) {
-    return null;
-  }
-
   const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === "Enter") {
       e.preventDefault();
@@ -74,7 +73,15 @@ export const TerminalSearchBar: React.FC<TerminalSearchBarProps> = ({
     }`;
 
   return (
-    <div
+    <AnimatePresence initial={false}>
+      {open && (
+    <motion.div
+      key="terminal-search-bar"
+      // overlay 层：从右上角沿弧线落下（Anticipation + Arc）
+      initial={{ opacity: 0, y: -8, scale: 0.96 }}
+      animate={{ opacity: 1, y: 0, scale: 1 }}
+      exit={{ opacity: 0, y: -6, scale: 0.97 }}
+      transition={MOTION_SPRING.snappy}
       className="km-terminal-search-floating absolute right-4 top-3 z-30 flex h-[34px] max-w-[calc(100vw-2rem)] items-center gap-1 rounded-[5px] bg-[#2b2b2b] p-1 shadow-2xl"
       onClick={(e) => e.stopPropagation()}
     >
@@ -88,11 +95,20 @@ export const TerminalSearchBar: React.FC<TerminalSearchBarProps> = ({
           onKeyDown={handleKeyDown}
           className="h-7 w-[clamp(132px,32vw,192px)] min-w-0 rounded-tl-[4px] border-0 border-b-2 border-[color:var(--accent-11)] bg-[#1e1e1e] pl-2 pr-12 text-xs text-neutral-100 placeholder-neutral-500 outline-none"
         />
-        {countDisplay && (
-          <span className="pointer-events-none absolute right-2 shrink-0 text-[11px] text-neutral-300 select-none">
-            {countDisplay}
-          </span>
-        )}
+        <AnimatePresence initial={false}>
+          {countDisplay && (
+            <motion.span
+              key="search-count"
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.9 }}
+              transition={MOTION_SPRING.snappy}
+              className="pointer-events-none absolute right-2 shrink-0 text-[11px] text-neutral-300 select-none"
+            >
+              {countDisplay}
+            </motion.span>
+          )}
+        </AnimatePresence>
       </div>
 
       <div className="flex h-full shrink-0 items-center gap-0.5">
@@ -114,26 +130,34 @@ export const TerminalSearchBar: React.FC<TerminalSearchBarProps> = ({
         >
           <ArrowDown size={14} />
         </button>
-        <button
+        <motion.button
           type="button"
           onClick={onToggleCaseSensitive}
           className={toolButtonClassName(caseSensitive)}
           aria-pressed={caseSensitive}
           title={t("terminal.search.match_case", "区分大小写")}
           aria-label={t("terminal.search.match_case", "区分大小写")}
+          whileTap={CONTROL_MOTION.tap}
+          transition={CONTROL_MOTION.transition}
         >
-          <CaseSensitive size={14} />
-        </button>
-        <button
+          <TogglePop value={caseSensitive}>
+            <CaseSensitive size={14} />
+          </TogglePop>
+        </motion.button>
+        <motion.button
           type="button"
           onClick={onToggleUseRegex}
           className={toolButtonClassName(useRegex)}
           aria-pressed={useRegex}
           title={t("terminal.search.use_regex", "正则表达式")}
           aria-label={t("terminal.search.use_regex", "正则表达式")}
+          whileTap={CONTROL_MOTION.tap}
+          transition={CONTROL_MOTION.transition}
         >
-          <Regex size={14} />
-        </button>
+          <TogglePop value={useRegex}>
+            <Regex size={14} />
+          </TogglePop>
+        </motion.button>
         <button
           type="button"
           onClick={onClose}
@@ -144,6 +168,8 @@ export const TerminalSearchBar: React.FC<TerminalSearchBarProps> = ({
           <X size={14} />
         </button>
       </div>
-    </div>
+    </motion.div>
+      )}
+    </AnimatePresence>
   );
 };

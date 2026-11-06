@@ -25,14 +25,21 @@ const RPC2Context = createContext<RPC2ContextType | undefined>(undefined);
 let __rpc2_singleton__: RPC2Client | null = null;
 let __rpc2_refcount = 0;
 
+/**
+ * 取得（必要时创建）全局唯一的 RPC2 客户端。
+ * 给组件之外的代码用（例如 src/routeQueries 里的页面数据预取）：与 RPC2Provider 是同一个实例，
+ * 不会多建连接。组件内请继续使用 useRPC2Call。
+ */
+export const getRPC2Client = (): RPC2Client => {
+  if (!__rpc2_singleton__) {
+    __rpc2_singleton__ = new RPC2Client("/api/rpc2", { autoConnect: true });
+  }
+  return __rpc2_singleton__;
+};
+
 export const RPC2Provider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   // 创建/复用客户端实例，默认启用自动连接
-  const [client] = useState(() => {
-    if (!__rpc2_singleton__) {
-      __rpc2_singleton__ = new RPC2Client("/api/rpc2", { autoConnect: true });
-    }
-    return __rpc2_singleton__;
-  });
+  const [client] = useState(getRPC2Client);
   const [connectionState, setConnectionState] = useState(client.state);
   const [error, setError] = useState<string | null>(null);
 

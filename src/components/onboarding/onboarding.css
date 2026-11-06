@@ -27,7 +27,8 @@
   width: min(360px, calc(100vw - 32px));
   max-height: calc(100dvh - 32px);
   overflow: auto;
-  padding: 20px;
+  /* 浮层在 <Theme> 内：内边距、区块间距走间距系统（block = --space-4） */
+  padding: var(--space-4);
   border: 1px solid var(--gray-6);
   border-radius: 8px;
   background: var(--color-panel-solid);
@@ -42,7 +43,7 @@
 }
 
 .km-guide-title {
-  margin: 0 0 8px;
+  margin: 0 0 var(--space-1);
   font-size: 18px;
   font-weight: 600;
   line-height: 1.4;
@@ -59,8 +60,8 @@
 
 .km-guide-progress {
   display: flex;
-  gap: 5px;
-  margin: 20px 0;
+  gap: var(--space-1);
+  margin: var(--space-4) 0;
 }
 
 .km-guide-progress span {

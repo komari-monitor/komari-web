@@ -39,7 +39,15 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { AnimatePresence, motion } from "motion/react";
 import { getOSImage } from "@/utils/osImageHelper";
+import {
+  CONTENT_MOTION,
+  CONTROL_MOTION,
+  MOTION_SPRING,
+  MOTION_TRANSITION,
+} from "@/lib/motion";
+import { useKmReducedMotion } from "@/components/motion/MotionProvider";
 import TabButton from "./TabButton";
 import TabMenu from "./TabMenu";
 import {
@@ -92,6 +100,8 @@ interface SortableTabItemProps {
   index: number;
   total: number;
   tabWidth: number;
+  /** 容器宽度测量完成前不做宽度补间，避免首帧从最小宽度「长」到实际宽度 */
+  animateWidth: boolean;
   isActive: boolean;
   editingTabId: string | null;
   renameDraft: string;
@@ -121,6 +131,7 @@ const SortableTabItem = ({
   index,
   total,
   tabWidth,
+  animateWidth,
   isActive,
   editingTabId,
   renameDraft,
@@ -155,19 +166,31 @@ const SortableTabItem = ({
     disabled: editingTabId === tab.id,
   });
 
+  /*
+    分工（避免两套动画抢同一个属性）：
+    - transform 只归 dnd-kit：拖拽中的跟手位移与落下后的补位都由它的 CSS transition 完成；
+      这里绝不能再加 motion 的 layout，否则落下后 motion 会从旧位置再播一遍位移。
+    - width / opacity 归 motion 弹簧：新开标签从 0 宽展开、关闭时收拢，邻居随真实布局顺势补位；
+      窗口缩放导致的标签宽度变化也走同一条弹簧，中途再变会保留速度继续追赶。
+  */
   const style = {
-    width: `${tabWidth}px`,
     transform: CSS.Translate.toString(transform),
     transition,
-    opacity: isDragging ? 0.4 : 1,
     zIndex: isDragging ? 20 : isActive ? 3 : 1,
   };
 
   return (
-    <div
+    <motion.div
       ref={setNodeRef}
       style={style}
-      className="relative h-full shrink-0"
+      initial={{ width: 0, opacity: 0 }}
+      animate={{ width: tabWidth, opacity: isDragging ? 0.4 : 1 }}
+      exit={{ width: 0, opacity: 0 }}
+      transition={{
+        width: animateWidth ? MOTION_SPRING.layout : { duration: 0 },
+        opacity: MOTION_TRANSITION.fade,
+      }}
+      className="relative h-full shrink-0 overflow-hidden"
       {...attributes}
       {...listeners}
       onContextMenu={(event) => {
@@ -220,7 +243,7 @@ const SortableTabItem = ({
         onCancelRename={onCancelRename}
         onClose={() => onClose(tab.id, "current")}
       />
-    </div>
+    </motion.div>
   );
 };
 
@@ -262,6 +285,15 @@ const TerminalTabBar = ({
   const [containerWidth, setContainerWidth] = useState(0);
   const [canScrollLeft, setCanScrollLeft] = useState(false);
   const [canScrollRight, setCanScrollRight] = useState(false);
+  const reducedMotion = useKmReducedMotion();
+  // 首次测量后的下一帧再允许宽度补间：已有标签挂载时直接到位，之后新开/关闭/缩放才走弹簧
+  const [widthMeasured, setWidthMeasured] = useState(false);
+  useEffect(() => {
+    if (containerWidth <= 0 || widthMeasured) return;
+    const frame = requestAnimationFrame(() => setWidthMeasured(true));
+    return () => cancelAnimationFrame(frame);
+  }, [containerWidth, widthMeasured]);
+  const animateTabWidth = widthMeasured && !reducedMotion;
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -397,18 +429,26 @@ const TerminalTabBar = ({
       role="tablist"
       aria-label={t("terminal.tabs.title")}
     >
-      {hasOverflow && (
-        <button
-          type="button"
-          className={`km-terminal-tab-scroll-button mb-1 ${TAB_SCROLL_BUTTON_CLASS_NAME}`}
-          onClick={() => scrollTabs(-1)}
-          disabled={!canScrollLeft}
-          title={t("terminal.tabs.scroll_left", "Scroll tabs left")}
-          aria-label={t("terminal.tabs.scroll_left", "Scroll tabs left")}
-        >
-          <ChevronLeft size={15} />
-        </button>
-      )}
+      <AnimatePresence initial={false}>
+        {hasOverflow && (
+          <motion.button
+            key="scroll-left"
+            type="button"
+            initial={CONTENT_MOTION.item.initial}
+            animate={CONTENT_MOTION.item.animate}
+            exit={CONTENT_MOTION.item.exit}
+            transition={MOTION_SPRING.snappy}
+            whileTap={CONTROL_MOTION.tap}
+            className={`km-terminal-tab-scroll-button mb-1 ${TAB_SCROLL_BUTTON_CLASS_NAME}`}
+            onClick={() => scrollTabs(-1)}
+            disabled={!canScrollLeft}
+            title={t("terminal.tabs.scroll_left", "Scroll tabs left")}
+            aria-label={t("terminal.tabs.scroll_left", "Scroll tabs left")}
+          >
+            <ChevronLeft size={15} />
+          </motion.button>
+        )}
+      </AnimatePresence>
 
       <DndContext
         sensors={sensors}
@@ -426,6 +466,11 @@ const TerminalTabBar = ({
             onWheel={handleTabsWheel}
             className="km-terminal-tabs-scroll flex h-9 min-w-0 flex-initial flex-row items-end overflow-x-auto overflow-y-hidden px-2.5 ![scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
+            {/*
+              标签增删用默认同步模式：退出的标签仍占位并把宽度收到 0，
+              邻居通过真实的 flex 布局顺势补位，不需要 layout/transform。
+            */}
+            <AnimatePresence initial={false}>
             {tabs.map((tab, index) => {
               const client = clientsByUuid.get(tab.uuid);
               const isActive = tab.id === activeTabId;
@@ -447,6 +492,7 @@ const TerminalTabBar = ({
                     index={index}
                     total={tabs.length}
                     tabWidth={tabWidth}
+                    animateWidth={animateTabWidth}
                     isActive={isActive}
                     editingTabId={editingTabId}
                     renameDraft={renameDraft}
@@ -474,22 +520,31 @@ const TerminalTabBar = ({
                 </Fragment>
               );
             })}
+            </AnimatePresence>
           </div>
         </SortableContext>
       </DndContext>
 
-      {hasOverflow && (
-        <button
-          type="button"
-          className={`km-terminal-tab-scroll-button mb-1 ${TAB_SCROLL_BUTTON_CLASS_NAME}`}
-          onClick={() => scrollTabs(1)}
-          disabled={!canScrollRight}
-          title={t("terminal.tabs.scroll_right", "Scroll tabs right")}
-          aria-label={t("terminal.tabs.scroll_right", "Scroll tabs right")}
-        >
-          <ChevronRight size={15} />
-        </button>
-      )}
+      <AnimatePresence initial={false}>
+        {hasOverflow && (
+          <motion.button
+            key="scroll-right"
+            type="button"
+            initial={CONTENT_MOTION.item.initial}
+            animate={CONTENT_MOTION.item.animate}
+            exit={CONTENT_MOTION.item.exit}
+            transition={MOTION_SPRING.snappy}
+            whileTap={CONTROL_MOTION.tap}
+            className={`km-terminal-tab-scroll-button mb-1 ${TAB_SCROLL_BUTTON_CLASS_NAME}`}
+            onClick={() => scrollTabs(1)}
+            disabled={!canScrollRight}
+            title={t("terminal.tabs.scroll_right", "Scroll tabs right")}
+            aria-label={t("terminal.tabs.scroll_right", "Scroll tabs right")}
+          >
+            <ChevronRight size={15} />
+          </motion.button>
+        )}
+      </AnimatePresence>
 
       <div className="km-terminal-tab-actions mb-1 ml-1 flex h-7 shrink-0 items-center gap-1">
         {showActionLeadingSeparator && (
@@ -500,14 +555,16 @@ const TerminalTabBar = ({
           onOpenChange={onServerMenuOpenChange}
         >
           <DropdownMenuTrigger asChild>
-            <button
+            <motion.button
               type="button"
+              whileTap={CONTROL_MOTION.tap}
+              transition={CONTROL_MOTION.transition}
               className={TAB_ACTION_CLASS_NAME}
               title={t("terminal.tabs.open_terminal", "Open terminal")}
               aria-label={t("terminal.tabs.open_terminal", "Open terminal")}
             >
               <SquareTerminal size={16} />
-            </button>
+            </motion.button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
             align="start"
@@ -561,14 +618,16 @@ const TerminalTabBar = ({
           onOpenChange={onWorkbenchMenuOpenChange}
         >
           <DropdownMenuTrigger asChild>
-            <button
+            <motion.button
               type="button"
+              whileTap={CONTROL_MOTION.tap}
+              transition={CONTROL_MOTION.transition}
               className={TAB_ACTION_CLASS_NAME}
               title={t("terminal.tabs.open_workbench", "Open workbench")}
               aria-label={t("terminal.tabs.open_workbench", "Open workbench")}
             >
               <Code2 size={16} />
-            </button>
+            </motion.button>
           </DropdownMenuTrigger>
           <DropdownMenuContent
             align="start"

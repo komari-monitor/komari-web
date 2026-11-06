@@ -1,68 +1,57 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
-  Badge,
-  Box,
   Button,
   Callout,
-  Card,
-  Dialog,
   Flex,
-  Heading,
-  Switch,
   Tabs,
-  Text,
 } from "@radix-ui/themes";
 import {
   Blocks,
-  FileText,
   RefreshCw,
-  Settings2,
-  Trash2,
   Upload,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { AnimatePresence, motion, useReducedMotion } from "motion/react";
-import Loading from "@/components/loading";
+import { useKmReducedMotion } from "@/components/motion/MotionProvider";
+import { AutoHeight, SlideSwap } from "@/components/motion";
+import { skeletonText } from "@/components/ui/skeleton";
+import { placeholderCard } from "@/components/ui/placeholderCard";
 import PluginConfigDialog from "@/components/admin/PluginConfigDialog";
-import InlineSvgIcon from "@/components/InlineSvgIcon";
+import PluginPermissionDialog from "@/components/admin/PluginPermissionDialog";
 import UploadDialog from "@/components/UploadDialog";
-import { createChunkUploadTask, type ChunkUploadTask } from "@/lib/chunkUpload";
+import { useZipUpload } from "@/components/useZipUpload";
 import { useAdminNavigation } from "@/contexts/AdminNavigationContext";
 import { useRPC2Call } from "@/contexts/RPC2Context";
+import { useRouteQuery } from "@/lib/routeData";
+import { fetchPluginList, pluginsQuery } from "@/routeQueries/appearance";
 import { resolveI18nText, type I18nText } from "@/utils/i18nText";
-import { iconMap, resolvePluginIcon } from "@/utils/iconHelper";
 import type { PluginInfo } from "@/types/plugin";
+import { KmTabsList } from "@/components/admin/KmTabsList";
+import PageHeader from "@/components/PageHeader";
+import PluginCard from "./plugins/PluginCard";
+import PluginLogsDialog from "./plugins/PluginLogsDialog";
+import PluginDeleteDialog from "./plugins/PluginDeleteDialog";
 
 interface SetEnabledResult {
   requires_approval?: boolean;
 }
 
-// 插件是否声明了可编辑配置项（忽略 title 分组项）。
-const hasConfiguration = (plugin: PluginInfo) =>
-  Array.isArray(plugin.configuration?.data) &&
-  plugin.configuration!.data!.some((item) => item.type !== "title");
+/** 列表骨架：常见的已安装插件数量；只用于展示，不会被操作（Skeletonize 期间 inert） */
+const PLACEHOLDER_PLUGINS = Array.from(
+  { length: 4 },
+  (_, index) =>
+    ({
+      short: `__km_placeholder_${index}`,
+      name: skeletonText(10 + (index % 3) * 3),
+      version: skeletonText(5),
+      author: skeletonText(8),
+      description: skeletonText(36 - (index % 2) * 10),
+      enabled: false,
+      running: false,
+    }) as unknown as PluginInfo,
+);
 
-// 渲染插件 icon：lucide 名用组件，URL/相对路径用图片或内联 SVG，否则默认 Blocks。
-const renderPluginIcon = (
-  plugin: PluginInfo,
-  size: number,
-  className: string,
-) => {
-  const icon = resolvePluginIcon(plugin.short, plugin.icon);
-  if (!icon) return <Blocks size={size} className={className} />;
-  const Cmp = iconMap[icon];
-  if (Cmp) {
-    return <Cmp size={size} className={className} />;
-  }
-  return (
-    <InlineSvgIcon
-      src={icon}
-      alt=""
-      className={`${className} object-contain`}
-    />
-  );
-};
+const EMPTY_PLUGINS: PluginInfo[] = [];
 
 // 插件管理：上传 zip、switch 启停、权限确认弹窗、运行日志、行内错误文本。
 export default function PluginsPage() {
@@ -76,10 +65,13 @@ export default function PluginsPage() {
     [language],
   );
 
-  const [plugins, setPlugins] = useState<PluginInfo[]>([]);
+  // 页面切换时插件列表已由 routePreload 提前请求；等待预算内到达直接显示，否则骨架
+  const pluginsResult = useRouteQuery(pluginsQuery);
+  const plugins = pluginsResult.data ?? EMPTY_PLUGINS;
+  const setPlugins = pluginsResult.setData;
   const [statusFilter, setStatusFilter] = useState("all");
   const [slideDirection, setSlideDirection] = useState(1);
-  const reduceMotion = useReducedMotion();
+  const reduceMotion = useKmReducedMotion();
   const filteredPlugins = plugins.filter((plugin) =>
     statusFilter === "all" || (statusFilter === "running" ? plugin.running : !plugin.running),
   );
@@ -88,11 +80,11 @@ export default function PluginsPage() {
     setSlideDirection(order.indexOf(value) > order.indexOf(statusFilter) ? 1 : -1);
     setStatusFilter(value);
   };
-  const [loading, setLoading] = useState(true);
-  const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
-  const uploadTaskRef = useRef<ChunkUploadTask | null>(null);
-  const [uploadDialogOpen, setUploadDialogOpen] = useState(false);
+  const loading = pluginsResult.data === undefined && !pluginsResult.error;
+  useEffect(() => {
+    const error = pluginsResult.error;
+    if (error) toast.error(error instanceof Error ? error.message : String(error));
+  }, [pluginsResult.error]);
   const [toggling, setToggling] = useState<string | null>(null);
   const [pendingApproval, setPendingApproval] = useState<PluginInfo | null>(
     null,
@@ -103,57 +95,32 @@ export default function PluginsPage() {
   const [pluginToDelete, setPluginToDelete] = useState<PluginInfo | null>(null);
   const [deleting, setDeleting] = useState(false);
 
+  // 刷新按钮、启停、上传、删除后重新获取（直接请求，不显示骨架）
   const loadList = useCallback(async () => {
     try {
-      const result = await call<any, PluginInfo[]>("admin:listPlugins");
-      setPlugins(Array.isArray(result) ? result : []);
+      setPlugins(await fetchPluginList());
     } catch (error) {
       toast.error(error instanceof Error ? error.message : String(error));
     }
-  }, [call]);
+  }, [setPlugins]);
 
-  useEffect(() => {
-    loadList().finally(() => setLoading(false));
-  }, [loadList]);
-
-  const uploadPlugin = async (file: File) => {
-    if (!file.name.endsWith(".zip")) {
-      toast.error(
-        t(
-          "plugin.invalid_file_type",
-          "Invalid file type, only .zip files are supported",
-        ),
-      );
-      return;
-    }
-    setUploading(true);
-    setUploadProgress(0);
-    const task = createChunkUploadTask("/api/admin/upload");
-    uploadTaskRef.current = task;
-    try {
-      await task.upload("plugin", file, setUploadProgress);
-      toast.success(t("plugin.uploaded", "Plugin uploaded"));
-      setUploadDialogOpen(false);
-      setUploadProgress(0);
-      await loadList();
-    } catch (error) {
-      if (!(error instanceof DOMException && error.name === "AbortError")) {
-        toast.error(
-          t("plugin.upload_failed", "Plugin upload failed") +
-            ": " +
-            (error instanceof Error ? error.message : String(error)),
-        );
-      }
-    } finally {
-      setUploading(false);
-      uploadTaskRef.current = null;
-    }
-  };
-
-  const cancelUpload = () => {
-    uploadTaskRef.current?.cancel();
-    setUploadProgress(0);
-  };
+  const {
+    uploading,
+    uploadProgress,
+    uploadDialogOpen,
+    setUploadDialogOpen,
+    upload: uploadPlugin,
+    cancelUpload,
+  } = useZipUpload({
+    purpose: "plugin",
+    invalidTypeText: t(
+      "plugin.invalid_file_type",
+      "Invalid file type, only .zip files are supported",
+    ),
+    successText: t("plugin.uploaded", "Plugin uploaded"),
+    failedText: t("plugin.upload_failed", "Plugin upload failed"),
+    onUploaded: loadList,
+  });
 
   const toggle = async (plugin: PluginInfo, enabled: boolean) => {
     setToggling(plugin.short);
@@ -243,51 +210,18 @@ export default function PluginsPage() {
     }
   };
 
-  // 需要批准的权限列表（按能力拆分；超时/大小限制等运行时设置不在此列）。
-  // server.registerRPC、server.getConfig、插件目录内文件读写默认授予，不弹确认。
-  const permissionLabels = (plugin: PluginInfo): string[] => {
-    const labels: string[] = [];
-    const p = plugin.permissions;
-    if (!p) return labels;
-    if (p.allowSystemRPC)
-      labels.push(t("plugin.permission.allowSystemRPC", "Call system RPC"));
-    if (p.allowRoutes)
-      labels.push(t("plugin.permission.allowRoutes", "Register HTTP routes"));
-    if (p.allowHooks)
-      labels.push(
-        t("plugin.permission.allowHooks", "Modify HTTP requests/responses"),
-      );
-    if (p.allowHTMLInject)
-      labels.push(
-        t(
-          "plugin.permission.allowHTMLInject",
-          "Embed CSS/JS into every HTML page",
-        ),
-      );
-    if (p.allowExec)
-      labels.push(t("plugin.permission.allowExec", "Execute child processes"));
-    if (p.allowListen)
-      labels.push(t("plugin.permission.allowListen", "Listen on local ports"));
-    if (p.allowAllFileAccess)
-      labels.push(
-        t(
-          "plugin.permission.allowAllFileAccess",
-          "Access files outside the plugin directory",
-        ),
-      );
-    return labels;
-  };
-
-  if (loading) return <Loading />;
+  // 页头、筛选直接渲染；列表未到时用占位插件渲染同样的卡片，每张卡片是一块色块
+  const listPlugins = loading ? PLACEHOLDER_PLUGINS : filteredPlugins;
 
   return (
-    <Box className="km-page-admin-plugins p-4 space-y-4">
-      <Flex align="center" justify="between" className="km-plugins-toolbar">
-        <Flex align="center" gap="2">
-          <Blocks size={20} />
-          <Heading size="4">{t("plugin.title", "Plugins")}</Heading>
-        </Flex>
-        <Flex gap="2">
+    // 外边距由后台内容区统一提供；页头 → 筛选+列表 之间 section
+    <div className="km-page km-page-admin-plugins">
+      <PageHeader
+        className="km-plugins-toolbar"
+        icon={<Blocks size={20} />}
+        title={t("plugin.title", "Plugins")}
+        actions={
+          <>
           <Button
             onClick={() => setUploadDialogOpen(true)}
             disabled={uploading}
@@ -299,33 +233,25 @@ export default function PluginsPage() {
             <RefreshCw size={14} />
             {t("common.refresh", "Refresh")}
           </Button>
-        </Flex>
-      </Flex>
+          </>
+        }
+      />
 
+      {/* 筛选 Tab 与它服务的插件列表是同一区块：block */}
+      <Flex direction="column" gap="4">
       <Tabs.Root value={statusFilter} onValueChange={changeStatusFilter}>
-        <Tabs.List aria-label={t("common.status", "Status")}>
+        {/* control 性格：选中下划线在标签间弹簧滑动（共享指示器，可被打断） */}
+        <KmTabsList aria-label={t("common.status", "Status")}>
           <Tabs.Trigger value="all">{t("common.all", "All")}</Tabs.Trigger>
           <Tabs.Trigger value="running">{t("exec.status.running", "Running")}</Tabs.Trigger>
           <Tabs.Trigger value="stopped">{t("plugin.stopped", "Stopped")}</Tabs.Trigger>
-        </Tabs.List>
+        </KmTabsList>
       </Tabs.Root>
 
-      <Box className="overflow-hidden">
-        <AnimatePresence mode="wait" initial={false} custom={slideDirection}>
-          <motion.div
-            key={statusFilter}
-            custom={slideDirection}
-            variants={{
-              enter: (direction: number) => ({ opacity: 0, x: reduceMotion ? 0 : direction * 24 }),
-              center: { opacity: 1, x: 0 },
-              exit: (direction: number) => ({ opacity: 0, x: reduceMotion ? 0 : -direction * 24 }),
-            }}
-            initial="enter"
-            animate="center"
-            exit="exit"
-            transition={{ duration: reduceMotion ? 0 : 0.10, ease: "easeOut" }}
-          >
-            {filteredPlugins.length === 0 ? (
+      {/* 占位卡片数 -> 真实插件数、切换状态筛选：列表高度弹簧过渡 */}
+      <AutoHeight className="overflow-x-clip">
+        <SlideSwap swapKey={statusFilter} direction={slideDirection} reduceMotion={reduceMotion}>
+            {listPlugins.length === 0 ? (
               <Callout.Root>
                 <Callout.Text>
                   {plugins.length === 0
@@ -334,100 +260,27 @@ export default function PluginsPage() {
                 </Callout.Text>
               </Callout.Root>
             ) : (
-              <Flex direction="column" gap="3" className="km-plugins-list">
-                {filteredPlugins.map((plugin) => (
-                  <Card key={plugin.short} className="km-plugin-card w-full">
-                    <Flex direction="column" gap="2">
-                      <Flex align="center" justify="between" gap="4">
-                        <Flex align="center" gap="3" className="min-w-0">
-                          {renderPluginIcon(plugin, 20, "h-5 w-5 shrink-0")}
-                          <Flex direction="column" gap="1" className="min-w-0">
-                            <Flex align="center" gap="2" wrap="wrap">
-                              <Text weight="bold">
-                                {displayText(plugin.name) || plugin.short}
-                              </Text>
-                              <Badge color={plugin.running ? "green" : "gray"}>
-                                {plugin.running
-                                  ? t("plugin.running", "Running")
-                                  : t("plugin.stopped", "Stopped")}
-                              </Badge>
-                              <Text size="2" color="gray">
-                                v{plugin.version}
-                                {displayText(plugin.author)
-                                  ? ` · ${displayText(plugin.author)}`
-                                  : ""}
-                              </Text>
-                            </Flex>
-                            {displayText(plugin.description) && (
-                              <Text size="2" color="gray" className="truncate">
-                                {displayText(plugin.description)}
-                              </Text>
-                            )}
-                          </Flex>
-                        </Flex>
-                        <Flex align="center" gap="3" className="shrink-0">
-                          {hasConfiguration(plugin) && (
-                            <Button
-                              size="1"
-                              variant="soft"
-                              onClick={() => setConfigPlugin(plugin)}
-                            >
-                              <Settings2 size={14} />
-                              {t("plugin.config", "Configuration")}
-                            </Button>
-                          )}
-                          <Button
-                            size="1"
-                            variant="soft"
-                            onClick={() => openLogs(plugin)}
-                          >
-                            <FileText size={14} />
-                            {t("logs.title", "Logs")}
-                          </Button>
-                          <Button
-                            size="1"
-                            variant="ghost"
-                            color="red"
-                            onClick={() => setPluginToDelete(plugin)}
-                            title={t("plugin.delete", "Delete plugin")}
-                            aria-label={t("plugin.delete", "Delete plugin")}
-                          >
-                            <Trash2 size={14} />
-                          </Button>
-                          <Switch
-                            checked={plugin.enabled}
-                            disabled={toggling === plugin.short}
-                            onCheckedChange={(checked) => toggle(plugin, checked)}
-                            aria-label={
-                              plugin.enabled
-                                ? t("plugin.disable", "Disable plugin")
-                                : t("plugin.enable", "Enable plugin")
-                            }
-                            title={
-                              plugin.enabled
-                                ? t("plugin.disable", "Disable plugin")
-                                : t("plugin.enable", "Enable plugin")
-                            }
-                          />
-                        </Flex>
-                      </Flex>
-                      {plugin.last_error && (
-                        <Callout.Root color="red" size="1">
-                          <Callout.Text>
-                            {t("plugin.last_error", "Last error")}:{" "}
-                            {plugin.last_error}
-                          </Callout.Text>
-                        </Callout.Root>
-                      )}
-                    </Flex>
-                  </Card>
-                ))}
+              <Flex direction="column" gap="4" className="km-plugins-list">
+                {listPlugins.map((plugin, index) => placeholderCard(loading, plugin.short, (
+                  <PluginCard
+                    key={plugin.short}
+                    plugin={plugin}
+                    index={index}
+                    reduceMotion={reduceMotion}
+                    displayText={displayText}
+                    toggling={toggling}
+                    onConfigure={setConfigPlugin}
+                    onLogs={openLogs}
+                    onDelete={setPluginToDelete}
+                    onToggle={toggle}
+                  />
+                ), "w-full"))}
               </Flex>
             )}
 
-          </motion.div>
-        </AnimatePresence>
-      </Box>
+        </SlideSwap>
+      </AutoHeight>
+      </Flex>
 
       {configPlugin && (
         <PluginConfigDialog
@@ -442,81 +295,23 @@ export default function PluginsPage() {
       )}
 
       {/* 权限确认弹窗 */}
-      <Dialog.Root
-        open={pendingApproval !== null}
+      <PluginPermissionDialog
+        plugin={pendingApproval}
         onOpenChange={(open) => {
           if (!open) setPendingApproval(null);
         }}
-      >
-        <Dialog.Content>
-          <Dialog.Title>
-            {t("plugin.permission_title", "Permission required")}
-          </Dialog.Title>
-          <Text as="p" size="2" className="mb-2">
-            {t(
-              "plugin.permission_description",
-              "This plugin requests the following permissions:",
-            )}
-          </Text>
-          <Flex direction="column" gap="2" my="3">
-            {pendingApproval &&
-              permissionLabels(pendingApproval).length === 0 && (
-                <Text size="2" color="gray">
-                  {t(
-                    "plugin.permission_none",
-                    "This plugin requests no special permissions",
-                  )}
-                </Text>
-              )}
-            {pendingApproval &&
-              permissionLabels(pendingApproval).map((label) => (
-                <Badge
-                  key={label}
-                  color="orange"
-                  size="2"
-                  className="justify-start"
-                >
-                  {label}
-                </Badge>
-              ))}
-          </Flex>
-          <Text size="1" color="gray" className="mb-4">
-            {t(
-              "plugin.permission_default_note",
-              "Default granted: read plugin configuration, register plugin RPC, read/write files inside the plugin directory",
-            )}
-          </Text>
-          <Flex gap="2" justify="end">
-            <Button variant="soft" onClick={() => setPendingApproval(null)}>
-              {t("common.cancel", "Cancel")}
-            </Button>
-            <Button onClick={approveAndEnable}>
-              {t("plugin.permission_approve", "Approve & Enable")}
-            </Button>
-          </Flex>
-        </Dialog.Content>
-      </Dialog.Root>
+        onCancel={() => setPendingApproval(null)}
+        onApprove={approveAndEnable}
+        animated
+      />
 
       {/* 运行日志弹窗 */}
-      <Dialog.Root
-        open={logPlugin !== null}
-        onOpenChange={(open) => {
-          if (!open) setLogPlugin(null);
-        }}
-      >
-        <Dialog.Content>
-          <Dialog.Title>
-            {t("logs.title", "Logs")} · {logPlugin?.short}
-          </Dialog.Title>
-          {logsLoading ? (
-            <Loading compact />
-          ) : (
-            <pre className="max-h-[60vh] overflow-auto whitespace-pre-wrap rounded-md bg-gray-1 p-3 text-xs">
-              {logContent || t("plugin.no_logs", "No logs")}
-            </pre>
-          )}
-        </Dialog.Content>
-      </Dialog.Root>
+      <PluginLogsDialog
+        logPlugin={logPlugin}
+        setLogPlugin={setLogPlugin}
+        logsLoading={logsLoading}
+        logContent={logContent}
+      />
 
       {/* 上传对话框 */}
       <UploadDialog
@@ -544,39 +339,12 @@ export default function PluginsPage() {
       />
 
       {/* 删除确认 */}
-      <Dialog.Root
-        open={pluginToDelete !== null}
-        onOpenChange={(open) => {
-          if (!open) setPluginToDelete(null);
-        }}
-      >
-        <Dialog.Content>
-          <Dialog.Title>{t("plugin.delete", "Delete plugin")}</Dialog.Title>
-          <Text as="p" size="2" my="3">
-            {t("plugin.delete_confirm", "Delete this plugin?")}{" "}
-            {pluginToDelete?.short}
-            <br />
-            {t(
-              "plugin.delete_confirm_desc",
-              "The plugin directory and its configuration will be removed.",
-            )}
-          </Text>
-          <Flex gap="2" justify="end">
-            <Button variant="soft" onClick={() => setPluginToDelete(null)}>
-              {t("common.cancel", "Cancel")}
-            </Button>
-            <Button
-              color="red"
-              disabled={deleting}
-              onClick={() => pluginToDelete && deletePlugin(pluginToDelete)}
-            >
-              {deleting
-                ? t("plugin.deleting", "Deleting...")
-                : t("plugin.delete", "Delete")}
-            </Button>
-          </Flex>
-        </Dialog.Content>
-      </Dialog.Root>
-    </Box>
+      <PluginDeleteDialog
+        pluginToDelete={pluginToDelete}
+        setPluginToDelete={setPluginToDelete}
+        deleting={deleting}
+        deletePlugin={deletePlugin}
+      />
+    </div>
   );
 }

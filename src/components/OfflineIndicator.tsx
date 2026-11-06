@@ -3,6 +3,8 @@ import { useEffect } from 'react';
 import { toast } from 'sonner';
 import { WifiOff, Wifi } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { AnimatePresence, motion } from 'motion/react';
+import { MOTION_SPRING } from '@/lib/motion';
 
 export const OfflineIndicator = () => {
   const { isOnline: isOnlineOffline } = usePWA();
@@ -26,17 +28,33 @@ export const OnlineIndicator = () => {
   const { t: tOnline } = useTranslation();
   return (
     <div className="km-offline-indicator flex items-center gap-1 text-xs text-gray-500">
-      {isOnlineOnline ? (
-        <>
-          <Wifi size={12} className="text-green-500" />
-          <span>{tOnline('nodeCard.online')}</span>
-        </>
-      ) : (
-        <>
-          <WifiOff size={12} className="text-orange-500" />
-          <span>{tOnline('nodeCard.offline')}</span>
-        </>
-      )}
+      <AnimatePresence mode="popLayout" initial={false}>
+        {isOnlineOnline ? (
+          <motion.span
+            key="online"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            transition={MOTION_SPRING.snappy}
+            className="flex items-center gap-1"
+          >
+            <Wifi size={12} className="text-green-500" />
+            <span>{tOnline('nodeCard.online')}</span>
+          </motion.span>
+        ) : (
+          <motion.span
+            key="offline"
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.9 }}
+            transition={MOTION_SPRING.snappy}
+            className="flex items-center gap-1"
+          >
+            <WifiOff size={12} className="text-orange-500" />
+            <span>{tOnline('nodeCard.offline')}</span>
+          </motion.span>
+        )}
+      </AnimatePresence>
     </div>
   );
 };

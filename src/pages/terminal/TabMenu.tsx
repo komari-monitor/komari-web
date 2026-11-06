@@ -10,6 +10,8 @@ import {
   X,
 } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { motion } from "motion/react";
+import { CONTROL_MOTION } from "@/lib/motion";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -96,11 +98,14 @@ const TabMenu = ({
           >
             <div className="grid grid-cols-4 gap-1.5">
               {TAB_COLORS.map((color) => (
-                <button
+                <motion.button
                   key={color}
                   type="button"
                   onClick={() => onColor(color)}
-                  className="h-5 w-5 rounded-full border border-black/40 transition-transform duration-100 hover:scale-110 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white"
+                  whileHover={CONTROL_MOTION.hover}
+                  whileTap={CONTROL_MOTION.tap}
+                  transition={CONTROL_MOTION.transition}
+                  className="h-5 w-5 rounded-full border border-black/40 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white"
                   style={{ backgroundColor: color }}
                   aria-label={color}
                 />

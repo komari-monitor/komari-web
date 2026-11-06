@@ -4,8 +4,10 @@ import {
   useState,
 } from "react";
 import type { PointerEvent as ReactPointerEvent } from "react";
+import { motion } from "motion/react";
 import { Terminal, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { CONTROL_MOTION, MOTION_SPRING } from "@/lib/motion";
 import TerminalSession from "./TerminalSession";
 
 interface EditorTerminalPanelProps {
@@ -22,6 +24,8 @@ const EditorTerminalPanel = ({ uuid, onClose }: EditorTerminalPanelProps) => {
   const { t } = useTranslation();
   const [twoFaEnabled, setTwoFaEnabled] = useState(false);
   const [height, setHeight] = useState(180);
+  // 拖动分隔条时高度必须 1:1 跟手；弹簧只用于展开/收起
+  const [resizing, setResizing] = useState(false);
   const dragRef = useRef<{
     pointerId: number;
     startY: number;
@@ -50,6 +54,7 @@ const EditorTerminalPanel = ({ uuid, onClose }: EditorTerminalPanelProps) => {
       startHeight: height,
     };
     event.currentTarget.setPointerCapture(event.pointerId);
+    setResizing(true);
   };
 
   const handleResizeMove = (event: ReactPointerEvent<HTMLDivElement>) => {
@@ -72,15 +77,24 @@ const EditorTerminalPanel = ({ uuid, onClose }: EditorTerminalPanelProps) => {
     const resizeState = dragRef.current;
     if (!resizeState || resizeState.pointerId !== event.pointerId) return;
     dragRef.current = null;
+    setResizing(false);
     if (event.currentTarget.hasPointerCapture(resizeState.pointerId)) {
       event.currentTarget.releasePointerCapture(resizeState.pointerId);
     }
   };
 
   return (
-    <div
+    <motion.div
+      // surface 层：底部终端面板从下边缘长出来，收起时原路返回
+      initial={{ height: 0, opacity: 0 }}
+      animate={{ height, opacity: 1 }}
+      exit={{ height: 0, opacity: 0 }}
+      transition={
+        resizing
+          ? { height: { duration: 0 }, opacity: { duration: 0 } }
+          : MOTION_SPRING.soft
+      }
       className="flex shrink-0 flex-col overflow-hidden border-t border-[#2b2b2b] bg-[#181818]"
-      style={{ height }}
     >
       <div
         role="separator"
@@ -97,14 +111,16 @@ const EditorTerminalPanel = ({ uuid, onClose }: EditorTerminalPanelProps) => {
         <span className="min-w-0 flex-1 truncate text-xs text-[#cccccc]">
           {t("terminal.title", "Terminal")}
         </span>
-        <button
+        <motion.button
           type="button"
+          whileTap={CONTROL_MOTION.tap}
+          transition={CONTROL_MOTION.transition}
           className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-[4px] border-0 bg-transparent text-[#bdbdbd] hover:bg-[#3a3d41] hover:text-white"
           onClick={onClose}
           title={t("common.close", "Close")}
         >
           <X size={14} />
-        </button>
+        </motion.button>
       </div>
       <div className="relative min-h-0 flex-1 overflow-hidden bg-black">
         <TerminalSession
@@ -117,7 +133,7 @@ const EditorTerminalPanel = ({ uuid, onClose }: EditorTerminalPanelProps) => {
           onApiChange={() => {}}
         />
       </div>
-    </div>
+    </motion.div>
   );
 };
 

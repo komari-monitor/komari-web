@@ -1,4 +1,5 @@
 import Loading from "@/components/loading";
+import { AnimatePresence } from "motion/react";
 import Editor, { type OnMount } from "@monaco-editor/react";
 import { DropdownMenu } from "@radix-ui/themes";
 import {
@@ -1911,12 +1912,14 @@ const FileEditorDialog = ({
               />
             )}
           </div>
-          {terminalOpen && (
-            <EditorTerminalPanel
-              uuid={uuid}
-              onClose={() => setTerminalOpen(false)}
-            />
-          )}
+          <AnimatePresence initial={false}>
+            {terminalOpen && (
+              <EditorTerminalPanel
+                uuid={uuid}
+                onClose={() => setTerminalOpen(false)}
+              />
+            )}
+          </AnimatePresence>
         </div>
 
         <ConfirmDialog

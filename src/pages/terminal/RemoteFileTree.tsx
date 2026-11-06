@@ -22,6 +22,17 @@ import {
   Trash2,
   Upload,
 } from "lucide-react";
+import { AnimatePresence, motion } from "motion/react";
+import { Collapse, PressableButton } from "@/components/motion";
+import { Skeletonize, skeletonText } from "@/components/ui/skeleton";
+
+/** 目录第一次列出前的占位行（文件名宽度，按数字宽计） */
+const TREE_PLACEHOLDER_ROWS = [12, 9, 15, 10, 13, 8];
+import {
+  CONTENT_MOTION,
+  MOTION_SPRING,
+  MOTION_TRANSITION,
+} from "@/lib/motion";
 import { useRemoteFileService } from "./useRemoteFileService";
 import {
   FileContextMenu,
@@ -704,11 +715,35 @@ export const RemoteFileTree = ({
       (dragTarget?.kind === "directory" && dragTarget.path === file.path) ||
       (dragTarget?.kind === "file" && dragTarget.path === file.path);
     return (
-      <div key={file.path}>
-        <button
+      /*
+        注意两个「不要」：
+        1) 不要在这一层写 whileTap —— 这一层是「节点 + 其全部子节点」的容器，
+           按压反馈会把整棵子树一起缩放，看起来像资源管理器整体抖了一下。
+           按压反馈只给下面那一行按钮。
+        2) 不要在这一层写 layout —— 同理，它会监听整棵子树的高度变化，
+           展开/收起时父节点会跟着做位移动画，出现层层错位的抖动。
+           子项增删的补位交给 Collapse 的高度弹簧就够了。
+      */
+      <motion.div
+        key={file.path}
+        initial={CONTENT_MOTION.item.initial}
+        animate={CONTENT_MOTION.item.animate}
+        exit={CONTENT_MOTION.item.exit}
+        transition={{
+          y: MOTION_SPRING.snappy,
+          scale: MOTION_SPRING.snappy,
+          opacity: MOTION_TRANSITION.fade,
+        }}
+      >
+        {/*
+          按压反馈只作用在这一行按钮上（而不是外层子树容器），
+          所以点哪一项就只有哪一项轻微压扁。
+        */}
+        <PressableButton
           type="button"
           data-tree-path={normalizedPath}
           draggable={!marqueeActiveRef.current && marqueeRange === null && renamingPath !== file.path}
+          tapScale={0.985}
           className={`my-0.5 flex h-6 w-full items-center gap-1 rounded-[4px] border-0 pr-1 text-left text-xs transition-colors ${
             activePath === file.path
               ? "bg-[#37373d] text-white"
@@ -720,7 +755,7 @@ export const RemoteFileTree = ({
                   ? "bg-[#20364a] text-[#eeeeee]"
                   : "bg-transparent text-[#cccccc] hover:bg-[#2a2d2e]"
           }`}
-          style={{ paddingLeft: `${Math.max(4, depth * 12 + 4)}px` }}
+          style={{ paddingLeft: `${Math.max(4, depth * 12 + 4)}px`, transformOrigin: "left center" }}
           onDragStart={(event) => {
             if (marqueeStartRef.current !== null) {
               event.preventDefault();
@@ -811,46 +846,75 @@ export const RemoteFileTree = ({
           {file.is_symlink && (
             <Link2 size={11} className="ml-auto mr-1 shrink-0 text-[#6a9955]" />
           )}
-          {isLoading && <span className="ml-auto shrink-0"><Loading compact /></span>}
-        </button>
-        {file.is_dir && isExpanded &&
-          nested
-            .filter((child) => !ancestors.has(normalizeRemotePath(child.path)))
-            .map((child) => {
-              const nextAncestors = new Set(ancestors);
-              nextAncestors.add(normalizedPath);
-              return renderNode(child, depth + 1, nextAncestors);
-            })}
-        {file.is_dir && isExpanded && creatingEntry?.parentPath === file.path && (
-          <div
-            data-tree-spacer=""
-            className="my-0.5 flex h-6 items-center gap-1"
-            style={{ paddingLeft: `${Math.max(4, (depth + 1) * 12 + 4)}px` }}
-          >
-            <span className="w-[13px] shrink-0" />
-            {creatingEntry.kind === "folder"
-              ? <Folder size={15} className="shrink-0 text-[#dcb67a]" />
-              : <FileCode2 size={14} className="shrink-0 text-[#8da9c4]" />}
-            <input
-              autoFocus
-              value={creatingEntry.name}
-              onChange={(event) => setCreatingEntry({ ...creatingEntry, name: event.target.value })}
-              onBlur={() => void submitCreate()}
-              onKeyDown={(event) => {
-                event.stopPropagation();
-                if (event.key === "Enter") {
-                  event.preventDefault();
-                  void submitCreate();
-                } else if (event.key === "Escape") {
-                  event.preventDefault();
-                  cancelCreate();
-                }
-              }}
-              className="h-5 min-w-0 flex-1 rounded-[4px] border border-[#007acc] bg-[#1e1e1e] px-1 text-xs text-[#eeeeee] outline-none"
-            />
-          </div>
+          {/* 已有子项的刷新才显示行内转圈；第一次展开由下方占位行骨架表示 */}
+          {isLoading && children[file.path] !== undefined && <span className="ml-auto shrink-0"><Loading compact /></span>}
+        </PressableButton>
+        {file.is_dir && (
+          // content 层：目录展开用高度弹簧，收起时保留当前速度顺势转向
+          <Collapse open={isExpanded} style={{ overflow: "hidden" }}>
+            {/*
+              第一次展开、子项还没到：先按目录形状放几行占位（同行高、同缩进），Collapse 立即有高度可展开；
+              Skeletonize 常驻，子项到达时同一容器揭开。正在此目录下新建时不进骨架（inert 会让输入框失焦）。
+            */}
+            <Skeletonize
+              loading={isExpanded && isLoading && children[file.path] === undefined && creatingEntry?.parentPath !== file.path}
+            >
+            {isExpanded && isLoading && children[file.path] === undefined && creatingEntry?.parentPath !== file.path &&
+              TREE_PLACEHOLDER_ROWS.slice(0, depth === 0 ? 6 : 3).map((width, index) => (
+                <div
+                  key={`placeholder-${index}`}
+                  className="my-0.5 flex h-6 items-center gap-1 text-xs"
+                  style={{ paddingLeft: `${Math.max(4, (depth + 1) * 12 + 4)}px` }}
+                >
+                  <span className="w-[13px] shrink-0" />
+                  <span className="h-[15px] w-[15px] shrink-0" />
+                  <span className="whitespace-nowrap">{skeletonText(width)}</span>
+                </div>
+              ))}
+            <AnimatePresence initial={false}>
+              {isExpanded &&
+                nested
+                  .filter((child) => !ancestors.has(normalizeRemotePath(child.path)))
+                  .map((child) => renderNode(child, depth + 1, new Set(ancestors).add(normalizedPath)))}
+              {isExpanded && creatingEntry?.parentPath === file.path && (
+                <motion.div
+                  key={`${file.path}-creating`}
+                  initial={CONTENT_MOTION.item.initial}
+                  animate={CONTENT_MOTION.item.animate}
+                  exit={CONTENT_MOTION.item.exit}
+                  transition={MOTION_SPRING.snappy}
+                  data-tree-spacer=""
+                  className="my-0.5 flex h-6 items-center gap-1"
+                  style={{ paddingLeft: `${Math.max(4, (depth + 1) * 12 + 4)}px` }}
+                >
+                  <span className="w-[13px] shrink-0" />
+                  {creatingEntry.kind === "folder"
+                    ? <Folder size={15} className="shrink-0 text-[#dcb67a]" />
+                    : <FileCode2 size={14} className="shrink-0 text-[#8da9c4]" />}
+                  <input
+                    autoFocus
+                    value={creatingEntry.name}
+                    onChange={(event) => setCreatingEntry({ ...creatingEntry, name: event.target.value })}
+                    onBlur={() => void submitCreate()}
+                    onKeyDown={(event) => {
+                      event.stopPropagation();
+                      if (event.key === "Enter") {
+                        event.preventDefault();
+                        void submitCreate();
+                      } else if (event.key === "Escape") {
+                        event.preventDefault();
+                        cancelCreate();
+                      }
+                    }}
+                    className="h-5 min-w-0 flex-1 rounded-[4px] border border-[#007acc] bg-[#1e1e1e] px-1 text-xs text-[#eeeeee] outline-none"
+                  />
+                </motion.div>
+              )}
+            </AnimatePresence>
+            </Skeletonize>
+          </Collapse>
         )}
-      </div>
+      </motion.div>
     );
   };
 
@@ -918,9 +982,8 @@ export const RemoteFileTree = ({
 		  if (files.length) void uploadFiles(files, uploadTargetRef.current || rootPath);
 		}}
 	  />
-      {uploadProgress.length > 0 && (
-        <TerminalUploadProgress progress={uploadProgress} onCancel={cancelUpload} />
-      )}
+      {/* 常驻挂载：TerminalUploadProgress 内部用 AnimatePresence 收起，外面再条件渲染会把退场动画截掉 */}
+      <TerminalUploadProgress progress={uploadProgress} onCancel={cancelUpload} />
 
       <FileContextMenu
         open={contextMenuOpen}

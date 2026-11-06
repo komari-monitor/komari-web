@@ -10,17 +10,24 @@ import {
   IconButton,
   Text,
 } from "@radix-ui/themes";
-import { AnimatePresence, motion } from "framer-motion"; // 引入 Framer Motion
+import { AnimatePresence, motion } from "motion/react";
+import { RevealBoundary } from "@/components/motion/reveal";
+import {
+  MOTION_DURATION,
+  MOTION_EASE,
+  MOTION_SPRING,
+  SURFACE_MOTION,
+} from "@/lib/motion";
 import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
-import { Link, useLocation /*useNavigate*/ } from "react-router-dom";
+import { useLocation /*useNavigate*/ } from "react-router-dom";
 import ColorSwitch from "../ColorSwitch";
 import LanguageSwitch from "../Language";
 import ThemeSwitch from "../ThemeSwitch";
 import { useIsMobile } from "@/hooks/use-mobile";
 import menuConfig from "../../config/menuConfig.json";
 import type { MenuItem } from "../../types/menu";
-import { iconMap, resolvePluginIcon } from "../../utils/iconHelper";
+import { iconMap } from "../../utils/iconHelper";
 import { ChevronDownIcon } from "@radix-ui/react-icons";
 import { TablerMenu2 } from "../Icones/Tabler";
 import InlineSvgIcon from "../InlineSvgIcon";
@@ -28,27 +35,26 @@ import { useAdminNavigation } from "@/contexts/AdminNavigationContext";
 import { usePublicInfo } from "@/contexts/PublicInfoContext";
 import Tips from "../ui/tips";
 import { CircleFadingArrowUp } from "lucide-react";
-import { useRPC2Call } from "@/contexts/RPC2Context";
-import { resolveI18nText } from "@/utils/i18nText";
-import type { PluginInfo } from "@/types/plugin";
 import GuidedTour from "@/components/onboarding/GuidedTour";
 import { useAdminGuide } from "@/components/onboarding/useAdminGuide";
-import {
-  getThemeConfigurationType,
-  normalizeThemeRedirectTarget,
-  THEME_CONFIGURATION_MANAGED,
-  THEME_CONFIGURATION_RAW,
-  THEME_CONFIGURATION_REDIRECT,
-} from "@/utils/themeConfiguration";
+import type { ExtendedMenuItem } from "./adminPanel/types";
+import { useAdminExtraMenus } from "./adminPanel/useAdminExtraMenus";
+import { useReleaseCheck } from "./adminPanel/useReleaseCheck";
+import SidebarItem from "./adminPanel/SidebarItem";
 
 // 将JSON配置转换为类型安全的菜单项数组 (基础静态菜单)
 const baseMenuItems = (menuConfig as { menu: MenuItem[] }).menu;
 
-// 扩展的菜单项类型（允许直接提供 rawLabel 而不是多语言 key）
-interface ExtendedMenuItem extends MenuItem {
-  rawLabel?: string; // 不走 i18n，直接显示
-  reloadDocument?: boolean;
-}
+/**
+ * 内容区进场动画的「路由区块」key（surface 性格）。
+ * - 只看 pathname，不看 search：很多页面用 query 做 tab/筛选/选中插件，
+ *   query 变化若让外层容器重挂载，会把表单、图表、iframe 整块卸载重载。
+ * - 共用 settings/_layout 的设置子页归为同一区块：子页切换由该布局内层负责淡入，
+ *   外层不再整块重挂（否则布局本身也被卸载，内外两段位移叠加成 16px）。
+ */
+const SETTINGS_SECTION_PREFIX = "/admin/settings/";
+const contentSectionKey = (pathname: string) =>
+  pathname.startsWith(SETTINGS_SECTION_PREFIX) ? SETTINGS_SECTION_PREFIX : pathname;
 
 interface AdminPanelBarProps {
   content: ReactNode;
@@ -56,17 +62,10 @@ interface AdminPanelBarProps {
 }
 
 const AdminPanelBar = ({ content, onboardingReady = false }: AdminPanelBarProps) => {
-  const { call } = useRPC2Call();
   const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [openSubMenus, setOpenSubMenus] = useState<Record<string, boolean>>(() => {
-    try {
-      const stored: unknown = JSON.parse(localStorage.getItem("komari.admin.submenus") || "{}");
-      if (!stored || typeof stored !== "object" || Array.isArray(stored)) return {};
-      return Object.fromEntries(Object.entries(stored).filter(([, value]) => typeof value === "boolean"));
-    } catch {
-      return {};
-    }
-  });
+  // 每次进入后台（刷新）二级菜单全部折叠，只展开当前页面所在的分组（见下方路由 effect）；
+  // 手动展开/折叠只在本次会话内保留，不再写入 localStorage
+  const [openSubMenus, setOpenSubMenus] = useState<Record<string, boolean>>({});
   const previousMenuRoute = useRef<string | null>(null);
   const initializedMenuGroups = useRef(new Set<string>());
   const isMobile = useIsMobile();
@@ -102,232 +101,16 @@ const AdminPanelBar = ({ content, onboardingReady = false }: AdminPanelBarProps)
   const { publicInfo } = usePublicInfo();
   const { refreshVersion } = useAdminNavigation();
   //const navigate = useNavigate();
-  // 获取版本信息
-  const [versionInfo, setVersionInfo] = useState<{
-    hash: string;
-    version: string;
-  } | null>(null);
   const currentLanguage =
     i18n.resolvedLanguage ||
     i18n.language ||
     (typeof navigator !== "undefined" ? navigator.language : "");
-  // GitHub 最新发布信息与更新检测
-  interface GithubReleaseInfo {
-    tag_name: string;
-    name?: string;
-    body?: string;
-    html_url: string;
-    published_at?: string;
-    draft?: boolean;
-    prerelease?: boolean;
-  }
-  const [latestRelease, setLatestRelease] = useState<GithubReleaseInfo | null>(
-    null,
-  );
-  const [updateAvailable, setUpdateAvailable] = useState(false);
-  const [releasesSince, setReleasesSince] = useState<GithubReleaseInfo[]>([]);
-
   const currentTheme = publicInfo?.theme;
 
-  // 动态扩展菜单（主题 + 插件注入页面）
-  const [extraMenuItems, setExtraMenuItems] = useState<ExtendedMenuItem[]>([]);
-  const [pluginMenuItems, setPluginMenuItems] = useState<ExtendedMenuItem[]>([]);
+  // 动态扩展菜单（主题 + 插件注入页面）与版本更新检测
+  const { extraMenuItems, pluginMenuItems } = useAdminExtraMenus(currentTheme, currentLanguage, refreshVersion);
+  const { versionInfo, latestRelease, updateAvailable, releasesSince } = useReleaseCheck(publicInfo);
 
-  useEffect(() => {
-    let ignore = false;
-    async function loadThemeMenu() {
-      // 仅当 theme 存在且不等于 default 时扩展
-      if (!currentTheme) {
-        setExtraMenuItems([]);
-        return;
-      }
-      try {
-        const resp = await fetch(`/themes/${currentTheme}/komari-theme.json`, {
-          cache: "no-cache",
-        });
-        if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-        const data = await resp.json();
-        if (ignore) return;
-        const cfg = data?.configuration;
-        if (!cfg) {
-          setExtraMenuItems([]);
-          return;
-        }
-
-        const cfgType = getThemeConfigurationType(cfg);
-        let itemPath: string | null = null;
-        if (
-          cfgType === THEME_CONFIGURATION_MANAGED &&
-          Array.isArray(cfg.data) &&
-          cfg.data.length > 0
-        ) {
-          itemPath = "/admin/theme_managed";
-        } else if (cfgType === THEME_CONFIGURATION_RAW) {
-          itemPath = "/admin/theme_raw";
-        } else if (cfgType === THEME_CONFIGURATION_REDIRECT) {
-          itemPath = normalizeThemeRedirectTarget(cfg.data);
-        }
-
-        if (!itemPath) {
-          setExtraMenuItems([]);
-          return;
-        }
-        const rawLabel: string =
-          resolveI18nText(cfg.name, currentLanguage) ??
-          t("theme.manage_with_name", {
-            name: currentTheme === "default" ? "" : currentTheme,
-          });
-        const icon: string = cfg.icon || "Settings2"; // fallback icon
-        const item: ExtendedMenuItem = {
-          labelKey: rawLabel,
-          rawLabel,
-          path: itemPath,
-          icon,
-          reloadDocument: cfgType === THEME_CONFIGURATION_REDIRECT,
-        };
-        setExtraMenuItems([item]);
-      } catch (e) {
-        console.warn("加载主题配置失败，将不扩展主题菜单:", e);
-        if (!ignore) setExtraMenuItems([]);
-      }
-    }
-    loadThemeMenu();
-    return () => {
-      ignore = true;
-    };
-  }, [currentTheme, refreshVersion]);
-  // 插件注入的管理页面：manifest pages（visibility=admin）-> 插件菜单的二级菜单。
-  // iframe 页面进入 plugin-page 路由；redirect 页面复用主题的站内跳转校验。
-  useEffect(() => {
-    let ignore = false;
-    async function loadPluginMenu() {
-      try {
-        const result = await call<any, PluginInfo[]>("admin:listPlugins");
-        if (ignore || !Array.isArray(result)) return;
-        const pluginIconUrl = (plugin: PluginInfo, icon?: string) =>
-          resolvePluginIcon(plugin.short, icon) || "Blocks";
-        const items: ExtendedMenuItem[] = [];
-        for (const plugin of result) {
-          if (!plugin.enabled) continue; // 未启用的插件不注入导航菜单
-          for (const page of plugin.pages || []) {
-            if (page.visibility === "public") continue; // 公开页面走公开路由，不进后台导航
-            const label =
-              resolveI18nText(page.title, currentLanguage) ||
-              resolveI18nText(plugin.name, currentLanguage) ||
-              plugin.short;
-            const pageType = page.type || "iframe";
-            if (pageType === "redirect") {
-              const target = normalizeThemeRedirectTarget(page.url);
-              if (!target) continue;
-              items.push({
-                labelKey: label,
-                rawLabel: label,
-                path: target,
-                icon: pluginIconUrl(plugin, page.icon),
-                reloadDocument: true, // 与主题 redirect 一致：整页跳转到站内路径
-              });
-              continue;
-            }
-            items.push({
-              labelKey: label,
-              rawLabel: label,
-              path: `/admin/plugin-page?short=${encodeURIComponent(plugin.short)}&file=${encodeURIComponent(page.file || "")}`,
-              icon: pluginIconUrl(plugin, page.icon),
-            });
-          }
-        }
-        if (!ignore) setPluginMenuItems(items);
-      } catch (e) {
-        console.warn("加载插件菜单失败:", e);
-        if (!ignore) setPluginMenuItems([]);
-      }
-    }
-    loadPluginMenu();
-    return () => {
-      ignore = true;
-    };
-  }, [call, currentLanguage, refreshVersion]);
-
-  useEffect(() => {
-    const fetchVersionInfo = async () => {
-      try {
-        //const response = await fetch("/api/version");
-        const data = await call("common:getVersion");
-        setVersionInfo({
-          hash: data.hash?.slice(0, 7),
-          version: data.version,
-        });
-      } catch (error) {
-        console.error("Failed to fetch version info:", error);
-      }
-    };
-
-    fetchVersionInfo();
-  }, []);
-
-  // 规范化版本为 [major, minor, patch] 数组，忽略前缀 v 和后缀
-  function parseSemver(input?: string | null): number[] | null {
-    if (!input) return null;
-    const s = String(input).trim().replace(/^v/i, "");
-    const match = s.match(/^(\d+)\.(\d+)\.(\d+)/);
-    if (!match) return null;
-    return [Number(match[1]), Number(match[2]), Number(match[3])];
-  }
-
-  function isNewerVersion(latest?: string | null, current?: string | null) {
-    const a = parseSemver(latest);
-    const b = parseSemver(current);
-    if (!a || !b) return false;
-    for (let i = 0; i < 3; i++) {
-      if (a[i] > b[i]) return true;
-      if (a[i] < b[i]) return false;
-    }
-    return false;
-  }
-
-  // 获取 GitHub releases 列表，并筛选出“比当前版本新的所有 release”
-  useEffect(() => {
-    let ignore = false;
-    const currentVersion = (publicInfo as any)?.version || versionInfo?.version;
-    if (!currentVersion) return;
-
-    async function loadReleases() {
-      try {
-        const resp = await fetch(
-          "https://api.github.com/repos/komari-monitor/komari/releases?per_page=100",
-          {
-            headers: {
-              Accept: "application/vnd.github+json",
-            },
-            cache: "no-cache",
-          },
-        );
-        if (!resp.ok) throw new Error(`GitHub HTTP ${resp.status}`);
-        const data: GithubReleaseInfo[] = await resp.json();
-        if (ignore) return;
-        const valid = (data || [])
-          .filter((r) => !r.draft && !r.prerelease)
-          .filter((r) =>
-            isNewerVersion(r?.tag_name || r?.name, currentVersion),
-          );
-        setReleasesSince(valid);
-        setLatestRelease(valid.length ? valid[0] : null);
-        setUpdateAvailable(valid.length > 0);
-      } catch (e) {
-        console.warn("加载 GitHub 最新发布失败:", e);
-        if (!ignore) {
-          setLatestRelease(null);
-          setReleasesSince([]);
-          setUpdateAvailable(false);
-        }
-      }
-    }
-
-    loadReleases();
-    return () => {
-      ignore = true;
-    };
-  }, [publicInfo, versionInfo]);
   // Handle responsive behavior
   useEffect(() => {
     const handleResize = () => setSidebarOpen(!isMobile);
@@ -390,52 +173,47 @@ const AdminPanelBar = ({ content, onboardingReady = false }: AdminPanelBarProps)
     });
   }, [location.pathname, location.search, mergedBaseMenuItems, onboarding.menu]);
 
+  // 清掉旧版本保存的展开状态（现在不再读取）
   useEffect(() => {
-    if (onboarding.guide) return;
     try {
-      localStorage.setItem("komari.admin.submenus", JSON.stringify(openSubMenus));
+      localStorage.removeItem("komari.admin.submenus");
     } catch {
-      // 存储不可用时仍保留本次会话中的展开状态。
+      // 存储不可用：本来就没有旧状态
     }
-  }, [openSubMenus, onboarding.guide]);
+  }, []);
 
-  // 侧边栏动画变体
+  // 首帧不播放侧栏展开：桌面端初始为关闭态、挂载后才被 resize 逻辑打开，
+  // 否则每次进入后台都会看到侧栏从 0 宽「弹」出来（surface 不该抢首屏的戏）。
+  const [sidebarAnimated, setSidebarAnimated] = useState(false);
+  useEffect(() => {
+    const id = requestAnimationFrame(() => setSidebarAnimated(true));
+    return () => cancelAnimationFrame(id);
+  }, []);
+  // 侧边栏动画变体：宽度用弹簧，展开到一半再点收起会保留速度顺势转向
   const sidebarVariants = {
     open: {
       width: isMobile ? "100vw" : "240px",
       opacity: 1,
-      transition: {
-        type: "spring",
-        stiffness: 300,
-        damping: 30,
-      },
+      transition: sidebarAnimated ? SURFACE_MOTION.slide : { duration: 0 },
     },
     closed: {
       width: 0,
       opacity: isMobile ? 0 : 1, // 移动端完全透明
-      transition: {
-        type: "spring",
-        stiffness: 300,
-        damping: 30,
-      },
+      transition: SURFACE_MOTION.slide,
     },
   };
 
-  // 内容区域动画变体
+  // 内容区域动画变体：与侧边栏共用同一条曲线，避免两段动画打架
   const contentVariants = {
     open: {
       opacity: isMobile ? 0 : 1,
       x: isMobile ? "100%" : 0,
-      transition: {
-        duration: 0.3,
-      },
+      transition: SURFACE_MOTION.slide,
     },
     closed: {
       opacity: 1,
       x: 0,
-      transition: {
-        duration: 0.3,
-      },
+      transition: SURFACE_MOTION.slide,
     },
   };
 
@@ -446,7 +224,9 @@ const AdminPanelBar = ({ content, onboardingReady = false }: AdminPanelBarProps)
     <>
       <Grid
         className="km-admin-layout km-admin-panel-bar"
-        columns={{ initial: "1fr", md: sidebarOpen ? "240px 1fr" : "0px 1fr" }} // 动态调整网格列
+        // 侧栏列用 auto：列宽每帧跟随侧栏的弹簧宽度，内容区与侧栏同步收放（同一条弹簧、可被打断），
+        // 而不是网格列先瞬间跳到 0/240px、侧栏再慢慢追上去。
+        columns={{ initial: "1fr", md: "auto 1fr" }}
         rows={{ initial: "auto 1fr", md: "auto 1fr" }}
         style={{
           height: "100vh",
@@ -460,7 +240,7 @@ const AdminPanelBar = ({ content, onboardingReady = false }: AdminPanelBarProps)
           className="km-admin-panel-topbar col-span-2"
           initial={{ y: 0 }}
           animate={{ y: 0 }}
-          transition={{ duration: 0.5, ease: "easeOut" }}
+          transition={{ duration: MOTION_DURATION.slower, ease: MOTION_EASE.out }}
         >
           <Flex
             gap="3"
@@ -556,7 +336,7 @@ const AdminPanelBar = ({ content, onboardingReady = false }: AdminPanelBarProps)
                     `${versionInfo.version} (${versionInfo.hash})`)}
               </label>
             </Flex>
-            <Flex gap="3" align="center" overflowX="auto" className="km-admin-panel-controls">
+            <Flex gap="2" align="center" overflowX="auto" className="km-admin-panel-controls">
               <ThemeSwitch />
               <ColorSwitch />
               <LanguageSwitch />
@@ -582,6 +362,8 @@ const AdminPanelBar = ({ content, onboardingReady = false }: AdminPanelBarProps)
             animate={sidebarOpen ? "open" : "closed"}
             exit="closed"
             className="km-admin-panel-nav"
+            // 侧栏自身可滚动：layoutScroll 让 layoutId 高亮块在滚动后仍按正确位置滑动
+            layoutScroll
             style={{
               backgroundColor: "var(--accent-1)",
               height: "100%",
@@ -726,48 +508,64 @@ const AdminPanelBar = ({ content, onboardingReady = false }: AdminPanelBarProps)
                             </Text>
 
                             <ChevronDownIcon
+                              className="km-chevron"
                               style={{
                                 transform: isOpen
                                   ? "rotate(180deg)"
                                   : "rotate(0deg)",
-                                transition: "transform 0.2s",
                               }}
                             />
                           </Flex>
                           <motion.div
-                            initial={{ height: 0, opacity: 0 }}
+                            initial={false}
                             animate={
                               isOpen
                                 ? { height: "auto", opacity: 1 }
                                 : { height: 0, opacity: 0 }
                             }
-                            transition={{ duration: 0.2 }}
+                            transition={MOTION_SPRING.soft}
                             style={{ overflow: "hidden" }}
                           >
-                            <Flex direction="column" className="ml-4 gap-1">
-                              {item.children.map((child: MenuItem) => (
-                                <SidebarItem
-                                  key={child.path}
-                                  to={child.path}
-                                  icon={renderIcon(
-                                    child.icon,
-                                    child.labelKey,
-                                    "flex w-4 h-5 items-center justify-center",
-                                  )}
-                                  children={
-                                    (child as ExtendedMenuItem).rawLabel ||
-                                    t(child.labelKey)
-                                  }
-                                  onClick={() =>
-                                    isMobile && setSidebarOpen(false)
-                                  }
-                                  newTab={child.newTab}
-                                  reloadDocument={
-                                    (child as ExtendedMenuItem).reloadDocument
-                                  }
-                                />
-                              ))}
-                            </Flex>
+                            <motion.div
+                              initial={false}
+                              animate={
+                                isOpen
+                                  ? { y: 0, opacity: 1 }
+                                  : { y: -6, opacity: 0 }
+                              }
+                              transition={{
+                                y: MOTION_SPRING.snappy,
+                                opacity: {
+                                  duration: MOTION_DURATION.fast,
+                                  ease: MOTION_EASE.standard,
+                                },
+                              }}
+                            >
+                              <Flex direction="column" className="ml-4 gap-1">
+                                {item.children.map((child: MenuItem) => (
+                                  <SidebarItem
+                                    key={child.path}
+                                    to={child.path}
+                                    icon={renderIcon(
+                                      child.icon,
+                                      child.labelKey,
+                                      "flex w-4 h-5 items-center justify-center",
+                                    )}
+                                    children={
+                                      (child as ExtendedMenuItem).rawLabel ||
+                                      t(child.labelKey)
+                                    }
+                                    onClick={() =>
+                                      isMobile && setSidebarOpen(false)
+                                    }
+                                    newTab={child.newTab}
+                                    reloadDocument={
+                                      (child as ExtendedMenuItem).reloadDocument
+                                    }
+                                  />
+                                ))}
+                              </Flex>
+                            </motion.div>
                           </motion.div>
                         </div>
                       );
@@ -823,14 +621,15 @@ const AdminPanelBar = ({ content, onboardingReady = false }: AdminPanelBarProps)
               height: "100%",
               minHeight: 0,
               borderRadius: "0",
-              padding: isMobile ? "8px" : "16px",
+              // 间距系统：窄屏 block(16)、宽屏 section(24)；页面自身不再另加外边距
+              padding: isMobile ? "var(--space-4)" : "var(--space-5)",
               overflowY: isConfigFormPage ? "hidden" : "auto",
               display: isConfigFormPage ? "flex" : "block",
               flexDirection: isConfigFormPage ? "column" : undefined,
               boxSizing: "border-box",
             }}
           >
-            <Callout.Root mb="2" hidden={ishttps} color="red">
+            <Callout.Root mb="5" hidden={ishttps} color="red">
               <Callout.Icon>
                 <svg
                   xmlns="http://www.w3.org/2000/svg"
@@ -849,11 +648,32 @@ const AdminPanelBar = ({ content, onboardingReady = false }: AdminPanelBarProps)
                 </Text>
               </Callout.Text>
             </Callout.Root>
-            {isConfigFormPage ? (
-              <div className="min-h-0 flex-1">{content}</div>
-            ) : (
-              content
-            )}
+            {/*
+              后台页面切换（surface 性格）：同样只进场、不退出。
+              key 只取路由区块（见 contentSectionKey），同一页面内的 query 变化不会重挂载。
+              mode="wait" 会先淡出旧页再挂新页，后台页面普遍较重（表格/图表），
+              中间会看到一段空白；同步替换让新页面在旧页卸载的同一帧开始淡入。
+            */}
+            <motion.div
+              key={contentSectionKey(location.pathname)}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{
+                opacity: {
+                  duration: MOTION_DURATION.fast,
+                  ease: MOTION_EASE.standard,
+                },
+                y: MOTION_SPRING.soft,
+              }}
+              className={isConfigFormPage ? "min-h-0 flex-1" : undefined}
+            >
+              {/* 页面骨架 -> 内容 的接棒入场；配置表单页需要保持 flex 撑满 */}
+              <RevealBoundary
+                className={isConfigFormPage ? "flex h-full min-h-0 flex-col" : undefined}
+              >
+                {content}
+              </RevealBoundary>
+            </motion.div>
           </div>
         </motion.div>
       </Grid>
@@ -875,110 +695,3 @@ const AdminPanelBar = ({ content, onboardingReady = false }: AdminPanelBarProps)
 };
 
 export default AdminPanelBar;
-
-// 侧边栏项目组件
-const SidebarItem = ({
-  to,
-  onClick,
-  icon,
-  children,
-  newTab,
-  reloadDocument,
-}: {
-  to: string;
-  onClick: () => void;
-  icon: ReactNode;
-  children: ReactNode;
-  newTab?: boolean;
-  reloadDocument?: boolean;
-}) => {
-  const location = useLocation();
-  const isExternalLink = to.startsWith("http://") || to.startsWith("https://");
-  // 带 query 的菜单项（如 /admin/plugin-page?short=x）做全匹配；不带 query
-  // 的菜单项只比 pathname（如 /admin/plugins/config?short=x 点亮“插件配置”），
-  // 同时避免前缀兄弟路由（/admin/plugins 与 /admin/plugins/config）同时点亮。
-  const isActive =
-    !isExternalLink &&
-    to !== "/" &&
-    (to.includes("?")
-      ? location.pathname + location.search === to
-      : location.pathname === to.split("?")[0]);
-  const openInNewTab = newTab === true || (isExternalLink && newTab !== false);
-
-  if (openInNewTab || reloadDocument) {
-    return (
-      <a
-        data-guide-nav={to}
-        href={to}
-        onClick={onClick}
-        target={openInNewTab ? "_blank" : undefined}
-        rel={openInNewTab ? "noopener noreferrer" : undefined}
-        className="group block w-full rounded-md"
-      >
-        <Flex
-          className="p-2 gap-2 h-full transition-colors duration-200 group-hover:bg-accent-3 group-focus-visible:bg-accent-3"
-          align="center"
-          style={{
-            borderLeft: "4px solid transparent",
-            borderRadius: "6px",
-            color: "inherit",
-            transition: "background-color 0.2s, border-color 0.2s",
-          }}
-        >
-          <span
-            style={{
-              color: "inherit",
-              opacity: 0.7,
-            }}
-            className="flex w-4 h-5 items-center justify-center"
-          >
-            {icon}
-          </span>
-          <Text className="text-base" weight="medium" style={{ flex: 1 }}>
-            {children}
-          </Text>
-        </Flex>
-      </a>
-    );
-  }
-
-  return (
-    <Link
-      data-guide-nav={to}
-      to={to}
-      onClick={onClick}
-      className="group block w-full rounded-md"
-    >
-      <Flex
-        className={`p-2 gap-2 transition-colors duration-200 ${isActive ? "" : "group-hover:bg-accent-3 group-focus-visible:bg-accent-3"}`}
-        align="center"
-        style={{
-          borderLeft: isActive
-            ? "4px solid var(--accent-8)"
-            : "4px solid transparent",
-          borderRadius: "6px",
-          backgroundColor: isActive ? "var(--accent-4)" : undefined,
-          color: isActive ? "var(--accent-10)" : "inherit",
-          transition: "background-color 0.2s, border-color 0.2s",
-        }}
-      >
-        <span
-          style={{
-            color: isActive ? "var(--accent-10)" : "inherit",
-            opacity: isActive ? 1 : 0.7,
-          }}
-          className="flex w-4 h-5 items-center justify-center"
-        >
-          {icon}
-        </span>
-        <Text
-          className="text-base"
-          weight={isActive ? "bold" : "medium"}
-          style={{ flex: 1 }}
-        >
-          {children}
-        </Text>
-      </Flex>
-    </Link>
-  );
-};

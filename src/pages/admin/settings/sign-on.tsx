@@ -1,104 +1,92 @@
 import {
   SettingCardLabel,
   SettingCardSelect,
-  SettingCardShortTextInput,
+  SettingCardsLoading,
   SettingCardSwitch,
 } from "@/components/admin/SettingCard";
-import { updateSettingsWithToast, useSettings } from "@/lib/api";
-import { Button, Text } from "@radix-ui/themes";
+import { Text } from "@radix-ui/themes";
 import { useTranslation } from "react-i18next";
-import Loading from "@/components/loading";
+import { Skeletonize } from "@/components/ui/skeleton";
+import { AutoHeight } from "@/components/motion";
 import React from "react";
 import { renderProviderInputs } from "@/utils/renderProviders";
-import { toast } from "sonner";
+import { api } from "@/lib/http";
+import { useRouteQuery } from "@/lib/routeData";
+import {
+  DEFAULT_SETTINGS,
+  initialOidcProvider,
+  oidcProvidersQuery,
+  oidcProviderValuesQuery,
+  settingsErrorText,
+  settingsQuery,
+} from "@/routeQueries/settings";
+import { ApiKeyCard } from "./shared/ApiKeyCard";
+import { saveSettings, serverError } from "./shared/request";
 
 export default function SignOnSettings() {
   const { t } = useTranslation();
-  const { settings, loading, error } = useSettings();
-  const [providerDefs, setProviderDefs] = React.useState<any>({});
-  const [providerList, setProviderList] = React.useState<string[]>([]);
-  const [currentProvider, setCurrentProvider] = React.useState<string>("");
-  const [providerValues, setProviderValues] = React.useState<any>({});
-  const [providerLoading, setProviderLoading] = React.useState(false);
-  const [providerError, setProviderError] = React.useState("");
+  // 页面切换时设置、provider 列表、当前 provider 的字段值都已由 routePreload 提前请求（见 routeQueries/settings）
+  const settingsResult = useRouteQuery(settingsQuery);
+  const settings = settingsResult.data ?? DEFAULT_SETTINGS;
+  const loading = settingsResult.loading;
+  const error = settingsErrorText(settingsResult.error);
+  // provider 列表在设置到达后才用（与原来一样），请求本身与设置并行
+  const defsResult = useRouteQuery(oidcProvidersQuery);
+  const defsReady = !loading && !error && defsResult.data !== undefined;
+  const providerDefs: any = (defsReady && defsResult.data) || {};
+  const providerList = Object.keys(providerDefs);
+  // 用户切换过 provider 后以选择为准；否则取设置里的 provider（不在列表里为空）
+  const [selectedProvider, setSelectedProvider] = React.useState<string | null>(null);
+  const currentProvider =
+    selectedProvider ?? (defsReady && defsResult.data ? initialOidcProvider(settings, defsResult.data) : "");
+  const valuesResult = useRouteQuery(currentProvider ? oidcProviderValuesQuery(currentProvider) : null);
+  const setValuesData = valuesResult.setData;
+  const providerValues: any = valuesResult.data ?? {};
+  const setProviderValues = React.useCallback(
+    (updater: (prev: any) => any) => setValuesData((prev) => updater(prev ?? {})),
+    [setValuesData],
+  );
+  const [saving, setSaving] = React.useState(false);
+  const [saveError, setSaveError] = React.useState("");
+  // 字段区骨架：切换 provider 后读取字段值、保存中（provider 列表未到时整页本来就是色块）
+  const providerLoading = valuesResult.loading || saving;
 
-
-  // 拉取所有 provider 及字段定义
-  React.useEffect(() => {
-    if (loading) return;
-    setProviderLoading(true);
-    fetch("/api/admin/settings/oidc")
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.status === "success" && data.data) {
-          setProviderDefs(data.data);
-          const providers = Object.keys(data.data);
-          setProviderList(providers);
-          const initialProvider =
-            settings.o_auth_provider && providers.includes(settings.o_auth_provider)
-              ? settings.o_auth_provider
-              : "";
-          setCurrentProvider(initialProvider);
-        } else {
-          setProviderError(data.message || t("settings.sso.provider_fetch_failed"));
-        }
-      })
-      .catch(() => setProviderError(t("settings.sso.provider_fetch_failed")))
-      .finally(() => setProviderLoading(false));
-  }, [loading, settings.o_auth_provider, t]);
-
-  // 拉取当前 provider 的设置
-  React.useEffect(() => {
-    if (!currentProvider) return;
-    setProviderLoading(true);
-    fetch(`/api/admin/settings/oidc?provider=${currentProvider}`)
-      .then((res) => res.json())
-      .then((data) => {
-        if (data.status === "success" && data.data) {
-          try {
-            setProviderValues(JSON.parse(data.data.addition || "{}"));
-          } catch {
-            setProviderValues({});
-          }
-        } else {
-          setProviderError(data.message || t("settings.sso.provider_settings_fetch_failed"));
-        }
-      })
-      .catch(() => setProviderError(t("settings.sso.provider_settings_fetch_failed")))
-      .finally(() => setProviderLoading(false));
-  }, [currentProvider, t]);
+  // 错误文字与原来一致：服务器 message 优先，接口没有 data 时用默认文案
+  const defsError = defsResult.error
+    ? serverError(defsResult.error)?.message || t("settings.sso.provider_fetch_failed")
+    : defsReady && defsResult.data === null
+      ? t("settings.sso.provider_fetch_failed")
+      : "";
+  const valuesError = valuesResult.error
+    ? serverError(valuesResult.error)?.message || t("settings.sso.provider_settings_fetch_failed")
+    : valuesResult.data === null
+      ? t("settings.sso.provider_settings_fetch_failed")
+      : "";
+  // 设置出错时整页只显示设置的错误（原来 provider 请求要等设置到达才发）
+  const providerError = loading || error ? "" : saveError || valuesError || defsError;
 
   // 处理保存
   const handleOidcSave = async (values: any) => {
-    setProviderLoading(true);
-    setProviderError("");
+    setSaving(true);
+    setSaveError("");
     const body = {
       name: currentProvider,
       addition: JSON.stringify(values),
     };
     try {
-      const res = await fetch("/api/admin/settings/oidc", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(body),
-      });
-      const data = await res.json();
-      if (data.status !== "success") {
-        setProviderError(data.message || t("settings.sso.provider_save_failed"));
-      } else {
-        setProviderValues(values);
-      }
-    } catch {
-      setProviderError(t("settings.sso.provider_save_failed"));
+      await api.post("/api/admin/settings/oidc", body);
+      setValuesData(values);
+    } catch (error) {
+      setSaveError(serverError(error)?.message || t("settings.sso.provider_save_failed"));
     }
-    setProviderLoading(false);
+    setSaving(false);
   };
 
   // 渲染 provider 的输入项已抽象到 utils/renderProviders.tsx 中
 
-  if (loading || (!providerLoading && providerList.length === 0 && !providerError)) {
-    return <Loading />;
-  }
+  // 首屏：设置或 provider 列表还没到，设置卡显示色块（不再 early return）
+  const pageLoading =
+    loading || (providerList.length === 0 && !providerError);
   if (error) {
     return <Text color="red">{error}</Text>;
   }
@@ -107,13 +95,14 @@ export default function SignOnSettings() {
   }
 
   return (
-    <>
+    <div className="flex w-full flex-col gap-km-block">
+      <SettingCardsLoading loading={pageLoading}>
       <SettingCardLabel>{t("settings.sign_on.title")}</SettingCardLabel>
       <SettingCardSwitch
         title={t("settings.sign_on.disable_password")}
         defaultChecked={settings.disable_password_login}
         onChange={async (checked) => {
-          await updateSettingsWithToast({ disable_password_login: checked }, t);
+          await saveSettings({ disable_password_login: checked }, t);
         }}
         className="km-page-admin-settings-sign-on km-setting-card"
       />
@@ -123,7 +112,7 @@ export default function SignOnSettings() {
         defaultChecked={settings.o_auth_enabled}
         description={t("settings.sso.enable_description")}
         onChange={async (checked) => {
-          await updateSettingsWithToast({ o_auth_enabled: checked }, t);
+          await saveSettings({ o_auth_enabled: checked }, t);
         }}
         className="km-setting-card"
       />
@@ -134,77 +123,49 @@ export default function SignOnSettings() {
         value={currentProvider}
         OnSave={async (val: string) => {
           if (val === currentProvider) return;
-          await updateSettingsWithToast({ o_auth_provider: val }, t);
-          setCurrentProvider(val);
+          await saveSettings({ o_auth_provider: val }, t);
+          setSelectedProvider(val);
         }}
       />
-      {providerLoading ? <Loading /> : renderProviderInputs({
-        currentProvider,
-        providerDefs,
-        providerValues,
-        translationPrefix: "settings.sso." + currentProvider,
-        title: t("settings.sso.provider_fields"),
-        description: t("settings.sso.provider_fields_description"),
-        footer: t("settings.sso.callback_url_tips", { url: `${window.location.origin}/api/oauth_callback` }),
-        setProviderValues,
-        handleSave: handleOidcSave,
-        t,
-      })}
+      {/*
+        切换 provider / 保存中：字段区保持原结构，只画成骨架（不再整块换成转圈），
+        字段数变化时高度弹簧过渡。
+      */}
+      <AutoHeight>
+        <Skeletonize loading={providerLoading && !pageLoading}>
+          {renderProviderInputs({
+            currentProvider,
+            providerDefs,
+            providerValues,
+            translationPrefix: "settings.sso." + currentProvider,
+            title: t("settings.sso.provider_fields"),
+            description: t("settings.sso.provider_fields_description"),
+            footer: t("settings.sso.callback_url_tips", { url: `${window.location.origin}/api/oauth_callback` }),
+            setProviderValues,
+            handleSave: handleOidcSave,
+            t,
+          })}
+        </Skeletonize>
+      </AutoHeight>
       <SettingCardLabel>API</SettingCardLabel>
-      <ApiCard />
-    </>
+      {/* 原来 ApiCard 自己再调一次 useSettings（重复请求设置）；改为用本页已取到的设置 */}
+      <ApiCard apiKey={settings.api_key} />
+      </SettingCardsLoading>
+    </div>
   );
 }
 
-const ApiCard = () => {
-  const { settings } = useSettings();
+const ApiCard = ({ apiKey }: { apiKey: string | undefined }) => {
   const { t } = useTranslation();
-  const [apiValues, setApiValues] = React.useState<string>(settings?.api_key || "" );
-
-  // 生成32位随机字符串
-  const generateRandomString = () => {
-    const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789';
-    let result = 'komari-';
-    for (let i = 0; i < 32; i++) {
-      result += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    return result;
-  };
-
-  // 处理生成按钮点击
-  const handleGenerateApiKey = () => {
-    const newApiKey = generateRandomString();
-    setApiValues(newApiKey);
-  };
-
-  // 初始化API值
-  React.useEffect(() => {
-    if (settings?.api_key) {
-      setApiValues(settings.api_key);
-    }
-  }, [settings?.api_key]);
 
   return (
-    <SettingCardShortTextInput
-        title={t("settings.api.title")}
-        description={t("settings.api.description")}
-        value={apiValues}
-        onChange={(e) => setApiValues(e.target.value)}
-        OnSave={async (values) => {
-          if (!values) {
-            await updateSettingsWithToast({ api_key: "" }, t);
-            return;
-          }
-          if (values.length < 12) {
-            toast.error(t("settings.api.key_length_error"));
-            return;
-          }
-          await updateSettingsWithToast({ api_key: values }, t);
-        }}
-      >
-        <div className="flex flex-row gap-2 justify-start items-center">
-          <Button variant="soft" color="green" onClick={handleGenerateApiKey}>{t('common.generate')}</Button>
-        </div>
-      </SettingCardShortTextInput>
-  )
-}
+    <ApiKeyCard
+      settingKey="api_key"
+      savedValue={apiKey}
+      title={t("settings.api.title")}
+      description={t("settings.api.description")}
+      prefix="komari-"
+      length={32}
+    />
+  );
+};

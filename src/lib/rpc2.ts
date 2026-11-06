@@ -22,12 +22,12 @@ export class RPC2Client {
   private pendingRequests = new Map<string | number, {
     resolve: (value: any) => void;
     reject: (reason?: any) => void;
-    timeout?: NodeJS.Timeout;
+    timeout?: ReturnType<typeof setTimeout>;
   }>();
   private reconnectAttempts = 0;
-  private reconnectTimeout?: NodeJS.Timeout;
-  private heartbeatInterval?: NodeJS.Timeout;
-  private stableConnectionTimeout?: NodeJS.Timeout;
+  private reconnectTimeout?: ReturnType<typeof setTimeout>;
+  private heartbeatInterval?: ReturnType<typeof setTimeout>;
+  private stableConnectionTimeout?: ReturnType<typeof setTimeout>;
   private manualDisconnect = false;
   private connectionGeneration = 0;
   private eventListeners: RPC2EventListeners = {};

@@ -11,53 +11,62 @@ import {
 import { useTranslation } from "react-i18next";
 import { Dialog, Flex, Button } from "@radix-ui/themes";
 import { UserAgentHelper } from "@/utils/UserAgentHelper";
-import Loading from "@/components/loading";
-type Resp = {
-  current: string;
-  data: Array<{
-    uuid: string;
-    session: string;
-    user_agent: string;
-    ip: string;
-    login_method: string;
-    latest_online: string;
-    latest_ip: string;
-    latest_user_agent: string;
-    expires: string;
-    created_at: string;
-  }>;
-  status: string;
-};
+import { Skeletonize, skeletonText } from "@/components/ui/skeleton";
+import { AutoHeight } from "@/components/motion";
+import { AnimatePresence, motion } from "motion/react";
+import { CONTENT_MOTION } from "@/lib/motion";
+import PageHeader from "@/components/PageHeader";
+import { ApiError, api } from "@/lib/http";
+import { useRouteQuery } from "@/lib/routeData";
+import { sessionsQuery } from "@/routeQueries/admin";
+/** 骨架占位行数：常见的会话数量 */
+const SESSION_PLACEHOLDER_ROWS = 5;
+
+/** 骨架行：与真实行同样的 7 列，文字长度贴近真实内容（会话 ID 前缀、UA、IP、时间） */
+const SessionPlaceholderRow = ({ row }: { row: number }) => (
+  <TableRow>
+    <TableCell>{skeletonText(11)}</TableCell>
+    <TableCell>{skeletonText(18 - (row % 3) * 3)}</TableCell>
+    <TableCell>{skeletonText(13)}</TableCell>
+    <TableCell>{skeletonText(13)}</TableCell>
+    <TableCell>{skeletonText(18)}</TableCell>
+    <TableCell>{skeletonText(26)}</TableCell>
+    <TableCell>{skeletonText(4)}</TableCell>
+  </TableRow>
+);
+
 export default function Sessions() {
   const [t] = useTranslation();
-  const [sessions, setSessions] = React.useState<Resp | null>(null);
+  // 页面切换时数据已经由 routePreload 提前请求；等待预算内到达直接显示，否则显示骨架
+  const sessionsResult = useRouteQuery(sessionsQuery);
+  const sessions = sessionsResult.data ?? null;
+  const setSessions = sessionsResult.setData;
+  const sessionsFailed = Boolean(sessionsResult.error);
   React.useEffect(() => {
-    fetch("/api/admin/session/get")
-      .then((response) => {
-        if (!response.ok) {
-          throw new Error(`Error: ${response.status} ${response.statusText}`);
-        }
-        return response.json();
-      })
-      .then((data: Resp) => {
-        setSessions(data);
-      })
-      .catch((error) => {
-        console.error("Error fetching sessions:", error);
-        toast.error(error.message);
-      });
-  }, []);
+    const error = sessionsResult.error;
+    if (!error) return;
+    const message = error instanceof ApiError
+      ? `Error: ${error.status} ${error.statusText}`
+      : error instanceof Error ? error.message : String(error);
+    console.error("Error fetching sessions:", error);
+    toast.error(message);
+  }, [sessionsResult.error]);
 
   function deleteSession(sessionId: string) {
     const isCurrent = sessionId === sessions?.current;
-    fetch("/api/admin/session/remove", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ session: sessionId }),
-    })
-      .then((response) => response.json())
+    // 原逻辑不看 HTTP 状态，只按响应体的 status 判断成功
+    api
+      .post<{ status?: string }>(
+        "/api/admin/session/remove",
+        { session: sessionId },
+        { expectSuccess: false },
+      )
+      .catch((error) => {
+        if (error instanceof ApiError) return error.body as { status?: string };
+        throw error;
+      })
       .then((data) => {
-        if (data.status === "success") {
+        if (data?.status === "success") {
           toast.success(t("sessions.deleted_successfully"));
           if (isCurrent) {
             window.location.href = "/"; // 登出
@@ -78,37 +87,32 @@ export default function Sessions() {
       });
   }
   function deleteAllSessions() {
-    fetch("/api/admin/session/remove/all", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-    })
-      .then((response) => {
-        if (!response.ok) {
-          toast.error("Error:" + response.status);
-          return;
-        }
-        response
-          .json()
-          .then(() => {
-            window.location.href = "/"; // 登出
-          })
-          .catch((error) => {
-            toast.error("Error parsing JSON:" + error);
-          });
+    api
+      .post("/api/admin/session/remove/all", undefined, {
+        headers: { "Content-Type": "application/json" },
+        expectSuccess: false,
+      })
+      .then(() => {
+        window.location.href = "/"; // 登出
       })
       .catch((error) => {
+        if (error instanceof ApiError) {
+          toast.error("Error:" + error.status);
+          return;
+        }
         toast.error(error.message);
       });
   }
 
-  if (!sessions) {
-    return <Loading />;
-  }
+  // 会话未到时表格用占位行渲染，Skeletonize 把表格画成色块
+  const loading = !sessions && !sessionsFailed;
 
   return (
-    <div className="km-page-admin-sessions p-4">
-      <h1 className="text-2xl font-semibold mb-4">{t("sessions.title")}</h1>
-      <div className="mb-4">
+    // 页头直接渲染；只有会话表格在加载中显示色块
+    <div className="km-page km-page-admin-sessions">
+      <PageHeader
+        title={t("sessions.title")}
+        actions={
         <Dialog.Root>
           <Dialog.Trigger>
             <Button color="red">{t("sessions.delete_all")}</Button>
@@ -118,7 +122,7 @@ export default function Sessions() {
             <Dialog.Description>
               {t("sessions.delete_all_desc")}
             </Dialog.Description>
-            <Flex gap="2" justify={"end"}>
+            <Flex gap="2" justify="end" mt="5">
               <Dialog.Trigger>
                 <Button variant="soft">{t("common.cancel")}</Button>
               </Dialog.Trigger>
@@ -130,8 +134,11 @@ export default function Sessions() {
             </Flex>
           </Dialog.Content>
         </Dialog.Root>
-      </div>
-      <div className="km-sessions-table overflow-hidden rounded-lg">
+        }
+      />
+      {/* 占位行数 -> 真实会话数、删除会话：表格高度弹簧过渡 */}
+      <AutoHeight className="km-sessions-table overflow-hidden rounded-lg">
+        <Skeletonize loading={loading} className="km-setting-card-skeleton">
         <Table>
           <TableHeader>
             <TableRow>
@@ -145,10 +152,35 @@ export default function Sessions() {
             </TableRow>
           </TableHeader>
           <TableBody>
-            {sessions.data.map((s) => {
-              const isCurrent = s.session === sessions.current;
+            {/* 占位行没有退场：数据到达的那一帧直接换成真实行（真实行入场） */}
+            {loading
+              ? Array.from({ length: SESSION_PLACEHOLDER_ROWS }, (_, row) => (
+                  <SessionPlaceholderRow key={row} row={row} />
+                ))
+              : null}
+            {/*
+              content 性格：会话行是表格数据，删除/新增时用 layout 弹簧重排，
+              退出行走默认 mode（tbody 不是 flex/grid，用 popLayout 会让 tr 脱离文档流），
+              所以是「先让位、再消失」，而不是整张表瞬间跳一下。
+            */}
+            <AnimatePresence initial={false}>
+            {(sessions?.data ?? []).map((s) => {
+              const isCurrent = s.session === sessions?.current;
               return (
-                <TableRow key={s.uuid} className="km-session-item">
+                <motion.tr
+                  key={s.uuid}
+                  // 只补间位置（行内有文字，尺寸补间会拉伸文字；高度变化直接生效）
+                  layout="position"
+                  initial={CONTENT_MOTION.item.initial}
+                  animate={CONTENT_MOTION.item.animate}
+                  exit={{
+                    ...CONTENT_MOTION.item.exit,
+                    transition: CONTENT_MOTION.exitTransition,
+                  }}
+                  transition={CONTENT_MOTION.transition}
+                  data-slot="table-row"
+                  className="km-session-item km-ui-table-row transition-colors border-b border-[var(--accent-2)] hover:bg-[var(--accent-2)]"
+                >
                   <TableCell>
                     <Dialog.Root>
                       <Dialog.Trigger>
@@ -216,7 +248,7 @@ export default function Sessions() {
                           <label className="text-sm">
                             {new Date(s.expires).toLocaleString()}
                           </label>
-                          <Flex justify={"end"}>
+                          <Flex gap="2" justify="end" mt="5">
                             <Dialog.Trigger>
                               <Button variant="soft">{t("common.close")}</Button>
                             </Dialog.Trigger>
@@ -248,7 +280,7 @@ export default function Sessions() {
                         <Dialog.Description>
                           {t("sessions.delete_one_desc")}
                         </Dialog.Description>
-                        <Flex gap="2" justify={"end"}>
+                        <Flex gap="2" justify="end" mt="5">
                           <Dialog.Trigger>
                             <Button variant="soft">
                               {t("common.cancel")}
@@ -266,12 +298,14 @@ export default function Sessions() {
                       </Dialog.Content>
                     </Dialog.Root>
                   </TableCell>
-                </TableRow>
+                </motion.tr>
               );
             })}
+            </AnimatePresence>
           </TableBody>
         </Table>
-      </div>
+        </Skeletonize>
+      </AutoHeight>
     </div>
   );
 }

@@ -2,6 +2,8 @@ import React from "react";
 import { Checkbox, TextField } from "@radix-ui/themes";
 import { Search } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { AutoHeight } from "@/components/motion";
+import { Skeletonize } from "@/components/ui/skeleton";
 import {
   Table,
   TableBody,
@@ -36,6 +38,11 @@ export interface SelectorProps<T> {
   searchPlaceholder?: string;
   /** 表头标题（第二列） */
   headerLabel?: React.ReactNode;
+  /**
+   * 数据源还没到：只把列表区画成骨架（items 传同结构的占位行），搜索框、已选计数照常渲染。
+   * 不传则不包骨架层（DOM 与原来一致）；要用就始终传布尔值，翻转时不换 DOM。
+   */
+  loading?: boolean;
 }
 
 function SelectorInner<T>(props: SelectorProps<T>) {
@@ -51,6 +58,7 @@ function SelectorInner<T>(props: SelectorProps<T>) {
     filterItem,
     searchPlaceholder,
     headerLabel,
+    loading,
   } = props;
   const { t } = useTranslation();
 
@@ -61,7 +69,8 @@ function SelectorInner<T>(props: SelectorProps<T>) {
   const processed = React.useMemo(() => {
     let arr = [...items];
     if (sortItems) arr.sort(sortItems);
-    if (search.trim()) {
+    // 占位行不参与搜索（否则输入关键字会把骨架行全部滤掉）
+    if (!loading && search.trim()) {
       const kw = search.toLowerCase();
       arr = arr.filter((it) =>
         filterItem
@@ -70,7 +79,7 @@ function SelectorInner<T>(props: SelectorProps<T>) {
       );
     }
     return arr;
-  }, [items, sortItems, filterItem, search, getLabel]);
+  }, [items, sortItems, filterItem, search, getLabel, loading]);
 
   const allIds = processed.map(getId);
 
@@ -81,8 +90,10 @@ function SelectorInner<T>(props: SelectorProps<T>) {
     value.length > 0 && value.some((id) => allIds.includes(id)) && !allChecked;
   const checkAllState = allChecked ? true : isIndeterminate ? "indeterminate" : false;
 
-  // 孤立（value 中但 items 不再存在）
-  const orphanIds = value.filter((id) => !items.some((it) => getId(it) === id));
+  // 孤立（value 中但 items 不再存在）；加载中 items 是占位行，不算孤立
+  const orphanIds = loading
+    ? []
+    : value.filter((id) => !items.some((it) => getId(it) === id));
 
   const resolvedSearchPlaceholder =
     searchPlaceholder ?? t("common.search");
@@ -104,55 +115,38 @@ function SelectorInner<T>(props: SelectorProps<T>) {
     }
   };
 
-  return (
-    <div className={`km-selector flex flex-col ${className}`}>
-      <TextField.Root
-        className="mb-2 flex items-center gap-1"
-        placeholder={resolvedSearchPlaceholder}
-        value={search}
-        onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
-          setSearch(e.target.value)
-        }
-      >
-        <TextField.Slot>
-          <Search size="16" />
-        </TextField.Slot>
-      </TextField.Root>
-      <div className="selector rounded-md overflow-hidden">
-        <Table>
-          <TableHeader>
-            <TableHead>
-              <Checkbox
-                checked={checkAllState}
-                onCheckedChange={(checked) => handleCheckAll(!!checked)}
-                aria-label={t("common.select_all")}
-              />
-            </TableHead>
-            <TableHead>{resolvedHeaderLabel}</TableHead>
-          </TableHeader>
-          <TableBody>
-            {processed.map((it) => {
-              const id = getId(it);
-              return (
-                <TableRow
-                  className="km-node-selector-item"
-                  key={id}
-                  onClick={() => {
-                    handleCheck(id, !value.includes(id));
-                  }}
-                >
-                  <TableCell>
-                    <Checkbox
-                      checked={value.includes(id)}
-                      onCheckedChange={(checked) => handleCheck(id, !!checked)}
-                      aria-label={`${t("common.select")} ${id}`}
-                    />
-                  </TableCell>
-                  <TableCell>{getLabel(it)}</TableCell>
-                </TableRow>
-              );
-            })}
-            {orphanIds.map((id) => (
+  const searchField = (
+    <TextField.Root
+      className="mb-2 flex items-center gap-1"
+      placeholder={resolvedSearchPlaceholder}
+      value={search}
+      onChange={(e: React.ChangeEvent<HTMLInputElement>) =>
+        setSearch(e.target.value)
+      }
+    >
+      <TextField.Slot>
+        <Search size="16" />
+      </TextField.Slot>
+    </TextField.Root>
+  );
+
+  const list = (
+    <div className="selector rounded-md overflow-hidden">
+      <Table>
+        <TableHeader>
+          <TableHead>
+            <Checkbox
+              checked={checkAllState}
+              onCheckedChange={(checked) => handleCheckAll(!!checked)}
+              aria-label={t("common.select_all")}
+            />
+          </TableHead>
+          <TableHead>{resolvedHeaderLabel}</TableHead>
+        </TableHeader>
+        <TableBody>
+          {processed.map((it) => {
+            const id = getId(it);
+            return (
               <TableRow
                 className="km-node-selector-item"
                 key={id}
@@ -167,14 +161,42 @@ function SelectorInner<T>(props: SelectorProps<T>) {
                     aria-label={`${t("common.select")} ${id}`}
                   />
                 </TableCell>
-                <TableCell>{id}</TableCell>
+                <TableCell>{getLabel(it)}</TableCell>
               </TableRow>
-            ))}
-          </TableBody>
-        </Table>
-      </div>
+            );
+          })}
+          {orphanIds.map((id) => (
+            <TableRow
+              className="km-node-selector-item"
+              key={id}
+              onClick={() => {
+                handleCheck(id, !value.includes(id));
+              }}
+            >
+              <TableCell>
+                <Checkbox
+                  checked={value.includes(id)}
+                  onCheckedChange={(checked) => handleCheck(id, !!checked)}
+                  aria-label={`${t("common.select")} ${id}`}
+                />
+              </TableCell>
+              <TableCell>{id}</TableCell>
+            </TableRow>
+          ))}
+        </TableBody>
+      </Table>
+    </div>
+  );
+
+  return (
+    <div className={`km-selector flex flex-col ${className}`}>
+      {searchField}
+      {/* 搜索过滤导致行数变化、占位行换成真实行时，列表高度弹簧过渡（对话框不会一下变矮） */}
+      <AutoHeight threshold={4}>
+        {loading === undefined ? list : <Skeletonize loading={loading}>{list}</Skeletonize>}
+      </AutoHeight>
       {!hiddenDescription && (
-        <label className="text-sm text-gray-500">
+        <label className="mt-km-group text-sm text-gray-500">
           {t("common.selected", { count: value.length })}
         </label>
       )}

@@ -63,13 +63,6 @@
     "url": "https://www.npmjs.com/package/@radix-ui/react-icons"
   },
   {
-    "name": "@radix-ui/react-label",
-    "version": "2.1.7",
-    "license": "MIT",
-    "dev": false,
-    "url": "https://www.npmjs.com/package/@radix-ui/react-label"
-  },
-  {
     "name": "@radix-ui/react-slot",
     "version": "1.2.3",
     "license": "MIT",
@@ -91,18 +84,18 @@
     "url": "https://www.npmjs.com/package/@tailwindcss/vite"
   },
   {
-    "name": "@tanstack/react-table",
-    "version": "8.21.3",
-    "license": "MIT",
-    "dev": false,
-    "url": "https://www.npmjs.com/package/@tanstack/react-table"
-  },
-  {
     "name": "@types/lodash",
     "version": "4.17.17",
     "license": "MIT",
     "dev": true,
     "url": "https://www.npmjs.com/package/@types/lodash"
+  },
+  {
+    "name": "@types/node",
+    "version": "22.15.17",
+    "license": "MIT",
+    "dev": true,
+    "url": "https://www.npmjs.com/package/@types/node"
   },
   {
     "name": "@types/react",
@@ -117,13 +110,6 @@
     "license": "MIT",
     "dev": true,
     "url": "https://www.npmjs.com/package/@types/react-dom"
-  },
-  {
-    "name": "@types/uuid",
-    "version": "10.0.0",
-    "license": "MIT",
-    "dev": false,
-    "url": "https://www.npmjs.com/package/@types/uuid"
   },
   {
     "name": "@vitejs/plugin-react",
@@ -231,13 +217,6 @@
     "url": "https://www.npmjs.com/package/globals"
   },
   {
-    "name": "http-proxy-middleware",
-    "version": "3.0.5",
-    "license": "MIT",
-    "dev": false,
-    "url": "https://www.npmjs.com/package/http-proxy-middleware"
-  },
-  {
     "name": "i18next",
     "version": "25.1.2",
     "license": "MIT",
@@ -267,7 +246,7 @@
   },
   {
     "name": "motion",
-    "version": "12.10.5",
+    "version": "12.43.0",
     "license": "MIT",
     "dev": false,
     "url": "https://www.npmjs.com/package/motion"
@@ -313,13 +292,6 @@
     "license": "MIT",
     "dev": true,
     "url": "https://www.npmjs.com/package/react-router-dom"
-  },
-  {
-    "name": "react-toastify",
-    "version": "11.0.5",
-    "license": "MIT",
-    "dev": false,
-    "url": "https://www.npmjs.com/package/react-toastify"
   },
   {
     "name": "recharts",
@@ -390,13 +362,6 @@
     "license": "MIT",
     "dev": true,
     "url": "https://www.npmjs.com/package/typescript-eslint"
-  },
-  {
-    "name": "uuid",
-    "version": "11.1.1",
-    "license": "MIT",
-    "dev": false,
-    "url": "https://www.npmjs.com/package/uuid"
   },
   {
     "name": "vaul",

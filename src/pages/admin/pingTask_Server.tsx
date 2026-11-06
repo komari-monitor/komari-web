@@ -4,7 +4,6 @@ import {
   TableCell,
   TableHead,
   TableHeader,
-  TableRow,
 } from "@/components/ui/table";
 import { useNodeDetails } from "@/contexts/NodeDetailsContext";
 import { usePingTask, type PingTask } from "@/contexts/PingTaskContext";
@@ -14,8 +13,24 @@ import React from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { Selector } from "@/components/Selector";
+import { AnimatePresence, motion } from "motion/react";
+import { MOTION_TRANSITION } from "@/lib/motion";
+import { skeletonText } from "@/components/ui/skeleton";
+import { postPingTask } from "./pingTask/api";
+
+/** 加载中的占位服务器行（外层 Skeletonize 画成条；不挂对话框，避免占位数据进入编辑） */
+const PLACEHOLDER_SERVERS = Array.from({ length: 5 }, (_, i) => ({
+  uuid: `__placeholder-${i}`,
+  name: skeletonText(9 + (i % 3) * 2),
+}));
 // 服务器视图：按服务器聚合展示其绑定的任务，并可快速增删绑定
-export const ServerView = ({ pingTasks }: { pingTasks: PingTask[] }) => {
+export const ServerView = ({
+  pingTasks,
+  loading = false,
+}: {
+  pingTasks: PingTask[];
+  loading?: boolean;
+}) => {
   const { t } = useTranslation();
   const { nodeDetail } = useNodeDetails();
 
@@ -38,6 +53,16 @@ export const ServerView = ({ pingTasks }: { pingTasks: PingTask[] }) => {
           <TableHead>{t("ping.task")}</TableHead>
         </TableHeader>
         <TableBody>
+          {/* content 层：服务器行随刷新重排，进出场都有过渡 */}
+          {loading ? (
+            PLACEHOLDER_SERVERS.map((n) => (
+              <tr key={n.uuid} className="km-ui-table-row border-b border-[var(--accent-2)]">
+                <TableCell>{n.name}</TableCell>
+                <TableCell>{skeletonText(16)}</TableCell>
+              </tr>
+            ))
+          ) : (
+          <AnimatePresence initial={false}>
           {sortedNodes.map((n) => (
             <ServerRow
               key={n.uuid}
@@ -46,6 +71,8 @@ export const ServerView = ({ pingTasks }: { pingTasks: PingTask[] }) => {
               pingTasks={pingTasks}
             />
           ))}
+          </AnimatePresence>
+          )}
         </TableBody>
       </Table>
     </div>
@@ -113,18 +140,7 @@ const ServerRow: React.FC<{
       return;
     }
 
-    fetch("/api/admin/ping/edit", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ tasks: toUpdate }),
-    })
-      .then((res) => {
-        if (!res.ok)
-          return res.json().then((d) => {
-            throw new Error(d?.message || t("common.error"));
-          });
-        return res.json();
-      })
+    postPingTask("/api/admin/ping/edit", { tasks: toUpdate }, t)
       .then(() => {
         toast.success(t("common.updated_successfully"));
         setOpen(false);
@@ -138,7 +154,13 @@ const ServerRow: React.FC<{
   const display = joined.length > 40 ? joined.slice(0, 40) + "..." : joined;
 
   return (
-    <TableRow>
+    <motion.tr
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      transition={MOTION_TRANSITION.fadeIn}
+      className="km-ui-table-row transition-colors border-b border-[var(--accent-2)] hover:bg-[var(--accent-2)]"
+    >
       <TableCell>{nodeName}</TableCell>
       <TableCell>
         <Flex align="center" gap="2">
@@ -183,7 +205,7 @@ const ServerRow: React.FC<{
                   }
                 />
               </div>
-              <Flex gap="2" justify="end" className="mt-4">
+              <Flex gap="2" justify="end" mt="5">
                 <Dialog.Close>
                   <Button
                     variant="soft"
@@ -202,6 +224,6 @@ const ServerRow: React.FC<{
           </Dialog.Root>
         </Flex>
       </TableCell>
-    </TableRow>
+    </motion.tr>
   );
 };

@@ -1,19 +1,30 @@
 import { useEffect, useMemo, useState } from "react";
 import { Card, Switch } from "@radix-ui/themes";
+import { AnimatePresence, motion } from "motion/react";
+import { MOTION_TRANSITION, SKELETON_MOTION } from "@/lib/motion";
 import { CartesianGrid, Line, LineChart, XAxis, YAxis } from "recharts";
 import { useTranslation } from "react-i18next";
-import Loading from "@/components/loading";
+import {
+  SkeletonChartShape,
+  Skeletonize,
+  skeletonText,
+} from "@/components/ui/skeleton";
 import MetricBoundaryAxisTick from "@/components/MetricBoundaryAxisTick";
-import PingMetricStatContent from "@/components/PingMetricStatContent";
+import MetricLegendItem from "@/components/MetricLegendItem";
+import {
+  METRIC_CHART_MARGIN,
+  METRIC_LINE_PROPS,
+  METRIC_X_AXIS_PROPS,
+  METRIC_Y_AXIS_PROPS,
+  toMetricChartConfig,
+} from "@/components/metricChartShared";
 import {
   ChartContainer,
   ChartTooltip,
   ChartTooltipContent,
-  type ChartConfig,
 } from "@/components/ui/chart";
 import Tips from "@/components/ui/tips";
 import { useRPC2Call } from "@/contexts/RPC2Context";
-import { cn } from "@/lib/utils";
 import type {
   MetricSeries,
   MetricTags,
@@ -26,6 +37,7 @@ import {
   PING_LATENCY_METRIC,
   applyMetricEwma,
   comparePingTaskOrder,
+  countMetricPoints,
   formatRemainingTags,
   metricChartBoundaryTicks,
   metricSeriesColor,
@@ -36,6 +48,9 @@ import {
   pingMetricStatKey,
   pingTaskId,
   pingTaskName,
+  sortMetricChartRows,
+  toPingMetricStatMap,
+  toPingTaskMap,
   trimMetricChartBoundaryRows,
   type MetricChartRow,
 } from "@/utils/metricSeries";
@@ -44,7 +59,7 @@ type RenderSeries = {
   dataKey: string;
   stableKey: string;
   taskId?: string;
-  name: string;
+  label: string;
   color: string;
   pointCount: number;
   tags?: MetricTags;
@@ -70,7 +85,8 @@ const MiniPingChart = ({
   const [stats, setStats] = useState<PingMetricStat[]>([]);
   const [hiddenLines, setHiddenLines] = useState<Record<string, boolean>>({});
   const [ewmaEnabled, setEwmaEnabled] = useState(false);
-  const [loading, setLoading] = useState(false);
+  // 有 uuid 时首帧就是加载态：否则会先闪一帧「无」再变成骨架
+  const [loading, setLoading] = useState(Boolean(uuid));
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
@@ -128,18 +144,8 @@ const MiniPingChart = ({
     };
   }, [call, hours, uuid]);
 
-  const taskMap = useMemo(
-    () => new Map(tasks.map((task) => [String(task.id), task])),
-    [tasks],
-  );
-
-  const statsMap = useMemo(() => {
-    const map = new Map<string, PingMetricStat>();
-    for (const stat of stats) {
-      map.set(pingMetricStatKey(stat.entity_id, stat.task_id), stat);
-    }
-    return map;
-  }, [stats]);
+  const taskMap = useMemo(() => toPingTaskMap(tasks), [tasks]);
+  const statsMap = useMemo(() => toPingMetricStatMap(stats), [stats]);
 
   const built = useMemo(() => {
     const rows = new Map<string, MetricChartRow>();
@@ -158,12 +164,9 @@ const MiniPingChart = ({
         dataKey,
         stableKey,
         taskId,
-        name: remainingTags ? `${taskLabel} ${remainingTags}` : taskLabel,
+        label: remainingTags ? `${taskLabel} ${remainingTags}` : taskLabel,
         color: metricSeriesColor(index),
-        pointCount: (series.points ?? []).reduce(
-          (count, point) => count + (typeof point.value === "number" ? 1 : 0),
-          0,
-        ),
+        pointCount: countMetricPoints(series),
         tags,
       });
 
@@ -188,11 +191,7 @@ const MiniPingChart = ({
       }));
 
     return {
-      rows: Array.from(rows.values()).sort(
-        (left, right) =>
-          new Date(String(left.time)).getTime() -
-          new Date(String(right.time)).getTime(),
-      ),
+      rows: sortMetricChartRows(Array.from(rows.values())),
       series: orderedSeries,
     };
   }, [metricSeries, t, taskMap]);
@@ -206,13 +205,7 @@ const MiniPingChart = ({
     [built.rows, built.series, ewmaEnabled],
   );
 
-  const chartConfig = useMemo(() => {
-    const config: ChartConfig = {};
-    for (const item of built.series) {
-      config[item.dataKey] = { label: item.name, color: item.color };
-    }
-    return config;
-  }, [built.series]);
+  const chartConfig = useMemo(() => toMetricChartConfig(built.series), [built.series]);
   const chartTicks = useMemo(
     () => metricChartBoundaryTicks(chartData),
     [chartData],
@@ -231,133 +224,147 @@ const MiniPingChart = ({
     setHiddenLines((current) => ({ ...current, [dataKey]: !current[dataKey] }));
   };
 
+  const view = loading
+    ? "loading"
+    : error
+      ? "error"
+      : chartData.length === 0
+        ? "empty"
+        : "chart";
+  const showChrome = view === "loading" || view === "chart";
+  const layerMotion = {
+    initial: { opacity: 0 },
+    animate: { opacity: 1, transition: SKELETON_MOTION.reveal.transition.opacity },
+    exit: { opacity: 0, transition: MOTION_TRANSITION.fadeOut },
+  };
+
   return (
     <Card
+      size="2"
       style={{ width, height }}
-      className="km-mini-ping-chart flex min-h-0 flex-col gap-2 overflow-hidden"
+      className="km-mini-ping-chart flex min-h-0 flex-col overflow-hidden"
     >
-      {loading && (
-        <div className="flex min-h-0 flex-1 items-center justify-center">
-          <Loading />
-        </div>
-      )}
-      {!loading && error && (
-        <div className="flex min-h-0 flex-1 items-center justify-center text-red-500">
-          {error}
-        </div>
-      )}
-      {!loading && !error && chartData.length === 0 && (
-        <div className="flex min-h-0 flex-1 items-center justify-center text-muted-foreground">
-          {t("common.none")}
-        </div>
-      )}
-      {!loading && !error && chartData.length > 0 && (
-        <>
-          <div className="flex max-h-16 shrink-0 flex-wrap items-center gap-1 overflow-y-auto">
-            {built.series.map((item) => {
-              const hidden = hiddenLines[item.dataKey] === true;
+      {/*
+        骨架就是图表本身的布局：图例条、图表区、EWMA 行都常驻，加载中由 Skeletonize 把文字画成条、
+        图表区显示折线轮廓（SkeletonChartShape），数据到达时在同一批 DOM 上交叉淡化。
+        卡片高度固定，加载/错误/空/图表四种状态都在同一块图表区里叠放切换，卡片不变高变矮。
+      */}
+      <Skeletonize
+        loading={loading}
+        label={typeof height === "number" && height >= 260}
+        // Radix Card 自身是 display:block（覆盖了 flex 类），子元素靠显式 100% 高度撑满卡片
+        className="flex min-h-0 flex-col gap-2"
+        style={{ height: "100%" }}
+      >
+        {showChrome && (
+          <div className="flex max-h-16 shrink-0 flex-wrap items-center gap-2 overflow-y-auto">
+            {view === "loading"
+              ? [10, 7].map((chars, index) => (
+                  <div
+                    key={`placeholder-${index}`}
+                    className="inline-flex max-w-full items-center overflow-hidden rounded-md bg-accent-3 text-xs"
+                  >
+                    <span className="inline-flex min-w-0 items-center gap-1 px-2 py-1">
+                      <span className="size-2 shrink-0 rounded-[2px] bg-[var(--gray-a5)]" />
+                      <span>{skeletonText(chars)}</span>
+                    </span>
+                  </div>
+                ))
+              : built.series.map((item) => {
               const stat = item.taskId
                 ? statsMap.get(pingMetricStatKey(uuid, item.taskId))
                 : undefined;
               return (
-                <div
+                <MetricLegendItem
                   key={item.stableKey}
-                  className={cn(
-                    "inline-flex max-w-full items-center overflow-hidden rounded-md text-xs",
-                    hidden
-                      ? "bg-accent-2 text-muted-foreground"
-                      : "bg-accent-3 text-accent-12",
-                  )}
-                >
-                  <button
-                    type="button"
-                    onClick={() => toggleLine(item.dataKey)}
-                    className="inline-flex min-w-0 items-center gap-1 px-2 py-1"
-                  >
-                    <span
-                      className="size-2 shrink-0 rounded-[2px]"
-                      style={{
-                        backgroundColor: hidden ? "var(--gray-8)" : item.color,
-                      }}
-                    />
-                    <span className={cn("truncate", hidden && "line-through")}>
-                      {item.name}
-                    </span>
-                  </button>
-                  {stat && (
-                    <Tips
-                      mode="auto"
-                      side="top"
-                      className="shrink-0"
-                      ariaLabel={`${item.name} ${t("common.details")}`}
-                    >
-                      <PingMetricStatContent stat={stat} t={t} />
-                    </Tips>
-                  )}
-                </div>
+                  label={item.label}
+                  color={item.color}
+                  hidden={hiddenLines[item.dataKey] === true}
+                  onToggle={() => toggleLine(item.dataKey)}
+                  stat={stat}
+                />
               );
             })}
           </div>
+        )}
 
-          <ChartContainer
-            config={chartConfig}
-            className="km-mini-ping-chart-canvas min-h-0 h-10/12 w-full flex-1"
-          >
-            <LineChart
-              data={chartData}
-              accessibilityLayer
-              margin={{ top: 16, right: 8, bottom: 4, left: 8 }}
-            >
-              <CartesianGrid vertical={false} />
-              <XAxis
-                dataKey="time"
-                tickLine={false}
-                axisLine={false}
-                ticks={chartTicks}
-                tick={<MetricBoundaryAxisTick boundaries={chartTicks} />}
-                interval={0}
-                height={32}
-              />
-              <YAxis
-                tickLine={false}
-                axisLine={false}
-                allowDecimals={false}
-                orientation="left"
-                type="number"
-                width={1}
-                mirror
-                tick={{ dx: 8 }}
-                tickFormatter={(value) => `${value}\u00a0ms`}
-              />
-              <ChartTooltip
-                cursor={false}
-                formatter={(value) =>
-                  typeof value === "number" ? `${Math.round(value)} ms` : value
-                }
-                content={
-                  <ChartTooltipContent
-                    labelFormatter={labelFormatter}
-                    indicator="dot"
-                  />
-                }
-              />
-              {built.series.map((item) => (
-                <Line
-                  key={item.dataKey}
-                  dataKey={item.dataKey}
-                  name={item.dataKey}
-                  stroke={item.color}
-                  dot={item.pointCount <= 30}
-                  isAnimationActive={false}
-                  strokeWidth={2}
-                  connectNulls={false}
-                  type="linear"
-                  hide={hiddenLines[item.dataKey] === true}
-                />
-              ))}
-            </LineChart>
-          </ChartContainer>
+        <div className="km-mini-ping-chart-area relative min-h-0 flex-1">
+          <SkeletonChartShape className="px-2 pb-8 pt-4" />
+          <AnimatePresence initial={false}>
+            {view === "error" && (
+              <motion.div
+                key="ping-error"
+                {...layerMotion}
+                className="absolute inset-0 flex items-center justify-center text-red-500"
+              >
+                {error}
+              </motion.div>
+            )}
+            {view === "empty" && (
+              <motion.div
+                key="ping-empty"
+                {...layerMotion}
+                className="absolute inset-0 flex items-center justify-center text-muted-foreground"
+              >
+                {t("common.none")}
+              </motion.div>
+            )}
+            {view === "chart" && (
+              <motion.div key="ping-chart" {...layerMotion} className="absolute inset-0">
+                <ChartContainer
+                  config={chartConfig}
+                  className="km-mini-ping-chart-canvas h-full w-full"
+                >
+                  <LineChart
+                    data={chartData}
+                    accessibilityLayer
+                    margin={METRIC_CHART_MARGIN}
+                  >
+                    <CartesianGrid vertical={false} />
+                    <XAxis
+                      {...METRIC_X_AXIS_PROPS}
+                      ticks={chartTicks}
+                      tick={<MetricBoundaryAxisTick boundaries={chartTicks} />}
+                    />
+                    <YAxis
+                      {...METRIC_Y_AXIS_PROPS}
+                      allowDecimals={false}
+                      orientation="left"
+                      tick={{ dx: 8 }}
+                      tickFormatter={(value) => `${value}\u00a0ms`}
+                    />
+                    <ChartTooltip
+                      cursor={false}
+                      formatter={(value) =>
+                        typeof value === "number" ? `${Math.round(value)} ms` : value
+                      }
+                      content={
+                        <ChartTooltipContent
+                          labelFormatter={labelFormatter}
+                          indicator="dot"
+                        />
+                      }
+                    />
+                    {built.series.map((item) => (
+                      <Line
+                        key={item.dataKey}
+                        dataKey={item.dataKey}
+                        name={item.dataKey}
+                        stroke={item.color}
+                        dot={item.pointCount <= 30}
+                        isAnimationActive={false}
+                        {...METRIC_LINE_PROPS}
+                        hide={hiddenLines[item.dataKey] === true}
+                      />
+                    ))}
+                  </LineChart>
+                </ChartContainer>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
 
+        {showChrome && (
           <div className="flex shrink-0 items-center gap-2">
             <Switch
               size="1"
@@ -372,8 +379,8 @@ const MiniPingChart = ({
               />
             </Tips>
           </div>
-        </>
-      )}
+        )}
+      </Skeletonize>
     </Card>
   );
 };

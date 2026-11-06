@@ -8,46 +8,29 @@ import {
   Text,
   TextField,
 } from "@radix-ui/themes";
-import {
-  AlertTriangle,
-  CheckCircle2,
-  Database,
-  LoaderCircle,
-  Save,
-} from "lucide-react";
+import { CheckCircle2, Database, LoaderCircle, Save } from "lucide-react";
 import { useTranslation } from "react-i18next";
+import { AnimatePresence, motion } from "motion/react";
+import { AutoHeight, PageMotion } from "@/components/motion";
+import { MOTION_SPRING } from "@/lib/motion";
+import { Skeletonize, skeletonText } from "@/components/ui/skeleton";
+import { ApiError } from "@/lib/http";
 
-import GuideHeader from "@/components/GuideHeader";
-import Loading from "@/components/loading";
-import RestrictedLoginDialog, {
-  type RestrictedAuthStatus,
-} from "@/components/RestrictedLoginDialog";
-import { isSQLiteDSN } from "@/utils/metric";
+import RestrictedLoginDialog from "@/components/RestrictedLoginDialog";
+import {
+  createGuideRequest,
+  loadAuth,
+  type LoginMethods,
+  type Me,
+} from "./database/api";
+import GuidePageHeader from "./database/GuidePageHeader";
+import PageErrorCallout from "./database/PageErrorCallout";
+import SQLiteWarning from "./database/SQLiteWarning";
 
 const API_BASE = "/api/admin/database-recovery";
 const I18N_PREFIX = "database_recovery";
-
-type APIResponse<T> = {
-  status: "success" | "error";
-  message?: string;
-  data?: T;
-};
-
-class RecoveryRequestError extends Error {
-  readonly status: number;
-
-  constructor(status: number, message: string) {
-    super(message);
-    this.status = status;
-  }
-}
-
-type LoginMethods = Pick<
-  RestrictedAuthStatus,
-  "oauth_enabled" | "oauth_provider" | "password_login_enabled"
->;
-
-type Me = Pick<RestrictedAuthStatus, "logged_in" | "username">;
+/** 状态未到时用真实表单渲染骨架 */
+const PLACEHOLDER_STATUS: RecoveryStatus = { state: "waiting", failures: 0, max_failures: 3 };
 
 type AuthStatus = LoginMethods & Me;
 
@@ -59,35 +42,7 @@ type RecoveryStatus = {
   dsn?: string;
 };
 
-async function request<T>(path: string, init?: RequestInit): Promise<T> {
-  const response = await fetch(`${API_BASE}${path}`, {
-    ...init,
-    headers: init?.body
-      ? { "Content-Type": "application/json", ...init.headers }
-      : init?.headers,
-    cache: "no-store",
-  });
-  const payload = (await response.json()) as APIResponse<T>;
-  if (
-    !response.ok ||
-    payload.status !== "success" ||
-    payload.data === undefined
-  ) {
-    throw new RecoveryRequestError(
-      response.status,
-      payload.message || `HTTP ${response.status}`,
-    );
-  }
-  return payload.data;
-}
-
-async function getMe(): Promise<Me> {
-  const response = await fetch("/api/me", { cache: "no-store" });
-  if (!response.ok) {
-    throw new RecoveryRequestError(response.status, `HTTP ${response.status}`);
-  }
-  return (await response.json()) as Me;
-}
+const request = createGuideRequest(API_BASE);
 
 async function normalRouterAvailable(): Promise<boolean> {
   const probe = new URL(window.location.href);
@@ -117,12 +72,9 @@ export default function DatabaseRecovery() {
         window.location.replace("/");
         return;
       }
-      const [methods, me] = await Promise.all([
-        request<LoginMethods>("/auth"),
-        getMe(),
-      ]);
-      setAuth({ ...methods, ...me });
-      if (!me.logged_in) {
+      const nextAuth = await loadAuth(request);
+      setAuth(nextAuth);
+      if (!nextAuth.logged_in) {
         setStatus(null);
         return;
       }
@@ -142,6 +94,9 @@ export default function DatabaseRecovery() {
   const completed = status?.state === "completed";
   const canEdit =
     authenticated && status?.state === "waiting" && !busy;
+  // 身份或状态还没到（且没有报错）：表单按真实布局渲染成骨架，到达后同一批 DOM 淡入
+  const formLoading = !pageError && (auth === null || (authenticated && !status));
+  const formStatus = status ?? PLACEHOLDER_STATUS;
 
   useEffect(() => {
     void load();
@@ -158,7 +113,7 @@ export default function DatabaseRecovery() {
     try {
       await request<Record<string, never>>("", {
         method: "POST",
-        body: JSON.stringify({ dsn: dsn.trim() }),
+        json: { dsn: dsn.trim() },
       });
       setStatus((current) => ({
         state: "completed",
@@ -167,7 +122,7 @@ export default function DatabaseRecovery() {
         dsn: dsn.trim(),
       }));
     } catch (error) {
-      if (error instanceof RecoveryRequestError && error.status === 401) {
+      if (error instanceof ApiError && error.status === 401) {
         setAuth((current) =>
           current ? { ...current, logged_in: false } : current,
         );
@@ -199,15 +154,8 @@ export default function DatabaseRecovery() {
   }, [completed]);
 
   return (
-    <main className="km-page-database-recovery min-h-screen bg-[var(--color-background)] text-[var(--gray-12)]">
-      <header
-        className="km-database-recovery-header border-b bg-[var(--color-panel-solid)]"
-        style={{ borderColor: "var(--gray-a5)" }}
-      >
-        <Container size="3" px={{ initial: "4", sm: "6" }} py="3">
-          <GuideHeader />
-        </Container>
-      </header>
+    <PageMotion className="km-page-database-recovery min-h-screen bg-[var(--color-background)] text-[var(--gray-12)]">
+      <GuidePageHeader className="km-database-recovery-header" />
 
       <Container
         size="2"
@@ -224,16 +172,21 @@ export default function DatabaseRecovery() {
             </Text>
           </div>
 
-          {pageError && (
-            <Callout.Root color="red" variant="surface">
-              <Callout.Icon>
-                <AlertTriangle size={18} />
-              </Callout.Icon>
-              <Callout.Text>{pageError}</Callout.Text>
-            </Callout.Root>
-          )}
+          {/* 错误提示连同 section 间距一起展开/收起，下面的表单顺势移动 */}
+          <PageErrorCallout error={pageError} motionKey="recovery-page-error" />
 
+          {/* 表单 -> 完成卡：先淡出再弹入，高度用弹簧跟过去 */}
+          <AutoHeight threshold={4}>
+          <AnimatePresence initial={false} mode="wait">
           {authenticated && completed ? (
+            <motion.div
+              key="recovery-completed"
+              // feedback 层：恢复完成时绿卡弹一下
+              initial={{ opacity: 0, scale: 0.97, y: 10 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              transition={MOTION_SPRING.pop}
+            >
             <Callout.Root color="green" variant="surface" size="3">
               <Callout.Icon>
                 <CheckCircle2 size={22} />
@@ -247,7 +200,18 @@ export default function DatabaseRecovery() {
                 </Text>
               </Callout.Text>
             </Callout.Root>
-          ) : authenticated && status ? (
+            </motion.div>
+          ) : (authenticated && status) || formLoading ? (
+            <motion.div
+              key="recovery-form"
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -6 }}
+              transition={MOTION_SPRING.soft}
+            >
+            <Skeletonize loading={formLoading}>
+            {/* 内容（提示、字段）之间 block；底部按钮区与内容之间 section */}
+            <Flex direction="column" gap="5">
             <Flex direction="column" gap="4">
               <Callout.Root color="amber" variant="surface">
                 <Callout.Icon>
@@ -255,10 +219,12 @@ export default function DatabaseRecovery() {
                 </Callout.Icon>
                 <Callout.Text>
                   <Text as="div">
-                    {t(`${I18N_PREFIX}.failure_detail`, {
-                      count: status?.failures ?? 0,
-                      max: status?.max_failures ?? 3,
-                    })}
+                    {formLoading
+                      ? skeletonText(22)
+                      : t(`${I18N_PREFIX}.failure_detail`, {
+                          count: formStatus.failures,
+                          max: formStatus.max_failures,
+                        })}
                   </Text>
                   {status?.error && (
                     <Text as="div" size="1" mt="1" className="break-all">
@@ -290,11 +256,8 @@ export default function DatabaseRecovery() {
                 </Text>
               </label>
 
-              {isSQLiteDSN(dsn) && (
-                <Callout.Root color="amber" variant="surface">
-                  <Callout.Text>{t("install.sqlite_warning")}</Callout.Text>
-                </Callout.Root>
-              )}
+              <SQLiteWarning dsn={dsn} motionKey="recovery-sqlite-warning" />
+            </Flex>
 
               <Flex justify="end">
                 <Button
@@ -302,22 +265,22 @@ export default function DatabaseRecovery() {
                   disabled={!canEdit || !dsn.trim()}
                   onClick={() => void save()}
                 >
-                  {busy || status.state === "connecting" ? (
+                  {busy || formStatus.state === "connecting" ? (
                     <LoaderCircle size={17} className="animate-spin" />
                   ) : (
                     <Save size={17} />
                   )}
-                  {busy || status.state === "connecting"
+                  {busy || formStatus.state === "connecting"
                     ? t(`${I18N_PREFIX}.saving`)
                     : t(`${I18N_PREFIX}.save`)}
                 </Button>
               </Flex>
             </Flex>
-          ) : authenticated ? (
-            <Callout.Root color="gray" variant="surface">
-              <Loading compact />
-            </Callout.Root>
+            </Skeletonize>
+            </motion.div>
           ) : null}
+          </AnimatePresence>
+          </AutoHeight>
         </Flex>
       </Container>
 
@@ -326,6 +289,6 @@ export default function DatabaseRecovery() {
         requestFailedKey={`${I18N_PREFIX}.request_failed`}
         onAuthenticated={load}
       />
-    </main>
+    </PageMotion>
   );
 }

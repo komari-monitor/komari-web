@@ -1,4 +1,5 @@
 import React from "react";
+import { ApiError, api } from "@/lib/http";
 
 // 账户数据类型
 type Account = {
@@ -32,11 +33,9 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
         setLoading(true);
         setError(null);
         try {
-        const response = await fetch("/api/me");
-        if (!response.ok) {
-            throw new Error("Failed to fetch account data");
-        }
-        const data: Account = await response.json();
+        const data = await api
+            .get<Account>("/api/me")
+            .catch((e) => { throw e instanceof ApiError ? new Error("Failed to fetch account data") : e; });
         setAccount(data);
         } catch (err) {
         setError(err as Error);

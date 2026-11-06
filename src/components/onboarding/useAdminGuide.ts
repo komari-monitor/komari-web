@@ -1,3 +1,4 @@
+import { api } from "@/lib/http";
 import { useEffect, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 import { useAccount } from "@/contexts/AccountContext";
@@ -42,9 +43,9 @@ export function useAdminGuide(ready: boolean) {
   useEffect(() => {
     if (!ready || !accountId) return;
     const controller = new AbortController();
-    fetch("/api/admin/client/list", { signal: controller.signal })
-      .then((response) => response.ok ? response.json() : null)
-      .then((data: unknown) => {
+    api
+      .get<unknown>("/api/admin/client/list", { signal: controller.signal, expectSuccess: false })
+      .then((data) => {
         if (!controller.signal.aborted && Array.isArray(data)) setNodeCount(data.length);
       })
       .catch(() => {});

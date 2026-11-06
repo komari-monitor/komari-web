@@ -9,8 +9,124 @@ import {
 } from "@radix-ui/themes";
 import React from "react";
 import { useTranslation } from "react-i18next";
-import { ChevronDownIcon } from "lucide-react";
-import { AnimatePresence, motion } from "framer-motion"; // 引入 Framer Motion
+import { ChevronDownIcon, LoaderCircle } from "lucide-react";
+import { AnimatePresence, motion, type Variants } from "motion/react";
+import {
+  CONTROL_MOTION,
+  MOTION_SPRING,
+  MOTION_TRANSITION,
+} from "@/lib/motion";
+import { AutoHeight, Collapse, Pressable } from "@/components/motion";
+import { SPACE } from "@/lib/spacing";
+import { Skeletonize } from "@/components/ui/skeleton";
+
+/**
+ * 设置卡的逐卡骨架：页面用 <SettingCardsLoading loading> 包住设置卡，
+ * 加载中每张 SettingCard 各自变成一块与自己同尺寸的色块（不显示转圈），
+ * 卡片之外的标题、提示、按钮照常渲染；数据到达后每张卡原地淡入。
+ * 不在 Provider 里的设置卡不受影响（DOM 不变）。
+ */
+const SettingCardLoadingContext = React.createContext<boolean | null>(null);
+
+export function SettingCardsLoading({
+  loading,
+  children,
+}: {
+  loading: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <SettingCardLoadingContext.Provider value={loading}>
+      {children}
+    </SettingCardLoadingContext.Provider>
+  );
+}
+
+/**
+ * control 性格：Radix 按钮直接提升为 motion 组件（不额外包一层 DOM）。
+ * 包一层 div 会在按钮 hidden 时留下空节点，占掉 Flex 的一份 gap；
+ * 放在 DropdownMenu.Trigger 里时还会让 Slot 把触发器属性合并到包裹层而不是按钮上。
+ */
+const MotionButton = motion.create(Button);
+
+/**
+ * control 性格：保存中在文案前「长出」一个加载图标。
+ * 文案本身始终挂载、不重播；图标槽宽度走弹簧，保存很快结束时会顺势收回（可被打断），
+ * 不再用 AnimatePresence mode="wait" 先把整段文字淡出再淡入（按钮会空白一瞬并跳宽）。
+ */
+function SavingLabel({
+  saving,
+  children,
+}: {
+  saving: boolean;
+  children: React.ReactNode;
+}) {
+  return (
+    <span className="inline-flex items-center">
+      <motion.span
+        aria-hidden
+        className="inline-flex shrink-0 items-center overflow-hidden"
+        initial={false}
+        animate={saving ? { width: 22, opacity: 1 } : { width: 0, opacity: 0 }}
+        transition={{ width: CONTROL_MOTION.transition, opacity: MOTION_TRANSITION.fade }}
+      >
+        <LoaderCircle size={14} className="shrink-0 animate-spin" />
+      </motion.span>
+      {children}
+    </span>
+  );
+}
+
+/**
+ * 条件出现的区块（错误提示、进度、来源徽标）：高度弹簧展开/收起，下方内容被平滑推开。
+ * 收起时同时把它占用的那份 gap（负 margin）收回，末尾不会再跳一截。
+ * gap 默认是设置页卡片栈的 block 档（SPACE.block），放在别的栈里时传入那个栈的间距。
+ * 退出期间 AnimatePresence 保留旧内容，文字不会先消失再收起。
+ */
+const gapCollapseVariants = (gap: number): Variants => ({
+  initial: { height: 0, opacity: 0, marginTop: -gap, overflow: "hidden" },
+  animate: {
+    height: "auto",
+    opacity: 1,
+    marginTop: 0,
+    overflow: "hidden",
+    transition: {
+      height: MOTION_SPRING.soft,
+      marginTop: MOTION_SPRING.soft,
+      opacity: MOTION_TRANSITION.fadeIn,
+    },
+    transitionEnd: { overflow: "visible" },
+  },
+  exit: {
+    height: 0,
+    opacity: 0,
+    marginTop: -gap,
+    overflow: "hidden",
+    transition: {
+      height: MOTION_SPRING.soft,
+      marginTop: MOTION_SPRING.soft,
+      opacity: MOTION_TRANSITION.fadeOut,
+    },
+  },
+});
+
+export const GapCollapse = ({
+  show,
+  children,
+  gap = SPACE.block,
+}: {
+  show: boolean;
+  children: React.ReactNode;
+  gap?: number;
+}) => (
+  <AnimatePresence initial={false}>
+    {show ? (
+      <motion.div key="content" variants={gapCollapseVariants(gap)} initial="initial" animate="animate" exit="exit">
+        {children}
+      </motion.div>
+    ) : null}
+  </AnimatePresence>
+);
 
 interface SettingCardProps {
   title?: string | React.ReactNode;
@@ -38,8 +154,15 @@ export function SettingCard({
   const otherChildren = React.Children.toArray(children).filter(
     (child) => !(React.isValidElement(child) && child.type === Action)
   );
+  const skeleton = React.useContext(SettingCardLoadingContext);
 
-  return (
+  const card = (
+    /*
+      设置卡本体不自带进场动画：
+      页面切换已有 surface 淡入，需要先后次序的分组由 StaggeredList/StaggeredItem 负责。
+      卡片再自带一次 y+scale 进场会与 StaggeredItem 叠加（位移翻倍、文字被 scale 发虚），
+      且所有未包 StaggeredList 的卡会同时「弹」一下，抢走 Staging。
+    */
     <Flex
       direction={direction}
       justify="between"
@@ -49,7 +172,7 @@ export function SettingCard({
       className={
         bordless
           ? "km-setting-card border-0"
-          : "km-setting-card border-1 rounded-md py-2 px-4 bg-transparent  min-h-8 " + className
+          : "km-setting-card border-1 rounded-md p-km-block bg-transparent min-h-8 " + className
       }
     >
       <Flex
@@ -79,6 +202,15 @@ export function SettingCard({
       </Flex>
       {otherChildren}
     </Flex>
+  );
+  if (skeleton === null) return card;
+  // 骨架包裹层始终存在（loading 翻转不换 DOM）；卡内再嵌套的设置卡不重复画色块
+  return (
+    <SettingCardLoadingContext.Provider value={null}>
+      <Skeletonize loading={skeleton} className="km-setting-card-skeleton">
+        {card}
+      </Skeletonize>
+    </SettingCardLoadingContext.Provider>
   );
 }
 
@@ -137,16 +269,46 @@ export function SettingCardSwitch({
       <SettingCard.Action>
         <Flex direction="row" gap="2" align="center">
           <label>{label}</label>
-          <Switch
-            ref={switchRef}
-            checked={checked}
-            onCheckedChange={handleChange}
-            disabled={disabled}
-          />
+          {/*
+            control 性格：开关是「纯反馈」控件（按下才有反应，值变化本身由 Radix 滑块位移负责），
+            这里只给 On 态的 thumb 推一下的触感 —— 按下时体积守恒地压扁一点（Squash & Stretch）。
+          */}
+          <Pressable tapScale={0.9} hoverScale={1}>
+            <Switch
+              ref={switchRef}
+              checked={checked}
+              onCheckedChange={handleChange}
+              disabled={disabled}
+            />
+          </Pressable>
         </Flex>
       </SettingCard.Action>
     </SettingCard>
   );
+}
+
+/**
+ * 设置卡里的按钮：点击后（autoDisabled 时）禁用，onClick 返回 Promise 则在其结束后恢复。
+ * SettingCardButton 与 SettingCardIconButton 共用。
+ */
+function useAutoDisabledClick(
+  onClick: ((buttonElement: HTMLButtonElement) => void) | undefined,
+  autoDisabled: boolean,
+) {
+  const [disabled, setDisabled] = React.useState(false);
+  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
+    if (autoDisabled) setDisabled(true);
+    const result: any = onClick ? onClick(event.currentTarget) : undefined;
+    if (autoDisabled) {
+      const promise: Promise<any> = result;
+      if (promise && typeof promise.then === "function") {
+        promise.finally(() => setDisabled(false)).catch(() => {});
+      } else {
+        setDisabled(false);
+      }
+    }
+  };
+  return { disabled, handleClick };
 }
 
 export function SettingCardButton({
@@ -163,29 +325,24 @@ export function SettingCardButton({
   onClick?: (buttonElement: HTMLButtonElement) => void;
   autoDisabled?: boolean;
 }) {
-  const [disabled, setDisabled] = React.useState(false);
   const resolvedLabel = label;
-  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    if (autoDisabled) setDisabled(true);
-    const result: any = onClick ? onClick(event.currentTarget) : undefined;
-    if (autoDisabled) {
-      const promise: Promise<any> = result;
-      if (promise && typeof promise.then === "function") {
-        promise.finally(() => setDisabled(false)).catch(() => {});
-      } else {
-        setDisabled(false);
-      }
-    }
-  };
+  const { disabled, handleClick } = useAutoDisabledClick(onClick, autoDisabled);
   return (
     <SettingCard {...props} direction="column">
       <SettingCard.Action>
         <Flex>
           <Flex direction="row" gap="2" align="center">
             <label>{resolvedLabel}</label>
-            <Button onClick={handleClick} variant={variant} disabled={disabled}>
-              {children}
-            </Button>
+            {/* control 性格：按压回弹；执行中在文案前长出 loading 图标（文案不重播） */}
+            <MotionButton
+              onClick={handleClick}
+              variant={variant}
+              disabled={disabled}
+              whileTap={disabled ? undefined : CONTROL_MOTION.tap}
+              transition={CONTROL_MOTION.transition}
+            >
+              <SavingLabel saving={disabled}>{children}</SavingLabel>
+            </MotionButton>
           </Flex>
         </Flex>
       </SettingCard.Action>
@@ -207,34 +364,25 @@ export function SettingCardIconButton({
   onClick?: (buttonElement: HTMLButtonElement) => void;
   autoDisabled?: boolean;
 }) {
-  const [disabled, setDisabled] = React.useState(false);
   const resolvedLabel = label;
-  const handleClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    if (autoDisabled) setDisabled(true);
-    const result: any = onClick ? onClick(event.currentTarget) : undefined;
-    if (autoDisabled) {
-      const promise: Promise<any> = result;
-      if (promise && typeof promise.then === "function") {
-        promise.finally(() => setDisabled(false)).catch(() => {});
-      } else {
-        setDisabled(false);
-      }
-    }
-  };
+  const { disabled, handleClick } = useAutoDisabledClick(onClick, autoDisabled);
   return (
     <SettingCard {...props} direction="column">
       <SettingCard.Action>
         <Flex>
           <Flex direction="row" gap="2" align="center">
             <label>{resolvedLabel}</label>
-            <IconButton
-              onClick={handleClick}
-              variant={variant}
-              disabled={disabled}
-              aria-label={resolvedLabel || undefined}
-            >
-              {children}
-            </IconButton>
+            <Pressable>
+              <IconButton
+                onClick={handleClick}
+                variant={variant}
+                disabled={disabled}
+                aria-label={resolvedLabel || undefined}
+              >
+                {/* 只保留外层 Pressable 一层按压反馈，内外两层同时缩放会叠成过冲 */}
+                {children}
+              </IconButton>
+            </Pressable>
           </Flex>
         </Flex>
       </SettingCard.Action>
@@ -410,12 +558,12 @@ export function SettingCardShortTextInput({
       description={descriptionPlacement === "footer" ? undefined : description}
       bordless={bordless}
     >
-      <Flex direction="column" className="w-full mt-1" gap="2" align="start">
+      <Flex direction="column" className="w-full mt-km-group" gap="2" align="start">
         <TextField.Root
           {...restProps}
           className={className}
+          // 始终受控（currentValue 已包含 defaultValue 的同步逻辑）；同时传 defaultValue 会触发 React 警告
           value={currentValue}
-          defaultValue={value === undefined ? normalizedDefaultValue : undefined}
           placeholder={placeholder}
           disabled={disabled || savingState}
           type={type}
@@ -441,22 +589,24 @@ export function SettingCardShortTextInput({
               className="w-full"
               align="center"
               justify={showFooterDescription ? "between" : "end"}
-              gap="3"
+              gap="4"
             >
               {showFooterDescription ? (
                 <label className="min-w-0 flex-1 text-sm text-muted-foreground">
                   {description}
                 </label>
               ) : null}
-              <Button
+              <MotionButton
                 ref={buttonRef}
                 onClick={handleSave}
                 variant="solid"
                 hidden={!showSaveButton}
                 disabled={savingState}
+                whileTap={savingState ? undefined : CONTROL_MOTION.tap}
+                transition={CONTROL_MOTION.transition}
               >
-                {resolvedLabel}
-              </Button>
+                <SavingLabel saving={savingState}>{resolvedLabel}</SavingLabel>
+              </MotionButton>
             </Flex>
           ) : showHiddenFooterSaveButton ? (
             <Button
@@ -470,15 +620,17 @@ export function SettingCardShortTextInput({
             </Button>
           ) : null
         ) : (
-          <Button
+          <MotionButton
             ref={buttonRef}
             onClick={handleSave}
             variant="solid"
             hidden={!showSaveButton}
             disabled={savingState}
+            whileTap={savingState ? undefined : CONTROL_MOTION.tap}
+            transition={CONTROL_MOTION.transition}
           >
-            {resolvedLabel}
-          </Button>
+            <SavingLabel saving={savingState}>{resolvedLabel}</SavingLabel>
+          </MotionButton>
         )}
       </Flex>
     </SettingCard>
@@ -560,10 +712,9 @@ export function SettingCardLongTextInput({
       description={descriptionPlacement === "footer" ? undefined : description}
       bordless={bordless}
     >
-      <Flex direction="column" className="w-full mt-1" gap="2" align="start">
+      <Flex direction="column" className="w-full mt-km-group" gap="2" align="start">
         <TextArea
           className="w-full"
-          defaultValue={defaultValue}
           resize="vertical"
           value={value}
           onChange={handleTextAreaChange}
@@ -576,7 +727,7 @@ export function SettingCardLongTextInput({
               className="w-full"
               align="center"
               justify={showFooterDescription ? "between" : "end"}
-              gap="3"
+              gap="4"
             >
               {showFooterDescription ? (
                 <label className="min-w-0 flex-1 text-sm text-muted-foreground">
@@ -584,26 +735,30 @@ export function SettingCardLongTextInput({
                 </label>
               ) : null}
               {showSaveButton ? (
-                <Button
+                <MotionButton
                   ref={buttonRef}
                   onClick={handleSave}
                   variant="solid"
                   disabled={savingState}
+                  whileTap={savingState ? undefined : CONTROL_MOTION.tap}
+                  transition={CONTROL_MOTION.transition}
                 >
-                  {resolvedLabel}
-                </Button>
+                  <SavingLabel saving={savingState}>{resolvedLabel}</SavingLabel>
+                </MotionButton>
               ) : null}
             </Flex>
           ) : null
         ) : showSaveButton ? (
-          <Button
+          <MotionButton
             ref={buttonRef}
             onClick={handleSave}
             variant="solid"
             disabled={savingState}
+            whileTap={savingState ? undefined : CONTROL_MOTION.tap}
+            transition={CONTROL_MOTION.transition}
           >
-            {resolvedLabel}
-          </Button>
+            <SavingLabel saving={savingState}>{resolvedLabel}</SavingLabel>
+          </MotionButton>
         ) : null}
       </Flex>
     </SettingCard>
@@ -642,11 +797,22 @@ export function SettingCardSelect({
   const buttonRef = React.useRef<HTMLButtonElement>(null);
   const resolvedLabel = label || t("common.select");
 
+  // 非受控时也跟随 defaultValue：页面先用占位数据渲染骨架，数据到达后要落到真实值上
+  // （用户已手动选过的值不覆盖，与 SettingCardShortTextInput 的同步规则一致）
+  const previousDefaultRef = React.useRef(defaultValue);
   React.useEffect(() => {
     if (value !== undefined) {
       setSelectedValue(value);
+      return;
     }
-  }, [value]);
+    if (defaultValue !== previousDefaultRef.current) {
+      const previousDefault = previousDefaultRef.current;
+      previousDefaultRef.current = defaultValue;
+      setSelectedValue((current) =>
+        current === previousDefault ? defaultValue : current,
+      );
+    }
+  }, [value, defaultValue]);
 
   const handleSave = (value: string) => {
     if (isSaving === undefined && autoDisabled) setDisabled(true);
@@ -697,11 +863,33 @@ export function SettingCardSelect({
         <Flex>
           <Flex direction="row" gap="2" align="center">
             <DropdownMenu.Root>
+              {/*
+                Trigger 的直接子元素必须是按钮本身：Slot 会把 aria-expanded / onPointerDown / ref
+                合并到这个子元素上，若中间多包一层 span，键盘焦点在按钮上却打不开菜单。
+                control 性格：按下回弹；选中项文案换成新值时上下错位交接（离散状态，不需要可逆）。
+                保存中的禁用态由 Radix 自身样式表达，不再叠加额外的缩放/压暗。
+              */}
               <DropdownMenu.Trigger disabled={savingState}>
-                <Button variant="soft" ref={buttonRef}>
-                  {getDisplayText()}
+                <MotionButton
+                  variant="soft"
+                  ref={buttonRef}
+                  whileTap={savingState ? undefined : CONTROL_MOTION.tap}
+                  transition={CONTROL_MOTION.transition}
+                >
+                  <AnimatePresence mode="wait" initial={false}>
+                    <motion.span
+                      key={getDisplayText()}
+                      className="inline-flex items-center gap-1"
+                      initial={{ opacity: 0, y: 4 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -4 }}
+                      transition={CONTROL_MOTION.transition}
+                    >
+                      {getDisplayText()}
+                    </motion.span>
+                  </AnimatePresence>
                   <DropdownMenu.TriggerIcon />
-                </Button>
+                </MotionButton>
               </DropdownMenu.Trigger>
               <DropdownMenu.Content>
                 {options.map((option) => (
@@ -730,7 +918,8 @@ export function SettingCardLabel({
   children: React.ReactNode | null;
 }) {
   return (
-    <label className="text-xl font-bold" style={{ fontWeight: 600 }}>
+    // 区块小标题：离上一组远（section）、离自己的卡片近（group），见 global.css .km-section-title
+    <label className="km-section-title block text-xl font-bold" style={{ fontWeight: 600 }}>
       {children}
     </label>
   );
@@ -750,6 +939,13 @@ export function SettingCardCollapse({
   bordless?: boolean;
 }) {
   const [open, setOpen] = React.useState(defaultOpen);
+  // 首次展开前不挂载内容（与改造前「收起时不渲染」一致，重型子组件不会提前请求/初始化）；
+  // 展开过一次后保持挂载：之后每次展开/收起都由同一个 Collapse 弹簧驱动 height，
+  // 展开到一半再收起会保留速度顺势转向，而不是 AnimatePresence 那样卸载重来。
+  const [hasOpened, setHasOpened] = React.useState(defaultOpen);
+  if (open && !hasOpened) setHasOpened(true);
+  // 每张折叠卡一个独立 id，避免页面上多张卡共用 "collapsible-content"
+  const contentId = React.useId();
 
   return (
     <SettingCard
@@ -763,34 +959,51 @@ export function SettingCardCollapse({
           variant="soft"
           onClick={() => setOpen(!open)}
           aria-expanded={open}
-          aria-controls="collapsible-content"
+          aria-controls={contentId}
         >
+          {/*
+            control 性格：箭头翻转走 CONTROL_MOTION 的弹簧（620 刚度、38 阻尼）。
+            弹簧的好处是展开到一半再收起会保留当前速度顺势转向，而不是硬折返。
+          */}
           <motion.div
-            initial={{ rotate: 0, scale: 1 }}
-            animate={{ rotate: open ? 180 : 0, scale: open ? 1.1 : 1 }}
-            transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
+            initial={false}
+            animate={{ rotate: open ? 180 : 0 }}
+            transition={CONTROL_MOTION.transition}
           >
             <ChevronDownIcon />
           </motion.div>
         </IconButton>
       </SettingCard.Action>
-      <AnimatePresence>
-        {open && (
-          <motion.div
-            className="w-full p-0 md:p-1" // Ensures the content takes full width
-            layout // Smoothly handles height changes
-            initial={{ height: 0, opacity: 0, y: -10 }}
-            animate={{ height: "auto", opacity: 1, y: 0 }}
-            exit={{ height: 0, opacity: 0, y: -10 }}
-            transition={{ duration: 0.25, ease: [0.4, 0, 0.2, 1] }}
-            style={{ overflow: "hidden" }} // Prevents content clipping during animation
-            id="collapsible-content"
-          >
-            <div className="border-t-1 my-2" />
-            {children}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {/*
+        Collapse 展开属于 overlay 性格（从触发点「长出来」）：
+        高度用 MOTION_SPRING.soft 弹簧（大块区域要重、要稳），
+        内部内容再用一条 snappy 弹簧做轻微跟随（Follow-through），
+        所以是「外壳先到位、内容随后落位」的两段式，而不是一个整体啪地出现。
+      */}
+      <Collapse
+        open={open}
+        id={contentId}
+        // 内边距放在内层：height:0 时外层的 padding 仍会撑出 8px，收起后卡片底部多一条空隙
+        className="w-full"
+        style={{ overflow: "hidden" }}
+        aria-hidden={!open}
+        inert={!open}
+      >
+        <motion.div
+          className="p-0"
+          initial={false}
+          animate={open ? { opacity: 1, y: 0 } : { opacity: 0, y: -8 }}
+          transition={{ y: MOTION_SPRING.snappy, opacity: MOTION_TRANSITION.fade }}
+        >
+          {/* 分隔线：上贴标题（group），下与内容拉开 block */}
+          <div className="border-t-1 mt-km-group mb-km-block" />
+          {/*
+            展开后内容自身变高/变矮（测试结果出现、字段增减）时高度用弹簧跟随，不跳。
+            只在首次展开后挂载：首帧测量即真实高度，不会和 Collapse 的 0 -> auto 抢高度。
+          */}
+          {hasOpened ? <AutoHeight>{children}</AutoHeight> : null}
+        </motion.div>
+      </Collapse>
     </SettingCard>
   );
 }
