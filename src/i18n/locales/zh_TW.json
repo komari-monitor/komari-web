@@ -1563,7 +1563,8 @@
       "title": "終端分頁"
     },
     "title": "終端",
-    "title_with_sessions": "終端 - {{name}}（{{count}} 個工作階段）"
+    "title_with_sessions": "終端 - {{name}}（{{count}} 個工作階段）",
+    "waiting_agent": "等待被控端連線..."
   },
   "theme": {
     "active": "當前使用",

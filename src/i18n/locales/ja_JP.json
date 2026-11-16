@@ -1588,7 +1588,8 @@
       "title": "ターミナルタブ"
     },
     "title": "ターミナル",
-    "title_with_sessions": "ターミナル - {{name}}（{{count}} セッション）"
+    "title_with_sessions": "ターミナル - {{name}}（{{count}} セッション）",
+    "waiting_agent": "エージェントの接続を待っています..."
   },
   "theme": {
     "active": "現在使用中",

@@ -1558,7 +1558,8 @@
       "match_case": "Match Case",
       "use_regex": "Use Regular Expression",
       "close": "Close"
-    }
+    },
+    "waiting_agent": "Waiting for the agent to connect..."
   },
   "theme": {
     "active": "Active",

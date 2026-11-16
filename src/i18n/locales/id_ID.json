@@ -1588,7 +1588,8 @@
       "title": "Tab Terminal"
     },
     "title": "Terminal",
-    "title_with_sessions": "Terminal - {{name}} ({{count}} sesi)"
+    "title_with_sessions": "Terminal - {{name}} ({{count}} sesi)",
+    "waiting_agent": "Menunggu agen terhubung..."
   },
   "theme": {
     "active": "Aktif",

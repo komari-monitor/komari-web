@@ -1588,7 +1588,8 @@
       "title": "终端选项卡"
     },
     "title": "终端",
-    "title_with_sessions": "终端 - {{name}}（{{count}} 个会话）"
+    "title_with_sessions": "终端 - {{name}}（{{count}} 个会话）",
+    "waiting_agent": "等待被控端连接..."
   },
   "theme": {
     "active": "当前使用",
