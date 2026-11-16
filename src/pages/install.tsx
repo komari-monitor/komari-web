@@ -1,12 +1,10 @@
 import { useEffect, useRef, useState } from "react";
 import type { FormEvent } from "react";
 import { AnimatePresence, motion } from "motion/react";
-import { AutoHeight, PageMotion } from "@/components/motion";
+import { AutoHeight, PageMotion, SlideSwap } from "@/components/motion";
 import { GapCollapse } from "@/components/GapCollapse";
 import { SPACE } from "@/lib/spacing";
 import {
-  MOTION_DURATION,
-  MOTION_EASE,
   MOTION_SPRING,
 } from "@/lib/motion";
 import {
@@ -215,19 +213,8 @@ export default function Install() {
         <form onSubmit={submit} className="km-install-form">
           <Card size="3" className="km-install-step">
             {/* 各步骤内容高度不同：卡片高度跟着弹簧过渡，不在换步时跳一下 */}
-            <AutoHeight threshold={4}>
-            <AnimatePresence mode="wait" initial={false} custom={stepDirection}>
-              <motion.div
-                key={step}
-                // content 层：步骤内容沿方向滑入/滑出，卡片外壳保持不动
-                initial={{ opacity: 0, x: stepDirection * 24 }}
-                animate={{ opacity: 1, x: 0 }}
-                exit={{ opacity: 0, x: stepDirection * -24 }}
-                transition={{
-                  x: MOTION_SPRING.snappy,
-                  opacity: { duration: MOTION_DURATION.fast, ease: MOTION_EASE.standard },
-                }}
-              >
+            <AutoHeight threshold={4} className="overflow-x-clip">
+            <SlideSwap swapKey={step} direction={stepDirection}>
             {/* 各步统一：步骤标题（标题+说明 inline）→ 内容 block；字段之间 block；label → 输入框 group */}
             {step === 0 && (
               <Flex direction="column" gap="4">
@@ -354,8 +341,7 @@ export default function Install() {
                 </Card>
               </Flex>
             )}
-              </motion.div>
-            </AnimatePresence>
+            </SlideSwap>
             </AutoHeight>
           </Card>
           {/* 按钮区与步骤卡之间 section，按钮之间 group */}

@@ -15,7 +15,7 @@ import { DownloadIcon } from "lucide-react";
 import { useRef, useState } from "react";
 import UploadDialog from "@/components/UploadDialog";
 import { createChunkUploadTask, type ChunkUploadTask } from "@/lib/chunkUpload";
-import { HighlightPulse, StaggeredItem, StaggeredList } from "@/components/motion";
+import { HighlightPulse } from "@/components/motion";
 import { api, requestJson } from "@/lib/http";
 import { useRouteQuery } from "@/lib/routeData";
 import { DEFAULT_SETTINGS, settingsErrorText, settingsQuery } from "@/routeQueries/settings";
@@ -86,85 +86,66 @@ export default function SiteSettings() {
     <div className="flex w-full flex-col gap-km-block">
     <SettingCardsLoading loading={loading}>
       <SettingCardLabel>{t("settings.site.title")}</SettingCardLabel>
-      {/*
-        content 性格：站点基础信息这一组是首屏最重要的 6 张卡，用 StaggeredList 错峰进场。
-        SettingCard 自己只做 30ms 内的一次弹簧落位，错峰再叠一层「先后次序」，
-        数量上限由 StaggeredList 内部的固定 stagger 控制，长表单不会排队到尾。
-      */}
-      <StaggeredList className="flex w-full flex-col gap-km-block">
-        <StaggeredItem>
-          <SettingCardShortTextInput
-            title={t("settings.site.name")}
-            description={t("settings.site.name_description")}
-            defaultValue={settings.sitename || ""}
-            OnSave={async (data) => {
-              await saveSettings({ sitename: data }, t);
-            }}
-          />
-        </StaggeredItem>
-        <StaggeredItem>
-          <SettingCardLongTextInput
-            title={t("settings.site.description")}
-            description={t("settings.site.description_description")}
-            defaultValue={settings.description || ""}
-            OnSave={async (data) => {
-              await saveSettings({ description: data }, t);
-            }}
-          />
-        </StaggeredItem>
-        <StaggeredItem>
-          <SettingCardSwitch
-            title={t("settings.site.cors_origin_check_enabled")}
-            description={t("settings.site.cors_origin_check_enabled_description")}
-            defaultChecked={settings.cors_origin_check_enabled ?? true}
-            onChange={async (checked) => {
-              await saveSettings({ cors_origin_check_enabled: checked }, t);
-            }}
-            className="km-page-admin-settings-site km-setting-card"
-          />
-        </StaggeredItem>
-        <StaggeredItem>
-          <SettingCardLongTextInput
-            title={t("settings.site.cors_allowed_origins", "API CORS 允许列表")}
-            description={t("settings.site.origins_list_description",
-              "每行或用逗号分隔一个 Origin，例如 https://example.com",
-            )}
-            defaultValue={settings.cors_allowed_origins || ""}
-            OnSave={async (data) => {
-              await saveSettings({ cors_allowed_origins: data }, t);
-            }}
-          />
-        </StaggeredItem>
-        <StaggeredItem>
-          <SettingCardSwitch
-            title={t("settings.site.ws_origin_check_enabled", "WebSocket Origin 校验")}
-            description={t(
-              "settings.site.ws_origin_check_enabled_description",
-              "开启后 WebSocket 请求只允许同源或允许列表中的 Origin",
-            )}
-            defaultChecked={settings.ws_origin_check_enabled ?? true}
-            onChange={async (checked) => {
-              await saveSettings(
-                { ws_origin_check_enabled: checked },
-                t,
-              );
-            }}
-            className="km-setting-card"
-          />
-        </StaggeredItem>
-        <StaggeredItem>
-          <SettingCardLongTextInput
-            title={t("settings.site.ws_allowed_origins", "WebSocket Origin 允许列表")}
-            description={t("settings.site.origins_list_description",
-              "每行或用逗号分隔一个 Origin，例如 https://example.com",
-            )}
-            defaultValue={settings.ws_allowed_origins || ""}
-            OnSave={async (data) => {
-              await saveSettings({ ws_allowed_origins: data }, t);
-            }}
-          />
-        </StaggeredItem>
-      </StaggeredList>
+      <SettingCardShortTextInput
+        title={t("settings.site.name")}
+        description={t("settings.site.name_description")}
+        defaultValue={settings.sitename || ""}
+        OnSave={async (data) => {
+          await saveSettings({ sitename: data }, t);
+        }}
+      />
+      <SettingCardLongTextInput
+        title={t("settings.site.description")}
+        description={t("settings.site.description_description")}
+        defaultValue={settings.description || ""}
+        OnSave={async (data) => {
+          await saveSettings({ description: data }, t);
+        }}
+      />
+      <SettingCardSwitch
+        title={t("settings.site.cors_origin_check_enabled")}
+        description={t("settings.site.cors_origin_check_enabled_description")}
+        defaultChecked={settings.cors_origin_check_enabled ?? true}
+        onChange={async (checked) => {
+          await saveSettings({ cors_origin_check_enabled: checked }, t);
+        }}
+        className="km-page-admin-settings-site km-setting-card"
+      />
+      <SettingCardLongTextInput
+        title={t("settings.site.cors_allowed_origins", "API CORS 允许列表")}
+        description={t("settings.site.origins_list_description",
+          "每行或用逗号分隔一个 Origin，例如 https://example.com",
+        )}
+        defaultValue={settings.cors_allowed_origins || ""}
+        OnSave={async (data) => {
+          await saveSettings({ cors_allowed_origins: data }, t);
+        }}
+      />
+      <SettingCardSwitch
+        title={t("settings.site.ws_origin_check_enabled", "WebSocket Origin 校验")}
+        description={t(
+          "settings.site.ws_origin_check_enabled_description",
+          "开启后 WebSocket 请求只允许同源或允许列表中的 Origin",
+        )}
+        defaultChecked={settings.ws_origin_check_enabled ?? true}
+        onChange={async (checked) => {
+          await saveSettings(
+            { ws_origin_check_enabled: checked },
+            t,
+          );
+        }}
+        className="km-setting-card"
+      />
+      <SettingCardLongTextInput
+        title={t("settings.site.ws_allowed_origins", "WebSocket Origin 允许列表")}
+        description={t("settings.site.origins_list_description",
+          "每行或用逗号分隔一个 Origin，例如 https://example.com",
+        )}
+        defaultValue={settings.ws_allowed_origins || ""}
+        OnSave={async (data) => {
+          await saveSettings({ ws_allowed_origins: data }, t);
+        }}
+      />
       <SettingCardSwitch
         title={t("settings.site.ssrf_protection_enabled")}
         description={t("settings.site.ssrf_protection_enabled_description")}

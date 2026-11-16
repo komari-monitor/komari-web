@@ -1,6 +1,6 @@
 import React from "react";
 import { AnimatePresence, animate, motion, type AnimationPlaybackControls } from "motion/react";
-import { SKELETON_MOTION } from "@/lib/motion";
+import { SKELETON_MOTION, SURFACE_MOTION } from "@/lib/motion";
 import { useKmReducedMotion } from "./MotionProvider";
 import { SuppressReveal } from "./reveal";
 
@@ -105,23 +105,27 @@ export const Swap = ({
   children,
   className,
   innerClassName,
+  threshold,
+  disabled,
 }: {
   swapKey: string | number;
   children: React.ReactNode;
   className?: string;
   innerClassName?: string;
+  threshold?: number;
+  disabled?: boolean;
 }) => {
   const reduced = useKmReducedMotion();
-  const { initial, animate: to, transition } = SKELETON_MOTION.reveal;
+  const { initial, animate: to, exit, transition, exitTransition } = SURFACE_MOTION.swap;
   return (
-    <AutoHeight className={className} innerClassName={innerClassName}>
+    <AutoHeight className={className} innerClassName={innerClassName} threshold={threshold} disabled={disabled}>
       <div className="relative">
         <AnimatePresence initial={false} mode="popLayout">
           <motion.div
             key={swapKey}
             initial={reduced ? { opacity: 0 } : initial}
             animate={to}
-            exit={{ opacity: 0, transition: SKELETON_MOTION.exit }}
+            exit={reduced ? { opacity: 0, transition: exitTransition } : { ...exit, transition: exitTransition }}
             transition={transition}
           >
             {children}

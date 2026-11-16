@@ -11,7 +11,6 @@ import { AlertTriangle } from "lucide-react";
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { StaggeredItem, StaggeredList } from "@/components/motion";
 import { useRouteQuery } from "@/lib/routeData";
 import {
   DEFAULT_SETTINGS,
@@ -119,12 +118,6 @@ export default function MetricsSettings() {
         )}
       />
 
-      {/*
-        content 性格：「高级」这一组只有 3 张卡、首屏即可见，
-        用带固定上限的错峰进场，避免长表单末尾排队出现。
-      */}
-      <StaggeredList className="flex w-full flex-col gap-km-block">
-      <StaggeredItem>
       <SettingCardShortTextInput
         title={t("settings.metrics.table_prefix_title")}
         description={t("settings.metrics.table_prefix_description")}
@@ -137,9 +130,7 @@ export default function MetricsSettings() {
           });
         }}
       />
-      </StaggeredItem>
 
-      <StaggeredItem>
       <SettingCardShortTextInput
         title={t("settings.metrics.max_open_conns_title")}
         description={t("settings.metrics.max_open_conns_description")}
@@ -156,9 +147,7 @@ export default function MetricsSettings() {
           await saveMetricSettings({ metric_max_open_conns: n });
         }}
       />
-      </StaggeredItem>
 
-      <StaggeredItem>
       <SettingCardShortTextInput
         title={t("settings.metrics.max_idle_conns_title")}
         description={t("settings.metrics.max_idle_conns_description")}
@@ -175,8 +164,6 @@ export default function MetricsSettings() {
           await saveMetricSettings({ metric_max_idle_conns: n });
         }}
       />
-      </StaggeredItem>
-      </StaggeredList>
 
       {/*<Callout.Root color="green" variant="surface">
         <Callout.Icon>

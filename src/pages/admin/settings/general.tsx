@@ -15,7 +15,6 @@ import { useRouteQuery } from "@/lib/routeData";
 import { DEFAULT_SETTINGS, settingsErrorText, settingsQuery } from "@/routeQueries/settings";
 import { AnimatePresence, motion } from "motion/react";
 import { MOTION_VARIANTS } from "@/lib/motion";
-import { StaggeredItem, StaggeredList } from "@/components/motion";
 import { ApiKeyCard } from "./shared/ApiKeyCard";
 import { getJsonBody, saveSettings, serverError } from "./shared/request";
 
@@ -61,58 +60,46 @@ export default function GeneralSettings() {
         </Button>
       </ApiKeyCard>
       <SettingCardLabel>{t("settings.geoip.title")}</SettingCardLabel>
-      {/*
-        content 性格：GeoIP 这一组只有 3 项、首屏即可见，用很短的上限错峰进场；
-        卡片本身（SettingCard）统一自带一次轻量弹簧进场，这里只负责「先后次序」。
-      */}
-      <StaggeredList className="flex w-full flex-col gap-km-block">
-        <StaggeredItem>
-          <SettingCardSwitch
-            title={t("settings.geoip.enable_title")}
-            description={t("settings.geoip.enable_description")}
-            defaultChecked={settings.geo_ip_enabled}
-            onChange={async (checked) => {
-              await saveSettings({ geo_ip_enabled: checked }, t);
-            }}
-            className="km-page-admin-settings-general km-setting-card"
-          />
-        </StaggeredItem>
-        <StaggeredItem>
-          <SettingCardSelect
-            title={t("settings.geoip.provider_title")}
-            description={t("settings.geoip.provider_description")}
-            defaultValue={settings.geo_ip_provider}
-            options={[
-              { value: "empty", label: t("common.none") },
-              { value: "mmdb", label: "MaxMind" },
-              { value: "ip-api", label: "ip-api.com" },
-              { value: "geojs", label: "geojs.io" },
-              { value: "ipinfo", label: "ipinfo.io" },
-            ]}
-            OnSave={async (value) => {
-              await saveSettings({ geo_ip_provider: value }, t);
-            }}
-          />
-        </StaggeredItem>
-        <StaggeredItem>
-          <SettingCardButton
-            title={t("settings.geoip.update_title")}
-            onClick={async () => {
-              try {
-                await api.post("/api/admin/update/mmdb");
-                toast.success(t("settings.geoip.update_success"));
-              } catch (error) {
-                const failure = serverError(error);
-                if (!failure) throw error;
-                toast.error(failure.message || t("settings.geoip.update_error"));
-              }
-            }}
-            className="km-setting-card"
-          >
-            {t("common.update")}
-          </SettingCardButton>
-        </StaggeredItem>
-      </StaggeredList>
+      <SettingCardSwitch
+        title={t("settings.geoip.enable_title")}
+        description={t("settings.geoip.enable_description")}
+        defaultChecked={settings.geo_ip_enabled}
+        onChange={async (checked) => {
+          await saveSettings({ geo_ip_enabled: checked }, t);
+        }}
+        className="km-page-admin-settings-general km-setting-card"
+      />
+      <SettingCardSelect
+        title={t("settings.geoip.provider_title")}
+        description={t("settings.geoip.provider_description")}
+        defaultValue={settings.geo_ip_provider}
+        options={[
+          { value: "empty", label: t("common.none") },
+          { value: "mmdb", label: "MaxMind" },
+          { value: "ip-api", label: "ip-api.com" },
+          { value: "geojs", label: "geojs.io" },
+          { value: "ipinfo", label: "ipinfo.io" },
+        ]}
+        OnSave={async (value) => {
+          await saveSettings({ geo_ip_provider: value }, t);
+        }}
+      />
+      <SettingCardButton
+        title={t("settings.geoip.update_title")}
+        onClick={async () => {
+          try {
+            await api.post("/api/admin/update/mmdb");
+            toast.success(t("settings.geoip.update_success"));
+          } catch (error) {
+            const failure = serverError(error);
+            if (!failure) throw error;
+            toast.error(failure.message || t("settings.geoip.update_error"));
+          }
+        }}
+        className="km-setting-card"
+      >
+        {t("common.update")}
+      </SettingCardButton>
       <SettingCardCollapse
         title={t("settings.geoip.test_title")}
         description={t("settings.geoip.test_description")}

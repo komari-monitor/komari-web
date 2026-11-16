@@ -66,7 +66,7 @@ export const TerminalSearchBar: React.FC<TerminalSearchBarProps> = ({
       : "";
 
   const toolButtonClassName = (active: boolean) =>
-    `inline-flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-[4px] transition-colors duration-150 ${
+    `inline-flex h-[26px] w-[26px] shrink-0 items-center justify-center rounded-[4px] transition-colors duration-[var(--km-dur-fast)] ease-[var(--km-ease-standard)] ${
       active
         ? "bg-[color:var(--accent-4)] text-[color:var(--accent-11)]"
         : "text-neutral-400 hover:bg-[#3c3c3c] hover:text-white"

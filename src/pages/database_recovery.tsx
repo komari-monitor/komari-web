@@ -11,7 +11,7 @@ import {
 import { CheckCircle2, Database, LoaderCircle, Save } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { AnimatePresence, motion } from "motion/react";
-import { AutoHeight, PageMotion } from "@/components/motion";
+import { AutoHeight, PageMotion, PresenceBox } from "@/components/motion";
 import { MOTION_SPRING } from "@/lib/motion";
 import { Skeletonize, skeletonText } from "@/components/ui/skeleton";
 import { ApiError } from "@/lib/http";
@@ -202,12 +202,8 @@ export default function DatabaseRecovery() {
             </Callout.Root>
             </motion.div>
           ) : (authenticated && status) || formLoading ? (
-            <motion.div
+            <PresenceBox
               key="recovery-form"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={MOTION_SPRING.soft}
             >
             <Skeletonize loading={formLoading}>
             {/* 内容（提示、字段）之间 block；底部按钮区与内容之间 section */}
@@ -277,7 +273,7 @@ export default function DatabaseRecovery() {
               </Flex>
             </Flex>
             </Skeletonize>
-            </motion.div>
+            </PresenceBox>
           ) : null}
           </AnimatePresence>
           </AutoHeight>

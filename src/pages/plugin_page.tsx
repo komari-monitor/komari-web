@@ -2,7 +2,7 @@ import { Box, Callout } from "@radix-ui/themes";
 import { useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { motion } from "motion/react";
-import { MOTION_DURATION, MOTION_EASE } from "@/lib/motion";
+import { SURFACE_MOTION } from "@/lib/motion";
 
 // 插件公开页面（visibility=public）：通过公开路由直接访问，不进导航。
 // 内容来自无需鉴权的 /api/plugin/:short/* 后端路由。
@@ -14,9 +14,9 @@ export default function PluginPage() {
   if (!short || !filepath) {
     return (
       <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: MOTION_DURATION.base, ease: MOTION_EASE.out }}
+        initial={SURFACE_MOTION.route.initial}
+        animate={SURFACE_MOTION.route.animate}
+        transition={SURFACE_MOTION.route.transition}
       >
         <Callout.Root className="km-plugin-missing">
           <Callout.Text>{t("plugin.page_missing_params", "Missing plugin page parameters")}</Callout.Text>
@@ -28,9 +28,9 @@ export default function PluginPage() {
   return (
     <motion.div
       // surface 层：插件页整页淡入，iframe 本身不做任何位移（避免重绘闪烁）
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: MOTION_DURATION.base, ease: MOTION_EASE.out }}
+      initial={SURFACE_MOTION.routeFade.initial}
+      animate={SURFACE_MOTION.routeFade.animate}
+      transition={SURFACE_MOTION.routeFade.transition}
       className="km-page-plugin h-full min-h-[calc(100vh-96px)]"
     >
       <Box className="h-full">

@@ -44,13 +44,13 @@ export default function SidebarItem({
         className="group block w-full rounded-md"
       >
         <Flex
-          className="p-2 gap-2 h-full transition-colors duration-200 group-hover:bg-accent-3 group-focus-visible:bg-accent-3"
+          className="p-2 gap-2 h-full group-hover:bg-accent-3 group-focus-visible:bg-accent-3"
           align="center"
           style={{
             borderLeft: "4px solid transparent",
             borderRadius: "6px",
             color: "inherit",
-            transition: "background-color 0.2s, border-color 0.2s",
+            transition: "var(--km-transition-colors)",
           }}
         >
           <span

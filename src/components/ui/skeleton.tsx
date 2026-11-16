@@ -145,8 +145,8 @@ export const skeletonText = (chars: number) => "\u2007".repeat(Math.max(1, Math.
  */
 type SkeletonState = "mount" | "update" | "settling" | "reveal" | "reveal-content" | "off";
 
-/** 色卡浮现前的等待（与 CSS 的 km-sk-card-in 延迟一致） */
-const CARD_DELAY_MS = 120;
+/** 色卡浮现前的等待（与 SKELETON_MOTION.delay / --km-skeleton-delay 一致） */
+const CARD_DELAY_MS = SKELETON_MOTION.delay * 1000;
 
 /**
  * 加载中的区域：最外层变成一张半透明的主题色卡片，里面的内容在原位隐藏（布局不变）。

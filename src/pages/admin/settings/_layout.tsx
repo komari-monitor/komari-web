@@ -2,7 +2,7 @@ import { Flex } from "@radix-ui/themes";
 import { useRef } from "react";
 import { Outlet, useLocation } from "react-router-dom";
 import { motion } from "motion/react";
-import { MOTION_TRANSITION } from "@/lib/motion";
+import { SURFACE_MOTION } from "@/lib/motion";
 
 export default function SettingLayout() {
   const location = useLocation();
@@ -31,9 +31,9 @@ export default function SettingLayout() {
         key={routeKey}
         className="km-admin-settings-page flex w-full flex-col gap-km-block"
         style={{ minHeight: 0 }}
-        initial={routeKey === mountedKey.current ? false : { opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={MOTION_TRANSITION.fadeIn}
+        initial={routeKey === mountedKey.current ? false : SURFACE_MOTION.routeFade.initial}
+        animate={SURFACE_MOTION.routeFade.animate}
+        transition={SURFACE_MOTION.routeFade.transition}
       >
         <Outlet />
       </motion.div>

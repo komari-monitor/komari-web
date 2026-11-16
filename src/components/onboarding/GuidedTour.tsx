@@ -5,10 +5,9 @@ import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { AnimatePresence, motion } from "motion/react";
 import {
-  MOTION_DURATION,
-  MOTION_EASE,
   MOTION_SPRING,
 } from "@/lib/motion";
+import { AutoHeight, SlideSwap } from "@/components/motion";
 import "./onboarding.css";
 
 export interface GuideStep {
@@ -210,23 +209,14 @@ export default function GuidedTour({
                 </IconButton>
               </Flex>
               {/* content 层：前进从右来、后退从左来，方向感和浏览器的「上一页/下一页」一致 */}
-              <AnimatePresence mode="wait" initial={false} custom={direction}>
-                <motion.div
-                  key={step}
-                  initial={{ opacity: 0, x: direction * 24 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  exit={{ opacity: 0, x: direction * -24 }}
-                  transition={{
-                    x: MOTION_SPRING.snappy,
-                    opacity: { duration: MOTION_DURATION.fast, ease: MOTION_EASE.standard },
-                  }}
-                >
+              <AutoHeight threshold={4} className="overflow-x-clip">
+                <SlideSwap swapKey={step} direction={direction}>
                   <Dialog.Title className="km-guide-title">{t(current.title)}</Dialog.Title>
                   <Dialog.Description className="km-guide-description">
                     {t(current.description)}
                   </Dialog.Description>
-                </motion.div>
-              </AnimatePresence>
+                </SlideSwap>
+              </AutoHeight>
               <div className="km-guide-progress" aria-hidden="true">
                 {steps.map((_, index) => (
                   <motion.span

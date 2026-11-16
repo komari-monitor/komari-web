@@ -376,7 +376,7 @@ body, * {
   --km-shadow-3: 0 18px 40px -16px rgb(0 0 0 / 0.28), 0 8px 18px -10px rgb(0 0 0 / 0.16);
 
   /* —— 视图切换（共享元素）—— */
-  --km-view-transition-duration: 200ms;
+  --km-view-transition-duration: 220ms;
   --km-view-transition-ease: cubic-bezier(0.22, 1, 0.36, 1);
 }
 
@@ -390,6 +390,11 @@ body, * {
 :root,
 .radix-themes {
   --segmented-control-transition-duration: var(--km-dur-base);
+}
+
+/* 全局统一所有 SegmentedControl 滑动指示器的缓动曲线 */
+.radix-themes .rt-SegmentedControlIndicator {
+  transition-timing-function: var(--km-ease-emphasized);
 }
 
 /* ---------------------------------------------------------------- 2) 微交互 */
@@ -468,21 +473,29 @@ body, * {
   .rt-DropdownMenuContent,
   .rt-SelectContent,
   .rt-TooltipContent,
-  .rt-HoverCardContent {
+  .rt-HoverCardContent,
+  .rt-BaseDialogContent,
+  .km-ui-dropdown-content {
     animation-timing-function: var(--km-ease-out) !important;
   }
   .rt-PopperContent:where([data-state="open"]),
   .rt-DropdownMenuContent:where([data-state="open"]),
   .rt-SelectContent:where([data-state="open"]),
   .rt-TooltipContent:where([data-state="open"]),
-  .rt-HoverCardContent:where([data-state="open"]) {
+  .rt-HoverCardContent:where([data-state="open"]),
+  .km-ui-dropdown-content:where([data-state="open"]) {
     animation-duration: var(--km-dur-fast) !important;
+  }
+  .rt-BaseDialogContent:where([data-state="open"]) {
+    animation-duration: var(--km-dur-base) !important;
   }
   .rt-PopperContent:where([data-state="closed"]),
   .rt-DropdownMenuContent:where([data-state="closed"]),
   .rt-SelectContent:where([data-state="closed"]),
   .rt-TooltipContent:where([data-state="closed"]),
-  .rt-HoverCardContent:where([data-state="closed"]) {
+  .rt-HoverCardContent:where([data-state="closed"]),
+  .rt-BaseDialogContent:where([data-state="closed"]),
+  .km-ui-dropdown-content:where([data-state="closed"]) {
     animation-duration: var(--km-dur-instant) !important;
     animation-timing-function: var(--km-ease-in) !important;
   }
@@ -602,7 +615,7 @@ span.km-skeletonize[data-skeleton]::before {
 /* 独立的「加载中」（路由切换、Suspense、对话框）：只有转圈和文字，不加背景色，稍等一下再淡入 */
 .km-loading-card {
   width: 100%;
-  animation: km-skeleton-appear var(--km-dur-slow) var(--km-ease-standard) 120ms both;
+  animation: km-skeleton-appear var(--km-dur-slow) var(--km-ease-standard) var(--km-skeleton-delay) both;
 }
 /* 接力上一个 Loading（见 loading.tsx）：直接可见，不再淡入一次 */
 .km-loading-card.km-loading-continue {
@@ -613,8 +626,8 @@ span.km-skeletonize[data-skeleton]::before {
 .km-skeletonize[data-skeleton="mount"] {
   --km-sk-hide: 1;
   animation:
-    km-sk-card-in var(--km-dur-slow) var(--km-ease-standard) 120ms both,
-    km-sk-pulse 1.6s cubic-bezier(0.37, 0, 0.63, 1) 380ms infinite;
+    km-sk-card-in var(--km-dur-slow) var(--km-ease-standard) var(--km-skeleton-delay) both,
+    km-sk-pulse 1.6s cubic-bezier(0.37, 0, 0.63, 1) calc(var(--km-skeleton-delay) + var(--km-dur-slow)) infinite;
 }
 /* 重新加载：旧内容先留着，超过 delay 才交叉淡化成色卡 */
 .km-skeletonize[data-skeleton="update"] {
@@ -884,14 +897,14 @@ span.km-skeletonize[data-skeleton]::before {
 
 /* 共享元素补间：稍长一些，让「这个东西在移动」被感知到 */
 ::view-transition-group(km-node-hero) {
-  animation-duration: 220ms;
+  animation-duration: var(--km-view-transition-duration);
   animation-timing-function: var(--km-view-transition-ease);
 }
 
 /* 共享元素的进出不做淡入淡出，只做几何补间（Solid Drawing：同一个物体不闪） */
 ::view-transition-old(km-node-hero),
 ::view-transition-new(km-node-hero) {
-  animation-duration: 220ms;
+  animation-duration: var(--km-view-transition-duration);
   animation-timing-function: var(--km-view-transition-ease);
 }
 

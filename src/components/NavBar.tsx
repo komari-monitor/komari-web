@@ -47,6 +47,7 @@ const NavBar = () => {
         y: SURFACE_MOTION.slide,
         opacity: SURFACE_MOTION.fade,
       }}
+      style={{ viewTransitionName: "km-navbar" }}
     >
       <div className="km-navbar-brand mr-auto flex items-center min-w-0">
         <Link

@@ -366,7 +366,7 @@ const NodeTable: React.FC<NodeTableProps> = ({ nodes, liveData, onlineSet, liveL
                     layout: settledLayoutTransition(orderSettled),
                     opacity: MOTION_TRANSITION.fadeIn,
                   }}
-                  className="km-ui-table-row border-b border-[var(--accent-2)] hover:bg-[var(--accent-2)] data-[state=selected]:bg-[var(--accent-3)] km-node-table-row hover:bg-accent-2 transition-colors duration-200 table-row-hover"
+                  className="km-ui-table-row border-b border-[var(--accent-2)] hover:bg-[var(--accent-2)] data-[state=selected]:bg-[var(--accent-3)] km-node-table-row hover:bg-accent-2 table-row-hover"
                   onClick={() => toggleRowExpansion(node.uuid)}
                   aria-expanded={isExpanded}
                 >

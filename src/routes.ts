@@ -87,13 +87,7 @@ export const routes: RouteObject[] = [
       },
       {
         path: "themes",
-        ...page(() => import("./pages/admin/settings/_layout")),
-        children: [
-          {
-            index: true,
-            ...page(() => import("./pages/admin/themes")),
-          },
-        ],
+        ...page(() => import("./pages/admin/themes")),
       },
       {
         path: "theme",
@@ -189,13 +183,7 @@ export const routes: RouteObject[] = [
           },
           {
             path: "channels",
-            ...page(() => import("./pages/admin/settings/_layout")),
-            children: [
-              {
-                index: true,
-                ...page(() => import("./pages/admin/notification/channels")),
-              },
-            ],
+            ...page(() => import("./pages/admin/notification/channels")),
           },
           {
             path: "offline",

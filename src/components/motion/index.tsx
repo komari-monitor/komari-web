@@ -22,6 +22,7 @@ import {
   listItemVariants,
   SURFACE_MOTION,
 } from "@/lib/motion";
+import { useKmReducedMotion } from "./MotionProvider";
 
 /* ------------------------------------------------------------------ *
  * surface —— 页面 / 面板
@@ -371,21 +372,24 @@ export const OverlayMotion = ({
   </motion.div>
 );
 
-/** 显示/隐藏都带过渡的盒子（条件渲染的区块） */
-export const PresenceBox = ({ children, ...props }: HTMLMotionProps<"div">) => (
-  <motion.div
-    initial={{ opacity: 0, y: 6 }}
-    animate={{ opacity: 1, y: 0 }}
-    exit={{ opacity: 0, y: -4 }}
-    transition={{
-      y: MOTION_SPRING.snappy,
-      opacity: MOTION_TRANSITION.fade,
-    }}
-    {...props}
-  >
-    {children}
-  </motion.div>
-);
+/** 显示/隐藏都带过渡的盒子（条件渲染或原位切换的区块，走 SURFACE_MOTION.swap） */
+export const PresenceBox = ({ children, ...props }: HTMLMotionProps<"div">) => {
+  const reduced = useKmReducedMotion();
+  return (
+    <motion.div
+      initial={reduced ? { opacity: 0 } : SURFACE_MOTION.swap.initial}
+      animate={SURFACE_MOTION.swap.animate}
+      exit={{
+        ...(reduced ? { opacity: 0 } : SURFACE_MOTION.swap.exit),
+        transition: SURFACE_MOTION.swap.exitTransition,
+      }}
+      transition={SURFACE_MOTION.swap.transition}
+      {...props}
+    >
+      {children}
+    </motion.div>
+  );
+};
 
 /* ------------------------------------------------------------------ *
  * 尺寸变化 / 加载占位
@@ -393,40 +397,62 @@ export const PresenceBox = ({ children, ...props }: HTMLMotionProps<"div">) => (
 /**
  * 标签/分类切换时的内容横向滑动：新内容从 direction 一侧滑入，旧内容向另一侧滑出（mode="wait"）。
  * direction 为 1（往右边的标签）或 -1；减少动态效果时只淡入淡出、时长为 0。
- * 插件页的状态筛选与插件市场的分类筛选共用。
+ * 统一使用 SURFACE_MOTION.directional（x ±16 + 柔和弹簧 + 快速淡入淡出），
+ * 内部自动读取 reducedMotion 偏好，并用 function variants 绑定最新 direction。
  */
+const SLIDE_SWAP_VARIANTS: Variants = {
+  enter: ({ direction, reduced }: { direction: number; reduced: boolean }) => ({
+    opacity: 0,
+    x: reduced ? 0 : direction * SURFACE_MOTION.directional.offset,
+  }),
+  center: ({ reduced }: { direction: number; reduced: boolean }) => ({
+    opacity: 1,
+    x: 0,
+    transition: reduced
+      ? { duration: 0 }
+      : SURFACE_MOTION.directional.enterTransition,
+  }),
+  exit: ({ direction, reduced }: { direction: number; reduced: boolean }) => ({
+    opacity: 0,
+    x: reduced ? 0 : -direction * SURFACE_MOTION.directional.offset,
+    transition: reduced
+      ? { duration: 0 }
+      : SURFACE_MOTION.directional.exitTransition,
+  }),
+};
+
 export const SlideSwap = ({
   swapKey,
   direction,
   reduceMotion,
+  className,
   children,
 }: {
   swapKey: React.Key;
   direction: number;
-  reduceMotion: boolean;
+  reduceMotion?: boolean;
+  className?: string;
   children: React.ReactNode;
-}) => (
-  <AnimatePresence mode="wait" initial={false} custom={direction}>
-    <motion.div
-      key={swapKey}
-      custom={direction}
-      variants={{
-        enter: (d: number) => ({ opacity: 0, x: reduceMotion ? 0 : d * 24 }),
-        center: { opacity: 1, x: 0 },
-        exit: (d: number) => ({ opacity: 0, x: reduceMotion ? 0 : -d * 24 }),
-      }}
-      initial="enter"
-      animate="center"
-      exit="exit"
-      transition={{
-        duration: reduceMotion ? 0 : MOTION_DURATION.fast,
-        ease: MOTION_EASE.out,
-      }}
-    >
-      {children}
-    </motion.div>
-  </AnimatePresence>
-);
+}) => {
+  const kmReduced = useKmReducedMotion();
+  const reduced = reduceMotion ?? kmReduced;
+  const custom = { direction, reduced };
+  return (
+    <AnimatePresence mode="wait" initial={false} custom={custom}>
+      <motion.div
+        key={swapKey}
+        custom={custom}
+        variants={SLIDE_SWAP_VARIANTS}
+        initial="enter"
+        animate="center"
+        exit="exit"
+        className={className}
+      >
+        {children}
+      </motion.div>
+    </AnimatePresence>
+  );
+};
 
 export { AutoHeight, Swap, LoadingSwap } from "./layout";
 export { RevealBoundary, SuppressReveal, useRevealPending } from "./reveal";

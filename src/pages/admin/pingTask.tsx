@@ -21,7 +21,7 @@ import {
 import React from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { AutoHeight, PresenceBox } from "@/components/motion";
+import { AutoHeight, SlideSwap } from "@/components/motion";
 import { Skeletonize, skeletonText } from "@/components/ui/skeleton";
 import { TaskView } from "./pingTask_Task";
 import { ServerView } from "./pingTask_Server";
@@ -45,6 +45,8 @@ const InnerLayout = () => {
   const { isLoading: nodeDetailLoading, error: nodeDetailError } =
     useNodeDetails();
   const { t } = useTranslation();
+  const [tab, setTab] = React.useState<"task" | "server">("task");
+  const [direction, setDirection] = React.useState(1);
   // 任务列表看 pingTasks 是否到达；节点的 isLoading 只表示首次加载（第一帧起为 true，刷新不再置 true）
   const pending = pingTasks === null || nodeDetailLoading;
 
@@ -54,32 +56,39 @@ const InnerLayout = () => {
   return (
     <div className="km-page km-page-admin-pingtask">
       <PageHeader title={t("ping.title")} actions={<AddButton />} />
-      <Tabs.Root defaultValue="task" className="km-pingtask-nav">
+      <Tabs.Root
+        value={tab}
+        onValueChange={(next) => {
+          const nextTab = next === "server" ? "server" : "task";
+          setDirection(nextTab === "server" ? 1 : -1);
+          setTab(nextTab);
+        }}
+        className="km-pingtask-nav"
+      >
         {/* control 性格：选中下划线在标签间弹簧滑动（共享指示器，可被打断） */}
         <KmTabsList>
           <Tabs.Trigger value="task">{t("ping.task_view")}</Tabs.Trigger>
           <Tabs.Trigger value="server">{t("ping.server_view")}</Tabs.Trigger>
         </KmTabsList>
         {/*
-          surface 层：任务视图 / 服务器视图切换时内容淡入（不接管 Radix Tabs 自身动画），
+          surface 层：任务视图 / 服务器视图切换使用统一的横向方向切换（SlideSwap），
           两个视图行数不同，外层高度由 AutoHeight 弹簧过渡，不跳。
           加载中：用占位行渲染真实表格并骨架化；到达后同一位置揭开（key 换一棵子树，本地排序状态直接取真实数据）。
         */}
-        <AutoHeight>
+        <AutoHeight className="overflow-x-clip">
         <Box pt="4">
           <Skeletonize loading={pending} className="km-setting-card-skeleton">
-          <Tabs.Content value="task" className="km-pingtask-view">
-            <PresenceBox>
-              <TaskView
-                key={pending ? "placeholder" : "data"}
-                pingTasks={pending ? PLACEHOLDER_TASKS : (pingTasks ?? [])}
-              />
-            </PresenceBox>
-          </Tabs.Content>
-          <Tabs.Content value="server" className="km-pingtask-view">
-            <PresenceBox>
-              <ServerView pingTasks={pending ? [] : (pingTasks ?? [])} loading={pending} />
-            </PresenceBox>
+          <Tabs.Content value={tab} forceMount className="km-pingtask-view">
+            <SlideSwap swapKey={tab} direction={direction}>
+              {tab === "task" ? (
+                <TaskView
+                  key={pending ? "placeholder" : "data"}
+                  pingTasks={pending ? PLACEHOLDER_TASKS : (pingTasks ?? [])}
+                />
+              ) : (
+                <ServerView pingTasks={pending ? [] : (pingTasks ?? [])} loading={pending} />
+              )}
+            </SlideSwap>
           </Tabs.Content>
           </Skeletonize>
         </Box>

@@ -117,6 +117,44 @@ export const SURFACE_MOTION = {
     exit: { opacity: 0, y: -6 },
     transition: { ...MOTION_SPRING.soft, opacity: { duration: MOTION_DURATION.base, ease: MOTION_EASE.out } },
   },
+  /** 路由区块切换（仅进场、同步替换，不设 exit 以免整页先变空） */
+  route: {
+    initial: { opacity: 0, y: 8 },
+    animate: { opacity: 1, y: 0 },
+    transition: {
+      y: MOTION_SPRING.soft,
+      opacity: { duration: MOTION_DURATION.base, ease: MOTION_EASE.out },
+    },
+  },
+  /** 轻量淡入（iframe / 次级设置子页切换等，不做位移） */
+  routeFade: {
+    initial: { opacity: 0 },
+    animate: { opacity: 1 },
+    transition: MOTION_TRANSITION.fadeIn,
+  },
+  /** 横向方向性切换（Tab / 分段器 / 向导步骤：x ±16 + 柔和弹簧 + 快速淡入淡出） */
+  directional: {
+    offset: 16,
+    enterTransition: {
+      x: MOTION_SPRING.soft,
+      opacity: MOTION_TRANSITION.fadeIn,
+    },
+    exitTransition: {
+      x: MOTION_TRANSITION.fadeOut,
+      opacity: MOTION_TRANSITION.fadeOut,
+    },
+  },
+  /** 原位内容替换（Swap / 视图切换 / 空状态 / 列表替换，默认 mode="popLayout"） */
+  swap: {
+    initial: { opacity: 0, y: 6 },
+    animate: { opacity: 1, y: 0 },
+    exit: { opacity: 0, y: -4 },
+    transition: {
+      y: MOTION_SPRING.soft,
+      opacity: MOTION_TRANSITION.fadeIn,
+    },
+    exitTransition: MOTION_TRANSITION.fadeOut,
+  },
   /** 侧边栏/抽屉：宽度与位移一起走同一条弹簧，收放可被打断 */
   slide: MOTION_SPRING.soft,
   /** 纯淡入（内容已被布局动画覆盖时使用） */

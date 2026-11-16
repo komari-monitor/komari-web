@@ -5,7 +5,7 @@ import { Outlet, useLocation } from "react-router-dom";
 import { usePublicInfo } from "@/contexts/PublicInfoContext";
 import { useIsMobile } from "@/hooks/use-mobile";
 import { motion } from "motion/react";
-import { MOTION_DURATION, MOTION_EASE, MOTION_SPRING } from "@/lib/motion";
+import { SURFACE_MOTION } from "@/lib/motion";
 import { useViewTransitionActive } from "@/lib/viewTransitionState";
 import { RevealBoundary } from "@/components/motion/reveal";
 
@@ -68,15 +68,9 @@ const IndexLayout = () => {
             */}
             <motion.div
               key={routeSection}
-              initial={viewTransitionActive ? false : { opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{
-                y: MOTION_SPRING.soft,
-                opacity: {
-                  duration: MOTION_DURATION.base,
-                  ease: MOTION_EASE.out,
-                },
-              }}
+              initial={viewTransitionActive ? false : SURFACE_MOTION.route.initial}
+              animate={SURFACE_MOTION.route.animate}
+              transition={SURFACE_MOTION.route.transition}
             >
               {/* 页面里的整页骨架卸载时，内容从骨架的位置淡入上浮（见 RevealBoundary） */}
               <RevealBoundary>

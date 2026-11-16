@@ -27,7 +27,7 @@ export default function ThemeCard({
 }: ThemeCardProps) {
   const { t } = useTranslation();
   return (
-    <Card size="2" className="relative group hover:shadow-lg transition-all duration-200 h-full">
+    <Card size="2" className="relative group hover:shadow-lg h-full">
       <Box
         onClick={() => {
           setPreviewDialogOpen(true);
@@ -58,7 +58,7 @@ export default function ThemeCard({
           <ImageIcon size={48} className="text-gray-400" />
         </Flex>
         {/* 覆盖层 */}
-        <Box className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-200 flex items-center justify-center">
+        <Box className="absolute inset-0 bg-black/50 opacity-0 group-hover:opacity-100 transition-opacity duration-[var(--km-dur-fast)] ease-[var(--km-ease-standard)] flex items-center justify-center">
           <Flex gap="2">{/* 预留操作位 */}</Flex>
         </Box>
 

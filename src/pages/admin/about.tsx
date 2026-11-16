@@ -3,7 +3,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import "github-markdown-css/github-markdown.css";
 import { Skeletonize, skeletonText } from "@/components/ui/skeleton";
-import { AutoHeight } from "@/components/motion";
+import { AutoHeight, SlideSwap } from "@/components/motion";
 import { useTranslation } from "react-i18next";
 import { SquareArrowOutUpRight } from "lucide-react";
 import { SegmentedControl } from "@radix-ui/themes";
@@ -12,30 +12,9 @@ import webDependencies from "@/utils/openSource.web.json";
 import goDependencies from "@/utils/openSource.go.json";
 import { getEula } from "@/utils/eula";
 import { SettingCardCollapse } from "@/components/admin/SettingCard";
-import { AnimatePresence, motion } from "motion/react";
-import { MOTION_SPRING, MOTION_TRANSITION } from "@/lib/motion";
 import PageHeader from "@/components/PageHeader";
 import { useRouteQuery } from "@/lib/routeData";
 import { aboutReadmeQuery } from "@/routeQueries/system";
-
-/** 分段切换的方向：越往右，内容沿弧线自右滑入（surface 层）。 */
-const switchVariants = {
-  initial: (direction: number) => ({ opacity: 0, x: direction * 12 }),
-  animate: {
-    opacity: 1,
-    x: 0,
-    transition: {
-      x: MOTION_SPRING.soft,
-      opacity: MOTION_TRANSITION.fadeIn,
-    },
-  },
-  exit: (direction: number) => ({
-    opacity: 0,
-    x: direction * -12,
-    transition: MOTION_TRANSITION.fadeOut,
-  }),
-};
-
 /**
  * README 还没下载完时的占位：与 markdown-body 同样的标签结构（标题、段落、列表），
  * Skeletonize 把文字画成等宽的条；README 到达后外层 AutoHeight 把高度弹簧到真实长度。
@@ -106,15 +85,8 @@ export default function AboutPage() {
         <SegmentedControl.Item value="readme">Readme</SegmentedControl.Item>
       </SegmentedControl.Root>
       {/* surface 层：三段内容切换时按方向轻微位移 + 淡入 */}
-      <AnimatePresence mode="wait" initial={false} custom={direction}>
-      <motion.div
-        key={view}
-        custom={direction}
-        variants={switchVariants}
-        initial="initial"
-        animate="animate"
-        exit="exit"
-      >
+      <AutoHeight className="overflow-x-clip">
+      <SlideSwap swapKey={view} direction={direction}>
       {(() => {
         switch (view) {
           case "eula":
@@ -192,8 +164,8 @@ export default function AboutPage() {
             );
         }
       })()}
-      </motion.div>
-      </AnimatePresence>
+      </SlideSwap>
+      </AutoHeight>
       </div>
     </div>
   );

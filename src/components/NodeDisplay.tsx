@@ -21,6 +21,7 @@ import {
   MOTION_EASE,
   MOTION_SPRING,
   MOTION_TRANSITION,
+  SURFACE_MOTION,
 } from "@/lib/motion";
 import { AutoHeight } from "@/components/motion";
 import Loading from "@/components/loading";
@@ -420,13 +421,13 @@ const NodeDisplay: React.FC<NodeDisplayProps> = ({
           ) : filteredNodes.length === 0 ? (
             <motion.div
               key={stageKey}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -8 }}
-              transition={{
-                duration: MOTION_DURATION.base,
-                ease: MOTION_EASE.standard,
+              initial={SURFACE_MOTION.swap.initial}
+              animate={SURFACE_MOTION.swap.animate}
+              exit={{
+                ...SURFACE_MOTION.swap.exit,
+                transition: SURFACE_MOTION.swap.exitTransition,
               }}
+              transition={SURFACE_MOTION.swap.transition}
             >
               <Flex
                 direction="column"
@@ -456,13 +457,13 @@ const NodeDisplay: React.FC<NodeDisplayProps> = ({
             <motion.div
               key={stageKey}
               className="w-full"
-              initial={{ opacity: 0, y: 6 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -4 }}
-              transition={{
-                opacity: { duration: MOTION_DURATION.fast, ease: MOTION_EASE.standard },
-                y: MOTION_SPRING.soft,
+              initial={SURFACE_MOTION.swap.initial}
+              animate={SURFACE_MOTION.swap.animate}
+              exit={{
+                ...SURFACE_MOTION.swap.exit,
+                transition: SURFACE_MOTION.swap.exitTransition,
               }}
+              transition={SURFACE_MOTION.swap.transition}
             >
               {viewMode === "grid" ? (
                 <NodeGrid

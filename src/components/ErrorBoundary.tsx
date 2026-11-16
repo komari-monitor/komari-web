@@ -75,7 +75,7 @@ class ErrorBoundary extends React.Component<
 
           {/* Error Details */}
           <details className="w-full max-w-xl">
-            <summary className="cursor-pointer text-sm font-medium text-red-500 hover:text-red-700 transition-colors duration-200">
+            <summary className="cursor-pointer text-sm font-medium text-red-500 hover:text-red-700 transition-colors duration-[var(--km-dur-fast)] ease-[var(--km-ease-standard)]">
               {i18n.t("errorBoundary.view_error_details", "View Error Details")}
             </summary>
             <pre className="mt-2 p-4 bg-red-100 text-sm text-red-900 border border-red-200 rounded-lg shadow-sm overflow-x-auto">
@@ -87,13 +87,13 @@ class ErrorBoundary extends React.Component<
           <div className="flex gap-2">
             <button
               onClick={() => window.location.reload()}
-              className="px-6 py-2 bg-red-600 text-white rounded-lg shadow hover:bg-red-700 transition-all duration-200 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50"
+              className="km-pressable px-6 py-2 bg-red-600 text-white rounded-lg shadow hover:bg-red-700 transition-[color,background-color,box-shadow,transform] duration-[var(--km-dur-fast)] ease-[var(--km-ease-standard)] focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-opacity-50"
             >
               {i18n.t("errorBoundary.reload_page", "Reload Page")}
             </button>
             <button
               onClick={() => (window.location.href = "/")}
-              className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg shadow hover:bg-gray-300 transition-all duration-200 ease-in-out transform hover:scale-105 focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50"
+              className="km-pressable px-6 py-2 bg-gray-200 text-gray-700 rounded-lg shadow hover:bg-gray-300 transition-[color,background-color,box-shadow,transform] duration-[var(--km-dur-fast)] ease-[var(--km-ease-standard)] focus:outline-none focus:ring-2 focus:ring-gray-500 focus:ring-opacity-50"
             >
               {i18n.t("errorBoundary.go_to_home", "Go to Home")}
             </button>

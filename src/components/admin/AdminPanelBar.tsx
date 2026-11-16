@@ -656,15 +656,9 @@ const AdminPanelBar = ({ content, onboardingReady = false }: AdminPanelBarProps)
             */}
             <motion.div
               key={contentSectionKey(location.pathname)}
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{
-                opacity: {
-                  duration: MOTION_DURATION.fast,
-                  ease: MOTION_EASE.standard,
-                },
-                y: MOTION_SPRING.soft,
-              }}
+              initial={SURFACE_MOTION.route.initial}
+              animate={SURFACE_MOTION.route.animate}
+              transition={SURFACE_MOTION.route.transition}
               className={isConfigFormPage ? "min-h-0 flex-1" : undefined}
             >
               {/* 页面骨架 -> 内容 的接棒入场；配置表单页需要保持 flex 撑满 */}
