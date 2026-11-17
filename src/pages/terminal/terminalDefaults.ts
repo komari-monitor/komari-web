@@ -14,7 +14,7 @@ export const DEFAULT_TERMINAL_OPTIONS: Pick<
   | "scrollback"
 > = {
   cursorBlink: true,
-  convertEol: true,
+  convertEol: false,
   fontFamily: DEFAULT_TERMINAL_FONT_FAMILY,
   fontSize: DEFAULT_TERMINAL_FONT_SIZE,
   macOptionIsMeta: true,
