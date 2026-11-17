@@ -34,6 +34,7 @@ const TerminalPage = () => {
     searchCaseSensitive,
     searchUseRegex,
     resourceMonitorServers,
+    tabLatencies,
     containerRef,
     sessionsReady,
     setActiveTabId,
@@ -51,6 +52,7 @@ const TerminalPage = () => {
     openFileManager,
     closeSearch,
     handleApiChange,
+    handleLatencyChange,
     startDragging,
     openClient,
     startRename,
@@ -116,6 +118,7 @@ const TerminalPage = () => {
               if (uuid) setEditorUuid(uuid);
             }}
             resourceMonitorServers={resourceMonitorServers}
+            tabLatencies={tabLatencies}
             onToggleResourceWindow={toggleResourceMonitor}
             onColor={colorTab}
             onClose={closeTab}
@@ -145,6 +148,7 @@ const TerminalPage = () => {
             onToggleUseRegex={handleToggleUseRegex}
             onCloseSearch={closeSearch}
             onApiChange={handleApiChange}
+            onLatencyChange={handleLatencyChange}
             onToggleSidebar={() => setIsSidebarOpen((open) => !open)}
             onStartDragging={startDragging}
             onOpenTerminalMenu={() => {

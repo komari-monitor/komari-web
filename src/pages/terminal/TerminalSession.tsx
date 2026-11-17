@@ -28,6 +28,7 @@ interface TerminalSessionProps {
   twoFaEnabled: boolean;
   disconnectMessage: string;
   onApiChange: (api: TerminalSessionApi | null) => void;
+  onLatencyChange?: (latencyMs: number | null) => void;
 }
 
 const RECONNECT_INTERVAL = 1000;
@@ -49,11 +50,13 @@ const TerminalSession = ({
   twoFaEnabled,
   disconnectMessage,
   onApiChange,
+  onLatencyChange,
 }: TerminalSessionProps) => {
   const hostRef = useRef<HTMLDivElement>(null);
   const activeRef = useRef(active);
   const disconnectMessageRef = useRef(disconnectMessage);
   const onApiChangeRef = useRef(onApiChange);
+  const onLatencyChangeRef = useRef(onLatencyChange);
   const apiRef = useRef<TerminalSessionApi | null>(null);
   const toastId = useId();
   const { t } = useTranslation();
@@ -69,6 +72,10 @@ const TerminalSession = ({
   useEffect(() => {
     onApiChangeRef.current = onApiChange;
   }, [onApiChange]);
+
+  useEffect(() => {
+    onLatencyChangeRef.current = onLatencyChange;
+  }, [onLatencyChange]);
 
   useEffect(() => {
     const currentApi = apiRef.current;
@@ -127,6 +134,8 @@ const TerminalSession = ({
     let waitingShown = false;
     // 收到 terminate 后进入终态：不再重连，也不再响应任何后续事件。
     let terminated = false;
+    let heartbeatSeq = 0;
+    const pendingHeartbeats = new Map<string, number>();
 
     term.loadAddon(fitAddon);
     term.loadAddon(searchAddon);
@@ -305,20 +314,31 @@ const TerminalSession = ({
     const handleWindowResize = () => fit();
     window.addEventListener("resize", handleWindowResize);
 
+    const clearLatency = () => {
+      pendingHeartbeats.clear();
+      onLatencyChangeRef.current?.(null);
+    };
+
+    const sendHeartbeat = () => {
+      if (!ws || ws.readyState !== WebSocket.OPEN) {
+        return;
+      }
+      const id = String(++heartbeatSeq);
+      if (pendingHeartbeats.size >= 8) {
+        const oldest = pendingHeartbeats.keys().next().value;
+        if (oldest !== undefined) {
+          pendingHeartbeats.delete(oldest);
+        }
+      }
+      pendingHeartbeats.set(id, performance.now());
+      ws.send(JSON.stringify({ type: "heartbeat", id }));
+    };
+
     const startHeartbeat = () => {
       if (heartbeatInterval !== null) {
         clearInterval(heartbeatInterval);
       }
-      heartbeatInterval = setInterval(() => {
-        if (ws && ws.readyState === WebSocket.OPEN) {
-          ws.send(
-            JSON.stringify({
-              type: "heartbeat",
-              timestamp: new Date().toISOString(),
-            }),
-          );
-        }
-      }, 10000);
+      heartbeatInterval = setInterval(sendHeartbeat, 10000);
     };
 
     const stopHeartbeat = () => {
@@ -426,14 +446,28 @@ const TerminalSession = ({
                 case "ready":
                   // 被控端就位，转发开始。
                   hideWaitingToast();
+                  sendHeartbeat();
+                  return;
+                case "heartbeat":
+                  if (typeof control.id === "string") {
+                    const sentAt = pendingHeartbeats.get(control.id);
+                    if (sentAt !== undefined) {
+                      pendingHeartbeats.delete(control.id);
+                      onLatencyChangeRef.current?.(
+                        Math.max(1, Math.round(performance.now() - sentAt)),
+                      );
+                    }
+                  }
                   return;
                 case "abort":
                   // 对端意外掉线：会话仍保留，稍后重连即可恢复。
+                  clearLatency();
                   showWaitingToast();
                   return;
                 case "terminate":
                   // 终态：不再重连。
                   terminated = true;
+                  clearLatency();
                   hideWaitingToast();
                   hideReconnectingToast();
                   term.write(`\n ${disconnectMessageRef.current}`);
@@ -474,6 +508,7 @@ const TerminalSession = ({
         if (ws !== socket) return;
         ws = null;
         stopHeartbeat();
+        clearLatency();
         // 等待提示只在“已连上但还没等到被控端”时有效，断线后交给重连流程重新给出。
         hideWaitingToast();
         if (stableConnectionTimer !== null) {
@@ -583,6 +618,7 @@ const TerminalSession = ({
         clearTimeout(firstBinaryTimeout);
       }
       stopHeartbeat();
+      clearLatency();
       if (reconnectTimer !== null) {
         clearTimeout(reconnectTimer);
       }

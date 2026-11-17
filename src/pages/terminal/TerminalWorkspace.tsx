@@ -37,6 +37,7 @@ export interface TerminalWorkspaceProps {
   onToggleUseRegex: () => void;
   onCloseSearch: () => void;
   onApiChange: (id: string, api: TerminalSessionApi | null) => void;
+  onLatencyChange: (id: string, latencyMs: number | null) => void;
   onToggleSidebar: () => void;
   onStartDragging: (event: ReactMouseEvent | ReactTouchEvent) => void;
   onOpenTerminalMenu: () => void;
@@ -80,6 +81,7 @@ const TerminalWorkspace = ({
   onToggleUseRegex,
   onCloseSearch,
   onApiChange,
+  onLatencyChange,
   onToggleSidebar,
   onStartDragging,
   onOpenTerminalMenu,
@@ -123,6 +125,7 @@ const TerminalWorkspace = ({
                 twoFaEnabled={twoFaEnabled}
                 disconnectMessage={disconnectMessage}
                 onApiChange={(api) => onApiChange(tab.id, api)}
+                onLatencyChange={(latency) => onLatencyChange(tab.id, latency)}
               />
             ))}
           <AnimatePresence initial={false}>

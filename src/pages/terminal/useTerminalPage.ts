@@ -71,6 +71,7 @@ export const useTerminalPage = () => {
   const [resourceMonitorServers, setResourceMonitorServers] = useState<
     string[]
   >([]);
+  const [tabLatencies, setTabLatencies] = useState<Record<string, number>>({});
 
   const containerRef = useRef<HTMLDivElement>(null);
   const draggingRef = useRef(false);
@@ -212,6 +213,26 @@ export const useTerminalPage = () => {
       if (activeTabIdRef.current === id) {
         setActiveApi(api);
       }
+    },
+    [],
+  );
+
+  const handleLatencyChange = useCallback(
+    (id: string, latencyMs: number | null) => {
+      setTabLatencies((current) => {
+        if (latencyMs === null) {
+          if (!(id in current)) {
+            return current;
+          }
+          const next = { ...current };
+          delete next[id];
+          return next;
+        }
+        if (current[id] === latencyMs) {
+          return current;
+        }
+        return { ...current, [id]: latencyMs };
+      });
     },
     [],
   );
@@ -444,6 +465,17 @@ export const useTerminalPage = () => {
       setResourceMonitorServers((current) =>
         current.filter((uuid) => !removedUuids.has(uuid)),
       );
+      setTabLatencies((current) => {
+        let changed = false;
+        const nextLatencies = { ...current };
+        for (const id of remove) {
+          if (id in nextLatencies) {
+            delete nextLatencies[id];
+            changed = true;
+          }
+        }
+        return changed ? nextLatencies : current;
+      });
       setEditingTabId((id) => (id && remove.has(id) ? null : id));
       if (activeId && remove.has(activeId)) {
         const nextActive =
@@ -815,6 +847,7 @@ export const useTerminalPage = () => {
     searchCaseSensitive,
     searchUseRegex,
     resourceMonitorServers,
+    tabLatencies,
     containerRef,
     sessionsReady,
     setActiveTabId,
@@ -832,6 +865,7 @@ export const useTerminalPage = () => {
     openFileManager,
     closeSearch,
     handleApiChange,
+    handleLatencyChange,
     startDragging,
     addTab,
     openClient,

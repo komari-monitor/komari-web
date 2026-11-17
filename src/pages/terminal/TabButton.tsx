@@ -9,6 +9,7 @@ import type { TerminalClient, TerminalTab } from "./terminalTypes";
 interface TabButtonProps {
   tab: TerminalTab;
   client: TerminalClient | undefined;
+  latencyMs?: number;
   index: number;
   active: boolean;
   editing: boolean;
@@ -24,6 +25,7 @@ interface TabButtonProps {
 const TabButton = ({
   tab,
   client,
+  latencyMs,
   index,
   active,
   editing,
@@ -60,6 +62,14 @@ const TabButton = ({
   };
   const shortcutNum = index < 10 ? (index === 9 ? 0 : index + 1) : null;
   const serverName = client?.name || tab.title;
+  const latencyToneClass =
+    latencyMs === undefined
+      ? ""
+      : latencyMs < 100
+      ? "text-emerald-400"
+      : latencyMs < 250
+      ? "text-amber-400"
+      : "text-rose-400";
 
   const tooltipContent = (
     <span className="flex flex-col items-center justify-center gap-0.5 rounded-[5px] border border-neutral-700 bg-[#202020] px-2 py-1 text-center leading-tight">
@@ -143,6 +153,14 @@ const TabButton = ({
             }`}
           >
             {tab.title}
+          </span>
+        )}
+
+        {!editing && latencyMs !== undefined && (
+          <span
+            className={`relative z-[1] shrink-0 font-mono text-[10px] tabular-nums opacity-85 ${latencyToneClass}`}
+          >
+            {latencyMs}ms
           </span>
         )}
 

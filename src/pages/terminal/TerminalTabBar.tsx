@@ -88,6 +88,7 @@ export interface TerminalTabBarProps {
   onOpenFileManager: (id: string) => void;
   onOpenEditor: (id: string) => void;
   resourceMonitorServers: string[];
+  tabLatencies: Record<string, number>;
   onToggleResourceWindow: (uuid: string) => void;
   onColor: (id: string, color: string | null) => void;
   onClose: (id: string, mode: CloseMode) => void;
@@ -97,6 +98,7 @@ export interface TerminalTabBarProps {
 interface SortableTabItemProps {
   tab: TerminalTab;
   client: TerminalClient | undefined;
+  latencyMs?: number;
   index: number;
   total: number;
   tabWidth: number;
@@ -128,6 +130,7 @@ interface SortableTabItemProps {
 const SortableTabItem = ({
   tab,
   client,
+  latencyMs,
   index,
   total,
   tabWidth,
@@ -232,6 +235,7 @@ const SortableTabItem = ({
       <TabButton
         tab={tab}
         client={client}
+        latencyMs={latencyMs}
         index={index}
         active={isActive}
         editing={editingTabId === tab.id}
@@ -259,6 +263,7 @@ const TerminalTabBar = ({
   workbenchMenuOpen,
   onWorkbenchMenuOpenChange,
   resourceMonitorServers,
+  tabLatencies,
   onToggleResourceWindow,
   onActivate,
   onOpenTerminalClient,
@@ -489,6 +494,7 @@ const TerminalTabBar = ({
                   <SortableTabItem
                     tab={tab}
                     client={client}
+                    latencyMs={tabLatencies[tab.id]}
                     index={index}
                     total={tabs.length}
                     tabWidth={tabWidth}
