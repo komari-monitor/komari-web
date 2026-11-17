@@ -158,17 +158,38 @@ export type LogEntry = {
 };
 
 /** 日志分页：只看 HTTP 状态；HTTP 失败统一成固定文案 */
-export const logsQuery = (limit: number, page: number) =>
-  routeQuery(`ops/logs/${limit}/${page}`, async () => {
-    const data = await api
-      .get<{ data: { logs: LogEntry[]; total: number } }>(`/api/admin/logs?limit=${limit}&page=${page}`, {
-        expectSuccess: false,
-      })
-      .catch((error) => {
-        throw error instanceof ApiError ? new Error("Failed to fetch logs") : error;
-      });
-    return { logs: data.data.logs, total: data.data.total };
+export const logsQuery = (
+  limit: number,
+  page: number,
+  msgType = "",
+  search = "",
+) => {
+  const normalizedSearch = search.trim();
+  const params = new URLSearchParams({
+    limit: String(limit),
+    page: String(page),
   });
+  if (msgType) params.set("msg_type", msgType);
+  if (normalizedSearch) params.set("q", normalizedSearch);
+  const key =
+    msgType || normalizedSearch
+      ? `ops/logs/${limit}/${page}?${params.toString()}`
+      : `ops/logs/${limit}/${page}`;
+  return routeQuery(
+    key,
+    async () => {
+      const data = await api
+        .get<{ data: { logs: LogEntry[]; total: number } }>(
+          `/api/admin/logs?${params.toString()}`,
+          { expectSuccess: false },
+        )
+        .catch((error) => {
+          throw error instanceof ApiError ? new Error("Failed to fetch logs") : error;
+        });
+      return { logs: data.data.logs, total: data.data.total };
+    },
+  );
+};
 
 /** 日志页首屏：默认每页 10 条、第 1 页 */
 export const LOGS_DEFAULT_LIMIT = 10;

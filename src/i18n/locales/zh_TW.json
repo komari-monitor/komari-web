@@ -732,7 +732,33 @@
     "username": "使用者名稱"
   },
   "logs": {
-    "title": "日誌"
+    "title": "日誌",
+    "filter_all_types": "全部類型",
+    "filter_type": "依類型篩選",
+    "search_placeholder": "搜尋訊息、IP 或 UUID",
+    "per_page": "每頁",
+    "showing": "顯示 {{from}}–{{to}}，共 {{total}} 筆",
+    "no_entries": "尚無日誌",
+    "load_failed": "日誌載入失敗",
+    "empty": "尚無日誌",
+    "no_matches": "沒有符合的日誌",
+    "clear_filters": "清除篩選",
+    "detail_title": "日誌詳情",
+    "field_time": "時間",
+    "field_ip": "IP",
+    "field_uuid": "UUID",
+    "field_type": "類型",
+    "field_message": "訊息",
+    "type": {
+      "info": "資訊",
+      "warn": "警告",
+      "error": "錯誤",
+      "login": "登入",
+      "logout": "登出",
+      "terminal": "終端機",
+      "renewal": "續約",
+      "unknown": "未知"
+    }
   },
   "market": {
     "add_source": "新增來源",

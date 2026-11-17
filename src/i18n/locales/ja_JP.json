@@ -707,7 +707,33 @@
     "username": "ユーザー名"
   },
   "logs": {
-    "title": "ログ"
+    "title": "ログ",
+    "filter_all_types": "すべての種類",
+    "filter_type": "種類で絞り込み",
+    "search_placeholder": "メッセージ・IP・UUID を検索",
+    "per_page": "表示件数",
+    "showing": "{{from}}–{{to}} / {{total}} 件を表示",
+    "no_entries": "ログはありません",
+    "load_failed": "ログの読み込みに失敗しました",
+    "empty": "まだログがありません",
+    "no_matches": "一致するログがありません",
+    "clear_filters": "絞り込みを解除",
+    "detail_title": "ログの詳細",
+    "field_time": "日時",
+    "field_ip": "IP",
+    "field_uuid": "UUID",
+    "field_type": "種類",
+    "field_message": "メッセージ",
+    "type": {
+      "info": "情報",
+      "warn": "警告",
+      "error": "エラー",
+      "login": "ログイン",
+      "logout": "ログアウト",
+      "terminal": "ターミナル",
+      "renewal": "更新",
+      "unknown": "不明"
+    }
   },
   "market": {
     "add_source": "ソースを追加",

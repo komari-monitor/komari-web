@@ -707,7 +707,33 @@
     "username": "用户名"
   },
   "logs": {
-    "title": "日志"
+    "title": "日志",
+    "filter_all_types": "全部类型",
+    "filter_type": "按类型筛选",
+    "search_placeholder": "搜索消息、IP 或 UUID",
+    "per_page": "每页",
+    "showing": "显示 {{from}}–{{to}}，共 {{total}} 条",
+    "no_entries": "暂无日志",
+    "load_failed": "日志加载失败",
+    "empty": "还没有日志",
+    "no_matches": "没有匹配的日志",
+    "clear_filters": "清除筛选",
+    "detail_title": "日志详情",
+    "field_time": "时间",
+    "field_ip": "IP",
+    "field_uuid": "UUID",
+    "field_type": "类型",
+    "field_message": "消息",
+    "type": {
+      "info": "信息",
+      "warn": "警告",
+      "error": "错误",
+      "login": "登录",
+      "logout": "登出",
+      "terminal": "终端",
+      "renewal": "续费",
+      "unknown": "未知"
+    }
   },
   "market": {
     "add_source": "添加源",

@@ -707,7 +707,33 @@
     "username": "Nama Pengguna"
   },
   "logs": {
-    "title": "Log"
+    "title": "Log",
+    "filter_all_types": "Semua jenis",
+    "filter_type": "Filter menurut jenis",
+    "search_placeholder": "Cari pesan, IP, atau UUID",
+    "per_page": "Per halaman",
+    "showing": "Menampilkan {{from}}–{{to}} dari {{total}}",
+    "no_entries": "Belum ada log",
+    "load_failed": "Gagal memuat log",
+    "empty": "Belum ada log",
+    "no_matches": "Tidak ada log yang cocok",
+    "clear_filters": "Hapus filter",
+    "detail_title": "Detail log",
+    "field_time": "Waktu",
+    "field_ip": "IP",
+    "field_uuid": "UUID",
+    "field_type": "Jenis",
+    "field_message": "Pesan",
+    "type": {
+      "info": "Info",
+      "warn": "Peringatan",
+      "error": "Kesalahan",
+      "login": "Masuk",
+      "logout": "Keluar",
+      "terminal": "Terminal",
+      "renewal": "Perpanjangan",
+      "unknown": "Tidak diketahui"
+    }
   },
   "market": {
     "add_source": "Tambah sumber",
