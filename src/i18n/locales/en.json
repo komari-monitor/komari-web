@@ -1542,6 +1542,13 @@
     "no_active_connection": "No active connection",
     "reconnecting": "Connection lost. Reconnecting...",
     "server": "Server",
+    "split": {
+      "down": "Split Down",
+      "left": "Split Left",
+      "menu": "Split Pane",
+      "right": "Split Right",
+      "up": "Split Up"
+    },
     "clients_load_failed": "Failed to load servers",
     "title": "Terminal",
     "title_with_sessions": "Terminal - {{name}} ({{count}} sessions)",

@@ -1583,6 +1583,13 @@
     "otp_invalid": "2FAコードが無効または期限切れです",
     "reconnecting": "接続が切断されました。再接続しています...",
     "rename_tab": "タブ名を変更",
+    "split": {
+      "down": "下に分割",
+      "left": "左に分割",
+      "menu": "ペイン分割",
+      "right": "右に分割",
+      "up": "上に分割"
+    },
     "resource_monitor": {
       "close": "リソースモニターを隠す",
       "load_error": "リアルタイムデータを読み込めませんでした",

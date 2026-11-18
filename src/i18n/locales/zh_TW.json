@@ -1558,6 +1558,13 @@
     "otp_invalid": "2FA 驗證碼無效或已過期",
     "reconnecting": "連線中斷，正在重新連線...",
     "rename_tab": "重新命名分頁",
+    "split": {
+      "down": "向下分割",
+      "left": "向左分割",
+      "menu": "分割畫面",
+      "right": "向右分割",
+      "up": "向上分割"
+    },
     "resource_monitor": {
       "close": "隱藏資源小窗",
       "load_error": "即時資料載入失敗",

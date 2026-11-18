@@ -2,7 +2,6 @@ import "@xterm/xterm/css/xterm.css";
 import { Theme } from "@radix-ui/themes";
 import TerminalNotices from "./TerminalNotices";
 import TerminalResourceMonitor from "./TerminalResourceMonitor";
-import TerminalTabBar from "./TerminalTabBar";
 import TerminalWorkspace from "./TerminalWorkspace";
 import { useTerminalPage } from "./useTerminalPage";
 import { DEFAULT_TERMINAL_FONT_FAMILY } from "./terminalDefaults";
@@ -19,10 +18,13 @@ const TerminalPage = () => {
     clients,
     clientsLoading,
     tabs,
+    paneTree,
+    leaves,
+    activePaneId,
     activeTabId,
     editingTabId,
     renameDraft,
-    serverMenuOpen,
+    serverMenuPaneId,
     isSidebarOpen,
     leftWidth,
     httpsCalloutOpen,
@@ -37,8 +39,9 @@ const TerminalPage = () => {
     tabLatencies,
     containerRef,
     sessionsReady,
-    setActiveTabId,
-    setServerMenuOpen,
+    focusPane,
+    activateTabInPane,
+    setServerMenuPaneId,
     setRenameDraft,
     setIsSidebarOpen,
     setHttpsCalloutOpen,
@@ -63,10 +66,16 @@ const TerminalPage = () => {
     colorTab,
     closeTab,
     reorderTab,
+    splitPane,
+    moveTab,
+    resizeSplit,
+    fitAllSessions,
   } = useTerminalPage();
 
   const [editorUuid, setEditorUuid] = useState<string | null>(null);
-  const [workbenchMenuOpen, setWorkbenchMenuOpen] = useState(false);
+  const [workbenchMenuPaneId, setWorkbenchMenuPaneId] = useState<string | null>(
+    null,
+  );
 
   return (
       <Theme
@@ -82,56 +91,23 @@ const TerminalPage = () => {
           className="km-terminal-shell flex h-screen w-screen min-w-0 flex-col bg-[#1e1e1e] text-[#cccccc]"
           style={appearance}
         >
-          <TerminalTabBar
-            tabs={tabs}
-            clients={clients}
-            clientsLoading={clientsLoading}
-            activeTabId={activeTabId}
-            editingTabId={editingTabId}
-            renameDraft={renameDraft}
-            serverMenuOpen={serverMenuOpen}
-            onServerMenuOpenChange={(open) => {
-              setServerMenuOpen(open);
-              if (open) setWorkbenchMenuOpen(false);
-            }}
-            workbenchMenuOpen={workbenchMenuOpen}
-            onWorkbenchMenuOpenChange={(open) => {
-              setWorkbenchMenuOpen(open);
-              if (open) setServerMenuOpen(false);
-            }}
-            onActivate={setActiveTabId}
-            onOpenTerminalClient={openClient}
-            onOpenWorkbenchClient={(client) => {
-              setEditorUuid(client.uuid);
-              setWorkbenchMenuOpen(false);
-            }}
-            onStartRename={startRename}
-            onDraftChange={setRenameDraft}
-            onCommitRename={commitRename}
-            onCancelRename={cancelRename}
-            onDuplicate={duplicateTab}
-            onExportText={exportText}
-            onFind={openSearch}
-            onOpenFileManager={openFileManager}
-            onOpenEditor={(tabId) => {
-              const uuid = tabs.find((tab) => tab.id === tabId)?.uuid;
-              if (uuid) setEditorUuid(uuid);
-            }}
-            resourceMonitorServers={resourceMonitorServers}
-            tabLatencies={tabLatencies}
-            onToggleResourceWindow={toggleResourceMonitor}
-            onColor={colorTab}
-            onClose={closeTab}
-            onReorder={reorderTab}
-          />
-
           <TerminalWorkspace
             containerRef={containerRef}
             isSidebarOpen={isSidebarOpen}
             leftWidth={leftWidth}
             tabs={tabs}
+            paneTree={paneTree}
+            leaves={leaves}
+            activePaneId={activePaneId}
+            clients={clients}
             clientsLoading={clientsLoading}
             activeTabId={activeTabId}
+            editingTabId={editingTabId}
+            renameDraft={renameDraft}
+            serverMenuPaneId={serverMenuPaneId}
+            workbenchMenuPaneId={workbenchMenuPaneId}
+            resourceMonitorServers={resourceMonitorServers}
+            tabLatencies={tabLatencies}
             sessionsReady={sessionsReady}
             twoFaEnabled={twoFaEnabled}
             disconnectMessage={t("terminal.disconnect")}
@@ -151,14 +127,41 @@ const TerminalPage = () => {
             onLatencyChange={handleLatencyChange}
             onToggleSidebar={() => setIsSidebarOpen((open) => !open)}
             onStartDragging={startDragging}
-            onOpenTerminalMenu={() => {
-              setWorkbenchMenuOpen(false);
-              setServerMenuOpen(true);
+            onFocusPane={focusPane}
+            onActivateTab={activateTabInPane}
+            onServerMenuOpenChange={(paneId, open) => {
+              setServerMenuPaneId(open ? paneId : null);
+              if (open) setWorkbenchMenuPaneId(null);
             }}
-            onOpenWorkbenchMenu={() => {
-              setServerMenuOpen(false);
-              setWorkbenchMenuOpen(true);
+            onWorkbenchMenuOpenChange={(paneId, open) => {
+              setWorkbenchMenuPaneId(open ? paneId : null);
+              if (open) setServerMenuPaneId(null);
             }}
+            onOpenTerminalClient={(client, paneId) => openClient(client, paneId)}
+            onOpenWorkbenchClient={(client) => {
+              setEditorUuid(client.uuid);
+              setWorkbenchMenuPaneId(null);
+            }}
+            onStartRename={startRename}
+            onDraftChange={setRenameDraft}
+            onCommitRename={commitRename}
+            onCancelRename={cancelRename}
+            onDuplicate={duplicateTab}
+            onExportText={exportText}
+            onFind={openSearch}
+            onOpenFileManager={openFileManager}
+            onOpenEditor={(tabId) => {
+              const uuid = tabs.find((tab) => tab.id === tabId)?.uuid;
+              if (uuid) setEditorUuid(uuid);
+            }}
+            onToggleResourceWindow={toggleResourceMonitor}
+            onColor={colorTab}
+            onClose={closeTab}
+            onReorderTab={reorderTab}
+            onSplitPane={splitPane}
+            onMoveTab={moveTab}
+            onResizeSplit={resizeSplit}
+            onResizeSplitEnd={fitAllSessions}
           />
         </div>
 
@@ -170,7 +173,12 @@ const TerminalPage = () => {
         <TerminalGuide
           authenticated={onboardingAuthenticated}
           hasTabs={!clientsLoading && tabs.length > 0}
-          blocked={Boolean(editorUuid) || serverMenuOpen || workbenchMenuOpen || Boolean(editingTabId)}
+          blocked={
+            Boolean(editorUuid) ||
+            Boolean(serverMenuPaneId) ||
+            Boolean(workbenchMenuPaneId) ||
+            Boolean(editingTabId)
+          }
         />
 
         {editorUuid && (

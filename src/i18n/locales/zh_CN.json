@@ -1599,6 +1599,13 @@
       "use_regex": "正则表达式"
     },
     "server": "服务器",
+    "split": {
+      "down": "向下分屏",
+      "left": "向左分屏",
+      "menu": "分屏拆分",
+      "right": "向右分屏",
+      "up": "向上分屏"
+    },
     "tabs": {
       "choose_server": "选择服务器",
       "connecting": "正在连接...",

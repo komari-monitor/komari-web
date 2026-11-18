@@ -1,5 +1,5 @@
-import Loading from "@/components/loading";
-import { AnimatePresence, motion } from "motion/react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { motion } from "motion/react";
 import { CONTROL_MOTION, MOTION_SPRING, MOTION_TRANSITION } from "@/lib/motion";
 import type {
   MouseEvent as ReactMouseEvent,
@@ -7,20 +7,50 @@ import type {
   TouchEvent as ReactTouchEvent,
 } from "react";
 import { useTranslation } from "react-i18next";
-import { Code2, PanelRightClose, PanelRightOpen, SquareTerminal } from "lucide-react";
+import { PanelRightClose, PanelRightOpen } from "lucide-react";
+import {
+  DndContext,
+  DragOverlay,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+  type DragEndEvent,
+  type DragStartEvent,
+} from "@dnd-kit/core";
+import { getOSImage } from "@/utils/osImageHelper";
 import FileManagerPanel from "./FileManagerPanel";
 import TerminalSession from "./TerminalSession";
-import { TerminalSearchBar } from "./TerminalSearchBar";
+import TerminalPaneTree, {
+  PersistentSessionPortal,
+  type DragHoverTarget,
+} from "./TerminalPaneTree";
 import type { TerminalSessionApi } from "./TerminalSession";
-import type { TerminalTab } from "./terminalTypes";
+import type {
+  DropZone,
+  SplitZone,
+  TerminalPaneLeaf,
+  TerminalPaneNode,
+} from "./splitTree";
+import type { CloseMode, TerminalClient, TerminalTab } from "./terminalTypes";
 
 export interface TerminalWorkspaceProps {
   containerRef: RefObject<HTMLDivElement | null>;
   isSidebarOpen: boolean;
   leftWidth: number;
   tabs: TerminalTab[];
+  paneTree: TerminalPaneNode;
+  leaves: TerminalPaneLeaf[];
+  activePaneId: string;
+  clients: TerminalClient[];
   clientsLoading: boolean;
   activeTabId: string | null;
+  editingTabId: string | null;
+  renameDraft: string;
+  serverMenuPaneId: string | null;
+  workbenchMenuPaneId: string | null;
+  resourceMonitorServers: string[];
+  tabLatencies: Record<string, number>;
   sessionsReady: boolean;
   twoFaEnabled: boolean;
   disconnectMessage: string;
@@ -40,8 +70,34 @@ export interface TerminalWorkspaceProps {
   onLatencyChange: (id: string, latencyMs: number | null) => void;
   onToggleSidebar: () => void;
   onStartDragging: (event: ReactMouseEvent | ReactTouchEvent) => void;
-  onOpenTerminalMenu: () => void;
-  onOpenWorkbenchMenu: () => void;
+  onFocusPane: (paneId: string) => void;
+  onActivateTab: (paneId: string, tabId: string) => void;
+  onServerMenuOpenChange: (paneId: string, open: boolean) => void;
+  onWorkbenchMenuOpenChange: (paneId: string, open: boolean) => void;
+  onOpenTerminalClient: (client: TerminalClient, paneId: string) => void;
+  onOpenWorkbenchClient: (client: TerminalClient) => void;
+  onStartRename: (tabId: string) => void;
+  onDraftChange: (value: string) => void;
+  onCommitRename: () => void;
+  onCancelRename: () => void;
+  onDuplicate: (tabId: string) => void;
+  onExportText: (tabId: string) => void;
+  onFind: (tabId: string) => void;
+  onOpenFileManager: (tabId: string) => void;
+  onOpenEditor: (tabId: string) => void;
+  onToggleResourceWindow: (uuid: string) => void;
+  onColor: (tabId: string, color: string | null) => void;
+  onClose: (tabId: string, mode: CloseMode, paneId: string) => void;
+  onReorderTab: (paneId: string, sourceId: string, targetId: string) => void;
+  onSplitPane: (paneId: string, zone: SplitZone, tabId?: string) => void;
+  onMoveTab: (
+    tabId: string,
+    targetPaneId: string,
+    zone: DropZone,
+    insertBeforeTabId?: string | null,
+  ) => void;
+  onResizeSplit: (splitId: string, ratio: number) => void;
+  onResizeSplitEnd: () => void;
 }
 
 const Divider = ({
@@ -58,13 +114,105 @@ const Divider = ({
   />
 );
 
+const computeDropZoneForBody = (
+  rect: DOMRect,
+  clientX: number,
+  clientY: number,
+  allowCenterMerge: boolean,
+): DropZone => {
+  const rx = Math.max(
+    0,
+    Math.min(1, (clientX - rect.left) / Math.max(1, rect.width)),
+  );
+  const ry = Math.max(
+    0,
+    Math.min(1, (clientY - rect.top) / Math.max(1, rect.height)),
+  );
+  const edgeThreshold = allowCenterMerge ? 0.28 : 0.5;
+  const minEdge = Math.min(rx, 1 - rx, ry, 1 - ry);
+
+  if (allowCenterMerge && minEdge > edgeThreshold) {
+    return "center";
+  }
+  if (minEdge === rx) return "left";
+  if (minEdge === 1 - rx) return "right";
+  if (minEdge === ry) return "top";
+  return "bottom";
+};
+
+const resolveHoverTargetAtPoint = (
+  clientX: number,
+  clientY: number,
+  dragSourcePaneId: string | null,
+  draggingTabId: string | null,
+): DragHoverTarget | null => {
+  const elements = document.elementsFromPoint(clientX, clientY);
+
+  for (const el of elements) {
+    if (!(el instanceof HTMLElement)) continue;
+
+    const tabBarEl = el.closest<HTMLElement>("[data-pane-tabbar]");
+    if (tabBarEl) {
+      const paneId = tabBarEl.dataset.paneTabbar;
+      if (!paneId) continue;
+
+      let insertBeforeTabId: string | null = null;
+      const tabEls = Array.from(
+        tabBarEl.querySelectorAll<HTMLElement>("[data-tab-id]"),
+      );
+      for (const tabEl of tabEls) {
+        const tid = tabEl.dataset.tabId;
+        if (!tid || tid === draggingTabId) continue;
+        const r = tabEl.getBoundingClientRect();
+        if (clientX < r.left + r.width / 2) {
+          insertBeforeTabId = tid;
+          break;
+        }
+      }
+
+      return {
+        paneId,
+        zone: "tabbar",
+        insertBeforeTabId,
+      };
+    }
+
+    const bodyEl = el.closest<HTMLElement>("[data-pane-body]");
+    if (bodyEl) {
+      const paneId = bodyEl.dataset.paneBody;
+      if (!paneId) continue;
+      const rect = bodyEl.getBoundingClientRect();
+      const allowCenterMerge = dragSourcePaneId !== paneId;
+      const zone = computeDropZoneForBody(
+        rect,
+        clientX,
+        clientY,
+        allowCenterMerge,
+      );
+      return { paneId, zone };
+    }
+  }
+
+  return null;
+};
+
 const TerminalWorkspace = ({
   containerRef,
   isSidebarOpen,
   leftWidth,
   tabs,
+  paneTree,
+  leaves,
+  activePaneId,
+  clients,
   clientsLoading,
   activeTabId,
+  editingTabId,
+  renameDraft,
+  serverMenuPaneId,
+  workbenchMenuPaneId,
+  resourceMonitorServers,
+  tabLatencies,
   sessionsReady,
   twoFaEnabled,
   disconnectMessage,
@@ -84,10 +232,171 @@ const TerminalWorkspace = ({
   onLatencyChange,
   onToggleSidebar,
   onStartDragging,
-  onOpenTerminalMenu,
-  onOpenWorkbenchMenu,
+  onFocusPane,
+  onActivateTab,
+  onServerMenuOpenChange,
+  onWorkbenchMenuOpenChange,
+  onOpenTerminalClient,
+  onOpenWorkbenchClient,
+  onStartRename,
+  onDraftChange,
+  onCommitRename,
+  onCancelRename,
+  onDuplicate,
+  onExportText,
+  onFind,
+  onOpenFileManager,
+  onOpenEditor,
+  onToggleResourceWindow,
+  onColor,
+  onClose,
+  onReorderTab,
+  onSplitPane,
+  onMoveTab,
+  onResizeSplit,
+  onResizeSplitEnd,
 }: TerminalWorkspaceProps) => {
   const { t } = useTranslation();
+  const [viewportsByPane, setViewportsByPane] = useState<
+    Record<string, HTMLDivElement | null>
+  >({});
+  const [draggingTabId, setDraggingTabId] = useState<string | null>(null);
+  const [dragSourcePaneId, setDragSourcePaneId] = useState<string | null>(null);
+  const [dragHoverTarget, setDragHoverTarget] =
+    useState<DragHoverTarget | null>(null);
+  const dragHoverRef = useRef<DragHoverTarget | null>(null);
+  dragHoverRef.current = dragHoverTarget;
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 5,
+      },
+    }),
+  );
+
+  const tabsById = useMemo(
+    () => new Map(tabs.map((tab) => [tab.id, tab])),
+    [tabs],
+  );
+
+  const clientsByUuid = useMemo(
+    () => new Map(clients.map((client) => [client.uuid, client])),
+    [clients],
+  );
+
+  const tabOwnerLeafByTabId = useMemo(() => {
+    const map = new Map<string, TerminalPaneLeaf>();
+    for (const leaf of leaves) {
+      for (const tabId of leaf.tabIds) {
+        map.set(tabId, leaf);
+      }
+    }
+    return map;
+  }, [leaves]);
+
+  const handleViewportMount = useCallback(
+    (paneId: string, element: HTMLDivElement | null) => {
+      setViewportsByPane((current) => {
+        if (current[paneId] === element) return current;
+        const next = { ...current };
+        if (element) {
+          next[paneId] = element;
+        } else {
+          delete next[paneId];
+        }
+        return next;
+      });
+    },
+    [],
+  );
+
+  useEffect(() => {
+    if (!draggingTabId) {
+      setDragHoverTarget(null);
+      return;
+    }
+
+    const handlePointerMove = (event: PointerEvent) => {
+      const nextTarget = resolveHoverTargetAtPoint(
+        event.clientX,
+        event.clientY,
+        dragSourcePaneId,
+        draggingTabId,
+      );
+      setDragHoverTarget((prev) => {
+        if (
+          prev?.paneId === nextTarget?.paneId &&
+          prev?.zone === nextTarget?.zone &&
+          prev?.insertBeforeTabId === nextTarget?.insertBeforeTabId
+        ) {
+          return prev;
+        }
+        return nextTarget;
+      });
+    };
+
+    window.addEventListener("pointermove", handlePointerMove, { passive: true });
+    return () => {
+      window.removeEventListener("pointermove", handlePointerMove);
+    };
+  }, [dragSourcePaneId, draggingTabId]);
+
+  const resetDragState = useCallback(() => {
+    setDraggingTabId(null);
+    setDragSourcePaneId(null);
+    setDragHoverTarget(null);
+  }, []);
+
+  const handleDragStart = useCallback((event: DragStartEvent) => {
+    const tabId = String(event.active.id);
+    const paneId =
+      (event.active.data.current?.paneId as string | undefined) ?? null;
+    setDraggingTabId(tabId);
+    setDragSourcePaneId(paneId);
+  }, []);
+
+  const handleDragEnd = useCallback(
+    (event: DragEndEvent) => {
+      const tabId = String(event.active.id);
+      const sourcePane =
+        (event.active.data.current?.paneId as string | undefined) ??
+        dragSourcePaneId;
+      const hover = dragHoverRef.current;
+      resetDragState();
+
+      if (!sourcePane) return;
+
+      // Released inside the same pane's tab bar -> reorder within this tab bar
+      if (hover && hover.paneId === sourcePane && hover.zone === "tabbar") {
+        const overId = event.over ? String(event.over.id) : null;
+        const overPaneId =
+          (event.over?.data.current?.paneId as string | undefined) ?? null;
+        if (overId && overId !== tabId && overPaneId === sourcePane) {
+          onReorderTab(sourcePane, tabId, overId);
+        } else if (hover.insertBeforeTabId && hover.insertBeforeTabId !== tabId) {
+          onReorderTab(sourcePane, tabId, hover.insertBeforeTabId);
+        }
+        return;
+      }
+
+      // Released outside source tab bar -> split or move to target pane without changing remaining tabs' order
+      if (hover) {
+        onMoveTab(
+          tabId,
+          hover.paneId,
+          hover.zone,
+          hover.zone === "tabbar" ? hover.insertBeforeTabId : null,
+        );
+      }
+    },
+    [dragSourcePaneId, onMoveTab, onReorderTab, resetDragState],
+  );
+
+  const draggingTab = draggingTabId ? tabsById.get(draggingTabId) : undefined;
+  const draggingClient = draggingTab
+    ? clientsByUuid.get(draggingTab.uuid)
+    : undefined;
 
   return (
     <div
@@ -100,83 +409,111 @@ const TerminalWorkspace = ({
           width: isSidebarOpen ? `${leftWidth}px` : "100%",
         }}
       >
-        <TerminalSearchBar
-          open={searchOpen}
-          searchTerm={searchTerm}
-          resultIndex={searchResultIndex}
-          resultCount={searchResultCount}
-          caseSensitive={searchCaseSensitive}
-          useRegex={searchUseRegex}
-          onSearchTermChange={onSearchTermChange}
-          onFindNext={onFindNext}
-          onFindPrevious={onFindPrevious}
-          onToggleCaseSensitive={onToggleCaseSensitive}
-          onToggleUseRegex={onToggleUseRegex}
-          onClose={onCloseSearch}
-        />
+        <DndContext
+          sensors={sensors}
+          collisionDetection={closestCenter}
+          onDragStart={handleDragStart}
+          onDragEnd={handleDragEnd}
+          onDragCancel={resetDragState}
+        >
+          <TerminalPaneTree
+            node={paneTree}
+            activePaneId={activePaneId}
+            hasMultiplePanes={leaves.length > 1}
+            tabsById={tabsById}
+            clients={clients}
+            clientsLoading={clientsLoading}
+            editingTabId={editingTabId}
+            renameDraft={renameDraft}
+            serverMenuPaneId={serverMenuPaneId}
+            workbenchMenuPaneId={workbenchMenuPaneId}
+            resourceMonitorServers={resourceMonitorServers}
+            tabLatencies={tabLatencies}
+            sessionsReady={sessionsReady}
+            draggingTabId={draggingTabId}
+            dragSourcePaneId={dragSourcePaneId}
+            dragHoverTarget={dragHoverTarget}
+            searchOpen={searchOpen}
+            searchTerm={searchTerm}
+            searchResultIndex={searchResultIndex}
+            searchResultCount={searchResultCount}
+            searchCaseSensitive={searchCaseSensitive}
+            searchUseRegex={searchUseRegex}
+            onSearchTermChange={onSearchTermChange}
+            onFindNext={onFindNext}
+            onFindPrevious={onFindPrevious}
+            onToggleCaseSensitive={onToggleCaseSensitive}
+            onToggleUseRegex={onToggleUseRegex}
+            onCloseSearch={onCloseSearch}
+            onFocusPane={onFocusPane}
+            onActivateTab={onActivateTab}
+            onServerMenuOpenChange={onServerMenuOpenChange}
+            onWorkbenchMenuOpenChange={onWorkbenchMenuOpenChange}
+            onOpenTerminalClient={onOpenTerminalClient}
+            onOpenWorkbenchClient={onOpenWorkbenchClient}
+            onStartRename={onStartRename}
+            onDraftChange={onDraftChange}
+            onCommitRename={onCommitRename}
+            onCancelRename={onCancelRename}
+            onDuplicate={onDuplicate}
+            onExportText={onExportText}
+            onFind={onFind}
+            onOpenFileManager={onOpenFileManager}
+            onOpenEditor={onOpenEditor}
+            onToggleResourceWindow={onToggleResourceWindow}
+            onColor={onColor}
+            onClose={onClose}
+            onSplitPane={onSplitPane}
+            onResizeSplit={onResizeSplit}
+            onResizeSplitEnd={onResizeSplitEnd}
+            onViewportMount={handleViewportMount}
+          />
 
-        <div className="km-terminal-session-stack relative h-full min-h-0 min-w-0 flex-1 overflow-hidden bg-[#000000]">
-          {sessionsReady &&
-            tabs.map((tab) => (
-              <TerminalSession
-                key={tab.id}
-                uuid={tab.uuid}
-                active={tab.id === activeTabId}
-                twoFaEnabled={twoFaEnabled}
-                disconnectMessage={disconnectMessage}
-                onApiChange={(api) => onApiChange(tab.id, api)}
-                onLatencyChange={(latency) => onLatencyChange(tab.id, latency)}
-              />
-            ))}
-          <AnimatePresence initial={false}>
-          {tabs.length === 0 && (
-            <motion.div
-              key="terminal-empty-state"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -6 }}
-              transition={MOTION_SPRING.soft}
-              className="km-terminal-empty-state flex h-full w-full flex-col items-center justify-center gap-3"
-            >
-              {clientsLoading ? (
-                <Loading compact />
-              ) : (
-                <strong className="text-neutral-400">{t("terminal.tabs.empty_title")}</strong>
-              )}
-              <div className={`flex items-center gap-2 ${clientsLoading ? "opacity-40 pointer-events-none" : ""}`}>
-                <button
-                  onClick={onOpenTerminalMenu}
-                  className="flex items-center gap-1.5 rounded-[6px] border border-neutral-700 bg-neutral-800/80 px-3 py-1.5 text-xs text-neutral-200 transition-colors hover:bg-neutral-700 disabled:opacity-50"
-                >
-                  <SquareTerminal size={14} />
-                  {t("terminal.tabs.open_terminal", "Open terminal")}
-                </button>
-                <button
-                  onClick={onOpenWorkbenchMenu}
-                  className="flex items-center gap-1.5 rounded-[6px] border border-neutral-700 bg-neutral-800/80 px-3 py-1.5 text-xs text-neutral-200 transition-colors hover:bg-neutral-700 disabled:opacity-50"
-                >
-                  <Code2 size={14} />
-                  {t("terminal.tabs.open_workbench", "Open workbench")}
-                </button>
+          <DragOverlay dropAnimation={null}>
+            {draggingTab ? (
+              <div
+                className="pointer-events-none flex h-8 max-w-[220px] items-center gap-2 rounded-[8px] border border-sky-400/60 bg-[#252526]/95 px-3 text-xs font-medium text-white shadow-2xl backdrop-blur-md"
+                style={
+                  draggingTab.color
+                    ? { backgroundColor: draggingTab.color }
+                    : undefined
+                }
+              >
+                <img
+                  src={getOSImage(draggingClient?.os || "")}
+                  alt=""
+                  draggable={false}
+                  className="h-3.5 w-3.5 shrink-0 object-contain"
+                />
+                <span className="truncate">{draggingTab.title}</span>
               </div>
-            </motion.div>
-          )}
-          </AnimatePresence>
-          <AnimatePresence initial={false}>
-          {tabs.length > 0 && !sessionsReady && (
-            <motion.div
-              key="terminal-loading-state"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              transition={MOTION_SPRING.soft}
-              className="km-terminal-loading-state absolute inset-0 z-[3] flex flex-col items-center justify-center gap-2.5 text-sm text-neutral-400"
-            >
-              <Loading compact />
-            </motion.div>
-          )}
-          </AnimatePresence>
-        </div>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
+
+        {sessionsReady &&
+          tabs.map((tab) => {
+            const ownerLeaf = tabOwnerLeafByTabId.get(tab.id);
+            const isPaneActiveTab = ownerLeaf?.activeTabId === tab.id;
+            const targetViewport = ownerLeaf
+              ? (viewportsByPane[ownerLeaf.id] ?? null)
+              : null;
+            return (
+              <PersistentSessionPortal
+                key={tab.id}
+                targetViewport={targetViewport}
+              >
+                <TerminalSession
+                  uuid={tab.uuid}
+                  active={Boolean(isPaneActiveTab)}
+                  twoFaEnabled={twoFaEnabled}
+                  disconnectMessage={disconnectMessage}
+                  onApiChange={(api) => onApiChange(tab.id, api)}
+                  onLatencyChange={(latency) => onLatencyChange(tab.id, latency)}
+                />
+              </PersistentSessionPortal>
+            );
+          })}
         <motion.button
           type="button"
           whileTap={CONTROL_MOTION.tap}

@@ -12,6 +12,7 @@ interface TabButtonProps {
   latencyMs?: number;
   index: number;
   active: boolean;
+  showGuideTarget?: boolean;
   editing: boolean;
   draft: string;
   onActivate: () => void;
@@ -28,6 +29,7 @@ const TabButton = ({
   latencyMs,
   index,
   active,
+  showGuideTarget = active,
   editing,
   draft,
   onActivate,
@@ -95,7 +97,7 @@ const TabButton = ({
         新增/关闭/重排的补位动画由 TerminalTabBar 的 layout 负责。
       */}
       <div
-        data-guide={active ? "terminal-tab" : undefined}
+        data-guide={showGuideTarget ? "terminal-tab" : undefined}
         role="tab"
         aria-selected={active}
         className={`group relative flex h-full w-full min-w-0 cursor-pointer items-center gap-2 px-3 select-none transition-colors duration-[var(--km-dur-fast)] ease-[var(--km-ease-standard)] ${

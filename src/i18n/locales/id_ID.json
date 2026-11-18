@@ -1583,6 +1583,13 @@
     "otp_invalid": "Kode 2FA tidak valid atau kedaluwarsa",
     "reconnecting": "Koneksi terputus. Menyambung ulang...",
     "rename_tab": "Ubah Nama Tab",
+    "split": {
+      "down": "Bagi ke Bawah",
+      "left": "Bagi ke Kiri",
+      "menu": "Bagi Panel",
+      "right": "Bagi ke Kanan",
+      "up": "Bagi ke Atas"
+    },
     "resource_monitor": {
       "close": "Sembunyikan Monitor Sumber Daya",
       "load_error": "Gagal memuat data waktu nyata",

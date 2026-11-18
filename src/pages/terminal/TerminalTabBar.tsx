@@ -19,19 +19,10 @@ import {
   SquareTerminal,
 } from "lucide-react";
 import {
-  DndContext,
-  PointerSensor,
-  closestCenter,
-  useSensor,
-  useSensors,
-  type DragEndEvent,
-} from "@dnd-kit/core";
-import {
   SortableContext,
   horizontalListSortingStrategy,
   useSortable,
 } from "@dnd-kit/sortable";
-import { restrictToHorizontalAxis } from "@dnd-kit/modifiers";
 import { CSS } from "@dnd-kit/utilities";
 import {
   DropdownMenu,
@@ -50,6 +41,7 @@ import {
 import { useKmReducedMotion } from "@/components/motion/MotionProvider";
 import TabButton from "./TabButton";
 import TabMenu from "./TabMenu";
+import type { SplitZone } from "./splitTree";
 import {
   ACTIONS_RESERVED_WIDTH,
   MAX_TAB_WIDTH,
@@ -65,6 +57,12 @@ import {
 } from "./terminalTypes";
 
 export interface TerminalTabBarProps {
+  paneId: string;
+  isFocusedPane?: boolean;
+  hasMultiplePanes?: boolean;
+  isDraggingTab?: boolean;
+  isTabBarDropTarget?: boolean;
+  freezeSortTransform?: boolean;
   tabs: TerminalTab[];
   clients: TerminalClient[];
   clientsLoading: boolean;
@@ -92,10 +90,14 @@ export interface TerminalTabBarProps {
   onToggleResourceWindow: (uuid: string) => void;
   onColor: (id: string, color: string | null) => void;
   onClose: (id: string, mode: CloseMode) => void;
-  onReorder: (sourceId: string, targetId: string) => void;
+  onSplit?: (zone: SplitZone, tabId?: string) => void;
+  onFocusPane?: () => void;
 }
 
 interface SortableTabItemProps {
+  paneId: string;
+  isFocusedPane: boolean;
+  freezeSortTransform: boolean;
   tab: TerminalTab;
   client: TerminalClient | undefined;
   latencyMs?: number;
@@ -125,9 +127,13 @@ interface SortableTabItemProps {
   onToggleResourceWindow: (uuid: string) => void;
   onColor: (id: string, color: string | null) => void;
   onClose: (id: string, mode: CloseMode) => void;
+  onSplit?: (zone: SplitZone, tabId?: string) => void;
 }
 
 const SortableTabItem = ({
+  paneId,
+  isFocusedPane,
+  freezeSortTransform,
   tab,
   client,
   latencyMs,
@@ -156,6 +162,7 @@ const SortableTabItem = ({
   onToggleResourceWindow,
   onColor,
   onClose,
+  onSplit,
 }: SortableTabItemProps) => {
   const {
     attributes,
@@ -167,17 +174,24 @@ const SortableTabItem = ({
   } = useSortable({
     id: tab.id,
     disabled: editingTabId === tab.id,
+    data: {
+      type: "terminal-tab",
+      paneId,
+      tabId: tab.id,
+    },
   });
 
   /*
     分工（避免两套动画抢同一个属性）：
     - transform 只归 dnd-kit：拖拽中的跟手位移与落下后的补位都由它的 CSS transition 完成；
       这里绝不能再加 motion 的 layout，否则落下后 motion 会从旧位置再播一遍位移。
+      当标签被拖离原标签栏准备分屏时，freezeSortTransform 置为 true，原栏其他标签立即恢复原顺序，不影响排序。
     - width / opacity 归 motion 弹簧：新开标签从 0 宽展开、关闭时收拢，邻居随真实布局顺势补位；
       窗口缩放导致的标签宽度变化也走同一条弹簧，中途再变会保留速度继续追赶。
   */
+  const effectiveTransform = freezeSortTransform && !isDragging ? null : transform;
   const style = {
-    transform: CSS.Translate.toString(transform),
+    transform: CSS.Translate.toString(effectiveTransform),
     transition,
     zIndex: isDragging ? 20 : isActive ? 3 : 1,
   };
@@ -186,6 +200,8 @@ const SortableTabItem = ({
     <motion.div
       ref={setNodeRef}
       style={style}
+      data-pane-id={paneId}
+      data-tab-id={tab.id}
       initial={{ width: 0, opacity: 0 }}
       animate={{ width: tabWidth, opacity: isDragging ? 0.4 : 1 }}
       exit={{ width: 0, opacity: 0 }}
@@ -231,6 +247,7 @@ const SortableTabItem = ({
         onToggleResourceWindow={() => onToggleResourceWindow(tab.uuid)}
         onColor={(color) => onColor(tab.id, color)}
         onClose={(mode) => onClose(tab.id, mode)}
+        onSplit={onSplit ? (zone) => onSplit(zone, tab.id) : undefined}
       />
       <TabButton
         tab={tab}
@@ -238,6 +255,7 @@ const SortableTabItem = ({
         latencyMs={latencyMs}
         index={index}
         active={isActive}
+        showGuideTarget={isActive && isFocusedPane}
         editing={editingTabId === tab.id}
         draft={renameDraft}
         onActivate={() => onActivate(tab.id)}
@@ -252,6 +270,12 @@ const SortableTabItem = ({
 };
 
 const TerminalTabBar = ({
+  paneId,
+  isFocusedPane = true,
+  hasMultiplePanes = false,
+  isDraggingTab = false,
+  isTabBarDropTarget = false,
+  freezeSortTransform = false,
   tabs,
   clients,
   clientsLoading,
@@ -279,7 +303,8 @@ const TerminalTabBar = ({
   onOpenEditor,
   onColor,
   onClose,
-  onReorder,
+  onSplit,
+  onFocusPane,
 }: TerminalTabBarProps) => {
   const { t } = useTranslation();
   const [contextMenuTabId, setContextMenuTabId] = useState<string | null>(null);
@@ -299,14 +324,6 @@ const TerminalTabBar = ({
     return () => cancelAnimationFrame(frame);
   }, [containerWidth, widthMeasured]);
   const animateTabWidth = widthMeasured && !reducedMotion;
-
-  const sensors = useSensors(
-    useSensor(PointerSensor, {
-      activationConstraint: {
-        distance: 5,
-      },
-    }),
-  );
 
   const clientsByUuid = useMemo(
     () => new Map(clients.map((client) => [client.uuid, client])),
@@ -416,12 +433,9 @@ const TerminalTabBar = ({
     [hasOverflow],
   );
 
-  const handleDragEnd = (event: DragEndEvent) => {
-    const { active, over } = event;
-    if (over && active.id !== over.id) {
-      onReorder(String(active.id), String(over.id));
-    }
-  };
+  const handlePointerDownCapture = useCallback(() => {
+    onFocusPane?.();
+  }, [onFocusPane]);
 
   const lastTab = tabs[tabs.length - 1];
   const lastTabIsActive = lastTab?.id === activeTabId;
@@ -430,10 +444,24 @@ const TerminalTabBar = ({
   return (
     <div
       ref={tabBarRef}
-      className="km-terminal-tab-bar flex h-10 min-w-0 flex-[0_0_40px] select-none items-end bg-[#1e1e1e] px-2"
+      data-pane-tabbar={paneId}
+      onPointerDownCapture={handlePointerDownCapture}
+      className={`km-terminal-tab-bar relative flex h-10 min-w-0 flex-[0_0_40px] select-none items-end px-2 transition-colors ${
+        hasMultiplePanes && !isFocusedPane ? "bg-[#181818]" : "bg-[#1e1e1e]"
+      } ${
+        isTabBarDropTarget && isDraggingTab
+          ? "ring-1 ring-inset ring-sky-500/70 bg-[#1a2634]"
+          : ""
+      }`}
       role="tablist"
       aria-label={t("terminal.tabs.title")}
     >
+      {hasMultiplePanes && isFocusedPane && (
+        <div
+          className="pointer-events-none absolute inset-x-0 top-0 z-[5] h-[2px] bg-sky-500/80"
+          aria-hidden="true"
+        />
+      )}
       <AnimatePresence initial={false}>
         {hasOverflow && (
           <motion.button
@@ -455,27 +483,21 @@ const TerminalTabBar = ({
         )}
       </AnimatePresence>
 
-      <DndContext
-        sensors={sensors}
-        collisionDetection={closestCenter}
-        modifiers={[restrictToHorizontalAxis]}
-        onDragEnd={handleDragEnd}
+      <SortableContext
+        items={tabs.map((tab) => tab.id)}
+        strategy={horizontalListSortingStrategy}
       >
-        <SortableContext
-          items={tabs.map((tab) => tab.id)}
-          strategy={horizontalListSortingStrategy}
+        <div
+          ref={tabsScrollRef}
+          onScroll={updateScrollState}
+          onWheel={handleTabsWheel}
+          className="km-terminal-tabs-scroll flex h-9 min-w-0 flex-initial flex-row items-end overflow-x-auto overflow-y-hidden px-2.5 ![scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
         >
-          <div
-            ref={tabsScrollRef}
-            onScroll={updateScrollState}
-            onWheel={handleTabsWheel}
-            className="km-terminal-tabs-scroll flex h-9 min-w-0 flex-initial flex-row items-end overflow-x-auto overflow-y-hidden px-2.5 ![scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-          >
-            {/*
-              标签增删用默认同步模式：退出的标签仍占位并把宽度收到 0，
-              邻居通过真实的 flex 布局顺势补位，不需要 layout/transform。
-            */}
-            <AnimatePresence initial={false}>
+          {/*
+            标签增删用默认同步模式：退出的标签仍占位并把宽度收到 0，
+            邻居通过真实的 flex 布局顺势补位，不需要 layout/transform。
+          */}
+          <AnimatePresence initial={false}>
             {tabs.map((tab, index) => {
               const client = clientsByUuid.get(tab.uuid);
               const isActive = tab.id === activeTabId;
@@ -492,6 +514,9 @@ const TerminalTabBar = ({
                     />
                   )}
                   <SortableTabItem
+                    paneId={paneId}
+                    isFocusedPane={isFocusedPane}
+                    freezeSortTransform={freezeSortTransform}
                     tab={tab}
                     client={client}
                     latencyMs={tabLatencies[tab.id]}
@@ -522,14 +547,14 @@ const TerminalTabBar = ({
                     onToggleResourceWindow={onToggleResourceWindow}
                     onColor={onColor}
                     onClose={onClose}
+                    onSplit={onSplit}
                   />
                 </Fragment>
               );
             })}
-            </AnimatePresence>
-          </div>
-        </SortableContext>
-      </DndContext>
+          </AnimatePresence>
+        </div>
+      </SortableContext>
 
       <AnimatePresence initial={false}>
         {hasOverflow && (

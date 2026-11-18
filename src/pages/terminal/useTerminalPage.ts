@@ -25,6 +25,23 @@ import {
   type TerminalClient,
   type TerminalTab,
 } from "./terminalTypes";
+import {
+  appendTabToLeaf,
+  collectLeaves,
+  createLeafPane,
+  findLeaf,
+  findLeafByTabId,
+  insertTabAfterInLeaf,
+  moveTabAcrossPanes,
+  removeTabsFromTree,
+  reorderTabInLeaf,
+  splitLeafWithTab,
+  updateLeaf,
+  updateSplitRatio,
+  type DropZone,
+  type SplitZone,
+  type TerminalPaneNode,
+} from "./splitTree";
 
 const getTabShortcutIndex = (event: KeyboardEvent) => {
   const code = event.code;
@@ -48,10 +65,15 @@ export const useTerminalPage = () => {
   const [clients, setClients] = useState<TerminalClient[]>([]);
   const [clientsLoading, setClientsLoading] = useState(true);
   const [tabs, setTabs] = useState<TerminalTab[]>([]);
-  const [activeTabId, setActiveTabId] = useState<string | null>(null);
+  const [paneTree, setPaneTree] = useState<TerminalPaneNode>(() =>
+    createLeafPane(),
+  );
+  const [activePaneId, setActivePaneId] = useState<string>(
+    () => (paneTree.type === "leaf" ? paneTree.id : ""),
+  );
   const [editingTabId, setEditingTabId] = useState<string | null>(null);
   const [renameDraft, setRenameDraft] = useState("");
-  const [serverMenuOpen, setServerMenuOpen] = useState(false);
+  const [serverMenuPaneId, setServerMenuPaneId] = useState<string | null>(null);
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
   const [leftWidth, setLeftWidth] = useState<number>(window.innerWidth * 0.7);
   const [httpsCalloutOpen, setHttpsCalloutOpen] = useState(
@@ -79,11 +101,22 @@ export const useTerminalPage = () => {
     new URLSearchParams(window.location.search).get("uuid"),
   );
   const tabsRef = useRef<TerminalTab[]>([]);
+  const paneTreeRef = useRef<TerminalPaneNode>(paneTree);
+  const activePaneIdRef = useRef<string>(activePaneId);
   const activeTabIdRef = useRef<string | null>(null);
   const sessionApisRef = useRef(new Map<string, TerminalSessionApi>());
   const [activeApi, setActiveApi] = useState<TerminalSessionApi | null>(null);
 
+  const leaves = useMemo(() => collectLeaves(paneTree), [paneTree]);
+  const resolvedActivePane = useMemo(
+    () => leaves.find((leaf) => leaf.id === activePaneId) ?? leaves[0] ?? null,
+    [activePaneId, leaves],
+  );
+  const activeTabId = resolvedActivePane?.activeTabId ?? null;
+
   tabsRef.current = tabs;
+  paneTreeRef.current = paneTree;
+  activePaneIdRef.current = resolvedActivePane?.id ?? activePaneId;
   activeTabIdRef.current = activeTabId;
 
   const appearance = {
@@ -94,6 +127,64 @@ export const useTerminalPage = () => {
     tabsRef.current = next;
     setTabs(next);
   }, []);
+
+  const updatePaneTree = useCallback((next: TerminalPaneNode) => {
+    paneTreeRef.current = next;
+    setPaneTree(next);
+  }, []);
+
+  const fitAllSessions = useCallback(() => {
+    requestAnimationFrame(() => {
+      for (const api of sessionApisRef.current.values()) {
+        api.fit();
+      }
+    });
+  }, []);
+
+  const focusPane = useCallback((paneId: string) => {
+    const leaf = findLeaf(paneTreeRef.current, paneId);
+    if (!leaf) return;
+    activePaneIdRef.current = paneId;
+    setActivePaneId(paneId);
+    if (leaf.activeTabId) {
+      const api = sessionApisRef.current.get(leaf.activeTabId);
+      requestAnimationFrame(() => {
+        api?.terminal.focus();
+      });
+    }
+  }, []);
+
+  const activateTabInPane = useCallback((paneId: string, tabId: string) => {
+    const nextTree = updateLeaf(paneTreeRef.current, paneId, (leaf) =>
+      leaf.tabIds.includes(tabId) ? { ...leaf, activeTabId: tabId } : leaf,
+    );
+    updatePaneTree(nextTree);
+    activePaneIdRef.current = paneId;
+    setActivePaneId(paneId);
+    requestAnimationFrame(() => {
+      const api = sessionApisRef.current.get(tabId);
+      api?.fit();
+      api?.terminal.focus();
+    });
+  }, [updatePaneTree]);
+
+  const setActiveTabId = useCallback(
+    (tabId: string | null) => {
+      if (!tabId) return;
+      const owner = findLeafByTabId(paneTreeRef.current, tabId);
+      if (owner) {
+        activateTabInPane(owner.id, tabId);
+      }
+    },
+    [activateTabInPane],
+  );
+
+  useEffect(() => {
+    if (!resolvedActivePane) return;
+    if (resolvedActivePane.id !== activePaneId) {
+      setActivePaneId(resolvedActivePane.id);
+    }
+  }, [activePaneId, resolvedActivePane]);
 
   const orderedClients = useMemo(
     () =>
@@ -134,7 +225,19 @@ export const useTerminalPage = () => {
         if (tabsRef.current.length === 0) {
           const tab = createTab(client, undefined, t("terminal.server"));
           updateTabs([tab]);
-          setActiveTabId(tab.id);
+          const rootLeaves = collectLeaves(paneTreeRef.current);
+          const firstPaneId = rootLeaves[0]?.id ?? "";
+          const nextTree = appendTabToLeaf(
+            paneTreeRef.current,
+            firstPaneId,
+            tab.id,
+            true,
+          );
+          updatePaneTree(nextTree);
+          const updatedFirst = collectLeaves(nextTree)[0];
+          if (updatedFirst) {
+            setActivePaneId(updatedFirst.id);
+          }
         }
       })
       .catch((error) => {
@@ -150,7 +253,7 @@ export const useTerminalPage = () => {
     return () => {
       mounted = false;
     };
-  }, [t, updateTabs]);
+  }, [t, updatePaneTree, updateTabs]);
 
   useEffect(() => {
     let mounted = true;
@@ -176,18 +279,6 @@ export const useTerminalPage = () => {
       mounted = false;
     };
   }, []);
-
-  useEffect(() => {
-    if (tabs.length === 0) {
-      if (activeTabId !== null) {
-        setActiveTabId(null);
-      }
-      return;
-    }
-    if (!activeTabId || !tabs.some((tab) => tab.id === activeTabId)) {
-      setActiveTabId(tabs[0].id);
-    }
-  }, [activeTabId, tabs]);
 
   useEffect(() => {
     const style = document.createElement("style");
@@ -270,9 +361,9 @@ export const useTerminalPage = () => {
   }, []);
 
   useEffect(() => {
-    const resize = window.setTimeout(() => activeApiRef.current?.fit(), 100);
+    const resize = window.setTimeout(() => fitAllSessions(), 100);
     return () => window.clearTimeout(resize);
-  }, [activeApi, isSidebarOpen]);
+  }, [activeApi, fitAllSessions, isSidebarOpen, leaves.length]);
 
   useEffect(() => {
     const terminal = activeApi?.terminal;
@@ -320,8 +411,8 @@ export const useTerminalPage = () => {
     }
     draggingRef.current = false;
     document.body.style.userSelect = "";
-    activeApiRef.current?.fit();
-  }, []);
+    fitAllSessions();
+  }, [fitAllSessions]);
 
   const handleDrag = useCallback((clientX: number) => {
     if (!draggingRef.current || !containerRef.current) {
@@ -369,20 +460,36 @@ export const useTerminalPage = () => {
   }, [handleDrag, stopDragging]);
 
   const openClient = useCallback(
-    (client: TerminalClient) => {
+    (client: TerminalClient, targetPaneId?: string) => {
       const tab = createTab(client, undefined, t("terminal.server"));
       updateTabs([...tabsRef.current, tab]);
-      setActiveTabId(tab.id);
-      setServerMenuOpen(false);
+      const paneId =
+        targetPaneId ??
+        activePaneIdRef.current ??
+        collectLeaves(paneTreeRef.current)[0]?.id ??
+        "";
+      const nextTree = appendTabToLeaf(
+        paneTreeRef.current,
+        paneId,
+        tab.id,
+        true,
+      );
+      updatePaneTree(nextTree);
+      const owner = findLeafByTabId(nextTree, tab.id);
+      if (owner) {
+        activePaneIdRef.current = owner.id;
+        setActivePaneId(owner.id);
+      }
+      setServerMenuPaneId(null);
     },
-    [t, updateTabs],
+    [t, updatePaneTree, updateTabs],
   );
 
   const duplicateTab = useCallback(
     (id: string) => {
       const source = tabsRef.current.find((item) => item.id === id);
       if (!source) {
-        setServerMenuOpen(true);
+        setServerMenuPaneId(activePaneIdRef.current || null);
         return;
       }
       const duplicate: TerminalTab = {
@@ -391,16 +498,101 @@ export const useTerminalPage = () => {
         color: null,
       };
       updateTabs([...tabsRef.current, duplicate]);
-      setActiveTabId(duplicate.id);
+      const nextTree = insertTabAfterInLeaf(
+        paneTreeRef.current,
+        id,
+        duplicate.id,
+        true,
+      );
+      updatePaneTree(nextTree);
+      const owner = findLeafByTabId(nextTree, duplicate.id);
+      if (owner) {
+        activePaneIdRef.current = owner.id;
+        setActivePaneId(owner.id);
+      }
     },
-    [updateTabs],
+    [updatePaneTree, updateTabs],
+  );
+
+  const splitPane = useCallback(
+    (paneId: string, zone: SplitZone, sourceTabId?: string) => {
+      const leaf =
+        findLeaf(paneTreeRef.current, paneId) ??
+        findLeaf(paneTreeRef.current, activePaneIdRef.current);
+      if (!leaf) return;
+      const baseTabId = sourceTabId ?? leaf.activeTabId ?? leaf.tabIds[0];
+      const source = baseTabId
+        ? tabsRef.current.find((item) => item.id === baseTabId)
+        : undefined;
+      if (!source) {
+        setServerMenuPaneId(leaf.id);
+        return;
+      }
+      const newTab: TerminalTab = {
+        ...source,
+        id: createTabId(),
+        color: null,
+      };
+      updateTabs([...tabsRef.current, newTab]);
+      const { tree: nextTree, newPaneId } = splitLeafWithTab(
+        paneTreeRef.current,
+        leaf.id,
+        zone,
+        newTab.id,
+      );
+      updatePaneTree(nextTree);
+      activePaneIdRef.current = newPaneId;
+      setActivePaneId(newPaneId);
+      fitAllSessions();
+    },
+    [fitAllSessions, updatePaneTree, updateTabs],
+  );
+
+  const moveTab = useCallback(
+    (
+      tabId: string,
+      targetPaneId: string,
+      zone: DropZone,
+      insertBeforeTabId?: string | null,
+    ) => {
+      const { tree: nextTree, activePaneId: nextActivePaneId } =
+        moveTabAcrossPanes(
+          paneTreeRef.current,
+          tabId,
+          targetPaneId,
+          zone,
+          insertBeforeTabId,
+        );
+      updatePaneTree(nextTree);
+      const validTarget =
+        findLeaf(nextTree, nextActivePaneId) ?? collectLeaves(nextTree)[0];
+      if (validTarget) {
+        activePaneIdRef.current = validTarget.id;
+        setActivePaneId(validTarget.id);
+      }
+      fitAllSessions();
+      requestAnimationFrame(() => {
+        sessionApisRef.current.get(tabId)?.terminal.focus();
+      });
+    },
+    [fitAllSessions, updatePaneTree],
+  );
+
+  const resizeSplit = useCallback(
+    (splitId: string, ratio: number) => {
+      updatePaneTree(updateSplitRatio(paneTreeRef.current, splitId, ratio));
+      fitAllSessions();
+    },
+    [fitAllSessions, updatePaneTree],
   );
 
   const addTab = useCallback(() => {
     if (activeTabIdRef.current) {
       duplicateTab(activeTabIdRef.current);
     } else {
-      setServerMenuOpen(true);
+      const fallbackPane =
+        activePaneIdRef.current || collectLeaves(paneTreeRef.current)[0]?.id;
+      setServerMenuPaneId(fallbackPane ?? null);
     }
   }, [duplicateTab]);
 
@@ -412,7 +604,7 @@ export const useTerminalPage = () => {
     setActiveTabId(id);
     setEditingTabId(id);
     setRenameDraft(tab.title);
-  }, []);
+  }, [setActiveTabId]);
 
   const commitRename = useCallback(() => {
     const id = editingTabId;
@@ -451,15 +643,25 @@ export const useTerminalPage = () => {
 
   const closeTabs = useCallback(
     (ids: string[]) => {
+      if (ids.length === 0) return;
       const remove = new Set(ids);
       const previous = tabsRef.current;
-      const activeId = activeTabIdRef.current;
-      const activeIndex = previous.findIndex((tab) => tab.id === activeId);
       const next = previous.filter((tab) => !remove.has(tab.id));
       updateTabs(next);
+      const nextTree = removeTabsFromTree(paneTreeRef.current, remove);
+      updatePaneTree(nextTree);
+      const remainingLeaves = collectLeaves(nextTree);
+      if (!remainingLeaves.some((leaf) => leaf.id === activePaneIdRef.current)) {
+        const fallbackLeaf = remainingLeaves[0];
+        if (fallbackLeaf) {
+          activePaneIdRef.current = fallbackLeaf.id;
+          setActivePaneId(fallbackLeaf.id);
+        }
+      }
+      const stillUsedUuids = new Set(next.map((tab) => tab.uuid));
       const removedUuids = new Set(
         previous
-          .filter((tab) => remove.has(tab.id))
+          .filter((tab) => remove.has(tab.id) && !stillUsedUuids.has(tab.uuid))
           .map((tab) => tab.uuid),
       );
       setResourceMonitorServers((current) =>
@@ -477,31 +679,29 @@ export const useTerminalPage = () => {
         return changed ? nextLatencies : current;
       });
       setEditingTabId((id) => (id && remove.has(id) ? null : id));
-      if (activeId && remove.has(activeId)) {
-        const nextActive =
-          next[Math.min(Math.max(activeIndex, 0), next.length - 1)];
-        setActiveTabId(nextActive?.id ?? null);
-      }
+      fitAllSessions();
     },
-    [updateTabs],
+    [fitAllSessions, updatePaneTree, updateTabs],
   );
 
   const closeTab = useCallback(
-    (id: string, mode: CloseMode) => {
-      const index = tabsRef.current.findIndex((tab) => tab.id === id);
+    (id: string, mode: CloseMode, paneId?: string) => {
+      const leaf = paneId
+        ? findLeaf(paneTreeRef.current, paneId)
+        : findLeafByTabId(paneTreeRef.current, id);
+      const scopedIds = leaf ? leaf.tabIds : tabsRef.current.map((t) => t.id);
+      const index = scopedIds.indexOf(id);
       if (index < 0) {
         return;
       }
       if (mode === "current") {
         closeTabs([id]);
       } else if (mode === "left") {
-        closeTabs(tabsRef.current.slice(0, index).map((tab) => tab.id));
+        closeTabs(scopedIds.slice(0, index));
       } else if (mode === "right") {
-        closeTabs(tabsRef.current.slice(index + 1).map((tab) => tab.id));
+        closeTabs(scopedIds.slice(index + 1));
       } else {
-        closeTabs(
-          tabsRef.current.filter((tab) => tab.id !== id).map((tab) => tab.id),
-        );
+        closeTabs(scopedIds.filter((tabId) => tabId !== id));
       }
     },
     [closeTabs],
@@ -530,13 +730,13 @@ export const useTerminalPage = () => {
       setActiveTabId(id);
     }
     setIsSidebarOpen(true);
-  }, []);
+  }, [setActiveTabId]);
   const openSearch = useCallback((id?: string) => {
     if (id) {
       setActiveTabId(id);
     }
     setSearchOpen(true);
-  }, []);
+  }, [setActiveTabId]);
 
   const closeSearch = useCallback(() => {
     searchSelectionRef.current = false;
@@ -664,33 +864,27 @@ export const useTerminalPage = () => {
 
   // Reorder tabs
   const reorderTab = useCallback(
-    (sourceId: string, targetId: string) => {
-      const next = [...tabsRef.current];
-      const sourceIndex = next.findIndex((tab) => tab.id === sourceId);
-      const targetIndex = next.findIndex((tab) => tab.id === targetId);
-      if (sourceIndex < 0 || targetIndex < 0 || sourceIndex === targetIndex) {
-        return;
-      }
-      const [source] = next.splice(sourceIndex, 1);
-      next.splice(targetIndex, 0, source);
-      updateTabs(next);
+    (paneId: string, sourceId: string, targetId: string) => {
+      updatePaneTree(
+        reorderTabInLeaf(paneTreeRef.current, paneId, sourceId, targetId),
+      );
     },
-    [updateTabs],
+    [updatePaneTree],
   );
 
   const switchTab = useCallback((direction: 1 | -1) => {
-    const tabs = tabsRef.current;
-    if (tabs.length < 2) {
+    const leaf = findLeaf(paneTreeRef.current, activePaneIdRef.current);
+    if (!leaf || leaf.tabIds.length < 2) {
       return;
     }
-    const activeIndex = tabs.findIndex(
-      (tab) => tab.id === activeTabIdRef.current,
-    );
+    const activeIndex = leaf.activeTabId
+      ? leaf.tabIds.indexOf(leaf.activeTabId)
+      : 0;
     const currentIndex = activeIndex < 0 ? 0 : activeIndex;
     const nextIndex =
-      (currentIndex + direction + tabs.length) % tabs.length;
-    setActiveTabId(tabs[nextIndex].id);
-  }, []);
+      (currentIndex + direction + leaf.tabIds.length) % leaf.tabIds.length;
+    activateTabInPane(leaf.id, leaf.tabIds[nextIndex]);
+  }, [activateTabInPane]);
 
   const toggleFullscreen = useCallback(() => {
     if (document.fullscreenElement) {
@@ -788,9 +982,10 @@ export const useTerminalPage = () => {
       // Ctrl+Alt+1..0 (Switch tab)
       if (ctrlAlt) {
         const index = getTabShortcutIndex(event);
-        if (index >= 0 && index < tabsRef.current.length) {
+        const leaf = findLeaf(paneTreeRef.current, activePaneIdRef.current);
+        if (leaf && index >= 0 && index < leaf.tabIds.length) {
           event.preventDefault();
-          setActiveTabId(tabsRef.current[index].id);
+          activateTabInPane(leaf.id, leaf.tabIds[index]);
           return;
         }
       }
@@ -805,6 +1000,30 @@ export const useTerminalPage = () => {
         }
       }
 
+      // Alt+Shift+Arrow: quick split active pane
+      if (
+        event.altKey &&
+        event.shiftKey &&
+        !event.ctrlKey &&
+        !event.metaKey &&
+        (event.code === "ArrowRight" ||
+          event.code === "ArrowLeft" ||
+          event.code === "ArrowDown" ||
+          event.code === "ArrowUp")
+      ) {
+        event.preventDefault();
+        const zone: SplitZone =
+          event.code === "ArrowRight"
+            ? "right"
+            : event.code === "ArrowLeft"
+            ? "left"
+            : event.code === "ArrowDown"
+            ? "bottom"
+            : "top";
+        splitPane(activePaneIdRef.current, zone);
+        return;
+      }
+
     };
 
     window.addEventListener("keydown", handleKeyDown, true);
@@ -812,6 +1031,7 @@ export const useTerminalPage = () => {
       window.removeEventListener("keydown", handleKeyDown, true);
     };
   }, [
+    activateTabInPane,
     addTab,
     clearActiveTerminal,
     closeTab,
@@ -819,6 +1039,7 @@ export const useTerminalPage = () => {
     openSearch,
     openFileManager,
     orderedClients,
+    splitPane,
     switchTab,
     toggleFullscreen,
   ]);
@@ -832,10 +1053,13 @@ export const useTerminalPage = () => {
     clients,
     clientsLoading,
     tabs,
+    paneTree,
+    leaves,
+    activePaneId: resolvedActivePane?.id ?? activePaneId,
     activeTabId,
     editingTabId,
     renameDraft,
-    serverMenuOpen,
+    serverMenuPaneId,
     isSidebarOpen,
     leftWidth,
     httpsCalloutOpen,
@@ -851,7 +1075,9 @@ export const useTerminalPage = () => {
     containerRef,
     sessionsReady,
     setActiveTabId,
-    setServerMenuOpen,
+    focusPane,
+    activateTabInPane,
+    setServerMenuPaneId,
     setRenameDraft,
     setIsSidebarOpen,
     setHttpsCalloutOpen,
@@ -877,5 +1103,9 @@ export const useTerminalPage = () => {
     colorTab,
     closeTab,
     reorderTab,
+    splitPane,
+    moveTab,
+    resizeSplit,
+    fitAllSessions,
   };
 };

@@ -1,4 +1,5 @@
 import {
+  Columns2,
   Copy,
   Download,
   FileCode2,
@@ -6,6 +7,7 @@ import {
   Gauge,
   Palette,
   Pencil,
+  Rows2,
   Search,
   X,
 } from "lucide-react";
@@ -28,6 +30,7 @@ import {
   type ContextMenuPosition,
   type TerminalTab,
 } from "./terminalTypes";
+import type { SplitZone } from "./splitTree";
 
 interface TabMenuProps {
   tab: TerminalTab;
@@ -46,6 +49,7 @@ interface TabMenuProps {
   onToggleResourceWindow: () => void;
   onColor: (color: string | null) => void;
   onClose: (mode: CloseMode) => void;
+  onSplit?: (zone: SplitZone) => void;
 }
 
 const TabMenu = ({
@@ -65,6 +69,7 @@ const TabMenu = ({
   onOpenFileManager,
   onColor,
   onClose,
+  onSplit,
 }: TabMenuProps) => {
   const { t } = useTranslation();
 
@@ -131,6 +136,48 @@ const TabMenu = ({
           <Copy size={14} />
           <span>{t("terminal.duplicate_tab", "复制标签页")}</span>
         </DropdownMenuItem>
+
+        {onSplit && (
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger className="flex items-center gap-2">
+              <Columns2 size={14} />
+              <span>{t("terminal.split.menu", "分屏拆分")}</span>
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent
+              themeAppearance="dark"
+              className="min-w-[148px] !border-neutral-800 !bg-[#161616] !text-neutral-200 backdrop-blur-md"
+            >
+              <DropdownMenuItem
+                onSelect={() => onSplit("right")}
+                className="flex items-center gap-2"
+              >
+                <Columns2 size={14} />
+                <span>{t("terminal.split.right", "向右分屏")}</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={() => onSplit("left")}
+                className="flex items-center gap-2"
+              >
+                <Columns2 size={14} />
+                <span>{t("terminal.split.left", "向左分屏")}</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={() => onSplit("bottom")}
+                className="flex items-center gap-2"
+              >
+                <Rows2 size={14} />
+                <span>{t("terminal.split.down", "向下分屏")}</span>
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onSelect={() => onSplit("top")}
+                className="flex items-center gap-2"
+              >
+                <Rows2 size={14} />
+                <span>{t("terminal.split.up", "向上分屏")}</span>
+              </DropdownMenuItem>
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+        )}
 
         <DropdownMenuItem onSelect={onExportText} className="flex items-center gap-2">
           <Download size={14} />
