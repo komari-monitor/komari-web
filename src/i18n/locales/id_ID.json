@@ -1582,6 +1582,15 @@
     "no_active_connection": "Tidak ada koneksi aktif",
     "otp_invalid": "Kode 2FA tidak valid atau kedaluwarsa",
     "reconnecting": "Koneksi terputus. Menyambung ulang...",
+    "recoverable": {
+      "continue": "Lanjutkan di tab baru",
+      "description": "Masih ada {{count}} sesi terminal yang berjalan sejak Anda terakhir keluar:",
+      "none_left": "Sesi yang dapat dipulihkan sudah ditangani atau kedaluwarsa",
+      "server_item": "{{name}}: {{count}} sesi",
+      "terminate": "Akhiri sesi",
+      "terminate_failed": "Gagal mengakhiri sesi, silakan coba lagi",
+      "title": "Sesi yang Dapat Dipulihkan"
+    },
     "rename_tab": "Ubah Nama Tab",
     "split": {
       "down": "Bagi ke Bawah",

@@ -506,6 +506,7 @@ const TerminalWorkspace = ({
                 <TerminalSession
                   uuid={tab.uuid}
                   active={Boolean(isPaneActiveTab)}
+                  initialRequestId={tab.requestId}
                   twoFaEnabled={twoFaEnabled}
                   disconnectMessage={disconnectMessage}
                   onApiChange={(api) => onApiChange(tab.id, api)}

@@ -3,6 +3,7 @@ import { Theme } from "@radix-ui/themes";
 import TerminalNotices from "./TerminalNotices";
 import TerminalResourceMonitor from "./TerminalResourceMonitor";
 import TerminalWorkspace from "./TerminalWorkspace";
+import RecoverableSessionsDialog from "./RecoverableSessionsDialog";
 import { useTerminalPage } from "./useTerminalPage";
 import { DEFAULT_TERMINAL_FONT_FAMILY } from "./terminalDefaults";
 import { lazy, Suspense, useState } from "react";
@@ -17,6 +18,10 @@ const TerminalPage = () => {
     appearance,
     clients,
     clientsLoading,
+    showRecoverableDialog,
+    recoverableSessionsCount,
+    recoverableSessionGroups,
+    recoverableSubmitting,
     tabs,
     paneTree,
     leaves,
@@ -70,6 +75,8 @@ const TerminalPage = () => {
     moveTab,
     resizeSplit,
     fitAllSessions,
+    handleRecoverSessions,
+    handleTerminateRecoverableSessions,
   } = useTerminalPage();
 
   const [editorUuid, setEditorUuid] = useState<string | null>(null);
@@ -174,11 +181,25 @@ const TerminalPage = () => {
           authenticated={onboardingAuthenticated}
           hasTabs={!clientsLoading && tabs.length > 0}
           blocked={
+            Boolean(showRecoverableDialog) ||
             Boolean(editorUuid) ||
             Boolean(serverMenuPaneId) ||
             Boolean(workbenchMenuPaneId) ||
             Boolean(editingTabId)
           }
+        />
+
+        <RecoverableSessionsDialog
+          open={showRecoverableDialog}
+          totalCount={recoverableSessionsCount}
+          groups={recoverableSessionGroups}
+          submitting={recoverableSubmitting}
+          onTerminate={() => {
+            void handleTerminateRecoverableSessions();
+          }}
+          onRecover={() => {
+            void handleRecoverSessions();
+          }}
         />
 
         {editorUuid && (

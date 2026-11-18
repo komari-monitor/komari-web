@@ -10,6 +10,7 @@ export interface TerminalTab {
   uuid: string;
   title: string;
   color: string | null;
+  requestId?: string;
 }
 
 export type CloseMode = "current" | "left" | "right" | "others";
@@ -61,9 +62,11 @@ export const createTab = (
   client: TerminalClient,
   title = client.name,
   fallbackTitle = "Server",
+  requestId?: string,
 ): TerminalTab => ({
   id: createTabId(),
   uuid: client.uuid,
   title: title || client.name || fallbackTitle,
   color: null,
+  ...(requestId ? { requestId } : {}),
 });

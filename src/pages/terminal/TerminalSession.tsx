@@ -23,6 +23,7 @@ export interface TerminalSessionApi {
 interface TerminalSessionProps {
   uuid: string;
   active: boolean;
+  initialRequestId?: string;
   fontSize?: number;
   padding?: number;
   twoFaEnabled: boolean;
@@ -41,10 +42,16 @@ const encode = (value: string) => new TextEncoder().encode(value);
 
 const normalizePaste = (value: string) => value.replace(/\r?\n/g, "\r");
 
+const createClientId = () =>
+  typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+    ? crypto.randomUUID()
+    : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+
 // 单个终端标签的 xterm、WebSocket 与快捷键会话
 const TerminalSession = ({
   uuid,
   active,
+  initialRequestId,
   fontSize = DEFAULT_TERMINAL_OPTIONS.fontSize,
   padding = DEFAULT_TERMINAL_PADDING,
   twoFaEnabled,
@@ -120,7 +127,8 @@ const TerminalSession = ({
     let firstBinary = false;
     let firstBinaryTimeout: ReturnType<typeof setTimeout> | null = null;
     let heartbeatInterval: ReturnType<typeof setInterval> | null = null;
-    let requestID: string | null = null;
+    let requestID: string | null = initialRequestId ?? null;
+    const clientId = createClientId();
     let ws: WebSocket | null = null;
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
     let stableConnectionTimer: ReturnType<typeof setTimeout> | null = null;
@@ -400,6 +408,7 @@ const TerminalSession = ({
       if (requestID) {
         params.set("request_id", requestID);
       }
+      params.set("client_id", clientId);
       const query = params.toString();
       const socket = new WebSocket(
         `${baseUrl}/api/admin/client/${uuid}/terminal${query ? `?${query}` : ""}`,
@@ -561,7 +570,7 @@ const TerminalSession = ({
       }, RECONNECT_INTERVAL);
     };
 
-    if (twoFaEnabled) {
+    if (twoFaEnabled && !requestID) {
       startOtpPrompt(false);
     } else {
       connect(null);
@@ -648,7 +657,7 @@ const TerminalSession = ({
       term.dispose();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [twoFaEnabled, toastId, uuid]);
+  }, [twoFaEnabled, toastId, uuid, initialRequestId]);
 
   const style = {
     "--xterm-padding": `${padding}px`,

@@ -1557,6 +1557,15 @@
     "no_active_connection": "沒有活動連線",
     "otp_invalid": "2FA 驗證碼無效或已過期",
     "reconnecting": "連線中斷，正在重新連線...",
+    "recoverable": {
+      "continue": "在新分頁中繼續",
+      "description": "自上次離開之後，還有 {{count}} 個終端工作階段正在執行：",
+      "none_left": "可恢復的工作階段已在其他分頁處理或已過期",
+      "server_item": "{{name}} 共 {{count}} 個工作階段",
+      "terminate": "結束工作階段",
+      "terminate_failed": "結束工作階段失敗，請重試",
+      "title": "可恢復的工作階段"
+    },
     "rename_tab": "重新命名分頁",
     "split": {
       "down": "向下分割",

@@ -1582,6 +1582,15 @@
     "no_active_connection": "アクティブな接続はありません",
     "otp_invalid": "2FAコードが無効または期限切れです",
     "reconnecting": "接続が切断されました。再接続しています...",
+    "recoverable": {
+      "continue": "新しいタブで続行",
+      "description": "前回の離脱後も {{count}} 件のターミナルセッションが実行中です：",
+      "none_left": "復元可能なセッションはすでに処理されたか期限切れです",
+      "server_item": "{{name}}：{{count}} 件のセッション",
+      "terminate": "セッションを終了",
+      "terminate_failed": "セッションの終了に失敗しました。再試行してください",
+      "title": "復元可能なセッション"
+    },
     "rename_tab": "タブ名を変更",
     "split": {
       "down": "下に分割",

@@ -1541,6 +1541,15 @@
     "disconnect": "Disconnected",
     "no_active_connection": "No active connection",
     "reconnecting": "Connection lost. Reconnecting...",
+    "recoverable": {
+      "continue": "Continue in new tab",
+      "description": "{{count}} terminal session(s) are still running since you left:",
+      "none_left": "Recoverable sessions have already been handled or expired",
+      "server_item": "{{name}}: {{count}} session(s)",
+      "terminate": "End sessions",
+      "terminate_failed": "Failed to end sessions, please retry",
+      "title": "Recoverable Sessions"
+    },
     "server": "Server",
     "split": {
       "down": "Split Down",

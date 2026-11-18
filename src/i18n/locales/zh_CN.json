@@ -1582,6 +1582,15 @@
     "no_active_connection": "没有活动连接",
     "otp_invalid": "2FA 验证码无效或已过期",
     "reconnecting": "连接已断开，正在重新连接...",
+    "recoverable": {
+      "continue": "在新标签页中继续",
+      "description": "自上次离开之后，还有 {{count}} 个终端会话在继续运行：",
+      "none_left": "可恢复的会话已在其他标签页处理或已过期",
+      "server_item": "{{name}} 共 {{count}} 个会话",
+      "terminate": "结束会话",
+      "terminate_failed": "结束会话失败，请重试",
+      "title": "可恢复的会话"
+    },
     "rename_tab": "重命名选项卡",
     "resource_monitor": {
       "close": "隐藏资源小窗",
