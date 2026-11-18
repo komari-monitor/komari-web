@@ -278,6 +278,17 @@ body, * {
   z-index: 10;
 }
 
+.km-file-editor.km-file-editor-has-bg .monaco-editor,
+.km-file-editor.km-file-editor-has-bg .monaco-editor-background,
+.km-file-editor.km-file-editor-has-bg .monaco-editor .inputarea.ime-input,
+.km-file-editor.km-file-editor-has-bg .monaco-editor .margin {
+  background-color: transparent !important;
+}
+
+.km-file-editor.km-file-editor-has-bg .monaco-editor .minimap {
+  opacity: 0.78;
+}
+
 .km-login-page {
   position: relative;
 }

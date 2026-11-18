@@ -20,19 +20,27 @@ import {
 } from "@dnd-kit/core";
 import { getOSImage } from "@/utils/osImageHelper";
 import FileManagerPanel from "./FileManagerPanel";
+import TerminalBackgroundMedia from "./TerminalBackgroundMedia";
 import TerminalSession from "./TerminalSession";
 import TerminalPaneTree, {
   PersistentSessionPortal,
   type DragHoverTarget,
 } from "./TerminalPaneTree";
 import type { TerminalSessionApi } from "./TerminalSession";
-import type {
-  DropZone,
-  SplitZone,
-  TerminalPaneLeaf,
-  TerminalPaneNode,
+import {
+  findTopRightLeaf,
+  type DropZone,
+  type SplitZone,
+  type TerminalPaneLeaf,
+  type TerminalPaneNode,
 } from "./splitTree";
-import type { CloseMode, TerminalClient, TerminalTab } from "./terminalTypes";
+import type { TerminalSettings } from "./terminalDefaults";
+import {
+  formatTabTitle,
+  type CloseMode,
+  type TerminalClient,
+  type TerminalTab,
+} from "./terminalTypes";
 
 export interface TerminalWorkspaceProps {
   containerRef: RefObject<HTMLDivElement | null>;
@@ -68,6 +76,7 @@ export interface TerminalWorkspaceProps {
   onCloseSearch: () => void;
   onApiChange: (id: string, api: TerminalSessionApi | null) => void;
   onLatencyChange: (id: string, latencyMs: number | null) => void;
+  onTitleChange: (id: string, title: string) => void;
   onToggleSidebar: () => void;
   onStartDragging: (event: ReactMouseEvent | ReactTouchEvent) => void;
   onFocusPane: (paneId: string) => void;
@@ -98,6 +107,8 @@ export interface TerminalWorkspaceProps {
   ) => void;
   onResizeSplit: (splitId: string, ratio: number) => void;
   onResizeSplitEnd: () => void;
+  terminalSettings: TerminalSettings;
+  onOpenSettings: () => void;
 }
 
 const Divider = ({
@@ -106,7 +117,7 @@ const Divider = ({
   onMouseDown: (event: ReactMouseEvent | ReactTouchEvent) => void;
 }) => (
   <div
-    className="km-terminal-divider h-full w-1.5 flex-[0_0_6px] cursor-col-resize bg-[#141414] transition-colors hover:bg-neutral-700"
+    className="km-terminal-divider relative z-[1] h-full w-1.5 flex-[0_0_6px] cursor-col-resize bg-[#141414]/80 transition-colors hover:bg-neutral-700"
     onMouseDown={onMouseDown}
     onTouchStart={onMouseDown}
     role="separator"
@@ -230,6 +241,7 @@ const TerminalWorkspace = ({
   onCloseSearch,
   onApiChange,
   onLatencyChange,
+  onTitleChange,
   onToggleSidebar,
   onStartDragging,
   onFocusPane,
@@ -255,6 +267,8 @@ const TerminalWorkspace = ({
   onMoveTab,
   onResizeSplit,
   onResizeSplitEnd,
+  terminalSettings,
+  onOpenSettings,
 }: TerminalWorkspaceProps) => {
   const { t } = useTranslation();
   const [viewportsByPane, setViewportsByPane] = useState<
@@ -283,6 +297,11 @@ const TerminalWorkspace = ({
   const clientsByUuid = useMemo(
     () => new Map(clients.map((client) => [client.uuid, client])),
     [clients],
+  );
+
+  const topRightPaneId = useMemo(
+    () => findTopRightLeaf(paneTree).id,
+    [paneTree],
   );
 
   const tabOwnerLeafByTabId = useMemo(() => {
@@ -397,14 +416,32 @@ const TerminalWorkspace = ({
   const draggingClient = draggingTab
     ? clientsByUuid.get(draggingTab.uuid)
     : undefined;
+  const activeTab = activeTabId ? tabsById.get(activeTabId) : undefined;
+  const activeClient = activeTab
+    ? clientsByUuid.get(activeTab.uuid)
+    : undefined;
+  const activeServerName =
+    activeClient?.name || activeTab?.title || activeTab?.uuid || "";
+  const backgroundUrl = terminalSettings.backgroundUrl.trim();
+  const hasBackground = Boolean(backgroundUrl);
 
   return (
     <div
       ref={containerRef}
-      className="km-terminal-body relative flex min-h-0 min-w-0 flex-1 bg-[#000000]"
+      className="km-terminal-body relative flex min-h-0 min-w-0 flex-1 overflow-hidden bg-[#000000]"
     >
+      {hasBackground && (
+        <TerminalBackgroundMedia
+          url={backgroundUrl}
+          offsetX={terminalSettings.backgroundOffsetX}
+          offsetY={terminalSettings.backgroundOffsetY}
+          scale={terminalSettings.backgroundScale}
+          opacity={terminalSettings.backgroundOpacity}
+          blur={terminalSettings.backgroundBlur}
+        />
+      )}
       <div
-        className="km-terminal-main relative flex h-full min-h-0 min-w-[300px] flex-[0_0_auto] overflow-hidden max-[640px]:min-w-0"
+        className="km-terminal-main relative z-[1] flex h-full min-h-0 min-w-[300px] flex-[0_0_auto] overflow-hidden max-[640px]:min-w-0"
         style={{
           width: isSidebarOpen ? `${leftWidth}px` : "100%",
         }}
@@ -419,7 +456,9 @@ const TerminalWorkspace = ({
           <TerminalPaneTree
             node={paneTree}
             activePaneId={activePaneId}
+            topRightPaneId={topRightPaneId}
             hasMultiplePanes={leaves.length > 1}
+            hasBackground={hasBackground}
             tabsById={tabsById}
             clients={clients}
             clientsLoading={clientsLoading}
@@ -467,6 +506,7 @@ const TerminalWorkspace = ({
             onResizeSplit={onResizeSplit}
             onResizeSplitEnd={onResizeSplitEnd}
             onViewportMount={handleViewportMount}
+            onOpenSettings={onOpenSettings}
           />
 
           <DragOverlay dropAnimation={null}>
@@ -485,7 +525,9 @@ const TerminalWorkspace = ({
                   draggable={false}
                   className="h-3.5 w-3.5 shrink-0 object-contain"
                 />
-                <span className="truncate">{draggingTab.title}</span>
+                <span className="truncate">
+                  {formatTabTitle(draggingTab, draggingClient?.name)}
+                </span>
               </div>
             ) : null}
           </DragOverlay>
@@ -502,15 +544,23 @@ const TerminalWorkspace = ({
               <PersistentSessionPortal
                 key={tab.id}
                 targetViewport={targetViewport}
+                onFocusPane={
+                  ownerLeaf ? () => onFocusPane(ownerLeaf.id) : undefined
+                }
               >
                 <TerminalSession
                   uuid={tab.uuid}
                   active={Boolean(isPaneActiveTab)}
                   initialRequestId={tab.requestId}
+                  fontFamily={terminalSettings.fontFamily}
+                  fontSize={terminalSettings.fontSize}
+                  convertEol={terminalSettings.convertEol}
+                  hasBackground={hasBackground}
                   twoFaEnabled={twoFaEnabled}
                   disconnectMessage={disconnectMessage}
                   onApiChange={(api) => onApiChange(tab.id, api)}
                   onLatencyChange={(latency) => onLatencyChange(tab.id, latency)}
+                  onTitleChange={(title) => onTitleChange(tab.id, title)}
                 />
               </PersistentSessionPortal>
             );
@@ -519,7 +569,7 @@ const TerminalWorkspace = ({
           type="button"
           whileTap={CONTROL_MOTION.tap}
           transition={CONTROL_MOTION.transition}
-          className="km-terminal-sidebar-toggle absolute right-0 top-1/2 z-[4] flex h-[48px] w-5 -translate-y-1/2 cursor-pointer items-center justify-center rounded-l-[5px] border-0 bg-[#2b2b2b] text-neutral-400 transition-colors hover:bg-[#383838] hover:text-white"
+          className="km-terminal-sidebar-toggle absolute right-0 top-1/2 z-30 flex h-[48px] w-5 -translate-y-1/2 cursor-pointer items-center justify-center rounded-l-[5px] border-0 bg-[#2b2b2b] text-neutral-400 transition-colors hover:bg-[#383838] hover:text-white"
           onClick={onToggleSidebar}
           aria-label={
             isSidebarOpen
@@ -547,12 +597,17 @@ const TerminalWorkspace = ({
         transition={{ x: MOTION_SPRING.soft, opacity: MOTION_TRANSITION.fade }}
         className={`${
           isSidebarOpen
-            ? "flex h-full min-w-[300px] flex-1 flex-col overflow-hidden bg-[#121212] max-[640px]:min-w-[220px]"
+            ? "relative z-[1] flex h-full min-w-[300px] flex-1 flex-col overflow-hidden border-l border-white/[0.08] bg-[#121212]/58 backdrop-blur-[6px] max-[640px]:min-w-[220px]"
             : "hidden"
         }`}
       >
         <div className="min-h-0 flex-1 overflow-hidden">
-          <FileManagerPanel uuid={tabs.find((tab) => tab.id === activeTabId)?.uuid ?? null} />
+          <FileManagerPanel
+            uuid={activeTab?.uuid ?? null}
+            serverName={activeServerName}
+            serverOs={activeClient?.os}
+            terminalSettings={terminalSettings}
+          />
         </div>
       </motion.aside>
     </div>

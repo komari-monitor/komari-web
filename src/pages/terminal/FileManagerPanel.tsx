@@ -25,10 +25,12 @@ import {
   RefreshCw,
   Scissors,
   Search,
+  Server,
   Trash2,
   Upload,
   X,
 } from "lucide-react";
+import { getOSImage } from "@/utils/osImageHelper";
 import {
   useCallback,
   lazy,
@@ -72,11 +74,15 @@ import {
   type RemoteSearchResult,
 } from "./fileManagerApi";
 import { useRemoteFileUpload } from "./useRemoteFileUpload";
+import type { TerminalSettings } from "./terminalDefaults";
 
   const FileEditorDialog = lazy(() => import("./FileEditorDialog"));
 
 interface FileManagerPanelProps {
   uuid: string | null;
+  serverName?: string;
+  serverOs?: string;
+  terminalSettings?: TerminalSettings;
 }
 
 type FileAction =
@@ -125,7 +131,7 @@ type ClipboardState = {
 } | null;
 
 const toolbarButton =
-  "km-pressable inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-[4px] border-0 bg-transparent text-[#b8b8b8] transition-colors hover:bg-[#343434] hover:text-white disabled:cursor-default disabled:opacity-35";
+  "km-pressable inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-[4px] border-0 bg-transparent text-[#c8c8c8] transition-colors hover:bg-white/10 hover:text-white disabled:cursor-default disabled:opacity-35";
 
 const fileIcon = (file: RemoteFileInfo) => {
   if (file.is_dir) {
@@ -138,7 +144,7 @@ const fileIcon = (file: RemoteFileInfo) => {
   if (["aac", "flac", "m4a", "mp3", "ogg", "wav"].includes(extension)) {
     return <FileMusic size={17} className="text-[#d19a66]" />;
   }
-  if (["3gp", "avi", "flv", "m4v", "mkv", "mov", "mp4", "mpeg", "mpg", "ogv", "ts", "webm", "wmv"].includes(extension)) {
+  if (["3gp", "avi", "flv", "m4v", "mkv", "mov", "mp4", "mpeg", "mpg", "ogv", "webm", "wmv"].includes(extension)) {
     return <FileVideo size={17} className="text-[#e06c75]" />;
   }
   if (["7z", "bz2", "gz", "rar", "tar", "tgz", "xz", "zip"].includes(extension)) {
@@ -150,7 +156,12 @@ const fileIcon = (file: RemoteFileInfo) => {
   return <File size={17} className="text-[#a7a7a7]" />;
 };
 
-const FileManagerPanel = ({ uuid }: FileManagerPanelProps) => {
+const FileManagerPanel = ({
+  uuid,
+  serverName,
+  serverOs,
+  terminalSettings,
+}: FileManagerPanelProps) => {
   const { t } = useTranslation();
   const fileService = useRemoteFileService(uuid ?? "");
   const [currentPath, setCurrentPath] = useState("");
@@ -191,8 +202,10 @@ const FileManagerPanel = ({ uuid }: FileManagerPanelProps) => {
 
   const requestVersionRef = useRef(0);
   const uploadInputRef = useRef<HTMLInputElement>(null);
+  const uploadTargetRef = useRef("");
   const listRef = useRef<HTMLDivElement | null>(null);
   const marqueeStartRef = useRef<number | null>(null);
+  const justMarqueeSelectedRef = useRef(false);
 
   const selectedFiles = files.filter((file) => selectedPathsRef.current.has(file.path));
   const selectedFile = selectedFiles.length === 1 ? selectedFiles[0] : null;
@@ -258,9 +271,11 @@ const FileManagerPanel = ({ uuid }: FileManagerPanelProps) => {
     const rect = container.getBoundingClientRect();
     marqueeStartRef.current = event.clientY - rect.top + container.scrollTop;
     marqueeActiveRef.current = false;
+    justMarqueeSelectedRef.current = false;
     setMarqueeRange(null);
     const handleMove = (moveEvent: MouseEvent) => updateMarqueeSelection(moveEvent.clientY);
     const handleUp = () => {
+      justMarqueeSelectedRef.current = marqueeActiveRef.current;
       marqueeStartRef.current = null;
       marqueeActiveRef.current = false;
       setMarqueeRange(null);
@@ -489,6 +504,11 @@ const FileManagerPanel = ({ uuid }: FileManagerPanelProps) => {
     setCreatingEntry({ kind, name: "" });
   }, []);
 
+  const openUpload = useCallback((destination: string) => {
+    uploadTargetRef.current = destination;
+    uploadInputRef.current?.click();
+  }, []);
+
   const submitCreate = useCallback(async () => {
     const entry = creatingEntry;
     const name = entry?.name.trim();
@@ -535,7 +555,7 @@ const FileManagerPanel = ({ uuid }: FileManagerPanelProps) => {
         return [
           { key: "new-file", label: t("file_manager.new_file", "New File"), icon: <FilePlus2 size={14} />, onSelect: () => startCreate("file") },
           { key: "new-folder", label: t("file_manager.new_folder", "New Folder"), icon: <FolderPlus size={14} />, onSelect: () => startCreate("folder") },
-          { key: "upload", label: t("file_manager.upload", "Upload"), icon: <Upload size={14} />, onSelect: () => uploadInputRef.current?.click() },
+          { key: "upload", label: t("file_manager.upload", "Upload"), icon: <Upload size={14} />, onSelect: () => openUpload(currentPath) },
           { key: "paste", label: clipboardSource ? (clipboardSource.cut ? t("file_manager.move_here", "Move here") : t("file_manager.copy_here", "Copy here")) : t("file_manager.paste", "Paste"), icon: <ClipboardCopy size={14} />, disabled: !clipboardSource, onSelect: () => void pasteClipboard() },
           { key: "refresh", label: t("common.refresh", "Refresh"), icon: <RefreshCw size={14} />, separatorBefore: true, onSelect: () => void refresh() },
         ];
@@ -548,6 +568,7 @@ const FileManagerPanel = ({ uuid }: FileManagerPanelProps) => {
         ...(file.is_dir
           ? [
               { key: "open-folder", label: t("file_manager.open", "Open"), icon: <FolderOpen size={14} />, onSelect: () => void loadDirectory(file.path) },
+              { key: "upload", label: t("file_manager.upload", "Upload"), icon: <Upload size={14} />, onSelect: () => openUpload(file.path) },
               { key: "refresh-directory", label: t("common.refresh", "Refresh"), icon: <RefreshCw size={14} />, separatorBefore: true, onSelect: () => void loadDirectory(file.path) },
             ]
           : [
@@ -572,7 +593,7 @@ const FileManagerPanel = ({ uuid }: FileManagerPanelProps) => {
         { key: "delete", label: multiple ? `${t("file_manager.delete", "Delete")} (${activeSelection.length})` : t("file_manager.delete", "Delete"), icon: <Trash2 size={14} />, destructive: true, separatorBefore: true, onSelect: () => setPendingDeleteFiles(activeSelection) },
       ];
     },
-    [beginAction, beginClipboard, clipboardSource, copySelectedPaths, downloadFiles, loadDirectory, openFile, pasteClipboard, refresh, selectedFiles, startCreate, t]);
+    [beginAction, beginClipboard, clipboardSource, copySelectedPaths, currentPath, downloadFiles, loadDirectory, openFile, openUpload, pasteClipboard, refresh, selectedFiles, startCreate, t]);
 
   const runAction = useCallback(async () => {
     if (!uuid || !action) return;
@@ -712,16 +733,18 @@ const FileManagerPanel = ({ uuid }: FileManagerPanelProps) => {
 
   if (!uuid) {
     return (
-      <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center text-[#777]">
+      <div className="flex h-full flex-col items-center justify-center gap-2 px-6 text-center text-neutral-400">
         <HardDrive size={34} strokeWidth={1.25} />
         <span className="text-xs">{t("file_manager.no_server", "Open a terminal tab to browse its files")}</span>
       </div>
     );
   }
 
+  const displayServerName = serverName?.trim() || uuid;
+
   return (
     <div
-      className={`relative flex h-full min-h-0 flex-col bg-[#181818] text-[#cccccc] ${uploadProgress.length > 0 ? "select-none opacity-90" : ""}`}
+      className="relative flex h-full min-h-0 flex-col bg-transparent text-[#cccccc]"
       onClick={closeContextMenu}
       tabIndex={0}
       onKeyDown={(event) => {
@@ -731,7 +754,26 @@ const FileManagerPanel = ({ uuid }: FileManagerPanelProps) => {
         }
       }}
     >
-      <div className="flex h-9 shrink-0 items-center gap-1 border-b border-[#2b2b2b] px-1.5">
+      <div className="flex h-10 shrink-0 items-center gap-2 border-b border-white/[0.08] px-3">
+        {serverOs ? (
+          <img
+            src={getOSImage(serverOs)}
+            alt=""
+            draggable={false}
+            className="h-3.5 w-3.5 shrink-0 object-contain"
+          />
+        ) : (
+          <Server size={14} className="shrink-0 text-neutral-400" />
+        )}
+        <span
+          className="min-w-0 flex-1 truncate text-xs font-medium text-neutral-100"
+          title={displayServerName}
+        >
+          {displayServerName}
+        </span>
+      </div>
+
+      <div className="flex h-9 shrink-0 items-center gap-1 border-b border-white/[0.08] px-1.5">
         <button
           type="button"
           onClick={() => void loadDirectory(remoteDirname(currentPath))}
@@ -749,7 +791,7 @@ const FileManagerPanel = ({ uuid }: FileManagerPanelProps) => {
               void loadDirectory(pathDraft.trim());
             }
           }}
-          className="h-7 min-w-0 flex-1 rounded-[4px] border border-[#3c3c3c] bg-[#1e1e1e] px-2 text-xs text-neutral-100 placeholder-neutral-500 outline-none focus:border-[#007acc]"
+          className="h-7 min-w-0 flex-1 rounded-[4px] border border-white/15 bg-black/35 px-2 text-xs text-neutral-100 placeholder-neutral-500 outline-none focus:border-[#007acc]"
           aria-label={t("file_manager.path", "Path")}
         />
         <button type="button" className={toolbarButton} onClick={() => void refresh()} title={t("common.refresh", "Refresh")}>
@@ -757,14 +799,14 @@ const FileManagerPanel = ({ uuid }: FileManagerPanelProps) => {
         </button>
       </div>
 
-      <div className="flex h-9 shrink-0 items-center gap-0.5 border-b border-[#2b2b2b] px-1.5">
+      <div className="flex h-9 shrink-0 items-center gap-0.5 border-b border-white/[0.08] px-1.5">
         <button type="button" className={toolbarButton} onClick={() => startCreate("file")} title={t("file_manager.new_file", "New File")}>
           <FilePlus2 size={15} />
         </button>
         <button type="button" className={toolbarButton} onClick={() => startCreate("folder")} title={t("file_manager.new_folder", "New Folder")}>
           <FolderPlus size={15} />
         </button>
-        <button type="button" className={toolbarButton} onClick={() => uploadInputRef.current?.click()} title={t("file_manager.upload", "Upload")}>
+        <button type="button" className={toolbarButton} onClick={() => openUpload(currentPath)} title={t("file_manager.upload", "Upload")}>
           <Upload size={15} />
         </button>
         <button
@@ -778,7 +820,7 @@ const FileManagerPanel = ({ uuid }: FileManagerPanelProps) => {
         >
           <Download size={15} />
         </button>
-        <div className="mx-1 h-4 w-px bg-[#353535]" />
+        <div className="mx-1 h-4 w-px bg-white/15" />
         <button type="button" className={toolbarButton} disabled={!selectedFile} onClick={renameSelected} title={t("file_manager.rename", "Rename")}>
           <Pencil size={14} />
         </button>
@@ -796,14 +838,14 @@ const FileManagerPanel = ({ uuid }: FileManagerPanelProps) => {
           onChange={(event) => {
             const files = Array.from(event.currentTarget.files ?? []);
             event.currentTarget.value = "";
-            if (files.length) void uploadFiles(files, currentPath);
+            if (files.length) void uploadFiles(files, uploadTargetRef.current || currentPath);
           }}
         />
       </div>
 
-      <div className="flex shrink-0 items-center gap-1.5 border-b border-[#2b2b2b] px-2 py-1.5">
+      <div className="flex shrink-0 items-center gap-1.5 border-b border-white/[0.08] px-2 py-1.5">
         <div className="relative min-w-0 flex-1">
-          <Search size={13} className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-[#777]" />
+          <Search size={13} className="pointer-events-none absolute left-2 top-1/2 -translate-y-1/2 text-neutral-400" />
           <input
             value={searchQuery}
             onChange={(event) => setSearchQuery(event.target.value)}
@@ -811,12 +853,12 @@ const FileManagerPanel = ({ uuid }: FileManagerPanelProps) => {
               if (event.key === "Enter") void runSearch();
             }}
             placeholder={t("file_manager.search_placeholder", "Search files")}
-            className="h-7 w-full rounded-[4px] border border-[#3c3c3c] bg-[#1e1e1e] pl-7 pr-7 text-xs text-neutral-100 outline-none focus:border-[#007acc]"
+            className="h-7 w-full rounded-[4px] border border-white/15 bg-black/35 pl-7 pr-7 text-xs text-neutral-100 outline-none focus:border-[#007acc]"
           />
           {(searchQuery || searchResult) && (
             <button
               type="button"
-              className="absolute right-1 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center text-[#888] hover:text-white"
+              className="absolute right-1 top-1/2 flex h-5 w-5 -translate-y-1/2 items-center justify-center text-neutral-400 hover:text-white"
               onClick={() => {
                 setSearchQuery("");
                 setSearchResult(null);
@@ -827,7 +869,7 @@ const FileManagerPanel = ({ uuid }: FileManagerPanelProps) => {
             </button>
           )}
         </div>
-        <label className="flex shrink-0 items-center gap-1 text-[10px] text-[#999]" title={t("file_manager.search_content", "Search file contents")}>
+        <label className="flex shrink-0 items-center gap-1 text-[10px] text-neutral-300" title={t("file_manager.search_content", "Search file contents")}>
           <Checkbox size="1" checked={searchContent} onCheckedChange={(checked) => setSearchContent(checked === true)} />
           {t("file_manager.content", "Content")}
         </label>
@@ -843,6 +885,17 @@ const FileManagerPanel = ({ uuid }: FileManagerPanelProps) => {
         onDrop={(event) => { void handleDrop(event, { kind: "blank" }); }}
         className={dragTarget?.kind === "blank" ? "relative min-h-0 flex-1 overflow-auto ring-1 ring-inset ring-[#55a7e0]" : "relative min-h-0 flex-1 overflow-auto"}
         onMouseDown={startMarqueeSelection}
+        onClick={(event) => {
+          if (justMarqueeSelectedRef.current) {
+            justMarqueeSelectedRef.current = false;
+            return;
+          }
+          if (!(event.target as HTMLElement).closest("[data-file-path],[data-parent-entry],[data-create-entry]")) {
+            selectedPathsRef.current = new Set();
+            setSelectedPath(null);
+            lastSelectedIndexRef.current = -1;
+          }
+        }}
         onContextMenu={(event) => {
           event.preventDefault();
           setContextTarget(null);
@@ -850,8 +903,8 @@ const FileManagerPanel = ({ uuid }: FileManagerPanelProps) => {
         }}
       >
         {searchResult ? (
-          <div className="py-1">
-            <div className="px-3 py-1 text-[10px] uppercase text-[#777]">
+          <div className="min-h-full pt-1 pb-8 pl-4 pr-1">
+            <div className="px-2 py-1 text-[10px] uppercase text-neutral-400">
               {t("file_manager.search_results", {
                 count: searchResult.matches.length,
                 defaultValue: `${searchResult.matches.length} results`,
@@ -862,19 +915,19 @@ const FileManagerPanel = ({ uuid }: FileManagerPanelProps) => {
               <button
                 type="button"
                 key={`${match.path}:${match.line}`}
-                className="flex w-full min-w-0 flex-col gap-0.5 border-0 bg-transparent px-3 py-2 text-left hover:bg-[#2a2d2e]"
+                className="flex w-full min-w-0 flex-col gap-0.5 rounded-[4px] border-0 bg-transparent px-2 py-2 text-left hover:bg-white/[0.08]"
                 onClick={() => void openSearchMatch(match)}
                 title={match.path}
               >
-                <span className="w-full truncate text-xs text-[#d7d7d7]">{remoteBasename(match.path)}</span>
-                <span className="w-full truncate text-[10px] text-[#777]">
+                <span className="w-full truncate text-xs text-[#e2e2e2]">{remoteBasename(match.path)}</span>
+                <span className="w-full truncate text-[10px] text-neutral-400">
                   {match.path}{match.line > 0 ? `:${match.line}` : ""}
                 </span>
-                {match.text && <span className="line-clamp-2 text-[10px] text-[#a6a6a6]">{match.text}</span>}
+                {match.text && <span className="line-clamp-2 text-[10px] text-neutral-300">{match.text}</span>}
               </button>
             ))}
             {searchResult.matches.length === 0 && (
-              <div className="px-4 py-8 text-center text-xs text-[#777]">{t("file_manager.no_results", "No results")}</div>
+              <div className="px-4 py-8 text-center text-xs text-neutral-400">{t("file_manager.no_results", "No results")}</div>
             )}
           </div>
         ) : (
@@ -882,10 +935,11 @@ const FileManagerPanel = ({ uuid }: FileManagerPanelProps) => {
             content 层：目录还没列出来（首次打开 / 切换节点后为空）时，用与真实行同高同结构的占位行骨架化；
             Skeletonize 常驻挂载，真实行到达时同一容器揭开，文字随之淡入。已有内容的刷新不进骨架（原地更新）。
             正在新建条目时不进骨架（inert 会让输入框失焦并触发提交）。
+            最左侧留出 pl-4 (16px) 空白带，方便在条目填满视图时仍可右键调出空白处菜单。
           */
           <Skeletonize
             loading={loading && files.length === 0 && !creatingEntry}
-            className="py-1"
+            className="min-h-full pt-1 pb-8 pl-4 pr-1"
           >
             {loading && files.length === 0 && !creatingEntry && FILE_PLACEHOLDER_ROWS.map((width, index) => (
               <div key={index} className="my-0.5 flex h-11 min-w-0 items-center gap-2 rounded-[4px] px-2">
@@ -908,7 +962,7 @@ const FileManagerPanel = ({ uuid }: FileManagerPanelProps) => {
                 animate={CONTENT_MOTION.item.animate}
                 exit={CONTENT_MOTION.item.exit}
                 transition={MOTION_SPRING.snappy}
-                className="my-0.5 flex h-11 min-w-0 items-center gap-2 rounded-[4px] bg-[#37373d] px-2"
+                className="my-0.5 flex h-11 min-w-0 items-center gap-2 rounded-[4px] bg-white/[0.14] px-2"
               >
                 <span className="shrink-0">
                   {creatingEntry.kind === "folder" ? <Folder size={17} className="text-[#dcb67a]" /> : <FilePlus2 size={17} className="text-[#a7a7a7]" />}
@@ -928,7 +982,7 @@ const FileManagerPanel = ({ uuid }: FileManagerPanelProps) => {
                       cancelCreate();
                     }
                   }}
-                  className="h-6 min-w-0 flex-1 rounded-[4px] border border-[#007acc] bg-[#1e1e1e] px-1 text-xs text-[#eeeeee] outline-none"
+                  className="h-6 min-w-0 flex-1 rounded-[4px] border border-[#007acc] bg-black/50 px-1 text-xs text-[#eeeeee] outline-none"
                 />
               </motion.div>
             )}
@@ -937,7 +991,7 @@ const FileManagerPanel = ({ uuid }: FileManagerPanelProps) => {
               <div
                 data-parent-entry=""
                 className={`my-0.5 flex h-8 min-w-0 items-center gap-2 rounded-[4px] px-2 text-xs ${
-                  dragTarget?.kind === "blank" && internalDrag ? "bg-[#20364a] text-[#eeeeee]" : "text-[#bbbbbb] hover:bg-[#2a2d2e]"
+                  dragTarget?.kind === "blank" && internalDrag ? "bg-sky-500/20 text-[#eeeeee]" : "text-neutral-200 hover:bg-white/[0.08]"
                 }`}
                 onClick={() => void loadDirectory(remoteDirname(currentPath))}
                 onDragOver={(event) => {
@@ -983,8 +1037,8 @@ const FileManagerPanel = ({ uuid }: FileManagerPanelProps) => {
                 <div
                   data-file-path={file.path}
                   draggable={!marqueeActiveRef.current && marqueeRange === null && renamingPath !== file.path}
-                  className={`group my-0.5 w-full flex h-11 min-w-0 items-center gap-2 rounded-[4px] px-2 ${
-                    selected ? "bg-[#37373d]" : dragTarget?.kind === "directory" && dragTarget.path === file.path ? "bg-[#20364a]" : "hover:bg-[#2a2d2e]"
+                  className={`group my-0.5 w-full flex h-11 min-w-0 items-center gap-2 rounded-[4px] px-2 transition-colors ${
+                    selected ? "bg-white/[0.15]" : dragTarget?.kind === "directory" && dragTarget.path === file.path ? "bg-sky-500/20" : "hover:bg-white/[0.08]"
                   }`}
                   onDragStart={(event) => {
                     if (marqueeStartRef.current !== null) {
@@ -1043,10 +1097,10 @@ const FileManagerPanel = ({ uuid }: FileManagerPanelProps) => {
                           cancelInlineRename();
                         }
                       }}
-                      className="h-6 min-w-0 flex-1 rounded-[4px] border border-[#007acc] bg-[#1e1e1e] px-1 text-xs text-[#eeeeee] outline-none"
+                      className="h-6 min-w-0 flex-1 rounded-[4px] border border-[#007acc] bg-black/50 px-1 text-xs text-[#eeeeee] outline-none"
                     />
                   ) : (
-                    <div className="flex min-w-0 items-center gap-1 truncate text-xs text-[#dddddd]">
+                    <div className="flex min-w-0 items-center gap-1 truncate text-xs text-[#e6e6e6]">
                       <span className="min-w-0 truncate">{file.name}</span>
                       {file.is_symlink && file.target && (
                         <span className="shrink-0 text-[10px] text-[#6a9955]">
@@ -1055,7 +1109,7 @@ const FileManagerPanel = ({ uuid }: FileManagerPanelProps) => {
                       )}
                     </div>
                   )}
-                    <div className="flex min-w-0 gap-2 text-[10px] text-[#777]">
+                    <div className="flex min-w-0 gap-2 text-[10px] text-neutral-400">
                       <span className="shrink-0">{file.is_dir ? file.mode_octal : formatFileSize(file.size)}</span>
                       <span className="shrink-0">{file.is_dir ? "" : file.mode_octal}</span>
                       <span className="min-w-0 truncate">{formatFileDate(file.modified_at)}</span>
@@ -1117,7 +1171,7 @@ const FileManagerPanel = ({ uuid }: FileManagerPanelProps) => {
             })}
             </AnimatePresence>
             {!loading && files.length === 0 && (
-              <div className="px-4 py-10 text-center text-xs text-[#777]">{t("file_manager.empty", "This directory is empty")}</div>
+              <div className="px-4 py-10 text-center text-xs text-neutral-400">{t("file_manager.empty", "This directory is empty")}</div>
             )}
           </Skeletonize>
         )}
@@ -1141,7 +1195,7 @@ const FileManagerPanel = ({ uuid }: FileManagerPanelProps) => {
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: 8 }}
             transition={MOTION_SPRING.snappy}
-            className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center bg-[#1e1e1e]/90 py-1 text-xs text-[#bbbbbb]"
+            className="pointer-events-none absolute inset-x-0 bottom-0 flex justify-center bg-[#181818]/75 py-1 text-xs text-neutral-200 backdrop-blur-sm"
           >
             <Loading compact />
           </motion.div>
@@ -1195,6 +1249,8 @@ const FileManagerPanel = ({ uuid }: FileManagerPanelProps) => {
           initialFile={editorFile}
           initialLine={editorLine}
           refreshToken={refreshToken}
+          fontFamily={terminalSettings?.fontFamily}
+          terminalSettings={terminalSettings}
           onOpenChange={setEditorOpen}
           onSaved={() => void refresh()}
           onChanged={() => void refresh()}

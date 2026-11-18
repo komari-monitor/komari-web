@@ -132,8 +132,8 @@ const EditorResourceMonitor = ({ uuid }: EditorResourceMonitorProps) => {
   }, [call, uuid]);
 
   return (
-    <section className="shrink-0 border-t border-[#2b2b2b] bg-[#181818]" aria-label={t("terminal.resource_monitor.title", "资源小窗")}>
-      <div className="flex h-7 items-center gap-1.5 px-2 text-[10px] font-semibold uppercase text-neutral-500">
+    <section className="shrink-0 border-t border-white/[0.08] bg-transparent" aria-label={t("terminal.resource_monitor.title", "资源小窗")}>
+      <div className="flex h-7 items-center gap-1.5 px-2 text-[10px] font-semibold uppercase text-neutral-400">
         <Gauge size={12} className="shrink-0" />
         <span>{t("terminal.resource_monitor.title", "资源小窗")}</span>
         <img

@@ -119,11 +119,32 @@
     "url": "https://www.npmjs.com/package/@vitejs/plugin-react"
   },
   {
+    "name": "@xterm/addon-clipboard",
+    "version": "0.2.0",
+    "license": "MIT",
+    "dev": false,
+    "url": "https://www.npmjs.com/package/@xterm/addon-clipboard"
+  },
+  {
     "name": "@xterm/addon-fit",
     "version": "0.11.0",
     "license": "MIT",
     "dev": false,
     "url": "https://www.npmjs.com/package/@xterm/addon-fit"
+  },
+  {
+    "name": "@xterm/addon-image",
+    "version": "0.9.0",
+    "license": "MIT",
+    "dev": false,
+    "url": "https://www.npmjs.com/package/@xterm/addon-image"
+  },
+  {
+    "name": "@xterm/addon-ligatures",
+    "version": "0.10.0",
+    "license": "MIT",
+    "dev": false,
+    "url": "https://www.npmjs.com/package/@xterm/addon-ligatures"
   },
   {
     "name": "@xterm/addon-search",
@@ -138,6 +159,13 @@
     "license": "MIT",
     "dev": false,
     "url": "https://www.npmjs.com/package/@xterm/addon-web-links"
+  },
+  {
+    "name": "@xterm/addon-webgl",
+    "version": "0.19.0",
+    "license": "MIT",
+    "dev": false,
+    "url": "https://www.npmjs.com/package/@xterm/addon-webgl"
   },
   {
     "name": "@xterm/xterm",

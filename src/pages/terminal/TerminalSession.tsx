@@ -2,9 +2,13 @@ import { useEffect, useId, useRef } from "react";
 import type { CSSProperties } from "react";
 import { Terminal } from "@xterm/xterm";
 import type { ITerminalOptions } from "@xterm/xterm";
+import { ClipboardAddon } from "@xterm/addon-clipboard";
 import { FitAddon } from "@xterm/addon-fit";
+import { ImageAddon } from "@xterm/addon-image";
+import { LigaturesAddon } from "@xterm/addon-ligatures";
 import { SearchAddon } from "@xterm/addon-search";
 import { WebLinksAddon } from "@xterm/addon-web-links";
+import { WebglAddon } from "@xterm/addon-webgl";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import {
@@ -24,12 +28,16 @@ interface TerminalSessionProps {
   uuid: string;
   active: boolean;
   initialRequestId?: string;
+  fontFamily?: string;
   fontSize?: number;
+  convertEol?: boolean;
+  hasBackground?: boolean;
   padding?: number;
   twoFaEnabled: boolean;
   disconnectMessage: string;
   onApiChange: (api: TerminalSessionApi | null) => void;
   onLatencyChange?: (latencyMs: number | null) => void;
+  onTitleChange?: (title: string) => void;
 }
 
 const RECONNECT_INTERVAL = 1000;
@@ -42,6 +50,11 @@ const encode = (value: string) => new TextEncoder().encode(value);
 
 const normalizePaste = (value: string) => value.replace(/\r?\n/g, "\r");
 
+// 过滤粘贴文本中可能夹带的 Bracketed Paste 起止控制序列，防止提前闭合粘贴块。
+const sanitizeBracketedPaste = (value: string) =>
+  // eslint-disable-next-line no-control-regex
+  value.replace(/\x1b\[20[01]~/g, "");
+
 const createClientId = () =>
   typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
     ? crypto.randomUUID()
@@ -52,18 +65,23 @@ const TerminalSession = ({
   uuid,
   active,
   initialRequestId,
+  fontFamily = DEFAULT_TERMINAL_OPTIONS.fontFamily,
   fontSize = DEFAULT_TERMINAL_OPTIONS.fontSize,
+  convertEol = DEFAULT_TERMINAL_OPTIONS.convertEol,
+  hasBackground = false,
   padding = DEFAULT_TERMINAL_PADDING,
   twoFaEnabled,
   disconnectMessage,
   onApiChange,
   onLatencyChange,
+  onTitleChange,
 }: TerminalSessionProps) => {
   const hostRef = useRef<HTMLDivElement>(null);
   const activeRef = useRef(active);
   const disconnectMessageRef = useRef(disconnectMessage);
   const onApiChangeRef = useRef(onApiChange);
   const onLatencyChangeRef = useRef(onLatencyChange);
+  const onTitleChangeRef = useRef(onTitleChange);
   const apiRef = useRef<TerminalSessionApi | null>(null);
   const toastId = useId();
   const { t } = useTranslation();
@@ -85,13 +103,69 @@ const TerminalSession = ({
   }, [onLatencyChange]);
 
   useEffect(() => {
+    onTitleChangeRef.current = onTitleChange;
+  }, [onTitleChange]);
+
+  useEffect(() => {
+    const currentApi = apiRef.current;
+    if (!currentApi) {
+      return;
+    }
+    currentApi.terminal.options.fontFamily = fontFamily;
+    try {
+      currentApi.terminal.clearTextureAtlas();
+    } catch {
+      // 忽略渲染器尚未就绪的情况
+    }
+    currentApi.fit();
+    if (currentApi.terminal.rows > 0) {
+      currentApi.terminal.refresh(0, currentApi.terminal.rows - 1);
+    }
+  }, [fontFamily]);
+
+  useEffect(() => {
     const currentApi = apiRef.current;
     if (!currentApi) {
       return;
     }
     currentApi.terminal.options.fontSize = fontSize;
+    try {
+      currentApi.terminal.clearTextureAtlas();
+    } catch {
+      // 忽略渲染器尚未就绪的情况
+    }
     currentApi.fit();
+    if (currentApi.terminal.rows > 0) {
+      currentApi.terminal.refresh(0, currentApi.terminal.rows - 1);
+    }
   }, [fontSize]);
+
+  useEffect(() => {
+    const currentApi = apiRef.current;
+    if (!currentApi) {
+      return;
+    }
+    currentApi.terminal.options.convertEol = convertEol;
+  }, [convertEol]);
+
+  useEffect(() => {
+    const currentApi = apiRef.current;
+    if (!currentApi) {
+      return;
+    }
+    currentApi.terminal.options.theme = {
+      ...currentApi.terminal.options.theme,
+      background: hasBackground ? "rgba(0, 0, 0, 0)" : "#000000",
+    };
+    try {
+      currentApi.terminal.clearTextureAtlas();
+    } catch {
+      // 忽略渲染器尚未就绪的情况
+    }
+    if (currentApi.terminal.rows > 0) {
+      currentApi.terminal.refresh(0, currentApi.terminal.rows - 1);
+    }
+  }, [hasBackground]);
 
   useEffect(() => {
     if (!hostRef.current) {
@@ -99,6 +173,7 @@ const TerminalSession = ({
     }
 
     const themeWithSelection = {
+      background: hasBackground ? "rgba(0, 0, 0, 0)" : "#000000",
       selectionBackground: "#ffffff",
       selectionForeground: "#000000",
       selectionInactiveBackground: "#ffffff",
@@ -109,7 +184,10 @@ const TerminalSession = ({
 
     const terminalOptions: Partial<ITerminalOptions> = {
       ...DEFAULT_TERMINAL_OPTIONS,
+      fontFamily,
       fontSize,
+      convertEol,
+      allowTransparency: true,
       cursorStyle: "bar",
       cursorInactiveStyle: "bar",
       cursorWidth: 2,
@@ -122,6 +200,8 @@ const TerminalSession = ({
     const fitAddon = new FitAddon();
     const searchAddon = new SearchAddon();
     const webLinksAddon = new WebLinksAddon();
+    const clipboardAddon = new ClipboardAddon();
+    const imageAddon = new ImageAddon();
     const host = hostRef.current;
     let disposed = false;
     let firstBinary = false;
@@ -148,7 +228,28 @@ const TerminalSession = ({
     term.loadAddon(fitAddon);
     term.loadAddon(searchAddon);
     term.loadAddon(webLinksAddon);
+    term.loadAddon(clipboardAddon);
+    term.loadAddon(imageAddon);
     term.open(host);
+
+    // LigaturesAddon 必须在 term.open 之后激活；WebglAddon 需在 LigaturesAddon 之后激活，
+    // 以便纹理图集读取已应用的 fontFeatureSettings 与字符连接器。
+    try {
+      const ligaturesAddon = new LigaturesAddon();
+      term.loadAddon(ligaturesAddon);
+    } catch {
+      // 忽略连字插件初始化失败，保持默认渲染。
+    }
+
+    try {
+      const webglAddon = new WebglAddon();
+      webglAddon.onContextLoss(() => {
+        webglAddon.dispose();
+      });
+      term.loadAddon(webglAddon);
+    } catch {
+      // WebGL2 不可用时自动回退到默认渲染器。
+    }
 
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const baseUrl = `${protocol}//${window.location.host}`;
@@ -207,15 +308,32 @@ const TerminalSession = ({
       }
     };
 
+    // 优先使用 Bracketed Paste Mode（由 xterm.paste 在终端开启 DECSET 2004 时自动包裹 \x1b[200~...\x1b[201~），
+    // 未开启时回退为常规换行规范化粘贴。
+    const pasteText = (rawText: string) => {
+      if (!rawText || disposed) {
+        return;
+      }
+      term.clearSelection();
+      term.focus();
+      const sanitized = sanitizeBracketedPaste(rawText);
+      if (!sanitized) {
+        return;
+      }
+      if (
+        term.modes.bracketedPasteMode &&
+        !term.options.ignoreBracketedPasteMode
+      ) {
+        term.paste(sanitized);
+        return;
+      }
+      term.paste(normalizePaste(sanitized));
+    };
+
     const pasteClipboard = async () => {
       try {
         const text = await navigator.clipboard.readText();
-        if (disposed) {
-          return;
-        }
-        term.clearSelection();
-        term.focus();
-        send(normalizePaste(text));
+        pasteText(text);
       } catch {
         // Clipboard permissions are reported by the existing HTTPS callout.
       }
@@ -286,8 +404,18 @@ const TerminalSession = ({
           return false;
         }
         if (key === "v") {
-          event.preventDefault();
-          void pasteClipboard();
+          // Ctrl+V 不阻止默认事件，交由浏览器原生 paste 事件触发统一粘贴逻辑（无需剪贴板读取权限弹窗）；
+          // Ctrl+Alt+V 或在支持 Clipboard API 时的 Ctrl+Shift+V 主动读取剪贴板粘贴。
+          if (ctrlOnly) {
+            return false;
+          }
+          if (
+            ctrlAlt ||
+            typeof navigator.clipboard?.readText === "function"
+          ) {
+            event.preventDefault();
+            void pasteClipboard();
+          }
           return false;
         }
       }
@@ -306,6 +434,17 @@ const TerminalSession = ({
 
       return true;
     });
+
+    const handlePaste = (event: ClipboardEvent) => {
+      const text = event.clipboardData?.getData("text/plain");
+      if (text === undefined) {
+        return;
+      }
+      event.preventDefault();
+      event.stopPropagation();
+      pasteText(text);
+    };
+    host.addEventListener("paste", handlePaste, true);
 
     const handleContextMenu = (event: MouseEvent) => {
       event.preventDefault();
@@ -576,24 +715,32 @@ const TerminalSession = ({
       connect(null);
     }
 
+    const termTitleDisposable = term.onTitleChange((title) => {
+      onTitleChangeRef.current?.(title);
+    });
+
     const termDataDisposable = term.onData((data) => {
       if (awaitingOtp) {
-        if (data === "\r") {
-          awaitingOtp = false;
-          term.write("\r\n");
-          if (!otpBuffer) {
-            startOtpPrompt(false);
+        const cleaned = sanitizeBracketedPaste(data);
+        for (const ch of cleaned) {
+          if (ch === "\r" || ch === "\n") {
+            awaitingOtp = false;
+            term.write("\r\n");
+            if (!otpBuffer) {
+              startOtpPrompt(false);
+              return;
+            }
+            currentOtp = otpBuffer;
+            otpBuffer = "";
+            connect(currentOtp);
             return;
+          } else if (ch === "\x7f" || ch === "\b") {
+            if (otpBuffer.length > 0) {
+              otpBuffer = otpBuffer.slice(0, -1);
+            }
+          } else if (ch >= " " && ch <= "~") {
+            otpBuffer += ch;
           }
-          currentOtp = otpBuffer;
-          otpBuffer = "";
-          connect(currentOtp);
-        } else if (data === "\x7f" || data === "\b") {
-          if (otpBuffer.length > 0) {
-            otpBuffer = otpBuffer.slice(0, -1);
-          }
-        } else if (data.length === 1 && data >= " " && data <= "~") {
-          otpBuffer += data;
         }
         return;
       }
@@ -619,9 +766,11 @@ const TerminalSession = ({
       disposed = true;
       apiRef.current = null;
       onApiChangeRef.current(null);
+      host.removeEventListener("paste", handlePaste, true);
       host.removeEventListener("contextmenu", handleContextMenu);
       resizeObserver.disconnect();
       window.removeEventListener("resize", handleWindowResize);
+      termTitleDisposable.dispose();
       termDataDisposable.dispose();
       if (firstBinaryTimeout !== null) {
         clearTimeout(firstBinaryTimeout);
@@ -661,11 +810,15 @@ const TerminalSession = ({
 
   const style = {
     "--xterm-padding": `${padding}px`,
+    "--xterm-container-bg": hasBackground ? "transparent" : "#000000",
+    "--xterm-scrollbar-track": hasBackground ? "transparent" : "#000000",
   } as CSSProperties;
 
   return (
     <div
       className={`km-terminal-session terminal-page terminal-xterm-host absolute inset-0 h-full w-full overflow-hidden box-border bg-[var(--xterm-container-bg,#000)] p-[var(--xterm-padding,16px)] transition-opacity duration-[var(--km-dur-fast)] ease-[var(--km-ease-standard)] [&_.xterm-viewport]:[scrollbar-width:thin] [&_.xterm-viewport]:[scrollbar-color:var(--xterm-scrollbar-thumb,#555)_var(--xterm-scrollbar-track,#000000)] [&_.xterm-viewport::-webkit-scrollbar]:h-2.5 [&_.xterm-viewport]:[scrollbar-width:thin] [&_.xterm-viewport::-webkit-scrollbar]:w-2.5 [&_.xterm-viewport::-webkit-scrollbar-track]:bg-[var(--xterm-scrollbar-track,#000000)] [&_.xterm-viewport::-webkit-scrollbar-thumb]:rounded-[5px] [&_.xterm-viewport::-webkit-scrollbar-thumb]:bg-[var(--xterm-scrollbar-thumb,#555)] [&_.xterm-viewport::-webkit-scrollbar-thumb:hover]:bg-[var(--xterm-scrollbar-thumb-hover,#777)] ${
+        hasBackground ? "[&_.xterm-viewport]:!bg-transparent " : ""
+      }${
         active
           ? "is-active z-[1] visible pointer-events-auto opacity-100"
           : "invisible pointer-events-none opacity-0"

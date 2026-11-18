@@ -284,7 +284,10 @@ export const useRemoteFileUpload = (
           id: taskID,
           name,
           destination: targetDirectory,
-          value: file.size === 0 ? 100 : Math.min(99, Math.round((bytes / file.size) * 100)),
+          value:
+            file.size === 0
+              ? 100
+              : Math.min(99.9, Math.round((bytes / file.size) * 1000) / 10),
           speed: smoothedSpeed,
           size: file.size,
           uploadedBytes: bytes,

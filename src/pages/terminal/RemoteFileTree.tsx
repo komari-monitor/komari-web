@@ -174,6 +174,7 @@ export const RemoteFileTree = ({
   const treeScrollRef = useRef<HTMLDivElement | null>(null);
   const marqueeStartRef = useRef<number | null>(null);
   const marqueeActiveRef = useRef(false);
+  const justMarqueeSelectedRef = useRef(false);
   const { contextMenuPosition, contextMenuOpen, openContextMenu, closeContextMenu } = useContextMenu();
 
   const loadDirectory = useCallback(
@@ -274,9 +275,11 @@ export const RemoteFileTree = ({
     const rect = container.getBoundingClientRect();
     marqueeStartRef.current = event.clientY - rect.top + container.scrollTop;
     marqueeActiveRef.current = false;
+    justMarqueeSelectedRef.current = false;
     setMarqueeRange(null);
     const handleMove = (moveEvent: MouseEvent) => updateMarqueeSelection(moveEvent.clientY);
     const handleUp = () => {
+      justMarqueeSelectedRef.current = marqueeActiveRef.current;
       marqueeStartRef.current = null;
       marqueeActiveRef.current = false;
       setMarqueeRange(null);
@@ -746,14 +749,14 @@ export const RemoteFileTree = ({
           tapScale={0.985}
           className={`my-0.5 flex h-6 w-full items-center gap-1 rounded-[4px] border-0 pr-1 text-left text-xs transition-colors ${
             activePath === file.path
-              ? "bg-[#37373d] text-white"
+              ? "bg-white/[0.16] text-white"
               : selectedPathsRef.current.has(file.path)
-                ? "bg-[#264f78] text-white"
+                ? "bg-sky-500/25 text-white"
               : isContextTarget
-                ? "bg-[#2a2d2e] text-[#eeeeee]"
+                ? "bg-white/[0.1] text-[#eeeeee]"
                 : isDropTarget
-                  ? "bg-[#20364a] text-[#eeeeee]"
-                  : "bg-transparent text-[#cccccc] hover:bg-[#2a2d2e]"
+                  ? "bg-sky-500/20 text-[#eeeeee]"
+                  : "bg-transparent text-[#d4d4d4] hover:bg-white/[0.08]"
           }`}
           style={{ paddingLeft: `${Math.max(4, depth * 12 + 4)}px`, transformOrigin: "left center" }}
           onDragStart={(event) => {
@@ -831,7 +834,7 @@ export const RemoteFileTree = ({
                   cancelInlineRename();
                 }
               }}
-              className="h-5 min-w-0 flex-1 rounded-[4px] border border-[#007acc] bg-[#1e1e1e] px-1 text-xs text-[#eeeeee] outline-none"
+              className="h-5 min-w-0 flex-1 rounded-[4px] border border-[#007acc] bg-black/50 px-1 text-xs text-[#eeeeee] outline-none"
             />
           ) : (
             <span className="min-w-0 whitespace-nowrap">
@@ -906,7 +909,7 @@ export const RemoteFileTree = ({
                         cancelCreate();
                       }
                     }}
-                    className="h-5 min-w-0 flex-1 rounded-[4px] border border-[#007acc] bg-[#1e1e1e] px-1 text-xs text-[#eeeeee] outline-none"
+                    className="h-5 min-w-0 flex-1 rounded-[4px] border border-[#007acc] bg-black/50 px-1 text-xs text-[#eeeeee] outline-none"
                   />
                 </motion.div>
               )}
@@ -941,7 +944,7 @@ export const RemoteFileTree = ({
     >
       <div
         ref={treeScrollRef}
-        className={`min-h-0 flex-1 select-none overflow-auto py-1 ${
+        className={`min-h-0 flex-1 select-none overflow-auto pt-1 pb-8 pl-4 pr-1 ${
           dragTarget?.kind === "root" ? "ring-1 ring-inset ring-[#55a7e0]" : ""
         }`}
         onDragOver={(event) => handleDragOver(event, { kind: "root" })}
@@ -950,6 +953,17 @@ export const RemoteFileTree = ({
         }}
         onDrop={(event) => void handleDrop(event, { kind: "root" })}
         onMouseDown={startMarqueeSelection}
+        onClick={(event) => {
+          if (justMarqueeSelectedRef.current) {
+            justMarqueeSelectedRef.current = false;
+            return;
+          }
+          if (!(event.target as HTMLElement).closest("[data-tree-path],[data-tree-spacer]")) {
+            selectedPathsRef.current = new Set();
+            setSelectedPath(null);
+            lastSelectedPathRef.current = null;
+          }
+        }}
         onContextMenu={(event) => {
           setContextTarget(null);
           openContextMenu(event);

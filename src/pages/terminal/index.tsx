@@ -4,8 +4,8 @@ import TerminalNotices from "./TerminalNotices";
 import TerminalResourceMonitor from "./TerminalResourceMonitor";
 import TerminalWorkspace from "./TerminalWorkspace";
 import RecoverableSessionsDialog from "./RecoverableSessionsDialog";
+import TerminalSettingsDialog from "./TerminalSettingsDialog";
 import { useTerminalPage } from "./useTerminalPage";
-import { DEFAULT_TERMINAL_FONT_FAMILY } from "./terminalDefaults";
 import { lazy, Suspense, useState } from "react";
 import TerminalGuide from "@/components/onboarding/TerminalGuide";
 
@@ -42,6 +42,11 @@ const TerminalPage = () => {
     searchUseRegex,
     resourceMonitorServers,
     tabLatencies,
+    terminalSettings,
+    settingsOpen,
+    setSettingsOpen,
+    updateTerminalSettings,
+    resetTerminalSettings,
     containerRef,
     sessionsReady,
     focusPane,
@@ -61,6 +66,7 @@ const TerminalPage = () => {
     closeSearch,
     handleApiChange,
     handleLatencyChange,
+    handleTitleChange,
     startDragging,
     openClient,
     startRename,
@@ -132,6 +138,7 @@ const TerminalPage = () => {
             onCloseSearch={closeSearch}
             onApiChange={handleApiChange}
             onLatencyChange={handleLatencyChange}
+            onTitleChange={handleTitleChange}
             onToggleSidebar={() => setIsSidebarOpen((open) => !open)}
             onStartDragging={startDragging}
             onFocusPane={focusPane}
@@ -169,8 +176,18 @@ const TerminalPage = () => {
             onMoveTab={moveTab}
             onResizeSplit={resizeSplit}
             onResizeSplitEnd={fitAllSessions}
+            terminalSettings={terminalSettings}
+            onOpenSettings={() => setSettingsOpen(true)}
           />
         </div>
+
+        <TerminalSettingsDialog
+          open={settingsOpen}
+          settings={terminalSettings}
+          onChange={updateTerminalSettings}
+          onReset={resetTerminalSettings}
+          onClose={() => setSettingsOpen(false)}
+        />
 
         <TerminalResourceMonitor
           clients={clients}
@@ -185,7 +202,8 @@ const TerminalPage = () => {
             Boolean(editorUuid) ||
             Boolean(serverMenuPaneId) ||
             Boolean(workbenchMenuPaneId) ||
-            Boolean(editingTabId)
+            Boolean(editingTabId) ||
+            Boolean(settingsOpen)
           }
         />
 
@@ -208,7 +226,8 @@ const TerminalPage = () => {
               open
               uuid={editorUuid}
               initialFile={null}
-              fontFamily={DEFAULT_TERMINAL_FONT_FAMILY}
+              fontFamily={terminalSettings.fontFamily}
+              terminalSettings={terminalSettings}
               onOpenChange={(open) => {
                 if (!open) setEditorUuid(null);
               }}

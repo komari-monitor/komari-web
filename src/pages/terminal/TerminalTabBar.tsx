@@ -8,6 +8,7 @@ import {
   useState,
 } from "react";
 import type {
+  PointerEvent as ReactPointerEvent,
   WheelEvent as ReactWheelEvent,
 } from "react";
 import { useTranslation } from "react-i18next";
@@ -16,6 +17,7 @@ import {
   ChevronRight,
   Code2,
   Server,
+  Settings,
   SquareTerminal,
 } from "lucide-react";
 import {
@@ -60,6 +62,7 @@ export interface TerminalTabBarProps {
   paneId: string;
   isFocusedPane?: boolean;
   hasMultiplePanes?: boolean;
+  hasBackground?: boolean;
   isDraggingTab?: boolean;
   isTabBarDropTarget?: boolean;
   freezeSortTransform?: boolean;
@@ -92,11 +95,13 @@ export interface TerminalTabBarProps {
   onClose: (id: string, mode: CloseMode) => void;
   onSplit?: (zone: SplitZone, tabId?: string) => void;
   onFocusPane?: () => void;
+  onOpenSettings?: () => void;
 }
 
 interface SortableTabItemProps {
   paneId: string;
   isFocusedPane: boolean;
+  hasBackground: boolean;
   freezeSortTransform: boolean;
   tab: TerminalTab;
   client: TerminalClient | undefined;
@@ -133,6 +138,7 @@ interface SortableTabItemProps {
 const SortableTabItem = ({
   paneId,
   isFocusedPane,
+  hasBackground,
   freezeSortTransform,
   tab,
   client,
@@ -255,6 +261,8 @@ const SortableTabItem = ({
         latencyMs={latencyMs}
         index={index}
         active={isActive}
+        isFocusedPane={isFocusedPane}
+        hasBackground={hasBackground}
         showGuideTarget={isActive && isFocusedPane}
         editing={editingTabId === tab.id}
         draft={renameDraft}
@@ -273,6 +281,7 @@ const TerminalTabBar = ({
   paneId,
   isFocusedPane = true,
   hasMultiplePanes = false,
+  hasBackground = false,
   isDraggingTab = false,
   isTabBarDropTarget = false,
   freezeSortTransform = false,
@@ -305,6 +314,7 @@ const TerminalTabBar = ({
   onClose,
   onSplit,
   onFocusPane,
+  onOpenSettings,
 }: TerminalTabBarProps) => {
   const { t } = useTranslation();
   const [contextMenuTabId, setContextMenuTabId] = useState<string | null>(null);
@@ -352,9 +362,11 @@ const TerminalTabBar = ({
     return () => observer.disconnect();
   }, []);
 
+  const reservedActionsWidth =
+    ACTIONS_RESERVED_WIDTH + (onOpenSettings ? 32 : 0);
   const totalAvailableForTabs = Math.max(
     0,
-    containerWidth - ACTIONS_RESERVED_WIDTH - 20,
+    containerWidth - reservedActionsWidth - 20,
   );
   const minRequiredTabsWidth = tabs.length * MIN_TAB_WIDTH;
   const hasOverflow =
@@ -433,26 +445,42 @@ const TerminalTabBar = ({
     [hasOverflow],
   );
 
-  const handlePointerDownCapture = useCallback(() => {
-    onFocusPane?.();
-  }, [onFocusPane]);
+  const handlePointerDownCapture = useCallback(
+    (event: ReactPointerEvent<HTMLDivElement>) => {
+      if (
+        editingTabId ||
+        (event.target instanceof HTMLElement &&
+          event.target.closest("input, textarea, [contenteditable='true']"))
+      ) {
+        return;
+      }
+      onFocusPane?.();
+    },
+    [editingTabId, onFocusPane],
+  );
 
   const lastTab = tabs[tabs.length - 1];
   const lastTabIsActive = lastTab?.id === activeTabId;
   const showActionLeadingSeparator = tabs.length > 0 && !lastTabIsActive;
+  const tabBarSurfaceClass =
+    isTabBarDropTarget && isDraggingTab
+      ? hasBackground
+        ? "border-b border-white/[0.08] bg-sky-500/20 ring-1 ring-inset ring-sky-500/70 backdrop-blur-[12px]"
+        : "bg-[#1a2634] ring-1 ring-inset ring-sky-500/70"
+      : hasBackground
+        ? hasMultiplePanes && !isFocusedPane
+          ? "border-b border-white/[0.06] bg-[#080808]/55 backdrop-blur-[12px]"
+          : "border-b border-white/[0.08] bg-[#121212]/35 backdrop-blur-[12px]"
+        : hasMultiplePanes && !isFocusedPane
+          ? "bg-[#181818]"
+          : "bg-[#1e1e1e]";
 
   return (
     <div
       ref={tabBarRef}
       data-pane-tabbar={paneId}
       onPointerDownCapture={handlePointerDownCapture}
-      className={`km-terminal-tab-bar relative flex h-10 min-w-0 flex-[0_0_40px] select-none items-end px-2 transition-colors ${
-        hasMultiplePanes && !isFocusedPane ? "bg-[#181818]" : "bg-[#1e1e1e]"
-      } ${
-        isTabBarDropTarget && isDraggingTab
-          ? "ring-1 ring-inset ring-sky-500/70 bg-[#1a2634]"
-          : ""
-      }`}
+      className={`km-terminal-tab-bar relative flex h-10 min-w-0 flex-[0_0_40px] select-none items-end px-2 transition-colors ${tabBarSurfaceClass}`}
       role="tablist"
       aria-label={t("terminal.tabs.title")}
     >
@@ -516,6 +544,7 @@ const TerminalTabBar = ({
                   <SortableTabItem
                     paneId={paneId}
                     isFocusedPane={isFocusedPane}
+                    hasBackground={hasBackground}
                     freezeSortTransform={freezeSortTransform}
                     tab={tab}
                     client={client}
@@ -696,6 +725,22 @@ const TerminalTabBar = ({
           </DropdownMenuContent>
         </DropdownMenu>
       </div>
+
+      {onOpenSettings && (
+        <div className="km-terminal-settings-action ml-auto mb-1 flex h-7 shrink-0 items-center pl-1">
+          <motion.button
+            type="button"
+            whileTap={CONTROL_MOTION.tap}
+            transition={CONTROL_MOTION.transition}
+            onClick={onOpenSettings}
+            className={TAB_ACTION_CLASS_NAME}
+            title={t("terminal.settings.title", "终端设置")}
+            aria-label={t("terminal.settings.title", "终端设置")}
+          >
+            <Settings size={16} />
+          </motion.button>
+        </div>
+      )}
     </div>
   );
 };

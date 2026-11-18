@@ -466,7 +466,7 @@ export const previewKindForFile = (
   }
   if (
     contentType.startsWith("video/") ||
-    ["3gp", "avi", "flv", "m4v", "mkv", "mov", "mp4", "mpeg", "mpg", "ogv", "ts", "webm", "wmv"].includes(extension)
+    ["3gp", "avi", "flv", "m4v", "mkv", "mov", "mp4", "mpeg", "mpg", "ogv", "webm", "wmv"].includes(extension)
   ) {
     return "video";
   }

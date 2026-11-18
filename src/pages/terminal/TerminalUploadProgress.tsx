@@ -1,4 +1,5 @@
-import { memo, useEffect, useRef, useState } from "react";
+import { memo, useCallback, useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { AnimatePresence, motion } from "motion/react";
 import { X } from "lucide-react";
 import { useTranslation } from "react-i18next";
@@ -15,6 +16,12 @@ import { formatTransferRate } from "./transferFormat";
 
 const RATE_WIDTH_CLASS = "w-[76px] min-w-[76px] shrink-0 overflow-hidden text-ellipsis text-right tabular-nums";
 
+const formatUploadPercent = (value: number) => {
+  if (!Number.isFinite(value)) return "0";
+  const clamped = Math.max(0, Math.min(100, value));
+  return String(Math.round(clamped * 10) / 10);
+};
+
 interface TerminalUploadProgressProps {
   progress: RemoteUploadProgress[];
   onCancel: (id: string) => void;
@@ -25,30 +32,81 @@ interface UploadProgressRowProps {
   onCancel: (id: string) => void;
 }
 
+interface PopoverAnchor {
+  left: number;
+  bottom: number;
+  width: number;
+}
+
 const UploadProgressRow = memo(function UploadProgressRow({ progress, onCancel }: UploadProgressRowProps) {
   const { t } = useTranslation();
+  const rowRef = useRef<HTMLDivElement>(null);
   const [hovered, setHovered] = useState(false);
+  const [anchor, setAnchor] = useState<PopoverAnchor | null>(null);
   const hoverTimer = useRef<number | null>(null);
   const totalChunks = progress.totalChunks ?? 0;
   const completedChunks = progress.completedChunks ?? 0;
   const chunks = progress.chunks ?? [];
   const activeChunks = chunks.filter((chunk) => chunk.status === "uploading" || chunk.status === "retrying");
+  const displayChunks = (
+    activeChunks.length > 0
+      ? [
+          ...activeChunks,
+          ...chunks.filter((chunk) => chunk.status !== "uploading" && chunk.status !== "retrying"),
+        ]
+      : chunks
+  ).slice(0, 5);
   const chunkSummary = totalChunks > 0 ? `${completedChunks}/${totalChunks}` : undefined;
   const totalRate = formatTransferRate(progress.speed ?? 0);
 
-  useEffect(() => () => {
-    if (hoverTimer.current !== null) window.clearTimeout(hoverTimer.current);
+  const clearHoverTimer = useCallback(() => {
+    if (hoverTimer.current !== null) {
+      window.clearTimeout(hoverTimer.current);
+      hoverTimer.current = null;
+    }
   }, []);
 
+  useEffect(() => clearHoverTimer, [clearHoverTimer]);
+
+  const updateAnchor = useCallback(() => {
+    const el = rowRef.current;
+    if (!el || typeof window === "undefined") return;
+    const rect = el.getBoundingClientRect();
+    const width = Math.min(
+      window.innerWidth - 16,
+      Math.max(300, Math.min(400, rect.width || 320)),
+    );
+    const left = Math.max(8, Math.min(rect.left, window.innerWidth - width - 8));
+    const bottom = Math.max(8, window.innerHeight - rect.top + 6);
+    setAnchor({ left, bottom, width });
+  }, []);
+
+  useLayoutEffect(() => {
+    if (!hovered) return;
+    updateAnchor();
+    const handleReposition = () => updateAnchor();
+    window.addEventListener("resize", handleReposition);
+    window.addEventListener("scroll", handleReposition, true);
+    return () => {
+      window.removeEventListener("resize", handleReposition);
+      window.removeEventListener("scroll", handleReposition, true);
+    };
+  }, [hovered, updateAnchor]);
+
   const handleEnter = () => {
-    if (hoverTimer.current !== null) window.clearTimeout(hoverTimer.current);
-    hoverTimer.current = window.setTimeout(() => setHovered(true), 350);
+    clearHoverTimer();
+    if (hovered) return;
+    hoverTimer.current = window.setTimeout(() => {
+      updateAnchor();
+      setHovered(true);
+    }, 180);
   };
 
   const handleLeave = () => {
-    if (hoverTimer.current !== null) window.clearTimeout(hoverTimer.current);
-    hoverTimer.current = null;
-    setHovered(false);
+    clearHoverTimer();
+    hoverTimer.current = window.setTimeout(() => {
+      setHovered(false);
+    }, 120);
   };
 
   const statusLabel = (chunk: UploadChunkProgress) => {
@@ -60,71 +118,95 @@ const UploadProgressRow = memo(function UploadProgressRow({ progress, onCancel }
 
   return (
     <div
-      className="relative min-h-[48px] shrink-0 border-b border-[#2b2b2b] px-2 py-1.5 last:border-b-0"
+      ref={rowRef}
+      className="relative min-h-[48px] shrink-0 border-b border-white/[0.08] px-2 py-1.5 last:border-b-0"
       onMouseEnter={handleEnter}
       onMouseLeave={handleLeave}
     >
-      <AnimatePresence initial={false}>
-      {hovered && (
-        <motion.div
-          key="chunk-detail"
-          // overlay 层：从行下方沿弧线浮出
-          initial={{ opacity: 0, y: 8, scale: 0.98 }}
-          animate={{ opacity: 1, y: 0, scale: 1 }}
-          exit={{ opacity: 0, y: 6, scale: 0.98 }}
-          transition={MOTION_SPRING.soft}
-          className="absolute bottom-full left-2 right-2 z-30 mb-1 max-h-[min(420px,60vh)] overflow-y-auto border border-[#3c3c3c] bg-[#252526] p-2 text-[10px] text-[#cccccc] shadow-[0_8px_24px_rgba(0,0,0,0.45)]"
-        >
-          <div className="mb-2 flex items-center justify-between gap-2 border-b border-[#3a3a3a] pb-1.5">
-            <div className="min-w-0">
-              <div className="truncate font-medium text-[#e6e6e6]">{progress.name}</div>
-              <div className="truncate text-[#858585]">{progress.destination}</div>
-            </div>
-            <div className="w-[120px] min-w-[120px] shrink-0 text-right text-[#bdbdbd] tabular-nums">
-              <div className="whitespace-nowrap">
-                {chunkSummary ? `${t("file_manager.upload_chunks", "切片上传")}，${chunkSummary}` : t("file_manager.uploading", "上传中")}
-              </div>
-              <div className={`${RATE_WIDTH_CLASS} ml-auto`} title={totalRate}>{totalRate}</div>
-            </div>
-          </div>
-          <div className="min-h-[160px] space-y-1.5">
-            {activeChunks.slice(0, 5).map((chunk) => {
-              const percent = chunk.size > 0 ? Math.min(100, Math.round((chunk.sent / chunk.size) * 100)) : 100;
-              const chunkRate = formatTransferRate(chunk.speed);
-              return (
-                <div key={chunk.index} className="grid grid-cols-[52px_minmax(0,1fr)_76px] items-center gap-1.5">
-                  <span className="text-[#a0a0a0]">{t("file_manager.upload_chunk", "区块")} {chunk.index + 1}</span>
+      {typeof document !== "undefined" &&
+        createPortal(
+          <AnimatePresence initial={false}>
+            {hovered && anchor && (
+              <motion.div
+                key={`chunk-detail-${progress.id}`}
+                // overlay 层：Portal 到 body 上避免被面板 overflow-hidden 裁剪
+                initial={{ opacity: 0, y: 8, scale: 0.98 }}
+                animate={{ opacity: 1, y: 0, scale: 1 }}
+                exit={{ opacity: 0, y: 6, scale: 0.98 }}
+                transition={MOTION_SPRING.soft}
+                style={{
+                  left: anchor.left,
+                  bottom: anchor.bottom,
+                  width: anchor.width,
+                }}
+                onMouseEnter={handleEnter}
+                onMouseLeave={handleLeave}
+                className="fixed z-[100000] max-h-[min(420px,calc(100vh-96px))] overflow-y-auto rounded-[6px] border border-white/[0.12] bg-[#1c1c1e]/95 p-2.5 text-[10px] text-[#cccccc] shadow-[0_10px_28px_rgba(0,0,0,0.55)] backdrop-blur-md"
+              >
+                <div className="mb-2 flex items-center justify-between gap-2 border-b border-white/[0.1] pb-1.5">
                   <div className="min-w-0">
-                    <div className="h-1 overflow-hidden bg-[#3a3a3a]">
-                      <div className={`h-full transition-[width] ${chunk.status === "retrying" ? "bg-[#d7ba7d]" : "bg-[#4daafc]"}`} style={{ width: `${percent}%` }} />
-                    </div>
-                    <div className="mt-0.5 flex justify-between gap-1 whitespace-nowrap text-[#777]">
-                      <span>{formatFileSize(chunk.sent)}/{formatFileSize(chunk.size)} · {percent}%</span>
-                      <span>{statusLabel(chunk)}</span>
-                    </div>
+                    <div className="truncate font-medium text-[#e6e6e6]">{progress.name}</div>
+                    <div className="truncate text-[#858585]">{progress.destination}</div>
                   </div>
-                  <span className={`${RATE_WIDTH_CLASS} whitespace-nowrap text-[#a8a8a8]`} title={chunkRate}>{chunkRate}</span>
+                  <div className="w-[120px] min-w-[120px] shrink-0 text-right text-[#bdbdbd] tabular-nums">
+                    <div className="whitespace-nowrap">
+                      {chunkSummary ? `${t("file_manager.upload_chunks", "切片上传")}，${chunkSummary}` : t("file_manager.uploading", "上传中")}
+                    </div>
+                    <div className={`${RATE_WIDTH_CLASS} ml-auto`} title={totalRate}>{totalRate}</div>
+                  </div>
                 </div>
-              );
-            })}
-          </div>
-        </motion.div>
-      )}
-      </AnimatePresence>
+                {displayChunks.length > 0 && (
+                  <div className="space-y-1.5">
+                    {displayChunks.map((chunk) => {
+                      const percent = chunk.size > 0
+                        ? Math.min(100, Math.round((chunk.sent / chunk.size) * 1000) / 10)
+                        : 100;
+                      const chunkRate = formatTransferRate(chunk.speed);
+                      return (
+                        <div key={chunk.index} className="grid grid-cols-[52px_minmax(0,1fr)_76px] items-center gap-1.5">
+                          <span className="text-[#a0a0a0]">{t("file_manager.upload_chunk", "区块")} {chunk.index + 1}</span>
+                          <div className="min-w-0">
+                            <div className="h-1 overflow-hidden rounded-full bg-white/[0.12]">
+                              <div className={`h-full transition-[width] ${chunk.status === "retrying" ? "bg-[#d7ba7d]" : "bg-[#4daafc]"}`} style={{ width: `${percent}%` }} />
+                            </div>
+                            <div className="mt-0.5 flex justify-between gap-1 whitespace-nowrap text-[#8c8c8c]">
+                              <span>{formatFileSize(chunk.sent)}/{formatFileSize(chunk.size)} · {formatUploadPercent(percent)}%</span>
+                              <span>{statusLabel(chunk)}</span>
+                            </div>
+                          </div>
+                          <span className={`${RATE_WIDTH_CLASS} whitespace-nowrap text-[#a8a8a8]`} title={chunkRate}>{chunkRate}</span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                )}
+                {totalChunks > displayChunks.length && (
+                  <div className="mt-1.5 border-t border-white/[0.08] pt-1 text-[10px] text-[#8c8c8c]">
+                    {t("file_manager.upload_chunk_summary", {
+                      active: activeChunks.length,
+                      count: totalChunks,
+                      defaultValue: `Showing active chunks only (${activeChunks.length} concurrent, ${totalChunks} total)`,
+                    })}
+                  </div>
+                )}
+              </motion.div>
+            )}
+          </AnimatePresence>,
+          document.body,
+        )}
 
-      <div className="flex items-center gap-2 text-[10px] text-[#bdbdbd]">
-        <span className="min-w-0 flex-1 truncate" title={progress.name}>{progress.name}</span>
-        <span className="shrink-0 text-[#c8c8c8]">
-          {formatFileSize(progress.uploadedBytes ?? 0)}/{formatFileSize(progress.size ?? 0)} -{" "}
+      <div className="flex items-center gap-1.5 text-[10px] text-[#bdbdbd]">
+        <span className="min-w-0 flex-1 truncate font-medium text-[#e2e2e2]" title={progress.name}>
+          {progress.name}
+        </span>
+        <span className="shrink-0 tabular-nums text-[#c8c8c8]">
           <AnimatedNumber
             value={Math.max(0, Math.min(100, progress.value))}
-            format={(value) => `${value}`}
+            format={formatUploadPercent}
             className="inline-block"
           />
           %
         </span>
-        <span className={`${RATE_WIDTH_CLASS} text-[#a8a8a8]`} title={totalRate}>{totalRate}</span>
-        {chunkSummary && <span className="w-[48px] min-w-[48px] shrink-0 text-right tabular-nums text-[#858585]">{chunkSummary}</span>}
         <button
           type="button"
           className="inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-[4px] border-0 bg-transparent p-0 text-[#f48771] hover:bg-[#3a3d41] hover:text-white"
@@ -134,6 +216,15 @@ const UploadProgressRow = memo(function UploadProgressRow({ progress, onCancel }
         >
           <X size={12} />
         </button>
+      </div>
+      <div className="mt-0.5 flex items-center justify-between gap-2 text-[10px] tabular-nums text-[#9a9a9a]">
+        <span className="truncate">
+          {formatFileSize(progress.uploadedBytes ?? 0)}/{formatFileSize(progress.size ?? 0)}
+        </span>
+        <span className="flex shrink-0 items-center gap-2">
+          {chunkSummary && <span className="text-[#858585]">{chunkSummary}</span>}
+          <span className="text-[#a8a8a8]" title={totalRate}>{totalRate}</span>
+        </span>
       </div>
       <div className="mt-1 h-1 overflow-hidden bg-[#3a3a3a]">
         {/* feedback 层：进度用弹簧缩放追赶，连续刷新时是「追着走」而不是硬跳 */}
@@ -163,7 +254,7 @@ export function TerminalUploadProgress({ progress, onCancel }: TerminalUploadPro
           animate={{ opacity: 1, height: "auto" }}
           exit={{ opacity: 0, height: 0 }}
           transition={MOTION_SPRING.soft}
-          className="relative shrink-0 overflow-hidden border-t border-[#2b2b2b] bg-[#202020]"
+          className="relative shrink-0 overflow-hidden border-t border-white/[0.08] bg-[#202020]/75 backdrop-blur-sm"
         >
           <div className="flex min-h-[48px] flex-col overflow-visible">
             <AnimatePresence initial={false}>

@@ -9,9 +9,22 @@ export interface TerminalTab {
   id: string;
   uuid: string;
   title: string;
+  terminalTitle?: string;
   color: string | null;
   requestId?: string;
 }
+
+export const formatTabTitle = (
+  tab: Pick<TerminalTab, "title" | "terminalTitle">,
+  fallbackTitle = "",
+) => {
+  const baseTitle = tab.title || fallbackTitle;
+  const terminalTitle = tab.terminalTitle?.trim();
+  if (!terminalTitle) {
+    return baseTitle;
+  }
+  return baseTitle ? `${baseTitle} - ${terminalTitle}` : terminalTitle;
+};
 
 export type CloseMode = "current" | "left" | "right" | "others";
 

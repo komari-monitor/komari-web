@@ -90,6 +90,9 @@ const TabMenu = ({
         side="bottom"
         sideOffset={0}
         themeAppearance="dark"
+        onCloseAutoFocus={(event) => {
+          event.preventDefault();
+        }}
         className="min-w-[170px] !border-neutral-800 !bg-[#161616] !text-neutral-200 backdrop-blur-md"
       >
         <DropdownMenuSub>
@@ -127,7 +130,15 @@ const TabMenu = ({
           </DropdownMenuSubContent>
         </DropdownMenuSub>
 
-        <DropdownMenuItem onSelect={onRename} className="flex items-center gap-2">
+        <DropdownMenuItem
+          onSelect={() => {
+            onOpenChange(false);
+            requestAnimationFrame(() => {
+              onRename();
+            });
+          }}
+          className="flex items-center gap-2"
+        >
           <Pencil size={14} />
           <span>{t("terminal.rename_tab", "重命名选项卡")}</span>
         </DropdownMenuItem>

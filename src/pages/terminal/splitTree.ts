@@ -47,6 +47,17 @@ export const collectLeaves = (node: TerminalPaneNode): TerminalPaneLeaf[] => {
   return [...collectLeaves(node.first), ...collectLeaves(node.second)];
 };
 
+export const findTopRightLeaf = (
+  node: TerminalPaneNode,
+): TerminalPaneLeaf => {
+  if (node.type === "leaf") {
+    return node;
+  }
+  return findTopRightLeaf(
+    node.direction === "row" ? node.second : node.first,
+  );
+};
+
 export const findLeaf = (
   node: TerminalPaneNode,
   paneId: string,

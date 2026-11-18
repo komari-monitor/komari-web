@@ -9,9 +9,16 @@ import { Terminal, X } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { CONTROL_MOTION, MOTION_SPRING } from "@/lib/motion";
 import TerminalSession from "./TerminalSession";
+import {
+  fetchTerminalSettingsFromTheme,
+  getCachedTerminalSettings,
+  type TerminalSettings,
+} from "./terminalDefaults";
 
 interface EditorTerminalPanelProps {
   uuid: string;
+  terminalSettings?: TerminalSettings;
+  hasBackground?: boolean;
   onClose: () => void;
 }
 
@@ -20,9 +27,19 @@ const MAX_TERMINAL_HEIGHT = 600;
 const EDITOR_TERMINAL_FONT_SIZE = 12;
 const EDITOR_TERMINAL_PADDING = 8;
 
-const EditorTerminalPanel = ({ uuid, onClose }: EditorTerminalPanelProps) => {
+const EditorTerminalPanel = ({
+  uuid,
+  terminalSettings: terminalSettingsProp,
+  hasBackground = false,
+  onClose,
+}: EditorTerminalPanelProps) => {
   const { t } = useTranslation();
   const [twoFaEnabled, setTwoFaEnabled] = useState(false);
+  const [terminalTitle, setTerminalTitle] = useState("");
+  const [loadedSettings, setLoadedSettings] = useState(() =>
+    terminalSettingsProp ?? getCachedTerminalSettings(),
+  );
+  const terminalSettings = terminalSettingsProp ?? loadedSettings;
   const [height, setHeight] = useState(180);
   // 拖动分隔条时高度必须 1:1 跟手；弹簧只用于展开/收起
   const [resizing, setResizing] = useState(false);
@@ -40,10 +57,17 @@ const EditorTerminalPanel = ({ uuid, onClose }: EditorTerminalPanelProps) => {
         if (mounted) setTwoFaEnabled(Boolean(data?.["2fa_enabled"]));
       })
       .catch(() => {});
+    if (!terminalSettingsProp) {
+      void fetchTerminalSettingsFromTheme()
+        .then((loaded) => {
+          if (mounted) setLoadedSettings(loaded);
+        })
+        .catch(() => {});
+    }
     return () => {
       mounted = false;
     };
-  }, []);
+  }, [terminalSettingsProp]);
 
   const handleResizeStart = (event: ReactPointerEvent<HTMLDivElement>) => {
     event.preventDefault();
@@ -94,7 +118,11 @@ const EditorTerminalPanel = ({ uuid, onClose }: EditorTerminalPanelProps) => {
           ? { height: { duration: 0 }, opacity: { duration: 0 } }
           : MOTION_SPRING.soft
       }
-      className="flex shrink-0 flex-col overflow-hidden border-t border-[#2b2b2b] bg-[#181818]"
+      className={`flex shrink-0 flex-col overflow-hidden ${
+        hasBackground
+          ? "border-t border-white/[0.08] bg-[#121212]/58 backdrop-blur-[6px]"
+          : "border-t border-[#2b2b2b] bg-[#181818]"
+      }`}
     >
       <div
         role="separator"
@@ -106,31 +134,45 @@ const EditorTerminalPanel = ({ uuid, onClose }: EditorTerminalPanelProps) => {
         onPointerUp={handleResizeEnd}
         onPointerCancel={handleResizeEnd}
       />
-      <div className="flex h-8 shrink-0 items-center gap-2 border-b border-[#2b2b2b] px-2">
+      <div
+        className={`flex h-8 shrink-0 items-center gap-2 px-2 ${
+          hasBackground ? "border-b border-white/[0.08]" : "border-b border-[#2b2b2b]"
+        }`}
+      >
         <Terminal size={14} className="shrink-0 text-[#55a7e0]" />
         <span className="min-w-0 flex-1 truncate text-xs text-[#cccccc]">
-          {t("terminal.title", "Terminal")}
+          {terminalTitle.trim()
+            ? `${t("terminal.title", "Terminal")} - ${terminalTitle.trim()}`
+            : t("terminal.title", "Terminal")}
         </span>
         <motion.button
           type="button"
           whileTap={CONTROL_MOTION.tap}
           transition={CONTROL_MOTION.transition}
-          className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-[4px] border-0 bg-transparent text-[#bdbdbd] hover:bg-[#3a3d41] hover:text-white"
+          className="inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-[4px] border-0 bg-transparent text-[#bdbdbd] hover:bg-white/10 hover:text-white"
           onClick={onClose}
           title={t("common.close", "Close")}
         >
           <X size={14} />
         </motion.button>
       </div>
-      <div className="relative min-h-0 flex-1 overflow-hidden bg-black">
+      <div
+        className={`relative min-h-0 flex-1 overflow-hidden ${
+          hasBackground ? "bg-transparent" : "bg-black"
+        }`}
+      >
         <TerminalSession
           uuid={uuid}
           active
+          fontFamily={terminalSettings.fontFamily}
           fontSize={EDITOR_TERMINAL_FONT_SIZE}
+          convertEol={terminalSettings.convertEol}
+          hasBackground={hasBackground}
           padding={EDITOR_TERMINAL_PADDING}
           twoFaEnabled={twoFaEnabled}
           disconnectMessage={t("terminal.disconnect", "Connection lost")}
           onApiChange={() => {}}
+          onTitleChange={setTerminalTitle}
         />
       </div>
     </motion.div>
