@@ -1,5 +1,4 @@
 import Loading from "@/components/loading";
-import { AnimatePresence } from "motion/react";
 import Editor, { type OnMount } from "@monaco-editor/react";
 import { DropdownMenu } from "@radix-ui/themes";
 import {
@@ -127,6 +126,8 @@ interface OutlineItem {
 interface FileEditorDialogProps {
   open: boolean;
   uuid: string;
+  serverName?: string;
+  serverOs?: string;
   initialFile: RemoteFileInfo | null;
   initialLine?: number;
   refreshToken?: number;
@@ -363,6 +364,8 @@ const buildOutlineTree = (items: OutlineItem[]): OutlineNode[] => {
 const FileEditorDialog = ({
   open,
   uuid,
+  serverName,
+  serverOs,
   initialFile,
   initialLine = 1,
   refreshToken = 0,
@@ -421,6 +424,16 @@ const FileEditorDialog = ({
   const [officePreviewSrc, setOfficePreviewSrc] = useState<string | null>(null);
   const [officePreviewError, setOfficePreviewError] = useState<string | null>(null);
   const [terminalOpen, setTerminalOpen] = useState(false);
+  const [terminalMounted, setTerminalMounted] = useState(false);
+  useEffect(() => {
+    if (terminalOpen) {
+      setTerminalMounted(true);
+    }
+  }, [terminalOpen]);
+  useEffect(() => {
+    setTerminalOpen(false);
+    setTerminalMounted(false);
+  }, [uuid]);
   const [explorerWidth, setExplorerWidth] = useState(230);
   const [outlineWidth, setOutlineWidth] = useState(220);
   const [cursor, setCursor] = useState({ line: 1, column: 1 });
@@ -884,6 +897,7 @@ const FileEditorDialog = ({
     setFullscreen(false);
     setTabContextPath(null);
     setTerminalOpen(false);
+    setTerminalMounted(false);
     closeContextMenu();
     window.setTimeout(() => disposeDocumentModels(paths), 0);
     openChangeRef.current(false);
@@ -1419,18 +1433,29 @@ const FileEditorDialog = ({
 
   useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
-      if ((event.ctrlKey || event.metaKey) && event.key === "`") {
+      if (
+        (event.ctrlKey || event.metaKey) &&
+        (event.key === "`" || event.code === "Backquote")
+      ) {
         event.preventDefault();
+        event.stopPropagation();
         setTerminalOpen((value) => !value);
+        return;
       }
       if ((event.ctrlKey || event.metaKey) && event.key.toLowerCase() === "p") {
+        const inEditorTerminal =
+          event.target instanceof HTMLElement &&
+          Boolean(event.target.closest(".km-editor-terminal-panel"));
+        if (inEditorTerminal) {
+          return;
+        }
         event.preventDefault();
         setQuickOpenQuery(activePathRef.current ?? "");
         setQuickOpenOpen(true);
       }
     };
-    window.addEventListener("keydown", handleKeyDown);
-    return () => window.removeEventListener("keydown", handleKeyDown);
+    window.addEventListener("keydown", handleKeyDown, true);
+    return () => window.removeEventListener("keydown", handleKeyDown, true);
   }, []);
 
 
@@ -2184,16 +2209,18 @@ const FileEditorDialog = ({
               />
             )}
           </div>
-          <AnimatePresence initial={false}>
-            {terminalOpen && (
-              <EditorTerminalPanel
-                uuid={uuid}
-                terminalSettings={resolvedSettings}
-                hasBackground={hasBackground}
-                onClose={() => setTerminalOpen(false)}
-              />
-            )}
-          </AnimatePresence>
+          {(terminalMounted || terminalOpen) && (
+            <EditorTerminalPanel
+              key={uuid}
+              uuid={uuid}
+              visible={terminalOpen}
+              serverName={serverName}
+              serverOs={serverOs}
+              terminalSettings={resolvedSettings}
+              hasBackground={hasBackground}
+              onClose={() => setTerminalOpen(false)}
+            />
+          )}
         </div>
 
         <ConfirmDialog

@@ -1,3 +1,4 @@
+import { createPortal } from "react-dom";
 import {
   Columns2,
   Copy,
@@ -38,15 +39,16 @@ interface TabMenuProps {
   total: number;
   open: boolean;
   position: ContextMenuPosition | null;
-  resourceWindowOpen: boolean;
+  orientation?: "horizontal" | "vertical";
+  resourceWindowOpen?: boolean;
   onOpenChange: (open: boolean) => void;
   onRename: () => void;
   onDuplicate: () => void;
   onExportText: () => void;
   onFind: () => void;
-  onOpenFileManager: () => void;
-  onOpenEditor: () => void;
-  onToggleResourceWindow: () => void;
+  onOpenFileManager?: () => void;
+  onOpenEditor?: () => void;
+  onToggleResourceWindow?: () => void;
   onColor: (color: string | null) => void;
   onClose: (mode: CloseMode) => void;
   onSplit?: (zone: SplitZone) => void;
@@ -58,7 +60,8 @@ const TabMenu = ({
   total,
   open,
   position,
-  resourceWindowOpen,
+  orientation = "horizontal",
+  resourceWindowOpen = false,
   onOpenChange,
   onRename,
   onDuplicate,
@@ -72,8 +75,9 @@ const TabMenu = ({
   onSplit,
 }: TabMenuProps) => {
   const { t } = useTranslation();
+  const isVertical = orientation === "vertical";
 
-  return (
+  const menu = (
     <DropdownMenu open={open} onOpenChange={onOpenChange}>
       <DropdownMenuTrigger asChild>
         <span
@@ -200,29 +204,39 @@ const TabMenu = ({
           <span>{t("terminal.find", "查找")}</span>
         </DropdownMenuItem>
 
-        <DropdownMenuItem
-          onSelect={onToggleResourceWindow}
-          className="flex items-center gap-2"
-        >
-          <Gauge size={14} />
-          <span>
-            {resourceWindowOpen
-              ? t("terminal.resource_monitor.close", "关闭资源小窗")
-              : t("terminal.resource_monitor.open", "打开资源小窗")}
-          </span>
-        </DropdownMenuItem>
+        {onToggleResourceWindow && (
+          <DropdownMenuItem
+            onSelect={onToggleResourceWindow}
+            className="flex items-center gap-2"
+          >
+            <Gauge size={14} />
+            <span>
+              {resourceWindowOpen
+                ? t("terminal.resource_monitor.close", "关闭资源小窗")
+                : t("terminal.resource_monitor.open", "打开资源小窗")}
+            </span>
+          </DropdownMenuItem>
+        )}
 
-        <DropdownMenuSeparator />
+        {(onOpenFileManager || onOpenEditor) && (
+          <>
+            <DropdownMenuSeparator />
 
-        <DropdownMenuItem onSelect={onOpenFileManager} className="flex items-center gap-2">
-          <FolderOpen size={14} />
-          <span>{t("file_manager.title", "文件管理")}</span>
-        </DropdownMenuItem>
+            {onOpenFileManager && (
+              <DropdownMenuItem onSelect={onOpenFileManager} className="flex items-center gap-2">
+                <FolderOpen size={14} />
+                <span>{t("file_manager.title", "文件管理")}</span>
+              </DropdownMenuItem>
+            )}
 
-        <DropdownMenuItem onSelect={onOpenEditor} className="flex items-center gap-2">
-          <FileCode2 size={14} />
-          <span>{t("file_manager.open_in_editor", "在编辑器中打开")}</span>
-        </DropdownMenuItem>
+            {onOpenEditor && (
+              <DropdownMenuItem onSelect={onOpenEditor} className="flex items-center gap-2">
+                <FileCode2 size={14} />
+                <span>{t("file_manager.open_in_editor", "在编辑器中打开")}</span>
+              </DropdownMenuItem>
+            )}
+          </>
+        )}
 
         <DropdownMenuSeparator />
 
@@ -239,13 +253,17 @@ const TabMenu = ({
               onSelect={() => onClose("left")}
               disabled={index === 0}
             >
-              {t("terminal.close_to_left", "左侧")}
+              {isVertical
+                ? t("terminal.close_above", "上方")
+                : t("terminal.close_to_left", "左侧")}
             </DropdownMenuItem>
             <DropdownMenuItem
               onSelect={() => onClose("right")}
               disabled={index === total - 1}
             >
-              {t("terminal.close_to_right", "右侧")}
+              {isVertical
+                ? t("terminal.close_below", "下方")
+                : t("terminal.close_to_right", "右侧")}
             </DropdownMenuItem>
             <DropdownMenuItem
               onSelect={() => onClose("others")}
@@ -266,6 +284,12 @@ const TabMenu = ({
       </DropdownMenuContent>
     </DropdownMenu>
   );
+
+  if (typeof document === "undefined") {
+    return menu;
+  }
+
+  return createPortal(menu, document.body);
 };
 
 export default TabMenu;

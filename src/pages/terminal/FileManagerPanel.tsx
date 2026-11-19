@@ -1246,6 +1246,8 @@ const FileManagerPanel = ({
         <FileEditorDialog
           open
           uuid={uuid}
+          serverName={serverName}
+          serverOs={serverOs}
           initialFile={editorFile}
           initialLine={editorLine}
           refreshToken={refreshToken}

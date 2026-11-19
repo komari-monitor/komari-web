@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { motion } from "motion/react";
 import { CONTROL_MOTION, MOTION_SPRING, MOTION_TRANSITION } from "@/lib/motion";
 import type {
@@ -42,22 +43,18 @@ import {
   type TerminalTab,
 } from "./terminalTypes";
 
-export interface TerminalWorkspaceProps {
-  containerRef: RefObject<HTMLDivElement | null>;
-  isSidebarOpen: boolean;
-  leftWidth: number;
+export interface TerminalPaneStageProps {
   tabs: TerminalTab[];
   paneTree: TerminalPaneNode;
   leaves: TerminalPaneLeaf[];
   activePaneId: string;
   clients: TerminalClient[];
   clientsLoading: boolean;
-  activeTabId: string | null;
   editingTabId: string | null;
   renameDraft: string;
-  serverMenuPaneId: string | null;
-  workbenchMenuPaneId: string | null;
-  resourceMonitorServers: string[];
+  serverMenuPaneId?: string | null;
+  workbenchMenuPaneId?: string | null;
+  resourceMonitorServers?: string[];
   tabLatencies: Record<string, number>;
   sessionsReady: boolean;
   twoFaEnabled: boolean;
@@ -77,14 +74,13 @@ export interface TerminalWorkspaceProps {
   onApiChange: (id: string, api: TerminalSessionApi | null) => void;
   onLatencyChange: (id: string, latencyMs: number | null) => void;
   onTitleChange: (id: string, title: string) => void;
-  onToggleSidebar: () => void;
-  onStartDragging: (event: ReactMouseEvent | ReactTouchEvent) => void;
   onFocusPane: (paneId: string) => void;
   onActivateTab: (paneId: string, tabId: string) => void;
-  onServerMenuOpenChange: (paneId: string, open: boolean) => void;
-  onWorkbenchMenuOpenChange: (paneId: string, open: boolean) => void;
-  onOpenTerminalClient: (client: TerminalClient, paneId: string) => void;
-  onOpenWorkbenchClient: (client: TerminalClient) => void;
+  onServerMenuOpenChange?: (paneId: string, open: boolean) => void;
+  onWorkbenchMenuOpenChange?: (paneId: string, open: boolean) => void;
+  onCreateSingleServerTab?: (paneId: string) => void;
+  onOpenTerminalClient?: (client: TerminalClient, paneId: string) => void;
+  onOpenWorkbenchClient?: (client: TerminalClient) => void;
   onStartRename: (tabId: string) => void;
   onDraftChange: (value: string) => void;
   onCommitRename: () => void;
@@ -92,9 +88,9 @@ export interface TerminalWorkspaceProps {
   onDuplicate: (tabId: string) => void;
   onExportText: (tabId: string) => void;
   onFind: (tabId: string) => void;
-  onOpenFileManager: (tabId: string) => void;
-  onOpenEditor: (tabId: string) => void;
-  onToggleResourceWindow: (uuid: string) => void;
+  onOpenFileManager?: (tabId: string) => void;
+  onOpenEditor?: (tabId: string) => void;
+  onToggleResourceWindow?: (uuid: string) => void;
   onColor: (tabId: string, color: string | null) => void;
   onClose: (tabId: string, mode: CloseMode, paneId: string) => void;
   onReorderTab: (paneId: string, sourceId: string, targetId: string) => void;
@@ -108,7 +104,22 @@ export interface TerminalWorkspaceProps {
   onResizeSplit: (splitId: string, ratio: number) => void;
   onResizeSplitEnd: () => void;
   terminalSettings: TerminalSettings;
-  onOpenSettings: () => void;
+  fontSize?: number;
+  padding?: number;
+  hasBackground?: boolean;
+  tabBarPosition?: "top" | "right";
+  singleServerMode?: boolean;
+  onOpenSettings?: () => void;
+  onHidePanel?: () => void;
+}
+
+export interface TerminalWorkspaceProps extends TerminalPaneStageProps {
+  containerRef: RefObject<HTMLDivElement | null>;
+  isSidebarOpen: boolean;
+  leftWidth: number;
+  activeTabId: string | null;
+  onToggleSidebar: () => void;
+  onStartDragging: (event: ReactMouseEvent | ReactTouchEvent) => void;
 }
 
 const Divider = ({
@@ -156,16 +167,20 @@ const resolveHoverTargetAtPoint = (
   clientY: number,
   dragSourcePaneId: string | null,
   draggingTabId: string | null,
+  scopeRoot: HTMLElement | null,
 ): DragHoverTarget | null => {
   const elements = document.elementsFromPoint(clientX, clientY);
 
   for (const el of elements) {
     if (!(el instanceof HTMLElement)) continue;
+    if (scopeRoot && !scopeRoot.contains(el)) continue;
 
     const tabBarEl = el.closest<HTMLElement>("[data-pane-tabbar]");
-    if (tabBarEl) {
+    if (tabBarEl && (!scopeRoot || scopeRoot.contains(tabBarEl))) {
       const paneId = tabBarEl.dataset.paneTabbar;
       if (!paneId) continue;
+      const isVertical =
+        tabBarEl.dataset.paneTabbarOrientation === "vertical";
 
       let insertBeforeTabId: string | null = null;
       const tabEls = Array.from(
@@ -175,7 +190,10 @@ const resolveHoverTargetAtPoint = (
         const tid = tabEl.dataset.tabId;
         if (!tid || tid === draggingTabId) continue;
         const r = tabEl.getBoundingClientRect();
-        if (clientX < r.left + r.width / 2) {
+        const isBefore = isVertical
+          ? clientY < r.top + r.height / 2
+          : clientX < r.left + r.width / 2;
+        if (isBefore) {
           insertBeforeTabId = tid;
           break;
         }
@@ -189,7 +207,7 @@ const resolveHoverTargetAtPoint = (
     }
 
     const bodyEl = el.closest<HTMLElement>("[data-pane-body]");
-    if (bodyEl) {
+    if (bodyEl && (!scopeRoot || scopeRoot.contains(bodyEl))) {
       const paneId = bodyEl.dataset.paneBody;
       if (!paneId) continue;
       const rect = bodyEl.getBoundingClientRect();
@@ -207,17 +225,13 @@ const resolveHoverTargetAtPoint = (
   return null;
 };
 
-const TerminalWorkspace = ({
-  containerRef,
-  isSidebarOpen,
-  leftWidth,
+export const TerminalPaneStage = ({
   tabs,
   paneTree,
   leaves,
   activePaneId,
   clients,
   clientsLoading,
-  activeTabId,
   editingTabId,
   renameDraft,
   serverMenuPaneId,
@@ -242,12 +256,11 @@ const TerminalWorkspace = ({
   onApiChange,
   onLatencyChange,
   onTitleChange,
-  onToggleSidebar,
-  onStartDragging,
   onFocusPane,
   onActivateTab,
   onServerMenuOpenChange,
   onWorkbenchMenuOpenChange,
+  onCreateSingleServerTab,
   onOpenTerminalClient,
   onOpenWorkbenchClient,
   onStartRename,
@@ -268,9 +281,15 @@ const TerminalWorkspace = ({
   onResizeSplit,
   onResizeSplitEnd,
   terminalSettings,
+  fontSize,
+  padding,
+  hasBackground: hasBackgroundProp,
+  tabBarPosition = "top",
+  singleServerMode = false,
   onOpenSettings,
-}: TerminalWorkspaceProps) => {
-  const { t } = useTranslation();
+  onHidePanel,
+}: TerminalPaneStageProps) => {
+  const stageRef = useRef<HTMLDivElement>(null);
   const [viewportsByPane, setViewportsByPane] = useState<
     Record<string, HTMLDivElement | null>
   >({});
@@ -342,6 +361,7 @@ const TerminalWorkspace = ({
         event.clientY,
         dragSourcePaneId,
         draggingTabId,
+        stageRef.current,
       );
       setDragHoverTarget((prev) => {
         if (
@@ -416,10 +436,172 @@ const TerminalWorkspace = ({
   const draggingClient = draggingTab
     ? clientsByUuid.get(draggingTab.uuid)
     : undefined;
-  const activeTab = activeTabId ? tabsById.get(activeTabId) : undefined;
-  const activeClient = activeTab
-    ? clientsByUuid.get(activeTab.uuid)
-    : undefined;
+  const hasBackground =
+    hasBackgroundProp ?? Boolean(terminalSettings.backgroundUrl.trim());
+  const effectiveFontSize = fontSize ?? terminalSettings.fontSize;
+
+  const dragOverlayContent = (
+    <DragOverlay dropAnimation={null} zIndex={100020}>
+      {draggingTab ? (
+        <div
+          className="pointer-events-none flex h-8 max-w-[220px] items-center gap-2 rounded-[8px] border border-sky-400/60 bg-[#252526]/95 px-3 text-xs font-medium text-white shadow-2xl backdrop-blur-md"
+          style={
+            draggingTab.color
+              ? { backgroundColor: draggingTab.color }
+              : undefined
+          }
+        >
+          <img
+            src={getOSImage(draggingClient?.os || "")}
+            alt=""
+            draggable={false}
+            className="h-3.5 w-3.5 shrink-0 object-contain"
+          />
+          <span className="truncate">
+            {formatTabTitle(draggingTab, draggingClient?.name)}
+          </span>
+        </div>
+      ) : null}
+    </DragOverlay>
+  );
+
+  return (
+    <div
+      ref={stageRef}
+      className="relative flex h-full min-h-0 w-full min-w-0 flex-1 overflow-hidden"
+    >
+      <DndContext
+        sensors={sensors}
+        collisionDetection={closestCenter}
+        onDragStart={handleDragStart}
+        onDragEnd={handleDragEnd}
+        onDragCancel={resetDragState}
+      >
+        <TerminalPaneTree
+          node={paneTree}
+          activePaneId={activePaneId}
+          topRightPaneId={topRightPaneId}
+          hasMultiplePanes={leaves.length > 1}
+          hasBackground={hasBackground}
+          tabBarPosition={tabBarPosition}
+          singleServerMode={singleServerMode}
+          tabsById={tabsById}
+          clients={clients}
+          clientsLoading={clientsLoading}
+          editingTabId={editingTabId}
+          renameDraft={renameDraft}
+          serverMenuPaneId={serverMenuPaneId}
+          workbenchMenuPaneId={workbenchMenuPaneId}
+          resourceMonitorServers={resourceMonitorServers}
+          tabLatencies={tabLatencies}
+          sessionsReady={sessionsReady}
+          draggingTabId={draggingTabId}
+          dragSourcePaneId={dragSourcePaneId}
+          dragHoverTarget={dragHoverTarget}
+          searchOpen={searchOpen}
+          searchTerm={searchTerm}
+          searchResultIndex={searchResultIndex}
+          searchResultCount={searchResultCount}
+          searchCaseSensitive={searchCaseSensitive}
+          searchUseRegex={searchUseRegex}
+          onSearchTermChange={onSearchTermChange}
+          onFindNext={onFindNext}
+          onFindPrevious={onFindPrevious}
+          onToggleCaseSensitive={onToggleCaseSensitive}
+          onToggleUseRegex={onToggleUseRegex}
+          onCloseSearch={onCloseSearch}
+          onFocusPane={onFocusPane}
+          onActivateTab={onActivateTab}
+          onServerMenuOpenChange={onServerMenuOpenChange}
+          onWorkbenchMenuOpenChange={onWorkbenchMenuOpenChange}
+          onCreateSingleServerTab={onCreateSingleServerTab}
+          onOpenTerminalClient={onOpenTerminalClient}
+          onOpenWorkbenchClient={onOpenWorkbenchClient}
+          onStartRename={onStartRename}
+          onDraftChange={onDraftChange}
+          onCommitRename={onCommitRename}
+          onCancelRename={onCancelRename}
+          onDuplicate={onDuplicate}
+          onExportText={onExportText}
+          onFind={onFind}
+          onOpenFileManager={onOpenFileManager}
+          onOpenEditor={onOpenEditor}
+          onToggleResourceWindow={onToggleResourceWindow}
+          onColor={onColor}
+          onClose={onClose}
+          onSplitPane={onSplitPane}
+          onResizeSplit={onResizeSplit}
+          onResizeSplitEnd={onResizeSplitEnd}
+          onViewportMount={handleViewportMount}
+          onOpenSettings={onOpenSettings}
+          onHidePanel={onHidePanel}
+        />
+
+        {typeof document !== "undefined"
+          ? createPortal(dragOverlayContent, document.body)
+          : dragOverlayContent}
+      </DndContext>
+
+      {sessionsReady &&
+        tabs.map((tab) => {
+          const ownerLeaf = tabOwnerLeafByTabId.get(tab.id);
+          const isPaneActiveTab = ownerLeaf?.activeTabId === tab.id;
+          const targetViewport = ownerLeaf
+            ? (viewportsByPane[ownerLeaf.id] ?? null)
+            : null;
+          return (
+            <PersistentSessionPortal
+              key={tab.id}
+              targetViewport={targetViewport}
+              onFocusPane={
+                ownerLeaf ? () => onFocusPane(ownerLeaf.id) : undefined
+              }
+            >
+              <TerminalSession
+                uuid={tab.uuid}
+                active={Boolean(isPaneActiveTab)}
+                initialRequestId={tab.requestId}
+                fontFamily={terminalSettings.fontFamily}
+                fontSize={effectiveFontSize}
+                convertEol={terminalSettings.convertEol}
+                hasBackground={hasBackground}
+                padding={padding}
+                twoFaEnabled={twoFaEnabled}
+                disconnectMessage={disconnectMessage}
+                onApiChange={(api) => onApiChange(tab.id, api)}
+                onLatencyChange={(latency) => onLatencyChange(tab.id, latency)}
+                onTitleChange={(title) => onTitleChange(tab.id, title)}
+              />
+            </PersistentSessionPortal>
+          );
+        })}
+    </div>
+  );
+};
+
+const TerminalWorkspace = ({
+  containerRef,
+  isSidebarOpen,
+  leftWidth,
+  activeTabId,
+  onToggleSidebar,
+  onStartDragging,
+  ...stageProps
+}: TerminalWorkspaceProps) => {
+  const { t } = useTranslation();
+  const { tabs, clients, terminalSettings } = stageProps;
+
+  const activeTab = useMemo(
+    () => (activeTabId ? tabs.find((tab) => tab.id === activeTabId) : undefined),
+    [activeTabId, tabs],
+  );
+  const activeClient = useMemo(
+    () =>
+      activeTab
+        ? clients.find((client) => client.uuid === activeTab.uuid)
+        : undefined,
+    [activeTab, clients],
+  );
   const activeServerName =
     activeClient?.name || activeTab?.title || activeTab?.uuid || "";
   const backgroundUrl = terminalSettings.backgroundUrl.trim();
@@ -446,125 +628,7 @@ const TerminalWorkspace = ({
           width: isSidebarOpen ? `${leftWidth}px` : "100%",
         }}
       >
-        <DndContext
-          sensors={sensors}
-          collisionDetection={closestCenter}
-          onDragStart={handleDragStart}
-          onDragEnd={handleDragEnd}
-          onDragCancel={resetDragState}
-        >
-          <TerminalPaneTree
-            node={paneTree}
-            activePaneId={activePaneId}
-            topRightPaneId={topRightPaneId}
-            hasMultiplePanes={leaves.length > 1}
-            hasBackground={hasBackground}
-            tabsById={tabsById}
-            clients={clients}
-            clientsLoading={clientsLoading}
-            editingTabId={editingTabId}
-            renameDraft={renameDraft}
-            serverMenuPaneId={serverMenuPaneId}
-            workbenchMenuPaneId={workbenchMenuPaneId}
-            resourceMonitorServers={resourceMonitorServers}
-            tabLatencies={tabLatencies}
-            sessionsReady={sessionsReady}
-            draggingTabId={draggingTabId}
-            dragSourcePaneId={dragSourcePaneId}
-            dragHoverTarget={dragHoverTarget}
-            searchOpen={searchOpen}
-            searchTerm={searchTerm}
-            searchResultIndex={searchResultIndex}
-            searchResultCount={searchResultCount}
-            searchCaseSensitive={searchCaseSensitive}
-            searchUseRegex={searchUseRegex}
-            onSearchTermChange={onSearchTermChange}
-            onFindNext={onFindNext}
-            onFindPrevious={onFindPrevious}
-            onToggleCaseSensitive={onToggleCaseSensitive}
-            onToggleUseRegex={onToggleUseRegex}
-            onCloseSearch={onCloseSearch}
-            onFocusPane={onFocusPane}
-            onActivateTab={onActivateTab}
-            onServerMenuOpenChange={onServerMenuOpenChange}
-            onWorkbenchMenuOpenChange={onWorkbenchMenuOpenChange}
-            onOpenTerminalClient={onOpenTerminalClient}
-            onOpenWorkbenchClient={onOpenWorkbenchClient}
-            onStartRename={onStartRename}
-            onDraftChange={onDraftChange}
-            onCommitRename={onCommitRename}
-            onCancelRename={onCancelRename}
-            onDuplicate={onDuplicate}
-            onExportText={onExportText}
-            onFind={onFind}
-            onOpenFileManager={onOpenFileManager}
-            onOpenEditor={onOpenEditor}
-            onToggleResourceWindow={onToggleResourceWindow}
-            onColor={onColor}
-            onClose={onClose}
-            onSplitPane={onSplitPane}
-            onResizeSplit={onResizeSplit}
-            onResizeSplitEnd={onResizeSplitEnd}
-            onViewportMount={handleViewportMount}
-            onOpenSettings={onOpenSettings}
-          />
-
-          <DragOverlay dropAnimation={null}>
-            {draggingTab ? (
-              <div
-                className="pointer-events-none flex h-8 max-w-[220px] items-center gap-2 rounded-[8px] border border-sky-400/60 bg-[#252526]/95 px-3 text-xs font-medium text-white shadow-2xl backdrop-blur-md"
-                style={
-                  draggingTab.color
-                    ? { backgroundColor: draggingTab.color }
-                    : undefined
-                }
-              >
-                <img
-                  src={getOSImage(draggingClient?.os || "")}
-                  alt=""
-                  draggable={false}
-                  className="h-3.5 w-3.5 shrink-0 object-contain"
-                />
-                <span className="truncate">
-                  {formatTabTitle(draggingTab, draggingClient?.name)}
-                </span>
-              </div>
-            ) : null}
-          </DragOverlay>
-        </DndContext>
-
-        {sessionsReady &&
-          tabs.map((tab) => {
-            const ownerLeaf = tabOwnerLeafByTabId.get(tab.id);
-            const isPaneActiveTab = ownerLeaf?.activeTabId === tab.id;
-            const targetViewport = ownerLeaf
-              ? (viewportsByPane[ownerLeaf.id] ?? null)
-              : null;
-            return (
-              <PersistentSessionPortal
-                key={tab.id}
-                targetViewport={targetViewport}
-                onFocusPane={
-                  ownerLeaf ? () => onFocusPane(ownerLeaf.id) : undefined
-                }
-              >
-                <TerminalSession
-                  uuid={tab.uuid}
-                  active={Boolean(isPaneActiveTab)}
-                  initialRequestId={tab.requestId}
-                  fontFamily={terminalSettings.fontFamily}
-                  fontSize={terminalSettings.fontSize}
-                  convertEol={terminalSettings.convertEol}
-                  hasBackground={hasBackground}
-                  twoFaEnabled={twoFaEnabled}
-                  disconnectMessage={disconnectMessage}
-                  onApiChange={(api) => onApiChange(tab.id, api)}
-                  onLatencyChange={(latency) => onLatencyChange(tab.id, latency)}
-                  onTitleChange={(title) => onTitleChange(tab.id, title)}
-                />
-              </PersistentSessionPortal>
-            );
-          })}
+        <TerminalPaneStage {...stageProps} hasBackground={hasBackground} />
         <motion.button
           type="button"
           whileTap={CONTROL_MOTION.tap}

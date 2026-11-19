@@ -16,14 +16,18 @@ import {
   ChevronLeft,
   ChevronRight,
   Code2,
+  Plus,
   Server,
   Settings,
   SquareTerminal,
+  Terminal,
+  X,
 } from "lucide-react";
 import {
   SortableContext,
   horizontalListSortingStrategy,
   useSortable,
+  verticalListSortingStrategy,
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
@@ -60,6 +64,8 @@ import {
 
 export interface TerminalTabBarProps {
   paneId: string;
+  position?: "top" | "right";
+  singleServerMode?: boolean;
   isFocusedPane?: boolean;
   hasMultiplePanes?: boolean;
   hasBackground?: boolean;
@@ -72,13 +78,14 @@ export interface TerminalTabBarProps {
   activeTabId: string | null;
   editingTabId: string | null;
   renameDraft: string;
-  serverMenuOpen: boolean;
-  onServerMenuOpenChange: (open: boolean) => void;
-  workbenchMenuOpen: boolean;
-  onWorkbenchMenuOpenChange: (open: boolean) => void;
+  serverMenuOpen?: boolean;
+  onServerMenuOpenChange?: (open: boolean) => void;
+  workbenchMenuOpen?: boolean;
+  onWorkbenchMenuOpenChange?: (open: boolean) => void;
   onActivate: (id: string) => void;
-  onOpenTerminalClient: (client: TerminalClient) => void;
-  onOpenWorkbenchClient: (client: TerminalClient) => void;
+  onCreateSingleServerTab?: () => void;
+  onOpenTerminalClient?: (client: TerminalClient) => void;
+  onOpenWorkbenchClient?: (client: TerminalClient) => void;
   onStartRename: (id: string) => void;
   onDraftChange: (value: string) => void;
   onCommitRename: () => void;
@@ -86,20 +93,23 @@ export interface TerminalTabBarProps {
   onDuplicate: (id: string) => void;
   onExportText: (id: string) => void;
   onFind: (id: string) => void;
-  onOpenFileManager: (id: string) => void;
-  onOpenEditor: (id: string) => void;
-  resourceMonitorServers: string[];
+  onOpenFileManager?: (id: string) => void;
+  onOpenEditor?: (id: string) => void;
+  resourceMonitorServers?: string[];
   tabLatencies: Record<string, number>;
-  onToggleResourceWindow: (uuid: string) => void;
+  onToggleResourceWindow?: (uuid: string) => void;
   onColor: (id: string, color: string | null) => void;
   onClose: (id: string, mode: CloseMode) => void;
   onSplit?: (zone: SplitZone, tabId?: string) => void;
   onFocusPane?: () => void;
   onOpenSettings?: () => void;
+  onHidePanel?: () => void;
 }
 
 interface SortableTabItemProps {
   paneId: string;
+  orientation: "horizontal" | "vertical";
+  reducedMotion: boolean;
   isFocusedPane: boolean;
   hasBackground: boolean;
   freezeSortTransform: boolean;
@@ -126,17 +136,21 @@ interface SortableTabItemProps {
   onDuplicate: (id: string) => void;
   onExportText: (id: string) => void;
   onFind: (id: string) => void;
-  onOpenFileManager: (id: string) => void;
-  onOpenEditor: (id: string) => void;
+  onOpenFileManager?: (id: string) => void;
+  onOpenEditor?: (id: string) => void;
   resourceWindowOpen: boolean;
-  onToggleResourceWindow: (uuid: string) => void;
+  onToggleResourceWindow?: (uuid: string) => void;
   onColor: (id: string, color: string | null) => void;
   onClose: (id: string, mode: CloseMode) => void;
   onSplit?: (zone: SplitZone, tabId?: string) => void;
 }
 
+const VERTICAL_TAB_HEIGHT = 28;
+
 const SortableTabItem = ({
   paneId,
+  orientation,
+  reducedMotion,
   isFocusedPane,
   hasBackground,
   freezeSortTransform,
@@ -170,6 +184,7 @@ const SortableTabItem = ({
   onClose,
   onSplit,
 }: SortableTabItemProps) => {
+  const isVertical = orientation === "vertical";
   const {
     attributes,
     listeners,
@@ -192,7 +207,7 @@ const SortableTabItem = ({
     - transform 只归 dnd-kit：拖拽中的跟手位移与落下后的补位都由它的 CSS transition 完成；
       这里绝不能再加 motion 的 layout，否则落下后 motion 会从旧位置再播一遍位移。
       当标签被拖离原标签栏准备分屏时，freezeSortTransform 置为 true，原栏其他标签立即恢复原顺序，不影响排序。
-    - width / opacity 归 motion 弹簧：新开标签从 0 宽展开、关闭时收拢，邻居随真实布局顺势补位；
+    - width / height / opacity 归 motion 弹簧：新开标签从 0 展开、关闭时收拢，邻居随真实布局顺势补位；
       窗口缩放导致的标签宽度变化也走同一条弹簧，中途再变会保留速度继续追赶。
   */
   const effectiveTransform = freezeSortTransform && !isDragging ? null : transform;
@@ -208,14 +223,29 @@ const SortableTabItem = ({
       style={style}
       data-pane-id={paneId}
       data-tab-id={tab.id}
-      initial={{ width: 0, opacity: 0 }}
-      animate={{ width: tabWidth, opacity: isDragging ? 0.4 : 1 }}
-      exit={{ width: 0, opacity: 0 }}
-      transition={{
-        width: animateWidth ? MOTION_SPRING.layout : { duration: 0 },
-        opacity: MOTION_TRANSITION.fade,
-      }}
-      className="relative h-full shrink-0 overflow-hidden"
+      initial={isVertical ? { height: 0, opacity: 0 } : { width: 0, opacity: 0 }}
+      animate={
+        isVertical
+          ? { height: VERTICAL_TAB_HEIGHT, opacity: isDragging ? 0.4 : 1 }
+          : { width: tabWidth, opacity: isDragging ? 0.4 : 1 }
+      }
+      exit={isVertical ? { height: 0, opacity: 0 } : { width: 0, opacity: 0 }}
+      transition={
+        isVertical
+          ? {
+              height: reducedMotion ? { duration: 0 } : MOTION_SPRING.layout,
+              opacity: MOTION_TRANSITION.fade,
+            }
+          : {
+              width: animateWidth ? MOTION_SPRING.layout : { duration: 0 },
+              opacity: MOTION_TRANSITION.fade,
+            }
+      }
+      className={
+        isVertical
+          ? "relative w-full shrink-0 overflow-hidden"
+          : "relative h-full shrink-0 overflow-hidden"
+      }
       {...attributes}
       {...listeners}
       onContextMenu={(event) => {
@@ -233,6 +263,7 @@ const SortableTabItem = ({
         total={total}
         open={contextMenuTabId === tab.id}
         position={contextMenuPosition}
+        orientation={orientation}
         resourceWindowOpen={resourceWindowOpen}
         onOpenChange={(open) => {
           if (open) {
@@ -248,9 +279,15 @@ const SortableTabItem = ({
         onDuplicate={() => onDuplicate(tab.id)}
         onExportText={() => onExportText(tab.id)}
         onFind={() => onFind(tab.id)}
-        onOpenFileManager={() => onOpenFileManager(tab.id)}
-        onOpenEditor={() => onOpenEditor(tab.id)}
-        onToggleResourceWindow={() => onToggleResourceWindow(tab.uuid)}
+        onOpenFileManager={
+          onOpenFileManager ? () => onOpenFileManager(tab.id) : undefined
+        }
+        onOpenEditor={onOpenEditor ? () => onOpenEditor(tab.id) : undefined}
+        onToggleResourceWindow={
+          onToggleResourceWindow
+            ? () => onToggleResourceWindow(tab.uuid)
+            : undefined
+        }
         onColor={(color) => onColor(tab.id, color)}
         onClose={(mode) => onClose(tab.id, mode)}
         onSplit={onSplit ? (zone) => onSplit(zone, tab.id) : undefined}
@@ -263,7 +300,9 @@ const SortableTabItem = ({
         active={isActive}
         isFocusedPane={isFocusedPane}
         hasBackground={hasBackground}
-        showGuideTarget={isActive && isFocusedPane}
+        orientation={orientation}
+        showShortcutHint={!isVertical}
+        showGuideTarget={!isVertical && isActive && isFocusedPane}
         editing={editingTabId === tab.id}
         draft={renameDraft}
         onActivate={() => onActivate(tab.id)}
@@ -279,6 +318,8 @@ const SortableTabItem = ({
 
 const TerminalTabBar = ({
   paneId,
+  position = "top",
+  singleServerMode = false,
   isFocusedPane = true,
   hasMultiplePanes = false,
   hasBackground = false,
@@ -291,14 +332,15 @@ const TerminalTabBar = ({
   activeTabId,
   editingTabId,
   renameDraft,
-  serverMenuOpen,
+  serverMenuOpen = false,
   onServerMenuOpenChange,
-  workbenchMenuOpen,
+  workbenchMenuOpen = false,
   onWorkbenchMenuOpenChange,
-  resourceMonitorServers,
+  resourceMonitorServers = [],
   tabLatencies,
   onToggleResourceWindow,
   onActivate,
+  onCreateSingleServerTab,
   onOpenTerminalClient,
   onOpenWorkbenchClient,
   onStartRename,
@@ -315,7 +357,9 @@ const TerminalTabBar = ({
   onSplit,
   onFocusPane,
   onOpenSettings,
+  onHidePanel,
 }: TerminalTabBarProps) => {
+  const isVertical = position === "right";
   const { t } = useTranslation();
   const [contextMenuTabId, setContextMenuTabId] = useState<string | null>(null);
   const [contextMenuPosition, setContextMenuPosition] =
@@ -403,6 +447,18 @@ const TerminalTabBar = ({
   }, [hasOverflow, tabWidth, tabs.length, updateScrollState]);
 
   useEffect(() => {
+    if (isVertical) {
+      if (!activeTabId || !tabsScrollRef.current) return;
+      const tabEls =
+        tabsScrollRef.current.querySelectorAll<HTMLElement>("[data-tab-id]");
+      for (const el of tabEls) {
+        if (el.dataset.tabId === activeTabId) {
+          el.scrollIntoView({ block: "nearest" });
+          break;
+        }
+      }
+      return;
+    }
     if (!hasOverflow || !activeTabId) return;
     const activeIndex = tabs.findIndex((tab) => tab.id === activeTabId);
     if (activeIndex === -1 || !tabsScrollRef.current) return;
@@ -419,7 +475,7 @@ const TerminalTabBar = ({
         behavior: "smooth",
       });
     }
-  }, [activeTabId, hasOverflow, tabWidth, tabs]);
+  }, [activeTabId, hasOverflow, isVertical, tabWidth, tabs]);
 
   const scrollTabs = useCallback(
     (direction: -1 | 1) => {
@@ -462,8 +518,19 @@ const TerminalTabBar = ({
   const lastTab = tabs[tabs.length - 1];
   const lastTabIsActive = lastTab?.id === activeTabId;
   const showActionLeadingSeparator = tabs.length > 0 && !lastTabIsActive;
-  const tabBarSurfaceClass =
-    isTabBarDropTarget && isDraggingTab
+  const tabBarSurfaceClass = isVertical
+    ? isTabBarDropTarget && isDraggingTab
+      ? hasBackground
+        ? "border-l border-white/[0.08] bg-sky-500/20 ring-1 ring-inset ring-sky-500/70 backdrop-blur-[12px]"
+        : "border-l border-[#2b2b2b] bg-[#1a2634] ring-1 ring-inset ring-sky-500/70"
+      : hasBackground
+        ? hasMultiplePanes && !isFocusedPane
+          ? "border-l border-white/[0.06] bg-[#080808]/55 backdrop-blur-[12px]"
+          : "border-l border-white/[0.08] bg-[#121212]/35 backdrop-blur-[12px]"
+        : hasMultiplePanes && !isFocusedPane
+          ? "border-l border-[#2b2b2b] bg-[#141414]"
+          : "border-l border-[#2b2b2b] bg-[#181818]"
+    : isTabBarDropTarget && isDraggingTab
       ? hasBackground
         ? "border-b border-white/[0.08] bg-sky-500/20 ring-1 ring-inset ring-sky-500/70 backdrop-blur-[12px]"
         : "bg-[#1a2634] ring-1 ring-inset ring-sky-500/70"
@@ -475,10 +542,132 @@ const TerminalTabBar = ({
           ? "bg-[#181818]"
           : "bg-[#1e1e1e]";
 
+  if (isVertical) {
+    return (
+      <div
+        ref={tabBarRef}
+        data-pane-tabbar={paneId}
+        data-pane-tabbar-orientation="vertical"
+        onPointerDownCapture={handlePointerDownCapture}
+        className={`km-terminal-tab-bar km-terminal-tab-bar-vertical relative flex h-full w-[176px] max-w-[42%] shrink-0 select-none flex-col transition-colors ${tabBarSurfaceClass}`}
+        role="tablist"
+        aria-orientation="vertical"
+        aria-label={t("terminal.tabs.title")}
+      >
+        {hasMultiplePanes && isFocusedPane && (
+          <div
+            className="pointer-events-none absolute inset-x-0 top-0 z-[5] h-[2px] bg-sky-500/80"
+            aria-hidden="true"
+          />
+        )}
+        <div
+          className={`flex h-8 shrink-0 items-center gap-1 px-2 ${
+            hasBackground
+              ? "border-b border-white/[0.08]"
+              : "border-b border-[#2b2b2b]"
+          }`}
+        >
+          <Terminal size={13} className="shrink-0 text-[#55a7e0]" />
+          <span className="min-w-0 flex-1 truncate text-[11px] font-medium text-neutral-300">
+            {t("terminal.title", "Terminal")}
+          </span>
+          {singleServerMode && onCreateSingleServerTab && (
+            <motion.button
+              type="button"
+              whileTap={CONTROL_MOTION.tap}
+              transition={CONTROL_MOTION.transition}
+              onClick={onCreateSingleServerTab}
+              className="km-pressable inline-flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-[5px] border-0 bg-transparent text-neutral-400 transition-colors hover:bg-white/10 hover:text-white"
+              title={t("terminal.tabs.new_tab", "New tab")}
+              aria-label={t("terminal.tabs.new_tab", "New tab")}
+            >
+              <Plus size={14} />
+            </motion.button>
+          )}
+          {onHidePanel && (
+            <motion.button
+              type="button"
+              whileTap={CONTROL_MOTION.tap}
+              transition={CONTROL_MOTION.transition}
+              onPointerDown={(event) => event.stopPropagation()}
+              onClick={onHidePanel}
+              className="km-pressable inline-flex h-6 w-6 shrink-0 cursor-pointer items-center justify-center rounded-[5px] border-0 bg-transparent text-neutral-400 transition-colors hover:bg-white/10 hover:text-white"
+              title={t("common.close", "Close")}
+              aria-label={t("common.close", "Close")}
+            >
+              <X size={14} />
+            </motion.button>
+          )}
+        </div>
+
+        <SortableContext
+          items={tabs.map((tab) => tab.id)}
+          strategy={verticalListSortingStrategy}
+        >
+          <div
+            ref={tabsScrollRef}
+            className="km-terminal-tabs-scroll flex min-h-0 flex-1 flex-col gap-0.5 overflow-y-auto overflow-x-hidden p-1.5 [scrollbar-width:thin] [scrollbar-color:rgba(255,255,255,0.18)_transparent]"
+          >
+            <AnimatePresence initial={false}>
+              {tabs.map((tab, index) => {
+                const client = clientsByUuid.get(tab.uuid);
+                const isActive = tab.id === activeTabId;
+
+                return (
+                  <SortableTabItem
+                    key={tab.id}
+                    paneId={paneId}
+                    orientation="vertical"
+                    reducedMotion={reducedMotion}
+                    isFocusedPane={isFocusedPane}
+                    hasBackground={hasBackground}
+                    freezeSortTransform={freezeSortTransform}
+                    tab={tab}
+                    client={client}
+                    latencyMs={tabLatencies[tab.id]}
+                    index={index}
+                    total={tabs.length}
+                    tabWidth={tabWidth}
+                    animateWidth={animateTabWidth}
+                    isActive={isActive}
+                    editingTabId={editingTabId}
+                    renameDraft={renameDraft}
+                    contextMenuTabId={contextMenuTabId}
+                    contextMenuPosition={contextMenuPosition}
+                    resourceWindowOpen={resourceMonitorServers.includes(
+                      tab.uuid,
+                    )}
+                    setContextMenuTabId={setContextMenuTabId}
+                    setContextMenuPosition={setContextMenuPosition}
+                    onActivate={onActivate}
+                    onStartRename={onStartRename}
+                    onDraftChange={onDraftChange}
+                    onCommitRename={onCommitRename}
+                    onCancelRename={onCancelRename}
+                    onDuplicate={onDuplicate}
+                    onExportText={onExportText}
+                    onFind={onFind}
+                    onOpenFileManager={onOpenFileManager}
+                    onOpenEditor={onOpenEditor}
+                    onToggleResourceWindow={onToggleResourceWindow}
+                    onColor={onColor}
+                    onClose={onClose}
+                    onSplit={onSplit}
+                  />
+                );
+              })}
+            </AnimatePresence>
+          </div>
+        </SortableContext>
+      </div>
+    );
+  }
+
   return (
     <div
       ref={tabBarRef}
       data-pane-tabbar={paneId}
+      data-pane-tabbar-orientation="horizontal"
       onPointerDownCapture={handlePointerDownCapture}
       className={`km-terminal-tab-bar relative flex h-10 min-w-0 flex-[0_0_40px] select-none items-end px-2 transition-colors ${tabBarSurfaceClass}`}
       role="tablist"
@@ -543,6 +732,8 @@ const TerminalTabBar = ({
                   )}
                   <SortableTabItem
                     paneId={paneId}
+                    orientation="horizontal"
+                    reducedMotion={reducedMotion}
                     isFocusedPane={isFocusedPane}
                     hasBackground={hasBackground}
                     freezeSortTransform={freezeSortTransform}
@@ -610,120 +801,140 @@ const TerminalTabBar = ({
         {showActionLeadingSeparator && (
           <div className={TAB_SEPARATOR_CLASS_NAME} aria-hidden="true" />
         )}
-        <DropdownMenu
-          open={serverMenuOpen}
-          onOpenChange={onServerMenuOpenChange}
-        >
-          <DropdownMenuTrigger asChild>
-            <motion.button
-              type="button"
-              whileTap={CONTROL_MOTION.tap}
-              transition={CONTROL_MOTION.transition}
-              className={TAB_ACTION_CLASS_NAME}
-              title={t("terminal.tabs.open_terminal", "Open terminal")}
-              aria-label={t("terminal.tabs.open_terminal", "Open terminal")}
-            >
-              <SquareTerminal size={16} />
-            </motion.button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="start"
-            themeAppearance="dark"
-            className="min-w-[260px] !border-neutral-800 !bg-[#161616] !text-neutral-200 backdrop-blur-md"
+        {singleServerMode && onCreateSingleServerTab ? (
+          <motion.button
+            type="button"
+            whileTap={CONTROL_MOTION.tap}
+            transition={CONTROL_MOTION.transition}
+            onClick={onCreateSingleServerTab}
+            className={TAB_ACTION_CLASS_NAME}
+            title={t("terminal.tabs.new_tab", "New tab")}
+            aria-label={t("terminal.tabs.new_tab", "New tab")}
           >
-            {clientsLoading ? (
-              <DropdownMenuItem disabled>
-                <Loading compact />
-              </DropdownMenuItem>
-            ) : clients.length === 0 ? (
-              <DropdownMenuItem disabled>
-                <Server size={14} />
-                <span>{t("terminal.tabs.no_servers")}</span>
-              </DropdownMenuItem>
-            ) : (
-              orderedClients.map((client, index) => {
-                const shortcutNum =
-                  index < 10 ? (index === 9 ? 0 : index + 1) : null;
-                return (
-                  <DropdownMenuItem
-                    key={client.uuid}
-                    onSelect={() => onOpenTerminalClient(client)}
-                    className="flex items-center justify-between gap-3"
+            <Plus size={16} />
+          </motion.button>
+        ) : (
+          <>
+            {onOpenTerminalClient && (
+              <DropdownMenu
+                open={serverMenuOpen}
+                onOpenChange={onServerMenuOpenChange}
+              >
+                <DropdownMenuTrigger asChild>
+                  <motion.button
+                    type="button"
+                    whileTap={CONTROL_MOTION.tap}
+                    transition={CONTROL_MOTION.transition}
+                    className={TAB_ACTION_CLASS_NAME}
+                    title={t("terminal.tabs.open_terminal", "Open terminal")}
+                    aria-label={t("terminal.tabs.open_terminal", "Open terminal")}
                   >
-                    <div className="flex min-w-0 items-center gap-2">
-                      <img
-                        src={getOSImage(client.os)}
-                        alt=""
-                        draggable={false}
-                        className="h-3.5 w-3.5 shrink-0 object-contain"
-                      />
-                      <span className="truncate">
-                        {client.name || client.uuid}
-                      </span>
-                    </div>
-                    {shortcutNum !== null && (
-                      <span className="ml-auto shrink-0 text-[10px] text-neutral-400 not-italic">
-                        Ctrl+Shift+{shortcutNum}
-                      </span>
-                    )}
-                  </DropdownMenuItem>
-                );
-              })
-            )}
-          </DropdownMenuContent>
-        </DropdownMenu>
-
-        <DropdownMenu
-          open={workbenchMenuOpen}
-          onOpenChange={onWorkbenchMenuOpenChange}
-        >
-          <DropdownMenuTrigger asChild>
-            <motion.button
-              type="button"
-              whileTap={CONTROL_MOTION.tap}
-              transition={CONTROL_MOTION.transition}
-              className={TAB_ACTION_CLASS_NAME}
-              title={t("terminal.tabs.open_workbench", "Open workbench")}
-              aria-label={t("terminal.tabs.open_workbench", "Open workbench")}
-            >
-              <Code2 size={16} />
-            </motion.button>
-          </DropdownMenuTrigger>
-          <DropdownMenuContent
-            align="start"
-            themeAppearance="dark"
-            className="min-w-[260px] !border-neutral-800 !bg-[#161616] !text-neutral-200 backdrop-blur-md"
-          >
-            {clientsLoading ? (
-              <DropdownMenuItem disabled>
-                <Loading compact />
-              </DropdownMenuItem>
-            ) : clients.length === 0 ? (
-              <DropdownMenuItem disabled>
-                <Server size={14} />
-                <span>{t("terminal.tabs.no_servers")}</span>
-              </DropdownMenuItem>
-            ) : (
-              orderedClients.map((client) => (
-                <DropdownMenuItem
-                  key={client.uuid}
-                  onSelect={() => onOpenWorkbenchClient(client)}
-                  className="flex min-w-0 items-center gap-2"
+                    <SquareTerminal size={16} />
+                  </motion.button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="start"
+                  themeAppearance="dark"
+                  className="min-w-[260px] !border-neutral-800 !bg-[#161616] !text-neutral-200 backdrop-blur-md"
                 >
-                  <img
-                    src={getOSImage(client.os)}
-                    alt=""
-                    draggable={false}
-                    className="h-3.5 w-3.5 shrink-0 object-contain"
-                  />
-                  <span className="min-w-0 truncate">
-                    {client.name || client.uuid}
-                  </span>
-                </DropdownMenuItem>
-              ))
+                  {clientsLoading ? (
+                    <DropdownMenuItem disabled>
+                      <Loading compact />
+                    </DropdownMenuItem>
+                  ) : clients.length === 0 ? (
+                    <DropdownMenuItem disabled>
+                      <Server size={14} />
+                      <span>{t("terminal.tabs.no_servers")}</span>
+                    </DropdownMenuItem>
+                  ) : (
+                    orderedClients.map((client, index) => {
+                      const shortcutNum =
+                        index < 10 ? (index === 9 ? 0 : index + 1) : null;
+                      return (
+                        <DropdownMenuItem
+                          key={client.uuid}
+                          onSelect={() => onOpenTerminalClient(client)}
+                          className="flex items-center justify-between gap-3"
+                        >
+                          <div className="flex min-w-0 items-center gap-2">
+                            <img
+                              src={getOSImage(client.os)}
+                              alt=""
+                              draggable={false}
+                              className="h-3.5 w-3.5 shrink-0 object-contain"
+                            />
+                            <span className="truncate">
+                              {client.name || client.uuid}
+                            </span>
+                          </div>
+                          {shortcutNum !== null && (
+                            <span className="ml-auto shrink-0 text-[10px] text-neutral-400 not-italic">
+                              Ctrl+Shift+{shortcutNum}
+                            </span>
+                          )}
+                        </DropdownMenuItem>
+                      );
+                    })
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
             )}
-          </DropdownMenuContent>
-        </DropdownMenu>
+
+            {onOpenWorkbenchClient && (
+              <DropdownMenu
+                open={workbenchMenuOpen}
+                onOpenChange={onWorkbenchMenuOpenChange}
+              >
+                <DropdownMenuTrigger asChild>
+                  <motion.button
+                    type="button"
+                    whileTap={CONTROL_MOTION.tap}
+                    transition={CONTROL_MOTION.transition}
+                    className={TAB_ACTION_CLASS_NAME}
+                    title={t("terminal.tabs.open_workbench", "Open workbench")}
+                    aria-label={t("terminal.tabs.open_workbench", "Open workbench")}
+                  >
+                    <Code2 size={16} />
+                  </motion.button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent
+                  align="start"
+                  themeAppearance="dark"
+                  className="min-w-[260px] !border-neutral-800 !bg-[#161616] !text-neutral-200 backdrop-blur-md"
+                >
+                  {clientsLoading ? (
+                    <DropdownMenuItem disabled>
+                      <Loading compact />
+                    </DropdownMenuItem>
+                  ) : clients.length === 0 ? (
+                    <DropdownMenuItem disabled>
+                      <Server size={14} />
+                      <span>{t("terminal.tabs.no_servers")}</span>
+                    </DropdownMenuItem>
+                  ) : (
+                    orderedClients.map((client) => (
+                      <DropdownMenuItem
+                        key={client.uuid}
+                        onSelect={() => onOpenWorkbenchClient(client)}
+                        className="flex min-w-0 items-center gap-2"
+                      >
+                        <img
+                          src={getOSImage(client.os)}
+                          alt=""
+                          draggable={false}
+                          className="h-3.5 w-3.5 shrink-0 object-contain"
+                        />
+                        <span className="min-w-0 truncate">
+                          {client.name || client.uuid}
+                        </span>
+                      </DropdownMenuItem>
+                    ))
+                  )}
+                </DropdownMenuContent>
+              </DropdownMenu>
+            )}
+          </>
+        )}
       </div>
 
       {onOpenSettings && (

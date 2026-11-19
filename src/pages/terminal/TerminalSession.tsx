@@ -262,7 +262,7 @@ const TerminalSession = ({
     };
 
     const fit = () => {
-      if (disposed) {
+      if (disposed || host.clientWidth <= 0 || host.clientHeight <= 0) {
         return;
       }
       fitAddon.fit();

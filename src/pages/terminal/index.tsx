@@ -89,6 +89,9 @@ const TerminalPage = () => {
   const [workbenchMenuPaneId, setWorkbenchMenuPaneId] = useState<string | null>(
     null,
   );
+  const editorClient = editorUuid
+    ? clients.find((item) => item.uuid === editorUuid)
+    : undefined;
 
   return (
       <Theme
@@ -225,6 +228,8 @@ const TerminalPage = () => {
             <FileEditorDialog
               open
               uuid={editorUuid}
+              serverName={editorClient?.name}
+              serverOs={editorClient?.os}
               initialFile={null}
               fontFamily={terminalSettings.fontFamily}
               terminalSettings={terminalSettings}

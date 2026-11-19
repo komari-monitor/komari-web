@@ -1632,6 +1632,8 @@
     "close_tabs": "Close",
     "close_to_left": "Left",
     "close_to_right": "Right",
+    "close_above": "Above",
+    "close_below": "Below",
     "close_others": "Others",
     "close_tab": "Close Tab",
     "search": {

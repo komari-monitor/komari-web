@@ -1584,6 +1584,8 @@
     "close_tabs": "关闭",
     "close_to_left": "左侧",
     "close_to_right": "右侧",
+    "close_above": "上方",
+    "close_below": "下方",
     "color_tab": "更改选项卡颜色",
     "default_color": "默认颜色",
     "disconnect": "连接已断开",

@@ -18,6 +18,8 @@ interface TabButtonProps {
   active: boolean;
   isFocusedPane?: boolean;
   hasBackground?: boolean;
+  orientation?: "horizontal" | "vertical";
+  showShortcutHint?: boolean;
   showGuideTarget?: boolean;
   editing: boolean;
   draft: string;
@@ -37,6 +39,8 @@ const TabButton = ({
   active,
   isFocusedPane = true,
   hasBackground = false,
+  orientation = "horizontal",
+  showShortcutHint = true,
   showGuideTarget = active,
   editing,
   draft,
@@ -65,12 +69,21 @@ const TabButton = ({
     return () => cancelAnimationFrame(frame);
   }, [editing]);
 
+  const isVertical = orientation === "vertical";
   const isHighlighted = active && isFocusedPane;
-  const activeBgColor = tab.color || (hasBackground ? "rgba(255, 255, 255, 0.14)" : "#000000");
+  const activeBgColor =
+    tab.color ||
+    (isVertical
+      ? hasBackground
+        ? "rgba(255, 255, 255, 0.14)"
+        : "rgba(255, 255, 255, 0.12)"
+      : hasBackground
+        ? "rgba(255, 255, 255, 0.14)"
+        : "#000000");
   const tabBackgroundColor = isHighlighted
     ? activeBgColor
     : active
-    ? tab.color || (hasBackground ? "rgba(255, 255, 255, 0.06)" : "rgba(255, 255, 255, 0.05)")
+    ? tab.color || (hasBackground ? "rgba(255, 255, 255, 0.06)" : "rgba(255, 255, 255, 0.06)")
     : tab.color || (hasBackground ? "rgba(255, 255, 255, 0.09)" : "rgba(255, 255, 255, 0.08)");
   const inactiveOverlay = !isHighlighted && tab.color
     ? "rgba(255, 255, 255, 0.22)"
@@ -81,7 +94,8 @@ const TabButton = ({
       ? `linear-gradient(${inactiveOverlay}, ${inactiveOverlay})`
       : undefined,
   };
-  const shortcutNum = index < 10 ? (index === 9 ? 0 : index + 1) : null;
+  const shortcutNum =
+    showShortcutHint && index < 10 ? (index === 9 ? 0 : index + 1) : null;
   const displayTitle = formatTabTitle(tab, client?.name);
   const serverName = displayTitle || client?.name || tab.title;
   const latencyToneClass =
@@ -108,6 +122,7 @@ const TabButton = ({
     <Tooltip
       open={editing ? false : undefined}
       content={tooltipContent}
+      side={isVertical ? "left" : undefined}
       delayDuration={300}
       className="!bg-[#202020] !text-white"
     >
@@ -121,7 +136,9 @@ const TabButton = ({
         data-guide={showGuideTarget ? "terminal-tab" : undefined}
         role="tab"
         aria-selected={isHighlighted}
-        className={`group relative flex h-full w-full min-w-0 cursor-pointer items-center gap-2 px-3 select-none transition-colors duration-[var(--km-dur-fast)] ease-[var(--km-ease-standard)] ${
+        className={`group relative flex h-full w-full min-w-0 cursor-pointer items-center select-none transition-colors duration-[var(--km-dur-fast)] ease-[var(--km-ease-standard)] ${
+          isVertical ? "gap-1.5 px-2" : "gap-2 px-3"
+        } ${
           isHighlighted
             ? "z-[3] text-white"
             : active
@@ -148,7 +165,9 @@ const TabButton = ({
         }}
         >
           <div
-            className={`pointer-events-none absolute inset-0 rounded-t-[10px] overflow-visible transition-[opacity,background-color,border-color,box-shadow] duration-[var(--km-dur-fast)] ease-[var(--km-ease-standard)] ${
+            className={`pointer-events-none absolute inset-0 overflow-visible transition-[opacity,background-color,border-color,box-shadow] duration-[var(--km-dur-fast)] ease-[var(--km-ease-standard)] ${
+              isVertical ? "rounded-[6px]" : "rounded-t-[10px]"
+            } ${
               hasBackground && isHighlighted && !tab.color
                 ? "shadow-[inset_0_1px_0_rgba(255,255,255,0.16)]"
                 : ""
@@ -163,6 +182,12 @@ const TabButton = ({
             }`}
             style={tabBackgroundStyle}
           />
+        {isVertical && isHighlighted && !tab.color && (
+          <span
+            className="pointer-events-none absolute bottom-1.5 left-0 top-1.5 z-[2] w-[2px] rounded-full bg-[#55a7e0]"
+            aria-hidden="true"
+          />
+        )}
         <img
           src={getOSImage(client?.os || "")}
           alt=""
@@ -173,7 +198,9 @@ const TabButton = ({
         {editing ? (
           <input
             ref={inputRef}
-            className="relative z-[1] h-5 min-w-0 flex-1 rounded-[3px] border border-blue-500/70 bg-[#111111] px-1.5 text-xs text-white outline-none"
+            className={`relative z-[1] h-5 min-w-0 flex-1 rounded-[3px] border border-blue-500/70 bg-[#111111] px-1.5 text-white outline-none ${
+              isVertical ? "text-[11px]" : "text-xs"
+            }`}
             value={draft}
             onChange={(event) => onDraftChange(event.target.value)}
             onPointerDown={(event) => event.stopPropagation()}
@@ -212,7 +239,9 @@ const TabButton = ({
           />
         ) : (
           <span
-            className={`relative z-[1] min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-left text-xs ${
+            className={`relative z-[1] min-w-0 flex-1 overflow-hidden text-ellipsis whitespace-nowrap text-left ${
+              isVertical ? "text-[11px]" : "text-xs"
+            } ${
               isHighlighted ? "font-medium text-white" : "font-normal"
             }`}
           >

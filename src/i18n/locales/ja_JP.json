@@ -1584,6 +1584,8 @@
     "close_tabs": "閉じる",
     "close_to_left": "左側",
     "close_to_right": "右側",
+    "close_above": "上側",
+    "close_below": "下側",
     "color_tab": "タブの色を変更",
     "default_color": "デフォルトの色",
     "disconnect": "接続が切断されました",
