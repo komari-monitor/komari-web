@@ -21,12 +21,21 @@ const RouteGate = ({ component: Component }: { component: ComponentType }) => {
  * 懒加载页面：element 用 React.lazy，handle.preload 指向同一个 import()，
  * 悬停 / 点击时 routePreload 按地址匹配并提前下载代码块（同一模块只下载一次）。
  */
-const page = (importer: () => Promise<{ default: ComponentType }>) => {
+const page = (
+  importer: () => Promise<{ default: ComponentType }>,
+  extraPreload?: () => Promise<unknown>,
+) => {
   const Component = lazy(importer);
-  return { element: React.createElement(RouteGate, { component: Component }), handle: { preload: importer } };
+  const preload = extraPreload
+    ? () => Promise.all([importer(), extraPreload()])
+    : importer;
+  return { element: React.createElement(RouteGate, { component: Component }), handle: { preload } };
 };
 
-const Index = page(() => import("./pages/Index"));
+const Index = page(
+  () => import("./pages/Index"),
+  () => import("./components/NodeDisplay"),
+);
 const AdminLayout = page(() => import("./pages/admin/_layout"));
 const Admin = page(() => import("./pages/admin"));
 const Dashboard = page(() => import("./pages/admin/dashboard"));

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { NodeDetailsProvider } from "@/contexts/NodeDetailsContext";
 import { Swap } from "@/components/motion";
 import { Skeletonize } from "@/components/ui/skeleton";
@@ -21,13 +21,17 @@ const Layout = () => {
     useServerList();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedNodes, setSelectedNodes] = useState<string[]>([]);
-  const filteredNodes = Array.isArray(nodeDetail)
-    ? nodeDetail
-        .filter((node) =>
-          node.name.toLowerCase().includes(searchTerm.toLowerCase())
-        )
-        .sort((a, b) => a.weight - b.weight)
-    : [];
+  const filteredNodes = useMemo(
+    () =>
+      Array.isArray(nodeDetail)
+        ? nodeDetail
+            .filter((node) =>
+              node.name.toLowerCase().includes(searchTerm.toLowerCase()),
+            )
+            .sort((a, b) => a.weight - b.weight)
+        : [],
+    [nodeDetail, searchTerm],
+  );
 
   if (error) return <div>{error}</div>;
 

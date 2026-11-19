@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Card, Select, Switch } from "@radix-ui/themes";
 import { useTranslation } from "react-i18next";
 import { Activity, RotateCcw, Save } from "lucide-react";
@@ -104,4 +105,4 @@ const ChartToolbar = ({
   );
 };
 
-export default ChartToolbar;
+export default memo(ChartToolbar);

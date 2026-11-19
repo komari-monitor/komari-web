@@ -42,15 +42,25 @@ export function useMetricQueries({
   */
   const [loadedMetricRequest, setLoadedMetricRequest] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const metricKeys = useMemo(() => {
+  // 用排序后的字符串签名稳定 metricKeys 引用：改图表尺寸或拖拽重排不会触发重复查询
+  const metricKeysSignature = useMemo(() => {
     const keys = charts.flatMap((chart) =>
       chart.metrics.filter((metricKey) => {
         if (!isRealtime) return true;
         return !hasRealtimeSource(metricKey);
       }),
     );
-    return Array.from(new Set(keys)).sort();
+    return Array.from(new Set(keys)).sort().join("\0");
   }, [charts, isRealtime]);
+
+  const metricKeys = useMemo(
+    () => (metricKeysSignature ? metricKeysSignature.split("\0") : []),
+    [metricKeysSignature],
+  );
+  const hasPingMetric = useMemo(
+    () => metricKeys.some(isPingMetric),
+    [metricKeys],
+  );
 
   const metricRequestKey = JSON.stringify([uuid, metricKeys, metricRangeParams, aggregation]);
   const metricsLoading =
@@ -102,7 +112,7 @@ export function useMetricQueries({
   ]);
 
   useEffect(() => {
-    if (!uuid || !metricKeys.some(isPingMetric)) {
+    if (!uuid || !hasPingMetric) {
       setPingStats([]);
       return;
     }
@@ -130,7 +140,7 @@ export function useMetricQueries({
     };
   }, [
     call,
-    metricKeys,
+    hasPingMetric,
     metricRangeParams,
     uuid,
   ]);

@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { memo, useEffect, useMemo, useState } from "react";
 import { Card, Switch } from "@radix-ui/themes";
 import { AnimatePresence, motion } from "motion/react";
 import { MOTION_TRANSITION, SKELETON_MOTION } from "@/lib/motion";
@@ -385,4 +385,4 @@ const MiniPingChart = ({
   );
 };
 
-export default MiniPingChart;
+export default memo(MiniPingChart);

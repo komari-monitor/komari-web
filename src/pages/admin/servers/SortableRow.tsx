@@ -1,3 +1,4 @@
+import { memo } from "react";
 import type { NodeDetail } from "@/contexts/NodeDetailsContext";
 import { Flex, Checkbox, Text, IconButton } from "@radix-ui/themes";
 import { Copy, MenuIcon } from "lucide-react";
@@ -16,13 +17,13 @@ import DetailView from "./DetailView";
 
 const SortableRow = ({
   node,
-  selectedNodes,
+  isSelected,
   handleSelectNode,
   settings,
   isSnapshotBackend,
 }: {
   node: NodeDetail;
-  selectedNodes: string[];
+  isSelected: boolean;
   handleSelectNode: (uuid: string, checked: boolean) => void;
   settings: any;
   isSnapshotBackend: boolean;
@@ -81,7 +82,7 @@ const SortableRow = ({
       </TableCell>
       <TableCell>
         <Checkbox
-          checked={selectedNodes.includes(node.uuid)}
+          checked={isSelected}
           onCheckedChange={(checked) => handleSelectNode(node.uuid, !!checked)}
         />
       </TableCell>
@@ -174,4 +175,4 @@ const SortableRow = ({
   );
 };
 
-export default SortableRow;
+export default memo(SortableRow);

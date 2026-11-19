@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import { UpDownStack } from "./UpDownStack";
 import {
@@ -46,7 +47,7 @@ const itemMotion = (index: number) => {
   };
 };
 
-export const DetailsGrid = ({
+export const DetailsGrid = memo(({
   uuid,
   gap,
   box,
@@ -235,4 +236,4 @@ export const DetailsGrid = ({
       </Skeletonize>
     </Container>
   );
-};
+});

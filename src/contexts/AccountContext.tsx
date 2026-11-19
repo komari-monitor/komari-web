@@ -29,7 +29,7 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
     const [loading, setLoading] = React.useState(true);
     const [error, setError] = React.useState<Error | null>(null);
     
-    const refresh = async () => {
+    const refresh = React.useCallback(async () => {
         setLoading(true);
         setError(null);
         try {
@@ -42,14 +42,19 @@ export const AccountProvider: React.FC<{ children: React.ReactNode }> = ({ child
         } finally {
         setLoading(false);
         }
-    };
-    
-    React.useEffect(() => {
-        refresh();
     }, []);
     
+    React.useEffect(() => {
+        void refresh();
+    }, [refresh]);
+
+    const contextValue = React.useMemo(
+        () => ({ account, loading, error, refresh }),
+        [account, loading, error, refresh],
+    );
+    
     return (
-        <AccountContext.Provider value={{ account, loading, error, refresh }}>
+        <AccountContext.Provider value={contextValue}>
         {children}
         </AccountContext.Provider>
     );

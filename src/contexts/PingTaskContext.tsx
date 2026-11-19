@@ -40,10 +40,13 @@ export const PingTaskProvider: React.FC<{ children: React.ReactNode }> = ({
     void reload();
   }, [reload]);
 
+  const contextValue = React.useMemo(
+    () => ({ pingTasks, isLoading: result.loading, error, refresh }),
+    [pingTasks, result.loading, error, refresh],
+  );
+
   return (
-    <PingTaskContext.Provider
-      value={{ pingTasks, isLoading: result.loading, error, refresh }}
-    >
+    <PingTaskContext.Provider value={contextValue}>
       {children}
     </PingTaskContext.Provider>
   );

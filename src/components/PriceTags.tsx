@@ -1,7 +1,8 @@
+import React from "react";
 import { Badge, Flex } from "@radix-ui/themes";
 import { useTranslation } from "react-i18next";
 
-const PriceTags = ({
+const PriceTags = React.memo(({
   price = 0,
   billing_cycle = 30,
   currency = "￥",
@@ -117,7 +118,8 @@ const PriceTags = ({
       <CustomTags tags={tags} />
     </Flex>
   );
-};
+});
+PriceTags.displayName = "PriceTags";
 
 const CustomTags = ({ tags }: { tags?: string }) => {
   if (!tags || tags.trim() === "") {

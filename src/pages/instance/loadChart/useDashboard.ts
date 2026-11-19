@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { arrayMove } from "@dnd-kit/sortable";
 import type { DragEndEvent } from "@dnd-kit/core";
@@ -7,7 +7,7 @@ import { usePublicInfo } from "@/contexts/PublicInfoContext";
 import { ApiError, api } from "@/lib/http";
 import { getMetricLabel } from "./catalog";
 import { DASHBOARD_TEMPLATE_KEY } from "./constants";
-import { normalizeDashboard, parseDashboardTemplate } from "./dashboard";
+import { parseDashboardTemplate } from "./dashboard";
 import type { ChartSize, DashboardChart, MetricDefinition } from "./types";
 
 /** 保存失败提示里的原因：服务器 message，否则 "HTTP 状态码" */
@@ -25,28 +25,37 @@ export function useDashboard(definitionMap: Map<string, MetricDefinition>) {
   const { publicInfo, refresh: refreshPublicInfo } = usePublicInfo();
   const globalDashboardTemplate =
     publicInfo?.theme_settings?.[DASHBOARD_TEMPLATE_KEY];
-  const [dashboard, setDashboard] = useState<DashboardChart[]>(() =>
+  // parseDashboardTemplate 已经返回规范化后的数组，后续所有变更保持未修改卡片的对象引用稳定
+  const [charts, setCharts] = useState<DashboardChart[]>(() =>
     parseDashboardTemplate(globalDashboardTemplate),
   );
-  const charts = useMemo(() => normalizeDashboard(dashboard), [dashboard]);
   const [savingGlobalTemplate, setSavingGlobalTemplate] = useState(false);
 
+  const definitionMapRef = useRef(definitionMap);
+  definitionMapRef.current = definitionMap;
+  const chartsRef = useRef(charts);
+  chartsRef.current = charts;
+
   useEffect(() => {
-    setDashboard(parseDashboardTemplate(globalDashboardTemplate));
+    setCharts(parseDashboardTemplate(globalDashboardTemplate));
   }, [globalDashboardTemplate]);
 
-  const updateChart = (id: string, updater: (chart: DashboardChart) => DashboardChart) => {
-    setDashboard((current) => normalizeDashboard(current).map((chart) => (chart.id === id ? updater(chart) : chart)));
-  };
+  const updateChart = useCallback(
+    (id: string, updater: (chart: DashboardChart) => DashboardChart) => {
+      setCharts((current) =>
+        current.map((chart) => (chart.id === id ? updater(chart) : chart)),
+      );
+    },
+    [],
+  );
 
-  const addChart = (metricKey: string) => {
+  const addChart = useCallback((metricKey: string) => {
     if (!metricKey) return;
-    setDashboard((current) => {
-      const normalized = normalizeDashboard(current);
-      const nextIndex = normalized.length + 1;
-      const title = getMetricLabel(metricKey, definitionMap);
+    setCharts((current) => {
+      const nextIndex = current.length + 1;
+      const title = getMetricLabel(metricKey, definitionMapRef.current);
       return [
-        ...normalized,
+        ...current,
         {
           id: `custom-${Date.now()}`,
           title: title || `Chart ${nextIndex}`,
@@ -55,17 +64,17 @@ export function useDashboard(definitionMap: Map<string, MetricDefinition>) {
         },
       ];
     });
-  };
+  }, []);
 
-  const removeChart = (id: string) => {
-    setDashboard((current) => normalizeDashboard(current).filter((chart) => chart.id !== id));
-  };
+  const removeChart = useCallback((id: string) => {
+    setCharts((current) => current.filter((chart) => chart.id !== id));
+  }, []);
 
-  const resetDashboard = () => {
-    setDashboard(parseDashboardTemplate(globalDashboardTemplate));
-  };
+  const resetDashboard = useCallback(() => {
+    setCharts(parseDashboardTemplate(globalDashboardTemplate));
+  }, [globalDashboardTemplate]);
 
-  const saveGlobalTemplate = async () => {
+  const saveGlobalTemplate = useCallback(async () => {
     const theme = publicInfo?.theme;
     if (!theme) return;
 
@@ -82,7 +91,7 @@ export function useDashboard(definitionMap: Map<string, MetricDefinition>) {
         `/api/admin/theme/settings?theme=${encodeURIComponent(theme)}`,
         {
           ...existingSettings,
-          [DASHBOARD_TEMPLATE_KEY]: JSON.stringify(charts, null, 2),
+          [DASHBOARD_TEMPLATE_KEY]: JSON.stringify(chartsRef.current, null, 2),
         },
         { expectSuccess: false },
       );
@@ -93,39 +102,47 @@ export function useDashboard(definitionMap: Map<string, MetricDefinition>) {
     } finally {
       setSavingGlobalTemplate(false);
     }
-  };
+  }, [publicInfo, refreshPublicInfo, t]);
 
-  const addMetric = (chartId: string, metricKey: string) => {
-    updateChart(chartId, (chart) => {
-      if (!metricKey || chart.metrics.includes(metricKey)) return chart;
-      return {
+  const addMetric = useCallback(
+    (chartId: string, metricKey: string) => {
+      updateChart(chartId, (chart) => {
+        if (!metricKey || chart.metrics.includes(metricKey)) return chart;
+        return {
+          ...chart,
+          metrics: [...chart.metrics, metricKey],
+        };
+      });
+    },
+    [updateChart],
+  );
+
+  const removeMetric = useCallback(
+    (chartId: string, metricKey: string) => {
+      updateChart(chartId, (chart) => ({
         ...chart,
-        metrics: [...chart.metrics, metricKey],
-      };
-    });
-  };
+        metrics: chart.metrics.filter((item) => item !== metricKey),
+      }));
+    },
+    [updateChart],
+  );
 
-  const removeMetric = (chartId: string, metricKey: string) => {
-    updateChart(chartId, (chart) => ({
-      ...chart,
-      metrics: chart.metrics.filter((item) => item !== metricKey),
-    }));
-  };
+  const setChartSize = useCallback(
+    (chartId: string, size: ChartSize) => {
+      updateChart(chartId, (chart) => (chart.size === size ? chart : { ...chart, size }));
+    },
+    [updateChart],
+  );
 
-  const setChartSize = (chartId: string, size: ChartSize) => {
-    updateChart(chartId, (chart) => ({ ...chart, size }));
-  };
-
-  const handleChartDragEnd = ({ active, over }: DragEndEvent) => {
+  const handleChartDragEnd = useCallback(({ active, over }: DragEndEvent) => {
     if (!over || active.id === over.id) return;
-    setDashboard((current) => {
-      const normalized = normalizeDashboard(current);
-      const oldIndex = normalized.findIndex((chart) => chart.id === active.id);
-      const newIndex = normalized.findIndex((chart) => chart.id === over.id);
+    setCharts((current) => {
+      const oldIndex = current.findIndex((chart) => chart.id === active.id);
+      const newIndex = current.findIndex((chart) => chart.id === over.id);
       if (oldIndex < 0 || newIndex < 0) return current;
-      return arrayMove(normalized, oldIndex, newIndex);
+      return arrayMove(current, oldIndex, newIndex);
     });
-  };
+  }, []);
 
   return {
     charts,

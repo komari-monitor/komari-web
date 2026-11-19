@@ -12,26 +12,25 @@ import {
 import { useLocalStorage } from "./hooks/useLocalStorage";
 import { useSystemTheme } from "./hooks/useSystemTheme";
 import { BrowserRouter } from "react-router-dom";
-// Ensure i18n is initialized before any component renders
-import "./i18n/config";
+import { initI18n } from "./i18n/config";
 import ErrorBoundary from "./components/ErrorBoundary";
 import { Suspense } from "react";
 import { useRoutes } from "react-router-dom";
 import { routes } from "./routes";
 import Loading from "./components/loading";
 import { PublicInfoProvider } from "./contexts/PublicInfoContext";
-import { PWAInstallPrompt } from "./components/PWAInstallPrompt";
-import { PWAUpdatePrompt } from "./components/PWAUpdatePrompt";
 import { OfflineIndicator } from "./components/OfflineIndicator";
 import { Toaster } from "./components/ui/sonner";
 import { RPC2Provider } from "./contexts/RPC2Context";
 import { NodeListProvider } from "./contexts/NodeListContext";
 import { MotionProvider } from "./components/motion/MotionProvider";
 import NavigationProgress from "./components/NavigationProgress";
-import { installRoutePreload } from "./lib/routePreload";
+import { installRoutePreload, preloadRouteChunks } from "./lib/routePreload";
 
 // 页面切换：history 一变就预加载新页面的代码和数据，并驱动顶部进度条
 installRoutePreload(routes);
+// 首屏并行预取当前路由代码块，与按需加载的当前语言包同时下载，消除瀑布流
+preloadRouteChunks(window.location.href);
 const App = () => {
   const restrictedPath = window.location.pathname.replace(/\/$/, "");
   const isRestrictedGuideRoute = [
@@ -113,8 +112,6 @@ const App = () => {
                     <OfflineIndicator />
                     <NavigationProgress />
                     {routing}
-                    <PWAInstallPrompt />
-                    <PWAUpdatePrompt />
                   </NodeListProvider>
                 </PublicInfoProvider>
               </RPC2Provider>
@@ -126,12 +123,15 @@ const App = () => {
   );
 };
 
-createRoot(document.getElementById("root")!).render(
-  <ErrorBoundary>
-    <StrictMode>
-      <BrowserRouter>
-        <App />
-      </BrowserRouter>
-    </StrictMode>
-  </ErrorBoundary>,
-);
+const rootElement = document.getElementById("root")!;
+void initI18n().finally(() => {
+  createRoot(rootElement).render(
+    <ErrorBoundary>
+      <StrictMode>
+        <BrowserRouter>
+          <App />
+        </BrowserRouter>
+      </StrictMode>
+    </ErrorBoundary>,
+  );
+});

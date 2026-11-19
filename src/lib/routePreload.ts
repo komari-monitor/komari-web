@@ -24,7 +24,7 @@ export const markRouteCommitted = (pathname: string) => {
   committedPath = pathname;
 };
 
-export function preloadRoute(url: string | URL) {
+export function preloadRouteChunks(url: string | URL) {
   let target: URL;
   try {
     target = new URL(url, window.location.href);
@@ -36,6 +36,17 @@ export function preloadRoute(url: string | URL) {
     const handle = match.route.handle as PreloadHandle | undefined;
     void handle?.preload?.().catch(() => undefined);
   }
+}
+
+export function preloadRoute(url: string | URL) {
+  let target: URL;
+  try {
+    target = new URL(url, window.location.href);
+  } catch {
+    return;
+  }
+  if (target.origin !== window.location.origin) return;
+  preloadRouteChunks(target);
   for (const entry of routeDataRegistry) {
     const matched = matchPath({ path: entry.pattern, end: true }, target.pathname);
     if (!matched) continue;

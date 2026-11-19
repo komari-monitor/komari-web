@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { useTranslation } from "react-i18next";
 import { Eye, EyeOff, X } from "lucide-react";
 import MetricLegendItem from "@/components/MetricLegendItem";
@@ -125,4 +126,4 @@ const ChartLegend = ({
   );
 };
 
-export default ChartLegend;
+export default memo(ChartLegend);

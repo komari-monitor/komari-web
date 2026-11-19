@@ -1,15 +1,18 @@
-import { useTheme } from "next-themes"
+import { useContext } from "react"
 import { createPortal } from "react-dom"
 import { Toaster as Sonner, type ToasterProps } from "sonner"
+import { ThemeContext } from "@/contexts/ThemeContext"
+import { useSystemTheme } from "@/hooks/useSystemTheme"
 
 const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = "system" } = useTheme()
+  const { appearance } = useContext(ThemeContext)
+  const resolvedAppearance = useSystemTheme(appearance)
 
   return (
     createPortal(
       <div className="km-toaster-portal" data-km-toaster-portal="">
         <Sonner
-          theme={theme as ToasterProps["theme"]}
+          theme={resolvedAppearance as ToasterProps["theme"]}
           className="toaster group km-ui-toaster"
           style={
             {

@@ -118,8 +118,23 @@ interface LiveDataContextType {
   onRefresh: (callback: (data: LiveDataResponse) => void) => () => void;
 }
 
+interface LiveDataMetaContextType {
+  /** 在线节点列表（仅在在线集合实际增减时变化，不随 2 秒数值刷新触发重渲染） */
+  online: string[] | null;
+  hasLiveData: boolean;
+  showCallout: boolean;
+  onRefresh: (callback: (data: LiveDataResponse) => void) => () => void;
+}
+
 const LiveDataContext = createContext<LiveDataContextType>({
   live_data: null,
+  showCallout: true,
+  onRefresh: () => () => {},
+});
+
+const LiveDataMetaContext = createContext<LiveDataMetaContextType>({
+  online: null,
+  hasLiveData: false,
   showCallout: true,
   onRefresh: () => () => {},
 });
@@ -229,18 +244,28 @@ export const LiveDataProvider: React.FC<{ children: React.ReactNode }> = ({
     };
   }, [call, notifyRefreshCallbacks]);
 
+  const online = live_data?.data?.online ?? null;
+  const hasLiveData = live_data !== null;
+  const metaContextValue = useMemo(
+    () => ({ online, hasLiveData, showCallout, onRefresh }),
+    [online, hasLiveData, showCallout, onRefresh],
+  );
   const contextValue = useMemo(
     () => ({ live_data, showCallout, onRefresh }),
     [live_data, showCallout, onRefresh],
   );
 
   return (
-    <LiveDataContext.Provider value={contextValue}>
-      {children}
-    </LiveDataContext.Provider>
+    <LiveDataMetaContext.Provider value={metaContextValue}>
+      <LiveDataContext.Provider value={contextValue}>
+        {children}
+      </LiveDataContext.Provider>
+    </LiveDataMetaContext.Provider>
   );
 };
 
 export const useLiveData = () => useContext(LiveDataContext);
+// eslint-disable-next-line react-refresh/only-export-components
+export const useLiveDataMeta = () => useContext(LiveDataMetaContext);
 
 export default LiveDataContext;

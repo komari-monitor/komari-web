@@ -102,8 +102,13 @@ export const PublicInfoProvider: React.FC<{ children: React.ReactNode }> = ({
     void refresh();
   }, [refresh]);
 
+  const contextValue = React.useMemo(
+    () => ({ publicInfo, isLoading, error, refresh }),
+    [publicInfo, isLoading, error, refresh],
+  );
+
   return (
-    <PublicInfoContext.Provider value={{ publicInfo, isLoading, error, refresh }}>
+    <PublicInfoContext.Provider value={contextValue}>
       {children}
     </PublicInfoContext.Provider>
   );

@@ -1,7 +1,4 @@
 import { Cross1Icon, ExitIcon } from "@radix-ui/react-icons";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import "github-markdown-css/github-markdown.css";
 import {
   Button,
   Callout,
@@ -18,7 +15,10 @@ import {
   MOTION_SPRING,
   SURFACE_MOTION,
 } from "@/lib/motion";
-import { useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import { lazy, Suspense, useEffect, useMemo, useRef, useState, type ReactNode } from "react";
+import Loading from "@/components/loading";
+
+const MarkdownRenderer = lazy(() => import("@/components/MarkdownRenderer"));
 import { useTranslation } from "react-i18next";
 import { useLocation /*useNavigate*/ } from "react-router-dom";
 import ColorSwitch from "../ColorSwitch";
@@ -300,9 +300,9 @@ const AdminPanelBar = ({ content, onboardingReady = false }: AdminPanelBarProps)
                               )}
                             </div>
                             <div className="km-update-changelog markdown-body break-words">
-                              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                                {r.body || ""}
-                              </ReactMarkdown>
+                              <Suspense fallback={<Loading compact reveal={false} />}>
+                                <MarkdownRenderer>{r.body || ""}</MarkdownRenderer>
+                              </Suspense>
                             </div>
                             <div
                               style={{

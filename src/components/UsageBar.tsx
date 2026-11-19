@@ -1,7 +1,5 @@
 import { Box, Flex, Text } from "@radix-ui/themes";
 import React from "react";
-import { motion } from "motion/react";
-import { MOTION_SPRING } from "@/lib/motion";
 import { Skeletonize, skeletonText } from "@/components/ui/skeleton";
 
 interface UsageBarProps {
@@ -9,7 +7,7 @@ interface UsageBarProps {
   label: string; // Label for the bar (e.g., "CPU", "Memory", "Disk")
   compact?: boolean; // Whether to show in compact mode (for tables)
   max?: number; // Maximum value for the bar (e.g., total RAM, total disk space)
-  /** live 数据还没到：百分比画成与文字等宽的条，进度条停在 0，到达后从 0 弹簧到真实值 */
+  /** live 数据还没到：百分比画成与文字等宽的条，进度条停在 0，到达后平滑过渡到真实值 */
   loading?: boolean;
 }
 
@@ -27,22 +25,16 @@ const UsageBar = React.memo(
     const ratio = Math.min(Math.max(clampedValue / 100, 0), 1);
     const barColor = usageColor(clampedValue);
 
-    // 进度条用弹簧缩放：连续刷新时数值变化会「追」着走，而不是每帧硬跳
+    // 进度条采用纯 CSS transform 过渡（合成器线程执行，不占用主线程 rAF 与常驻 will-change 显存）
     const bar = (
-      <motion.div
+      <div
         className="km-usage-bar-fill"
-        initial={false}
-        animate={{ scaleX: ratio }}
-        transition={{ scaleX: { ...MOTION_SPRING.soft, restDelta: 0.0005 } }}
         style={{
           height: "100%",
           width: "100%",
           borderRadius: "inherit",
           transformOrigin: "left center",
-          willChange: "transform",
-          // global.css 的 .km-usage-bar-track > div 给 transform 配了 CSS 过渡，会和弹簧
-          // 每帧写入的 scaleX 叠成「二次缓动」，追不上数值；transform 只交给弹簧，颜色仍走 CSS 过渡
-          transition: "background-color var(--km-dur-base) var(--km-ease-standard)",
+          transform: `scaleX(${ratio})`,
           backgroundColor: `var(--${barColor}-9)`,
         }}
       />

@@ -1,4 +1,4 @@
-import type { Ref } from "react";
+import { memo, useMemo, type Ref } from "react";
 import { SegmentedControl } from "@radix-ui/themes";
 import { useTranslation } from "react-i18next";
 import { ChartLine, Trash2 } from "lucide-react";
@@ -17,15 +17,22 @@ import {
   METRIC_X_AXIS_PROPS,
   METRIC_Y_AXIS_PROPS,
 } from "@/components/metricChartShared";
+import type { MetricSeries, PublicPingTask } from "@/types/metrics";
+import type { RecordFormat } from "@/utils/RecordHelper";
 import ChartLegend, { type ChartLegendProps } from "./ChartLegend";
 import { formatValue, labelFormatter } from "./format";
-import type { ChartView } from "./series";
+import { buildChartView } from "./series";
 import SortableChartCard from "./SortableChartCard";
-import type { ChartSize, DashboardChart } from "./types";
+import type { ChartSize, DashboardChart, NodeLike } from "./types";
 
 type ChartCardProps = {
   chart: DashboardChart;
-  view: ChartView;
+  metricSeries: MetricSeries[];
+  records: RecordFormat[];
+  node: NodeLike | undefined;
+  pingTaskMap: ReadonlyMap<string, PublicPingTask>;
+  isRealtime: boolean;
+  ewmaEnabled: boolean;
   /** 这张卡片依赖的数据还在路上：卡片原位进入骨架态 */
   busy: boolean;
   /** 提示框时间格式：不足 24 小时只显示时分秒 */
@@ -40,7 +47,12 @@ type ChartCardProps = {
 /** 一张可拖拽排序的指标图表卡片：标题与最新值、S/M/L 尺寸、删除；图例；折线图 */
 const ChartCard = ({
   chart,
-  view,
+  metricSeries,
+  records,
+  node,
+  pingTaskMap,
+  isRealtime,
+  ewmaEnabled,
   busy,
   displayRangeHours,
   onSizeChange,
@@ -49,6 +61,36 @@ const ChartCard = ({
   ref,
 }: ChartCardProps) => {
   const { t } = useTranslation();
+  const { definitionMap } = legendProps;
+  const view = useMemo(
+    () =>
+      buildChartView({
+        chart,
+        metricSeries,
+        records,
+        node,
+        definitionMap,
+        pingTaskMap,
+        isRealtime,
+        ewmaEnabled,
+        t,
+      }),
+    [
+      chart,
+      metricSeries,
+      records,
+      node,
+      definitionMap,
+      pingTaskMap,
+      isRealtime,
+      ewmaEnabled,
+      t,
+    ],
+  );
+  const tooltipLabelFormatter = useMemo(
+    () => labelFormatter(displayRangeHours),
+    [displayRangeHours],
+  );
   const showEmpty = view.rows.length === 0 || view.series.length === 0;
 
   return (
@@ -145,7 +187,7 @@ const ChartCard = ({
               }}
               content={
                 <ChartTooltipContent
-                  labelFormatter={labelFormatter(displayRangeHours)}
+                  labelFormatter={tooltipLabelFormatter}
                   indicator="dot"
                 />
               }
@@ -172,4 +214,4 @@ const ChartCard = ({
   );
 };
 
-export default ChartCard;
+export default memo(ChartCard);

@@ -56,8 +56,12 @@ export const NodeDetailsProvider: React.FC<{ children: React.ReactNode }> = ({ c
     void reload();
   }, [reload]);
   const nodeDetail = result.data ?? NO_NODES;
+  const contextValue = React.useMemo(
+    () => ({ nodeDetail, isLoading, error, refresh }),
+    [nodeDetail, isLoading, error, refresh],
+  );
   return (
-    <NodeDetailsContext.Provider value={{ nodeDetail, isLoading, error, refresh }}>
+    <NodeDetailsContext.Provider value={contextValue}>
       {children}
     </NodeDetailsContext.Provider>
   );

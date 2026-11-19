@@ -1,4 +1,3 @@
-import "@xterm/xterm/css/xterm.css";
 import { Theme } from "@radix-ui/themes";
 import TerminalNotices from "./TerminalNotices";
 import TerminalResourceMonitor from "./TerminalResourceMonitor";

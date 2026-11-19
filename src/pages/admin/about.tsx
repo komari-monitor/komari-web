@@ -1,7 +1,4 @@
-import { useState, useEffect } from "react";
-import ReactMarkdown from "react-markdown";
-import remarkGfm from "remark-gfm";
-import "github-markdown-css/github-markdown.css";
+import { lazy, Suspense, useState, useEffect } from "react";
 import { Skeletonize, skeletonText } from "@/components/ui/skeleton";
 import { AutoHeight, SlideSwap } from "@/components/motion";
 import { useTranslation } from "react-i18next";
@@ -10,11 +7,14 @@ import { SegmentedControl } from "@radix-ui/themes";
 import { Apache2_LICENSE, MIT_LICENSE } from "@/utils/field";
 import webDependencies from "@/utils/openSource.web.json";
 import goDependencies from "@/utils/openSource.go.json";
-import { getEula } from "@/utils/eula";
 import { SettingCardCollapse } from "@/components/admin/SettingCard";
 import PageHeader from "@/components/PageHeader";
 import { useRouteQuery } from "@/lib/routeData";
 import { aboutReadmeQuery } from "@/routeQueries/system";
+
+const loadMarkdownRenderer = () => import("@/components/MarkdownRenderer");
+const MarkdownRenderer = lazy(loadMarkdownRenderer);
+const loadEulaModule = () => import("@/utils/eula");
 /**
  * README 还没下载完时的占位：与 markdown-body 同样的标签结构（标题、段落、列表），
  * Skeletonize 把文字画成等宽的条；README 到达后外层 AutoHeight 把高度弹簧到真实长度。
@@ -42,6 +42,17 @@ export default function AboutPage() {
   const { t, i18n } = useTranslation();
   const [view, setView] = useState("open_source");
   const [direction, setDirection] = useState(1);
+  const [eulaText, setEulaText] = useState<string>("");
+  useEffect(() => {
+    if (view !== "eula") return;
+    let active = true;
+    void loadEulaModule().then(({ getEula }) => {
+      if (active) setEulaText(getEula(i18n.language));
+    });
+    return () => {
+      active = false;
+    };
+  }, [view, i18n.language]);
   // README 在 Readme 分段里才显示，切换页面时不等它：routePreload 已提前请求，
   // 挂载后再接手（不随导航挂起），用户切到 Readme 时多半已经到了，没到就显示原来的骨架
   const [readmeArmed, setReadmeArmed] = useState(false);
@@ -79,10 +90,20 @@ export default function AboutPage() {
         <SegmentedControl.Item value="open_source">
           {t("about.open_source_title")}
         </SegmentedControl.Item>
-        <SegmentedControl.Item value="eula">
+        <SegmentedControl.Item
+          value="eula"
+          onPointerEnter={() => void loadEulaModule()}
+          onFocus={() => void loadEulaModule()}
+        >
           {t("eula.title")}
         </SegmentedControl.Item>
-        <SegmentedControl.Item value="readme">Readme</SegmentedControl.Item>
+        <SegmentedControl.Item
+          value="readme"
+          onPointerEnter={() => void loadMarkdownRenderer()}
+          onFocus={() => void loadMarkdownRenderer()}
+        >
+          Readme
+        </SegmentedControl.Item>
       </SegmentedControl.Root>
       {/* surface 层：三段内容切换时按方向轻微位移 + 淡入 */}
       <AutoHeight className="overflow-x-clip">
@@ -93,7 +114,11 @@ export default function AboutPage() {
             return (
               <>
                 <div className="km-about-license license-text p-km-block border rounded-md bg-accent-1 flex flex-col gap-2">
-                  <pre className="text-wrap">{getEula(i18n.language)}</pre>
+                  <Skeletonize loading={!eulaText}>
+                    <pre className="text-wrap">
+                      {eulaText || skeletonText(48)}
+                    </pre>
+                  </Skeletonize>
                 </div>
               </>
             );
@@ -142,10 +167,9 @@ export default function AboutPage() {
                     {readmeFailed ? (
                       <p className="text-sm text-muted-foreground">README unavailable.</p>
                     ) : markdown ? (
-                      <ReactMarkdown
-                        remarkPlugins={[remarkGfm]}
-                        children={markdown}
-                      />
+                      <Suspense fallback={<ReadmePlaceholder />}>
+                        <MarkdownRenderer>{markdown}</MarkdownRenderer>
+                      </Suspense>
                     ) : (
                       <ReadmePlaceholder />
                     )}

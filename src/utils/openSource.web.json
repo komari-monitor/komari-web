@@ -80,7 +80,7 @@
     "name": "@tailwindcss/vite",
     "version": "4.1.5",
     "license": "MIT",
-    "dev": false,
+    "dev": true,
     "url": "https://www.npmjs.com/package/@tailwindcss/vite"
   },
   {
@@ -206,7 +206,7 @@
     "name": "dotenv",
     "version": "16.5.0",
     "license": "BSD-2-Clause",
-    "dev": false,
+    "dev": true,
     "url": "https://www.npmjs.com/package/dotenv"
   },
   {
@@ -252,13 +252,6 @@
     "url": "https://www.npmjs.com/package/i18next"
   },
   {
-    "name": "i18next-browser-languagedetector",
-    "version": "8.1.0",
-    "license": "MIT",
-    "dev": false,
-    "url": "https://www.npmjs.com/package/i18next-browser-languagedetector"
-  },
-  {
     "name": "lucide-react",
     "version": "0.511.0",
     "license": "ISC",
@@ -278,13 +271,6 @@
     "license": "MIT",
     "dev": false,
     "url": "https://www.npmjs.com/package/motion"
-  },
-  {
-    "name": "next-themes",
-    "version": "0.4.6",
-    "license": "MIT",
-    "dev": false,
-    "url": "https://www.npmjs.com/package/next-themes"
   },
   {
     "name": "react",
@@ -318,7 +304,7 @@
     "name": "react-router-dom",
     "version": "7.16.0",
     "license": "MIT",
-    "dev": true,
+    "dev": false,
     "url": "https://www.npmjs.com/package/react-router-dom"
   },
   {
@@ -360,7 +346,7 @@
     "name": "tailwindcss",
     "version": "4.1.5",
     "license": "MIT",
-    "dev": false,
+    "dev": true,
     "url": "https://www.npmjs.com/package/tailwindcss"
   },
   {
@@ -373,9 +359,9 @@
   {
     "name": "twemoji",
     "version": "14.0.2",
-    "license": "MIT AND CC-BY-4.0",
+    "license": "CC-BY-4.0",
     "dev": false,
-    "url": "https://www.npmjs.com/package/twemoji"
+    "url": "https://github.com/twitter/twemoji"
   },
   {
     "name": "typescript",
@@ -404,13 +390,6 @@
     "license": "MIT",
     "dev": true,
     "url": "https://www.npmjs.com/package/vite"
-  },
-  {
-    "name": "vite-plugin-pages",
-    "version": "0.33.0",
-    "license": "MIT",
-    "dev": true,
-    "url": "https://www.npmjs.com/package/vite-plugin-pages"
   },
   {
     "name": "vite-plugin-pwa",

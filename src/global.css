@@ -451,11 +451,10 @@ body, * {
   transition: var(--km-transition-colors);
 }
 
-/* 进度条填充：由 CSS 变量驱动，宽度变化更顺滑 */
+/* 进度条填充：纯 CSS 合成器过渡，不常驻 will-change 避免百卡场景占用过多 GPU 图层显存 */
 .km-usage-bar-track > div {
   transition: transform var(--km-dur-slow) var(--km-ease-out),
     background-color var(--km-dur-base) var(--km-ease-standard);
-  will-change: transform;
 }
 
 /* 可折叠内容通用动画（不依赖 JS 时的降级方案） */

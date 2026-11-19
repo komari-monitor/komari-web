@@ -1,8 +1,11 @@
-import React, { useState, useRef, useCallback, useEffect } from "react";
-import { Popover } from "@radix-ui/themes";
+import React, { lazy, Suspense, useState, useRef, useCallback, useEffect } from "react";
+import { Card, Popover } from "@radix-ui/themes";
 import { motion } from "motion/react";
 import { CONTROL_MOTION, MOTION_SPRING, MOTION_TRANSITION } from "@/lib/motion";
-import MiniPingChart from "./MiniPingChart";
+import Loading from "@/components/loading";
+
+const loadMiniPingChart = () => import("./MiniPingChart");
+const MiniPingChart = lazy(loadMiniPingChart);
 
 interface FloatMiniPingChartProps {
   uuid: string;
@@ -32,6 +35,7 @@ const MiniPingChartFloat: React.FC<FloatMiniPingChartProps> = ({
   useEffect(() => clearHoverTimeout, [clearHoverTimeout]);
 
   const handleMouseEnter = useCallback(() => {
+    void loadMiniPingChart();
     clearHoverTimeout();
     hoverTimeoutRef.current = window.setTimeout(() => {
       setOpen(true);
@@ -46,6 +50,7 @@ const MiniPingChartFloat: React.FC<FloatMiniPingChartProps> = ({
   }, [clearHoverTimeout]);
 
   const handleClick = useCallback(() => {
+    void loadMiniPingChart();
     clearHoverTimeout();
     setOpen((prev) => !prev);
   }, [clearHoverTimeout]);
@@ -95,12 +100,24 @@ const MiniPingChartFloat: React.FC<FloatMiniPingChartProps> = ({
               opacity: MOTION_TRANSITION.fade,
             }}
           >
-            <MiniPingChart
-              hours={hours}
-              uuid={uuid}
-              width="100%"
-              height={chartHeight}
-            />
+            <Suspense
+              fallback={
+                <Card
+                  size="2"
+                  style={{ width: "100%", height: chartHeight }}
+                  className="km-mini-ping-chart flex items-center justify-center"
+                >
+                  <Loading reveal={false} />
+                </Card>
+              }
+            >
+              <MiniPingChart
+                hours={hours}
+                uuid={uuid}
+                width="100%"
+                height={chartHeight}
+              />
+            </Suspense>
           </motion.div>
         )}
       </Popover.Content>

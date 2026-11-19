@@ -1,4 +1,4 @@
-import React, { useCallback, useMemo, useRef, useState } from "react";
+import React, { lazy, Suspense, useCallback, useMemo, useRef, useState } from "react";
 import {
   Table,
   TableBody,
@@ -7,7 +7,7 @@ import {
   TableHeader,
   TableRow,
 } from "./ui/table";
-import { Badge, Flex, IconButton } from "@radix-ui/themes";
+import { Badge, Card, Flex, IconButton } from "@radix-ui/themes";
 import { useTranslation } from "react-i18next";
 import { Link } from "react-router-dom";
 import { ChevronRight, ChevronUp } from "lucide-react";
@@ -23,7 +23,9 @@ import Flag from "./Flag";
 import PriceTags from "./PriceTags";
 import Tips from "./ui/tips";
 import { DetailsGrid } from "./DetailsGrid";
-import MiniPingChart from "./MiniPingChart";
+import Loading from "@/components/loading";
+const loadMiniPingChart = () => import("./MiniPingChart");
+const MiniPingChart = lazy(loadMiniPingChart);
 import { getOSImage } from "@/utils";
 import { usePublicInfo } from "@/contexts/PublicInfoContext";
 import { AnimatePresence, motion } from "motion/react";
@@ -64,6 +66,15 @@ interface SortState {
   order: SortOrder;
 }
 
+const LIVE_SORT_FIELDS = new Set<SortField>([
+  "cpu",
+  "ram",
+  "disk",
+  "networkUp",
+  "networkDown",
+  "totalUp",
+  "totalDown",
+]);
 
 const NodeTable: React.FC<NodeTableProps> = ({ nodes, liveData, onlineSet, liveLoading = false }) => {
   const [t] = useTranslation();
@@ -74,12 +85,6 @@ const NodeTable: React.FC<NodeTableProps> = ({ nodes, liveData, onlineSet, liveL
   const offlineServerPosition =
     publicInfo?.theme_settings?.offlineServerPosition;
   const [expandedRows, setExpandedRows] = useState<Set<string>>(new Set());
-  // 小骨架：只包住数值本身；live 到达时同一批 DOM 上条淡出、数字淡入
-  const sk = (node: React.ReactNode, chars = 7) => (
-    <Skeletonize as="span" loading={liveLoading}>
-      {liveLoading ? skeletonText(chars) : node}
-    </Skeletonize>
-  );
   const [sortState, setSortState] = useState<SortState>({
     field: null,
     order: "default",
@@ -129,23 +134,24 @@ const NodeTable: React.FC<NodeTableProps> = ({ nodes, liveData, onlineSet, liveL
     [sortState.field, sortState.order],
   );
 
-  const getNodeData = useCallback(
-    (uuid: string): Record => liveData.data[uuid] || EMPTY_LIVE_RECORD,
-    [liveData.data],
-  );
+  // 仅当按实时指标列排序时才依赖 liveData.data，默认/名称/系统/状态/价格排序不随 2 秒实时推送重排
+  const sortLiveData =
+    sortState.field && sortState.order !== "default" && LIVE_SORT_FIELDS.has(sortState.field)
+      ? liveData.data
+      : null;
 
   // 排序节点函数
   const sortedNodes = useMemo(() => [...nodes].sort((a, b) => {
-    const aOnline = onlineSet.has(a.uuid);
-    const bOnline = onlineSet.has(b.uuid);
-    const aData = getNodeData(a.uuid);
-    const bData = getNodeData(b.uuid);
-
     // 如果没有排序字段或为默认排序，使用原来的排序逻辑
     if (!sortState.field || sortState.order === "default") {
       // 遵循后台离线节点位置设置（First/Keep/Last），再按权重排序
       return compareNodesByStatus(a, b, onlineSet, offlineServerPosition);
     }
+
+    const aOnline = onlineSet.has(a.uuid);
+    const bOnline = onlineSet.has(b.uuid);
+    const aData = sortLiveData?.[a.uuid] || EMPTY_LIVE_RECORD;
+    const bData = sortLiveData?.[b.uuid] || EMPTY_LIVE_RECORD;
 
     // 自定义排序逻辑
     let comparison = 0;
@@ -211,7 +217,16 @@ const NodeTable: React.FC<NodeTableProps> = ({ nodes, liveData, onlineSet, liveL
     }
 
     return sortState.order === "desc" ? -comparison : comparison;
-  }), [nodes, onlineSet, getNodeData, offlineServerPosition, sortState]);
+  }), [nodes, onlineSet, sortLiveData, offlineServerPosition, sortState]);
+
+  const handleNavigateInstance = useCallback(
+    (uuid: string) => {
+      navigateWithTransition(`/instance/${uuid}`, {
+        sharedHero: uuid,
+      });
+    },
+    [navigateWithTransition],
+  );
 
   return (
     <div className="km-node-table overflow-x-auto rounded-xl node-table-container">
@@ -337,212 +352,257 @@ const NodeTable: React.FC<NodeTableProps> = ({ nodes, liveData, onlineSet, liveL
             被筛掉的行先淡出，其余行再用 layout="position" 补位。
           */}
           <AnimatePresence initial={false}>
-          {sortedNodes.map((node) => {
-            const isOnline = onlineSet.has(node.uuid);
-            const nodeData = getNodeData(node.uuid);
-            const isExpanded = expandedRows.has(node.uuid);
-
-            const memoryUsagePercent = node.mem_total
-              ? (nodeData.ram.used / node.mem_total) * 100
-              : 0;
-            const diskUsagePercent = node.disk_total
-              ? (nodeData.disk.used / node.disk_total) * 100
-              : 0;
-
-            return (
-              <React.Fragment key={node.uuid}>
-                {/*
-                  content 层：排序/筛选导致的行重排用 layout="position" 补位，
-                  看得出「这一行挪到了那里」；只补位置不补尺寸，文字不会被拉伸。
-                  className 与 ui/table 的 TableRow 完全一致（保留主题选择器）。
-                */}
-                <motion.tr
-                  data-slot="table-row"
-                  layout="position"
-                  initial={{ opacity: 0 }}
-                  animate={{ opacity: 1 }}
-                  exit={{ opacity: 0, transition: MOTION_TRANSITION.fadeOut }}
-                  transition={{
-                    layout: settledLayoutTransition(orderSettled),
-                    opacity: MOTION_TRANSITION.fadeIn,
-                  }}
-                  className="km-ui-table-row border-b border-[var(--accent-2)] hover:bg-[var(--accent-2)] data-[state=selected]:bg-[var(--accent-3)] km-node-table-row hover:bg-accent-2 table-row-hover"
-                  onClick={() => toggleRowExpansion(node.uuid)}
-                  aria-expanded={isExpanded}
-                >
-                  <TableCell>
-                    <div className="flex justify-center items-center">
-                      <IconButton
-                        variant="ghost"
-                        size="1"
-                        className="expand-button"
-                        aria-label="Expand row"
-                      >
-                        {/* control 层：箭头用弹簧转向，连点展开/收起会顺势反转 */}
-                        <motion.span
-                          className="inline-flex"
-                          initial={false}
-                          animate={{ rotate: isExpanded ? 90 : 0 }}
-                          transition={CONTROL_MOTION.transition}
-                        >
-                          <ChevronRight size={16} />
-                        </motion.span>
-                      </IconButton>
-                    </div>
-                  </TableCell>
-                  <TableCell className="node-name-cell">
-                    <Flex align="center" gap="1">
-                      <Flag flag={node.region} />
-                      <Link
-                        to={`/instance/${node.uuid}`}
-                        className="hover:underline"
-                        onPointerEnter={preloadInstancePage}
-                        onFocus={preloadInstancePage}
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          if (
-                            e.metaKey ||
-                            e.ctrlKey ||
-                            e.shiftKey ||
-                            e.altKey ||
-                            e.button !== 0
-                          ) {
-                            return;
-                          }
-                          e.preventDefault();
-                          // 共享元素：表格里的节点名同样「飞」到详情页标题
-                          navigateWithTransition(`/instance/${node.uuid}`, {
-                            sharedHero: node.uuid,
-                          });
-                        }}
-                      >
-                        <Flex direction="column" gap="0">
-                          <TableNodeName uuid={node.uuid} name={node.name} />
-                          {liveLoading ? (
-                            <label className="-mt-1 text-muted-foreground text-xs">
-                              {sk(null, 10)}
-                            </label>
-                          ) : isOnline ? (
-                            <label className="-mt-1 text-muted-foreground text-xs">
-                              {formatUptime(nodeData.uptime, t)}
-                            </label>
-                          ) : (
-                            <label className="-mt-1 text-muted-foreground">
-                              -
-                            </label>
-                          )}
-                        </Flex>
-                      </Link>
-                    </Flex>
-                  </TableCell>
-
-                  <TableCell className="w-4">
-                    <img
-                      src={getOSImage(node.os)}
-                      alt={node.os}
-                      className="w-5 h-5 mr-2"
-                    />
-                  </TableCell>
-
-                  <TableCell>
-                    <Flex
-                      direction="row"
-                      justify="start"
-                      align="center"
-                      gap="1"
-                    >
-                      {/* feedback 层：只在在线状态真的翻转时弹一下（与卡片视图一致） */}
-                      {/* live 未到：灰色徽标 + 骨架文字，不先显示「离线」 */}
-                      <StatusFeedback state={liveLoading ? "loading" : isOnline}>
-                        <Badge
-                          color={liveLoading ? "gray" : isOnline ? "green" : "red"}
-                          variant="soft"
-                          size="1"
-                        >
-                          {liveLoading ? (
-                            <Skeletonize as="span" loading>
-                              {t("nodeCard.online")}
-                            </Skeletonize>
-                          ) : isOnline ? (
-                            t("nodeCard.online")
-                          ) : (
-                            t("nodeCard.offline")
-                          )}
-                        </Badge>
-                      </StatusFeedback>
-                      <AnimatePresence initial={false}>
-                        {nodeData.message && (
-                          <motion.span
-                            key="message"
-                            className="inline-flex"
-                            initial={{ opacity: 0, scale: 0.86 }}
-                            animate={{ opacity: 1, scale: 1 }}
-                            exit={{ opacity: 0, scale: 0.86, transition: MOTION_TRANSITION.fadeOut }}
-                            transition={MOTION_SPRING.pop}
-                          >
-                            <Tips color="#CE282E">{nodeData.message}</Tips>
-                          </motion.span>
-                        )}
-                      </AnimatePresence>
-                    </Flex>
-                  </TableCell>
-
-                  <TableCell>
-                    <div className="w-[100px]">
-                      <UsageBar label="" value={nodeData.cpu.usage} compact loading={liveLoading} />
-                    </div>
-                  </TableCell>
-
-                  <TableCell>
-                    <div className="w-[100px]">
-                      <UsageBar label="" value={memoryUsagePercent} compact loading={liveLoading} />
-                    </div>
-                  </TableCell>
-
-                  <TableCell>
-                    <div className="w-[100px]">
-                      <UsageBar label="" value={diskUsagePercent} compact loading={liveLoading} />
-                    </div>
-                  </TableCell>
-                  <TableCell>
-                    <PriceTags
-                      price={node.price}
-                      billing_cycle={node.billing_cycle}
-                      expired_at={node.expired_at}
-                      currency={node.currency}
-                      gap="1"
-                      tags={node.tags || ""}
-                    />
-                  </TableCell>
-                  <TableCell className="text-center min-w-[80px]">
-                    <label>{sk(<>↑{formatBytes(nodeData.network.up)}/s</>)}</label>
-                  </TableCell>
-                  <TableCell className="text-center min-w-[80px]">
-                    <label>{sk(<>↓{formatBytes(nodeData.network.down)}/s</>)}</label>
-                  </TableCell>
-                  <TableCell className="text-center min-w-[80px]">
-                    <label>{sk(<>↑{formatBytes(nodeData.network.totalUp)}</>)}</label>
-                  </TableCell>
-                  <TableCell className="text-center min-w-[80px]">
-                    <label>{sk(<>↓{formatBytes(nodeData.network.totalDown)}</>)}</label>
-                  </TableCell>
-                </motion.tr>
-
-                {/* 展开的详细信息行：同一个元素在展开/收起间弹簧切换，中途反向会保留速度 */}
-                <ExpandedRow
-                  open={isExpanded}
-                  node={node}
-                  nodeData={nodeData}
-                />
-              </React.Fragment>
-            );
-          })}
+            {sortedNodes.map((node) => (
+              <NodeTableRow
+                key={node.uuid}
+                node={node}
+                live={liveData.data[node.uuid]}
+                isOnline={onlineSet.has(node.uuid)}
+                isExpanded={expandedRows.has(node.uuid)}
+                liveLoading={liveLoading}
+                orderSettled={orderSettled}
+                layoutDependency={sortedNodes}
+                onToggleExpand={toggleRowExpansion}
+                onNavigateInstance={handleNavigateInstance}
+              />
+            ))}
           </AnimatePresence>
         </TableBody>
       </Table>
     </div>
   );
 };
+
+interface NodeTableRowProps {
+  node: NodeBasicInfo;
+  live: Record | undefined;
+  isOnline: boolean;
+  isExpanded: boolean;
+  liveLoading: boolean;
+  orderSettled: boolean;
+  layoutDependency: unknown;
+  onToggleExpand: (uuid: string) => void;
+  onNavigateInstance: (uuid: string) => void;
+}
+
+const NodeTableRow = React.memo(({
+  node,
+  live,
+  isOnline,
+  isExpanded,
+  liveLoading,
+  orderSettled,
+  layoutDependency,
+  onToggleExpand,
+  onNavigateInstance,
+}: NodeTableRowProps) => {
+  const [t] = useTranslation();
+  const nodeData = live || EMPTY_LIVE_RECORD;
+  const osImage = useMemo(() => getOSImage(node.os), [node.os]);
+  const memoryUsagePercent = node.mem_total
+    ? (nodeData.ram.used / node.mem_total) * 100
+    : 0;
+  const diskUsagePercent = node.disk_total
+    ? (nodeData.disk.used / node.disk_total) * 100
+    : 0;
+
+  const sk = (content: React.ReactNode, chars = 7) => (
+    <Skeletonize as="span" loading={liveLoading}>
+      {liveLoading ? skeletonText(chars) : content}
+    </Skeletonize>
+  );
+
+  return (
+    <>
+      {/*
+        content 层：排序/筛选导致的行重排用 layout="position" 补位，
+        看得出「这一行挪到了那里」；只补位置不补尺寸，文字不会被拉伸。
+        layoutDependency 锁定在列表顺序上，2 秒实时数值刷新跳过 DOM 布局测量。
+      */}
+      <motion.tr
+        data-slot="table-row"
+        layout="position"
+        layoutDependency={layoutDependency}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0, transition: MOTION_TRANSITION.fadeOut }}
+        transition={{
+          layout: settledLayoutTransition(orderSettled),
+          opacity: MOTION_TRANSITION.fadeIn,
+        }}
+        className="km-ui-table-row border-b border-[var(--accent-2)] hover:bg-[var(--accent-2)] data-[state=selected]:bg-[var(--accent-3)] km-node-table-row hover:bg-accent-2 table-row-hover"
+        onClick={() => onToggleExpand(node.uuid)}
+        aria-expanded={isExpanded}
+      >
+        <TableCell>
+          <div className="flex justify-center items-center">
+            <IconButton
+              variant="ghost"
+              size="1"
+              className="expand-button"
+              aria-label="Expand row"
+            >
+              {/* control 层：箭头用弹簧转向，连点展开/收起会顺势反转 */}
+              <motion.span
+                className="inline-flex"
+                initial={false}
+                animate={{ rotate: isExpanded ? 90 : 0 }}
+                transition={CONTROL_MOTION.transition}
+              >
+                <ChevronRight size={16} />
+              </motion.span>
+            </IconButton>
+          </div>
+        </TableCell>
+        <TableCell className="node-name-cell">
+          <Flex align="center" gap="1">
+            <Flag flag={node.region} />
+            <Link
+              to={`/instance/${node.uuid}`}
+              className="hover:underline"
+              onPointerEnter={preloadInstancePage}
+              onFocus={preloadInstancePage}
+              onClick={(e) => {
+                e.stopPropagation();
+                if (
+                  e.metaKey ||
+                  e.ctrlKey ||
+                  e.shiftKey ||
+                  e.altKey ||
+                  e.button !== 0
+                ) {
+                  return;
+                }
+                e.preventDefault();
+                // 共享元素：表格里的节点名同样「飞」到详情页标题
+                onNavigateInstance(node.uuid);
+              }}
+            >
+              <Flex direction="column" gap="0">
+                <TableNodeName uuid={node.uuid} name={node.name} />
+                {liveLoading ? (
+                  <label className="-mt-1 text-muted-foreground text-xs">
+                    {sk(null, 10)}
+                  </label>
+                ) : isOnline ? (
+                  <label className="-mt-1 text-muted-foreground text-xs">
+                    {formatUptime(nodeData.uptime, t)}
+                  </label>
+                ) : (
+                  <label className="-mt-1 text-muted-foreground">
+                    -
+                  </label>
+                )}
+              </Flex>
+            </Link>
+          </Flex>
+        </TableCell>
+
+        <TableCell className="w-4">
+          <img
+            src={osImage}
+            alt={node.os}
+            loading="lazy"
+            decoding="async"
+            className="w-5 h-5 mr-2"
+          />
+        </TableCell>
+
+        <TableCell>
+          <Flex
+            direction="row"
+            justify="start"
+            align="center"
+            gap="1"
+          >
+            {/* feedback 层：只在在线状态真的翻转时弹一下（与卡片视图一致） */}
+            {/* live 未到：灰色徽标 + 骨架文字，不先显示「离线」 */}
+            <StatusFeedback state={liveLoading ? "loading" : isOnline}>
+              <Badge
+                color={liveLoading ? "gray" : isOnline ? "green" : "red"}
+                variant="soft"
+                size="1"
+              >
+                {liveLoading ? (
+                  <Skeletonize as="span" loading>
+                    {t("nodeCard.online")}
+                  </Skeletonize>
+                ) : isOnline ? (
+                  t("nodeCard.online")
+                ) : (
+                  t("nodeCard.offline")
+                )}
+              </Badge>
+            </StatusFeedback>
+            <AnimatePresence initial={false}>
+              {nodeData.message && (
+                <motion.span
+                  key="message"
+                  className="inline-flex"
+                  initial={{ opacity: 0, scale: 0.86 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  exit={{ opacity: 0, scale: 0.86, transition: MOTION_TRANSITION.fadeOut }}
+                  transition={MOTION_SPRING.pop}
+                >
+                  <Tips color="#CE282E">{nodeData.message}</Tips>
+                </motion.span>
+              )}
+            </AnimatePresence>
+          </Flex>
+        </TableCell>
+
+        <TableCell>
+          <div className="w-[100px]">
+            <UsageBar label="" value={nodeData.cpu.usage} compact loading={liveLoading} />
+          </div>
+        </TableCell>
+
+        <TableCell>
+          <div className="w-[100px]">
+            <UsageBar label="" value={memoryUsagePercent} compact loading={liveLoading} />
+          </div>
+        </TableCell>
+
+        <TableCell>
+          <div className="w-[100px]">
+            <UsageBar label="" value={diskUsagePercent} compact loading={liveLoading} />
+          </div>
+        </TableCell>
+        <TableCell>
+          <PriceTags
+            price={node.price}
+            billing_cycle={node.billing_cycle}
+            expired_at={node.expired_at}
+            currency={node.currency}
+            gap="1"
+            tags={node.tags || ""}
+          />
+        </TableCell>
+        <TableCell className="text-center min-w-[80px]">
+          <label>{sk(<>↑{formatBytes(nodeData.network.up)}/s</>)}</label>
+        </TableCell>
+        <TableCell className="text-center min-w-[80px]">
+          <label>{sk(<>↓{formatBytes(nodeData.network.down)}/s</>)}</label>
+        </TableCell>
+        <TableCell className="text-center min-w-[80px]">
+          <label>{sk(<>↑{formatBytes(nodeData.network.totalUp)}</>)}</label>
+        </TableCell>
+        <TableCell className="text-center min-w-[80px]">
+          <label>{sk(<>↓{formatBytes(nodeData.network.totalDown)}</>)}</label>
+        </TableCell>
+      </motion.tr>
+
+      {/* 展开的详细信息行：同一个元素在展开/收起间弹簧切换，中途反向会保留速度 */}
+      <ExpandedRow
+        open={isExpanded}
+        node={node}
+        nodeData={nodeData}
+        layoutDependency={layoutDependency}
+      />
+    </>
+  );
+});
+NodeTableRow.displayName = "NodeTableRow";
 
 /** 表格里的节点名：被点击的那一行会拿到共享元素名，与详情页标题配对 */
 const TableNodeName = ({ uuid, name }: { uuid: string; name: string }) => {
@@ -589,14 +649,16 @@ const EXPAND_VARIANTS = {
   closed: { height: 0, opacity: 0 },
 };
 
-const ExpandedRow = ({
+const ExpandedRow = React.memo(({
   open,
   node,
   nodeData,
+  layoutDependency,
 }: {
   open: boolean;
   node: NodeBasicInfo;
   nodeData: Record;
+  layoutDependency: unknown;
 }) => {
   const [mounted, setMounted] = useState(open);
   const openRef = useRef(open);
@@ -606,6 +668,7 @@ const ExpandedRow = ({
   return (
     <motion.tr
       layout="position"
+      layoutDependency={layoutDependency}
       transition={{ layout: MOTION_SPRING.layout }}
       className="expanded-row"
       aria-hidden={!open}
@@ -631,7 +694,8 @@ const ExpandedRow = ({
       </TableCell>
     </motion.tr>
   );
-};
+});
+ExpandedRow.displayName = "ExpandedRow";
 
 // 展开的节点详细信息组件
 interface ExpandedNodeDetailsProps {
@@ -639,7 +703,7 @@ interface ExpandedNodeDetailsProps {
   nodeData: Record;
 }
 
-const ExpandedNodeDetails: React.FC<ExpandedNodeDetailsProps> = ({
+const ExpandedNodeDetails: React.FC<ExpandedNodeDetailsProps> = React.memo(({
   node,
   nodeData,
 }) => {
@@ -653,10 +717,23 @@ const ExpandedNodeDetails: React.FC<ExpandedNodeDetailsProps> = ({
         liveRecord={nodeData}
       />
       <div>
-        <MiniPingChart hours={24} uuid={node.uuid} />
+        <Suspense
+          fallback={
+            <Card
+              size="2"
+              style={{ width: "100%", height: 300 }}
+              className="km-mini-ping-chart flex items-center justify-center"
+            >
+              <Loading reveal={false} />
+            </Card>
+          }
+        >
+          <MiniPingChart hours={24} uuid={node.uuid} />
+        </Suspense>
       </div>
     </div>
   );
-};
+});
+ExpandedNodeDetails.displayName = "ExpandedNodeDetails";
 
 export default NodeTable;

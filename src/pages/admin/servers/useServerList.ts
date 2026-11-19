@@ -12,9 +12,40 @@ export default function useServerList() {
   const settingsLoading = settingsResult.data === undefined && !settingsResult.error;
 
   useEffect(() => {
-    const interval = setInterval(() => { refresh() }, 5000);
-    return () => clearInterval(interval);
-  }, [nodeDetail]);
+    let interval: ReturnType<typeof setInterval> | null = null;
+
+    const start = () => {
+      if (interval !== null) return;
+      interval = setInterval(() => {
+        refresh();
+      }, 5000);
+    };
+
+    const stop = () => {
+      if (interval === null) return;
+      clearInterval(interval);
+      interval = null;
+    };
+
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        stop();
+      } else {
+        refresh();
+        start();
+      }
+    };
+
+    if (!document.hidden) {
+      start();
+    }
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+
+    return () => {
+      stop();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
+  }, [refresh]);
 
   // NodeDetailsProvider 的 isLoading 只表示首次加载（从第一帧起为 true），之后的 5 秒刷新不会再置 true
   const pending = isLoading;

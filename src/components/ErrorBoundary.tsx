@@ -1,8 +1,6 @@
 import React from "react";
 import type { ErrorInfo, ReactNode } from "react";
-import { motion } from "motion/react";
 import i18n from "@/i18n/config";
-import { MOTION_DURATION, MOTION_EASE, MOTION_SPRING } from "@/lib/motion";
 
 interface ErrorBoundaryProps {
   children: ReactNode;
@@ -35,12 +33,9 @@ class ErrorBoundary extends React.Component<
       return (
         // 在 <Theme> 之外渲染，--space-N 不可用：用 Tailwind 原生档位（16/24/32/48）对齐间距系统
         <div className="km-error-boundary-page px-4 py-12">
-        <motion.div
-          // surface 层：崩溃页整体淡入 + 极小位移，不弹跳（此刻用户需要的是稳定）
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ y: MOTION_SPRING.soft, opacity: { duration: MOTION_DURATION.base, ease: MOTION_EASE.out } }}
-          className="km-error-boundary flex flex-col items-center justify-center gap-6 min-h-[300px] p-8 bg-gradient-to-br from-rose-50 to-red-50 border border-red-200 rounded-md shadow-md max-w-3xl mx-auto"
+        <div
+          // surface 层：崩溃页整体淡入 + 极小位移，使用纯 CSS 过渡，避免将 motion 拉进首屏入口包
+          className="km-error-boundary km-page-enter flex flex-col items-center justify-center gap-6 min-h-[300px] p-8 bg-gradient-to-br from-rose-50 to-red-50 border border-red-200 rounded-md shadow-md max-w-3xl mx-auto"
         >
           {/* 图标 → 标题 block；标题 → 说明 group；这一组 → 详情 → 按钮 section */}
           <div className="flex flex-col items-center gap-4">
@@ -98,7 +93,7 @@ class ErrorBoundary extends React.Component<
               {i18n.t("errorBoundary.go_to_home", "Go to Home")}
             </button>
           </div>
-        </motion.div>
+        </div>
         </div>
       );
     }

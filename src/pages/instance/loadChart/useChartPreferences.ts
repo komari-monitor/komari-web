@@ -1,5 +1,9 @@
+import { useCallback } from "react";
 import { useLocalStorage } from "@/hooks/useLocalStorage";
 import type { Aggregation, RenderSeries } from "./types";
+
+const hiddenKey = (chartId: string, series: RenderSeries) =>
+  `${chartId}:${series.stableKey}`;
 
 /** 持久化在 localStorage 的图表偏好：采样算法、EWMA 开关、每张图隐藏的曲线 */
 export function useChartPreferences() {
@@ -16,30 +20,38 @@ export function useChartPreferences() {
     {},
   );
 
-  const hiddenKey = (chartId: string, series: RenderSeries) =>
-    `${chartId}:${series.stableKey}`;
+  const isSeriesHidden = useCallback(
+    (chartId: string, series: RenderSeries) =>
+      hiddenSeries[hiddenKey(chartId, series)] === true,
+    [hiddenSeries],
+  );
 
-  const isSeriesHidden = (chartId: string, series: RenderSeries) =>
-    hiddenSeries[hiddenKey(chartId, series)] === true;
+  const toggleSeries = useCallback(
+    (chartId: string, series: RenderSeries) => {
+      const key = hiddenKey(chartId, series);
+      setHiddenSeries((current) => ({
+        ...current,
+        [key]: !current[key],
+      }));
+    },
+    [setHiddenSeries],
+  );
 
-  const toggleSeries = (chartId: string, series: RenderSeries) => {
-    const key = hiddenKey(chartId, series);
-    setHiddenSeries((current) => ({
-      ...current,
-      [key]: !current[key],
-    }));
-  };
-
-  const toggleAllSeries = (chartId: string, series: RenderSeries[]) => {
-    const allHidden = series.length > 0 && series.every((item) => isSeriesHidden(chartId, item));
-    setHiddenSeries((current) => {
-      const next = { ...current };
-      for (const item of series) {
-        next[hiddenKey(chartId, item)] = !allHidden;
-      }
-      return next;
-    });
-  };
+  const toggleAllSeries = useCallback(
+    (chartId: string, series: RenderSeries[]) => {
+      setHiddenSeries((current) => {
+        const allHidden =
+          series.length > 0 &&
+          series.every((item) => current[hiddenKey(chartId, item)] === true);
+        const next = { ...current };
+        for (const item of series) {
+          next[hiddenKey(chartId, item)] = !allHidden;
+        }
+        return next;
+      });
+    },
+    [setHiddenSeries],
+  );
 
   return {
     aggregation,

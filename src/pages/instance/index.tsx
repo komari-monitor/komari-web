@@ -1,12 +1,12 @@
-import { useCallback, useEffect, useLayoutEffect, useState, useMemo } from "react";
+import { memo, useCallback, useEffect, useLayoutEffect, useState, useMemo } from "react";
 import { compareNodesByStatus } from "@/utils/nodeOrder";
 import { useParams, useNavigate } from "react-router-dom";
-import { useLiveData } from "../../contexts/LiveDataContext";
+import { useLiveDataMeta } from "../../contexts/LiveDataContext";
 import { useTranslation } from "react-i18next";
 import type { Record } from "../../types/LiveData";
 import Flag from "../../components/Flag";
 import { Card, Flex, Text } from "@radix-ui/themes";
-import { useNodeList } from "@/contexts/NodeListContext";
+import { useNodeList, type NodeBasicInfo } from "@/contexts/NodeListContext";
 import { liveDataToRecords } from "@/utils/RecordHelper";
 import LoadChart from "./LoadChart";
 import { DetailsGrid } from "@/components/DetailsGrid";
@@ -21,10 +21,147 @@ import { Skeletonize, skeletonText } from "@/components/ui/skeleton";
 import { api } from "@/lib/http";
 import { useOrderSettled } from "@/hooks/useOrderSettled";
 
-export default function InstancePage() {
+type GroupedNodeSection = {
+  group: string | null;
+  nodes: NodeBasicInfo[];
+};
+
+const InstanceServerList = memo(function InstanceServerList({
+  show,
+  serverListLoading,
+  groupedNodes,
+  activeUuid,
+  orderSettled,
+  onSelect,
+}: {
+  show: boolean;
+  serverListLoading: boolean;
+  groupedNodes: GroupedNodeSection[];
+  activeUuid: string | undefined;
+  orderSettled: boolean;
+  onSelect: (uuid: string) => void;
+}) {
   const { t } = useTranslation();
+
+  return (
+    <AnimatePresence initial={false}>
+      {show && (
+        <motion.div
+          key="server-list"
+          className="km-instance-server-list shrink-0 self-start sticky top-4"
+          // 只在展开/收起途中裁切；静止后恢复 visible，卡片阴影不被切掉
+          initial={{ width: 0, opacity: 0, overflow: "hidden" }}
+          animate={{ width: 300, opacity: 1, transitionEnd: { overflow: "visible" } }}
+          exit={{ width: 0, opacity: 0, overflow: "hidden" }}
+          transition={{ width: MOTION_SPRING.soft, opacity: SURFACE_MOTION.fade }}
+        >
+          <div className="w-[300px]">
+            <Card
+              className="km-instance-server-list-card w-full overflow-hidden shadow-lg"
+              style={{ height: "calc(100vh - 2rem)" }}
+            >
+              <Flex direction="column" gap="0" className="h-full min-h-0">
+                <div className="km-instance-server-list-header p-3 border-b border-accent-3">
+                  <Text size="2" weight="bold">
+                    {t("common.serverList")}
+                  </Text>
+                </div>
+                {/* layoutScroll：列表可滚动，高亮块在项之间滑动时要扣掉滚动偏移 */}
+                <motion.div
+                  layoutScroll
+                  className="km-instance-server-list-items flex-1 min-h-0 overflow-y-auto overscroll-contain"
+                >
+                  <Skeletonize loading={serverListLoading}>
+                    {serverListLoading && (
+                      <div aria-hidden="true">
+                        <div className="km-instance-server-group px-3 py-1 text-xs font-semibold text-accent-8 bg-accent-2">
+                          {skeletonText(4)}
+                        </div>
+                        {[9, 7, 10, 8, 9, 6].map((chars, index) => (
+                          <div
+                            key={index}
+                            className="km-instance-server-item relative mx-1 my-0.5 px-2 py-0 text-sm rounded-md flex items-center gap-2"
+                          >
+                            <span className="relative z-10 flex items-center gap-2 min-w-0">
+                              <Flag flag="" />
+                              <span className="truncate">{skeletonText(chars)}</span>
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
+                    {groupedNodes.map((group, groupIndex) => (
+                      <div key={groupIndex}>
+                        {(group.group || group.group === null) && (
+                          <div className="km-instance-server-group px-3 py-1 text-xs font-semibold text-accent-8 bg-accent-2 sticky top-0">
+                            {group.group ?? t("common.ungrouped")}
+                          </div>
+                        )}
+                        <div>
+                          {group.nodes.map((node) => (
+                            <motion.div
+                              key={node.uuid}
+                              role="link"
+                              tabIndex={0}
+                              onClick={() => onSelect(node.uuid)}
+                              className={`km-instance-server-item relative mx-1 my-0.5 px-2 py-0 cursor-pointer text-sm rounded-md flex items-center gap-2 ${
+                                node.uuid === activeUuid
+                                  ? "text-accent-10 font-bold"
+                                  : "hover:bg-accent-3"
+                              }`}
+                              whileHover={{ x: 2 }}
+                              whileTap={{ scale: 0.99 }}
+                              transition={CONTROL_MOTION.transition}
+                            >
+                              {node.uuid === activeUuid && (
+                                <motion.span
+                                  layoutId="km-instance-active-item"
+                                  aria-hidden
+                                  className="absolute inset-0 rounded-md"
+                                  style={{ backgroundColor: "var(--accent-4)" }}
+                                  transition={orderSettled ? MOTION_SPRING.snappy : { duration: 0 }}
+                                />
+                              )}
+                              <motion.span
+                                aria-hidden
+                                className="absolute left-0 top-1 bottom-1 w-1 rounded-r"
+                                style={{ backgroundColor: "var(--accent-8)" }}
+                                initial={false}
+                                animate={{
+                                  scaleY: node.uuid === activeUuid ? 1 : 0.001,
+                                  opacity: node.uuid === activeUuid ? 1 : 0,
+                                }}
+                                transition={MOTION_SPRING.snappy}
+                              />
+                              <span className="relative z-10 flex items-center gap-2 min-w-0">
+                                <Flag flag={node.region} />
+                                <span
+                                  className={`truncate ${
+                                    node.uuid === activeUuid ? "text-accent-10" : ""
+                                  }`}
+                                >
+                                  {node.name}
+                                </span>
+                              </span>
+                            </motion.div>
+                          ))}
+                        </div>
+                      </div>
+                    ))}
+                  </Skeletonize>
+                </motion.div>
+              </Flex>
+            </Card>
+          </div>
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+});
+
+export default function InstancePage() {
   const navigate = useNavigate();
-  const { onRefresh, live_data } = useLiveData();
+  const { onRefresh, online, hasLiveData } = useLiveDataMeta();
   const { uuid } = useParams<{ uuid: string }>();
   /*
     recent 记住它属于哪台服务器：切换服务器时不清空旧曲线，
@@ -40,10 +177,13 @@ export default function InstancePage() {
   const { nodeList, isLoading: nodeListLoading } = useNodeList();
   const length = 30 * 5;
   // #region 初始数据加载
-  const node = nodeList?.find((n) => n.uuid === uuid);
+  const node = useMemo(
+    () => nodeList?.find((n) => n.uuid === uuid),
+    [nodeList, uuid],
+  );
   const { publicInfo, isLoading: publicInfoLoading } = usePublicInfo();
   // 侧栏顺序依赖实时状态和「离线节点位置」：首次定序前，选中高亮块随重排瞬时就位，不滑过去
-  const orderSettled = useOrderSettled(live_data !== null && !publicInfoLoading);
+  const orderSettled = useOrderSettled(hasLiveData && !publicInfoLoading);
   const isMobile = useIsMobile();
   // 详情页标题与列表卡片的标题共享同一个 view-transition-name
   const isSharedHero = useSharedHero(uuid ?? "");
@@ -68,8 +208,8 @@ export default function InstancePage() {
   const offlineServerPosition =
     publicInfo?.theme_settings?.offlineServerPosition;
   const onlineSet = useMemo(
-    () => new Set(live_data?.data?.online ?? []),
-    [live_data?.data?.online],
+    () => new Set(online ?? []),
+    [online],
   );
   const chartRecords = useMemo(
     () => liveDataToRecords(uuid ?? "", recent),
@@ -78,6 +218,12 @@ export default function InstancePage() {
   const handleChartRealtimeChange = useCallback((active: boolean) => {
     setChartRealtimeActive(active);
   }, []);
+  const handleSelectServer = useCallback(
+    (targetUuid: string) => {
+      navigate(`/instance/${targetUuid}`);
+    },
+    [navigate],
+  );
 
   // 组织按分组的服务器列表
   const groupedNodes = useMemo(() => {
@@ -191,118 +337,14 @@ export default function InstancePage() {
         从 0 宽弹簧展开，把主区域平滑推开，而不是突然出现把整页挤到右边。
         首次渲染就已知要显示时（initial={false}）不播放。
       */}
-      <AnimatePresence initial={false}>
-      {showServerListInDetails && !isMobile && (
-        <motion.div
-          key="server-list"
-          className="km-instance-server-list shrink-0 self-start sticky top-4"
-          // 只在展开/收起途中裁切；静止后恢复 visible，卡片阴影不被切掉
-          initial={{ width: 0, opacity: 0, overflow: "hidden" }}
-          animate={{ width: 300, opacity: 1, transitionEnd: { overflow: "visible" } }}
-          exit={{ width: 0, opacity: 0, overflow: "hidden" }}
-          transition={{ width: MOTION_SPRING.soft, opacity: SURFACE_MOTION.fade }}
-        >
-          <div className="w-[300px]">
-          <Card
-            className="km-instance-server-list-card w-full overflow-hidden shadow-lg"
-            style={{ height: "calc(100vh - 2rem)" }}
-          >
-            <Flex direction="column" gap="0" className="h-full min-h-0">
-              <div className="km-instance-server-list-header p-3 border-b border-accent-3">
-                <Text size="2" weight="bold">
-                  {t("common.serverList")}
-                </Text>
-              </div>
-              {/* layoutScroll：列表可滚动，高亮块在项之间滑动时要扣掉滚动偏移 */}
-              <motion.div
-                layoutScroll
-                className="km-instance-server-list-items flex-1 min-h-0 overflow-y-auto overscroll-contain"
-              >
-                <Skeletonize loading={serverListLoading}>
-                {serverListLoading && (
-                  <div aria-hidden="true">
-                    <div className="km-instance-server-group px-3 py-1 text-xs font-semibold text-accent-8 bg-accent-2">
-                      {skeletonText(4)}
-                    </div>
-                    {[9, 7, 10, 8, 9, 6].map((chars, index) => (
-                      <div
-                        key={index}
-                        className="km-instance-server-item relative mx-1 my-0.5 px-2 py-0 text-sm rounded-md flex items-center gap-2"
-                      >
-                        <span className="relative z-10 flex items-center gap-2 min-w-0">
-                          <Flag flag="" />
-                          <span className="truncate">{skeletonText(chars)}</span>
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                {groupedNodes.map((group, groupIndex) => (
-                  <div key={groupIndex}>
-                    {(group.group || group.group === null) && (
-                      <div className="km-instance-server-group px-3 py-1 text-xs font-semibold text-accent-8 bg-accent-2 sticky top-0">
-                        {group.group ?? t("common.ungrouped")}
-                      </div>
-                    )}
-                    <div>
-                      {group.nodes.map((node) => (
-                        <motion.div
-                          key={node.uuid}
-                          role="link"
-                          tabIndex={0}
-                          onClick={() => navigate(`/instance/${node.uuid}`)}
-                          className={`km-instance-server-item relative mx-1 my-0.5 px-2 py-0 cursor-pointer text-sm rounded-md flex items-center gap-2 ${
-                            node.uuid === uuid
-                              ? "text-accent-10 font-bold"
-                              : "hover:bg-accent-3"
-                          }`}
-                          whileHover={{ x: 2 }}
-                          whileTap={{ scale: 0.99 }}
-                          transition={CONTROL_MOTION.transition}
-                        >
-                          {node.uuid === uuid && (
-                            <motion.span
-                              layoutId="km-instance-active-item"
-                              aria-hidden
-                              className="absolute inset-0 rounded-md"
-                              style={{ backgroundColor: "var(--accent-4)" }}
-                              transition={orderSettled ? MOTION_SPRING.snappy : { duration: 0 }}
-                            />
-                          )}
-                          <motion.span
-                            aria-hidden
-                            className="absolute left-0 top-1 bottom-1 w-1 rounded-r"
-                            style={{ backgroundColor: "var(--accent-8)" }}
-                            initial={false}
-                            animate={{
-                              scaleY: node.uuid === uuid ? 1 : 0.001,
-                              opacity: node.uuid === uuid ? 1 : 0,
-                            }}
-                            transition={MOTION_SPRING.snappy}
-                          />
-                          <span className="relative z-10 flex items-center gap-2 min-w-0">
-                            <Flag flag={node.region} />
-                            <span
-                              className={`truncate ${
-                                node.uuid === uuid ? "text-accent-10" : ""
-                              }`}
-                            >
-                              {node.name}
-                            </span>
-                          </span>
-                        </motion.div>
-                      ))}
-                    </div>
-                  </div>
-                ))}
-                </Skeletonize>
-              </motion.div>
-            </Flex>
-          </Card>
-          </div>
-        </motion.div>
-      )}
-      </AnimatePresence>
+      <InstanceServerList
+        show={showServerListInDetails && !isMobile}
+        serverListLoading={serverListLoading}
+        groupedNodes={groupedNodes}
+        activeUuid={uuid}
+        orderSettled={orderSettled}
+        onSelect={handleSelectServer}
+      />
       {/*
         主列铺满剩余宽度（与首页同宽）：页头 → 图表区之间 section；
         图表区内部（时间范围 → 工具栏 → 图表网格）是 block，见 LoadChart。
@@ -344,13 +386,13 @@ export default function InstancePage() {
               {node?.uuid}
             </Text>
           </h1>
+          {/* DetailsGrid 内部自行订阅 LiveDataContext，避免 2 秒实时推送带动整个实例页与图表重渲染 */}
           <DetailsGrid
             box
             fullWidth
             align="center"
             uuid={uuid ?? ""}
             node={node}
-            liveRecord={uuid ? live_data?.data.data[uuid] : undefined}
           />
         </motion.div>
         {/*

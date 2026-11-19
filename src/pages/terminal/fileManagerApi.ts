@@ -367,7 +367,10 @@ const loadLegacyTextEncoder = async () => {
     };
     scope.TextEncodingIndexes ??= { encodingIndexes: indexesModule.encodingIndexes };
     return encodingModule;
-  })();
+  })().catch((error) => {
+    legacyEncoderModulePromise = null;
+    throw error;
+  });
   const module = await legacyEncoderModulePromise;
   return module.TextEncoder;
 };

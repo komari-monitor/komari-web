@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useCallback, useMemo, useState } from "react";
 import type { NodeDetail } from "@/contexts/NodeDetailsContext";
 import { Checkbox } from "@radix-ui/themes";
 import { useTranslation } from "react-i18next";
@@ -19,7 +19,7 @@ const NodeTable = ({
 }: {
   nodes: NodeDetail[];
   selectedNodes: string[];
-  setSelectedNodes: (nodes: string[]) => void;
+  setSelectedNodes: React.Dispatch<React.SetStateAction<string[]>>;
   settings: any;
 }) => {
   const { t } = useTranslation();
@@ -43,9 +43,12 @@ const NodeTable = ({
   const [localNodes, setLocalNodes] = useState<NodeDetail[]>(nodes);
   const [isDragging, setIsDragging] = useState(false);
   const isSnapshotBackend = useIsSnapshotBackend();
+  // 拖拽过程中忽略后台 5 秒轮询写回，避免排序顺序被半途覆盖
   React.useEffect(() => {
-    setLocalNodes(nodes);
-  }, [nodes]);
+    if (!isDragging) {
+      setLocalNodes(nodes);
+    }
+  }, [nodes, isDragging]);
   const handleDragStart = () => {
     setIsDragging(true);
     if ("vibrate" in navigator) {
@@ -84,18 +87,32 @@ const NodeTable = ({
     }
   };
 
-  // 更新全选逻辑，使用 localNodes
-  const handleSelectAll = (checked: boolean) => {
-    setSelectedNodes(checked ? localNodes.map((node) => node.uuid) : []);
-  };
+  const selectedSet = useMemo(() => new Set(selectedNodes), [selectedNodes]);
+  const sortableItems = useMemo(
+    () => localNodes.map((node) => node.uuid),
+    [localNodes],
+  );
 
-  const handleSelectNode = (uuid: string, checked: boolean) => {
-    setSelectedNodes(
-      checked
-        ? [...selectedNodes, uuid]
-        : selectedNodes.filter((id) => id !== uuid)
-    );
-  };
+  // 更新全选逻辑，使用 localNodes
+  const handleSelectAll = useCallback(
+    (checked: boolean) => {
+      setSelectedNodes(checked ? localNodes.map((node) => node.uuid) : []);
+    },
+    [localNodes, setSelectedNodes],
+  );
+
+  const handleSelectNode = useCallback(
+    (uuid: string, checked: boolean) => {
+      setSelectedNodes((prev) =>
+        checked
+          ? prev.includes(uuid)
+            ? prev
+            : [...prev, uuid]
+          : prev.filter((id) => id !== uuid),
+      );
+    },
+    [setSelectedNodes],
+  );
   return (
     <div
       className={`rounded-md overflow-hidden ${
@@ -132,7 +149,7 @@ const NodeTable = ({
           </TableHeader>
           <TableBody>
             <SortableContext
-              items={localNodes.map((node) => node.uuid)}
+              items={sortableItems}
               strategy={verticalListSortingStrategy}
             >
               {/* content 层：增删行用 AnimatePresence，选中/拖拽重排由 dnd-kit 与 motion 同步 */}
@@ -141,7 +158,7 @@ const NodeTable = ({
                 <SortableRow
                   key={node.uuid}
                   node={node}
-                  selectedNodes={selectedNodes}
+                  isSelected={selectedSet.has(node.uuid)}
                   handleSelectNode={handleSelectNode}
                   settings={settings}
                   isSnapshotBackend={isSnapshotBackend}

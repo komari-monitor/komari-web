@@ -1,14 +1,13 @@
-import { useEffect, useId, useRef } from "react";
+import "@xterm/xterm/css/xterm.css";
+import { memo, useEffect, useId, useRef } from "react";
 import type { CSSProperties } from "react";
 import { Terminal } from "@xterm/xterm";
 import type { ITerminalOptions } from "@xterm/xterm";
 import { ClipboardAddon } from "@xterm/addon-clipboard";
 import { FitAddon } from "@xterm/addon-fit";
-import { ImageAddon } from "@xterm/addon-image";
-import { LigaturesAddon } from "@xterm/addon-ligatures";
 import { SearchAddon } from "@xterm/addon-search";
 import { WebLinksAddon } from "@xterm/addon-web-links";
-import { WebglAddon } from "@xterm/addon-webgl";
+import type { WebglAddon as WebglAddonType } from "@xterm/addon-webgl";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import {
@@ -83,6 +82,7 @@ const TerminalSession = ({
   const onLatencyChangeRef = useRef(onLatencyChange);
   const onTitleChangeRef = useRef(onTitleChange);
   const apiRef = useRef<TerminalSessionApi | null>(null);
+  const syncWebglRef = useRef<((shouldEnable: boolean) => void) | null>(null);
   const toastId = useId();
   const { t } = useTranslation();
   const tRef = useRef(t);
@@ -167,6 +167,11 @@ const TerminalSession = ({
     }
   }, [hasBackground]);
 
+  // 仅当前可见标签占用 WebGL 上下文，后台标签切出时释放，避免多标签耗尽浏览器 WebGL 上下文上限
+  useEffect(() => {
+    syncWebglRef.current?.(active);
+  }, [active]);
+
   useEffect(() => {
     if (!hostRef.current) {
       return;
@@ -201,7 +206,6 @@ const TerminalSession = ({
     const searchAddon = new SearchAddon();
     const webLinksAddon = new WebLinksAddon();
     const clipboardAddon = new ClipboardAddon();
-    const imageAddon = new ImageAddon();
     const host = hostRef.current;
     let disposed = false;
     let firstBinary = false;
@@ -224,32 +228,18 @@ const TerminalSession = ({
     let terminated = false;
     let heartbeatSeq = 0;
     const pendingHeartbeats = new Map<string, number>();
+    let webglCtor: (new () => WebglAddonType) | null = null;
+    let webglAddon: WebglAddonType | null = null;
+    let addonsReady = false;
+    let fitRaf: number | null = null;
+    let lastSentCols: number | null = null;
+    let lastSentRows: number | null = null;
 
     term.loadAddon(fitAddon);
     term.loadAddon(searchAddon);
     term.loadAddon(webLinksAddon);
     term.loadAddon(clipboardAddon);
-    term.loadAddon(imageAddon);
     term.open(host);
-
-    // LigaturesAddon 必须在 term.open 之后激活；WebglAddon 需在 LigaturesAddon 之后激活，
-    // 以便纹理图集读取已应用的 fontFeatureSettings 与字符连接器。
-    try {
-      const ligaturesAddon = new LigaturesAddon();
-      term.loadAddon(ligaturesAddon);
-    } catch {
-      // 忽略连字插件初始化失败，保持默认渲染。
-    }
-
-    try {
-      const webglAddon = new WebglAddon();
-      webglAddon.onContextLoss(() => {
-        webglAddon.dispose();
-      });
-      term.loadAddon(webglAddon);
-    } catch {
-      // WebGL2 不可用时自动回退到默认渲染器。
-    }
 
     const protocol = window.location.protocol === "https:" ? "wss:" : "ws:";
     const baseUrl = `${protocol}//${window.location.host}`;
@@ -261,21 +251,121 @@ const TerminalSession = ({
       ws.send(typeof data === "string" ? encode(data) : data);
     };
 
-    const fit = () => {
+    const sendResize = (force = false) => {
+      if (!ws || ws.readyState !== WebSocket.OPEN) {
+        return;
+      }
+      if (!force && lastSentCols === term.cols && lastSentRows === term.rows) {
+        return;
+      }
+      lastSentCols = term.cols;
+      lastSentRows = term.rows;
+      ws.send(
+        JSON.stringify({
+          type: "resize",
+          cols: term.cols,
+          rows: term.rows,
+        }),
+      );
+    };
+
+    const fit = (forceSend = false) => {
       if (disposed || host.clientWidth <= 0 || host.clientHeight <= 0) {
         return;
       }
       fitAddon.fit();
-      if (ws && ws.readyState === WebSocket.OPEN) {
-        ws.send(
-          JSON.stringify({
-            type: "resize",
-            cols: term.cols,
-            rows: term.rows,
-          }),
-        );
+      sendResize(forceSend);
+    };
+
+    // 将 ResizeObserver / window.resize 合并到单帧一次 rAF，避免拖拽分屏时高频重排与重复发帧
+    const scheduleFit = () => {
+      if (disposed || fitRaf !== null) {
+        return;
+      }
+      fitRaf = requestAnimationFrame(() => {
+        fitRaf = null;
+        fit();
+      });
+    };
+
+    const disposeWebgl = () => {
+      if (!webglAddon) return;
+      const current = webglAddon;
+      webglAddon = null;
+      try {
+        current.dispose();
+      } catch {
+        // 忽略已释放或上下文丢失后的清理异常
       }
     };
+
+    const syncWebgl = (shouldEnable: boolean) => {
+      if (disposed) return;
+      if (!shouldEnable) {
+        disposeWebgl();
+        return;
+      }
+      if (!addonsReady || !webglCtor || webglAddon) {
+        return;
+      }
+      try {
+        const addon = new webglCtor();
+        addon.onContextLoss(() => {
+          if (webglAddon === addon) {
+            webglAddon = null;
+          }
+          try {
+            addon.dispose();
+          } catch {
+            // 忽略上下文丢失后的清理异常
+          }
+        });
+        term.loadAddon(addon);
+        webglAddon = addon;
+        scheduleFit();
+        if (term.rows > 0) {
+          term.refresh(0, term.rows - 1);
+        }
+      } catch {
+        // WebGL2 不可用时自动回退到默认渲染器。
+      }
+    };
+    syncWebglRef.current = syncWebgl;
+
+    // 较重的增强插件（连字、WebGL 渲染、内联图像）在终端打开后异步加载，
+    // 显著减小终端首屏体积并加快首次连接；仍严格保持 LigaturesAddon -> WebglAddon 激活顺序。
+    void (async () => {
+      const [ligaturesRes, webglRes, imageRes] = await Promise.allSettled([
+        import("@xterm/addon-ligatures"),
+        import("@xterm/addon-webgl"),
+        import("@xterm/addon-image"),
+      ]);
+      if (disposed) return;
+
+      if (imageRes.status === "fulfilled") {
+        try {
+          term.loadAddon(new imageRes.value.ImageAddon());
+        } catch {
+          // 忽略图像插件初始化失败
+        }
+      }
+
+      if (ligaturesRes.status === "fulfilled") {
+        try {
+          term.loadAddon(new ligaturesRes.value.LigaturesAddon());
+        } catch {
+          // 忽略连字插件初始化失败，保持默认渲染。
+        }
+      }
+
+      if (disposed) return;
+
+      if (webglRes.status === "fulfilled") {
+        webglCtor = webglRes.value.WebglAddon;
+      }
+      addonsReady = true;
+      syncWebgl(activeRef.current);
+    })();
 
     const exportText = () => {
       const buffer = term.buffer.active;
@@ -456,10 +546,9 @@ const TerminalSession = ({
     };
     host.addEventListener("contextmenu", handleContextMenu);
 
-    const resizeObserver = new ResizeObserver(fit);
+    const resizeObserver = new ResizeObserver(scheduleFit);
     resizeObserver.observe(host);
-    const handleWindowResize = () => fit();
-    window.addEventListener("resize", handleWindowResize);
+    window.addEventListener("resize", scheduleFit);
 
     const clearLatency = () => {
       pendingHeartbeats.clear();
@@ -571,7 +660,9 @@ const TerminalSession = ({
         // 后端只在被控端真正附着后才发状态帧，所以这里先显示等待提示；
         // 被控端已在位的会话会在 attach 时立刻收到 ready。
         showWaitingToast();
-        fit();
+        lastSentCols = null;
+        lastSentRows = null;
+        fit(true);
         startHeartbeat();
       };
 
@@ -642,7 +733,7 @@ const TerminalSession = ({
                 return;
               }
               term.resize(Math.max(1, term.cols - 1), term.rows);
-              fit();
+              fit(true);
             }, 200);
           } else {
             term.write(new Uint8Array(event.data));
@@ -750,12 +841,15 @@ const TerminalSession = ({
       terminal: term,
       searchAddon,
       send,
-      fit,
+      fit: () => fit(false),
       exportText,
     };
     apiRef.current = api;
     onApiChangeRef.current(api);
-    requestAnimationFrame(() => {
+    const initialFitRaf = requestAnimationFrame(() => {
+      if (disposed) {
+        return;
+      }
       fit();
       if (activeRef.current) {
         term.focus();
@@ -764,12 +858,19 @@ const TerminalSession = ({
 
     return () => {
       disposed = true;
+      cancelAnimationFrame(initialFitRaf);
+      if (fitRaf !== null) {
+        cancelAnimationFrame(fitRaf);
+        fitRaf = null;
+      }
+      syncWebglRef.current = null;
+      disposeWebgl();
       apiRef.current = null;
       onApiChangeRef.current(null);
       host.removeEventListener("paste", handlePaste, true);
       host.removeEventListener("contextmenu", handleContextMenu);
       resizeObserver.disconnect();
-      window.removeEventListener("resize", handleWindowResize);
+      window.removeEventListener("resize", scheduleFit);
       termTitleDisposable.dispose();
       termDataDisposable.dispose();
       if (firstBinaryTimeout !== null) {
@@ -834,4 +935,4 @@ const TerminalSession = ({
   );
 };
 
-export default TerminalSession;
+export default memo(TerminalSession);

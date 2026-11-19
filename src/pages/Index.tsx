@@ -14,7 +14,7 @@ const loadNodeDisplay = () => import("../components/NodeDisplay");
 const NodeDisplay = React.lazy(loadNodeDisplay);
 void loadNodeDisplay();
 import { formatBytes, formatSpeed } from "@/utils/unitHelper";
-import { useLiveData } from "../contexts/LiveDataContext";
+import { useLiveData, useLiveDataMeta } from "../contexts/LiveDataContext";
 import { useNodeList } from "@/contexts/NodeListContext";
 import Loading from "@/components/loading";
 import { Settings } from "lucide-react";
@@ -298,6 +298,7 @@ const Index = () => {
         <NodeDisplay
           nodes={nodeList ?? []}
           liveData={liveData}
+          onlineSet={onlineSet}
           loading={listLoading}
           liveLoading={liveLoading}
         />
@@ -328,9 +329,9 @@ const CalloutBanner = ({
   </Collapse>
 );
 
-const Callouts = () => {
+const Callouts = React.memo(() => {
   const [t] = useTranslation();
-  const { showCallout } = useLiveData();
+  const { showCallout } = useLiveDataMeta();
   const ishttps = window.location.protocol === "https:";
   return (
     // 容器不开 layout：子项自己做高度弹簧，再叠一层尺寸补间会把提示文字拉伸
@@ -389,7 +390,7 @@ const Callouts = () => {
       </CalloutBanner>
     </div>
   );
-};
+});
 // #endregion Callouts
 export default Index;
 
@@ -456,10 +457,34 @@ const CurrentTimeValue = React.memo(() => {
   );
 
   React.useEffect(() => {
-    const timer = window.setInterval(() => {
-      setCurrentTime(new Date().toLocaleTimeString());
-    }, 1000);
-    return () => window.clearInterval(timer);
+    let timer: number | undefined;
+    const stop = () => {
+      if (timer !== undefined) {
+        window.clearInterval(timer);
+        timer = undefined;
+      }
+    };
+    const start = () => {
+      if (timer === undefined && !document.hidden) {
+        timer = window.setInterval(() => {
+          setCurrentTime(new Date().toLocaleTimeString());
+        }, 1000);
+      }
+    };
+    const handleVisibilityChange = () => {
+      if (document.hidden) {
+        stop();
+      } else {
+        setCurrentTime(new Date().toLocaleTimeString());
+        start();
+      }
+    };
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    start();
+    return () => {
+      stop();
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+    };
   }, []);
 
   return <>{currentTime}</>;

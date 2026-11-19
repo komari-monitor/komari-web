@@ -36,9 +36,13 @@ export const OfflineNotificationProvider: React.FC<{ children: React.ReactNode }
   const loading = result.data === undefined && !error;
   const offlineNotification = result.data ?? NO_NOTIFICATIONS;
   const refresh = result.reload;
+  const contextValue = React.useMemo(
+    () => ({ offlineNotification, refresh, loading, error }),
+    [offlineNotification, refresh, loading, error],
+  );
 
   return (
-    <NotificationContext.Provider value={{ offlineNotification, refresh, loading, error }}>
+    <NotificationContext.Provider value={contextValue}>
       {children}
     </NotificationContext.Provider>
   );

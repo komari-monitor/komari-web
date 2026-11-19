@@ -87,6 +87,8 @@ const Flag = React.memo(({ flag, size }: FlagProps) => {
       <img
         src={imgSrc}
         alt={altText}
+        loading="lazy"
+        decoding="async"
         style={{ width: "100%", height: "100%", objectFit: "contain" }}
       />
     </Box>

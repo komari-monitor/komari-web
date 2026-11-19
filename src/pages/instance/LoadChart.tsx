@@ -1,6 +1,5 @@
-import { memo } from "react";
+import { memo, useCallback, useMemo } from "react";
 import { useParams } from "react-router-dom";
-import { useTranslation } from "react-i18next";
 import { Flex } from "@radix-ui/themes";
 import { AnimatePresence } from "motion/react";
 import {
@@ -25,14 +24,16 @@ import ChartCard from "./loadChart/ChartCard";
 import ChartToolbar from "./loadChart/ChartToolbar";
 import { STACK_COLLAPSE_TRANSITION, STACK_COLLAPSE_VARIANTS } from "./loadChart/constants";
 import CustomRangePanel from "./loadChart/CustomRangePanel";
-import { buildChartView } from "./loadChart/series";
 import TimeViewSelector from "./loadChart/TimeViewSelector";
+import type { ChartSize } from "./loadChart/types";
 import { ChartFlipProvider, useChartFlip } from "./loadChart/useChartFlip";
 import { useChartPreferences } from "./loadChart/useChartPreferences";
 import { useDashboard } from "./loadChart/useDashboard";
 import { useMetricCatalog } from "./loadChart/useMetricCatalog";
 import { useMetricQueries } from "./loadChart/useMetricQueries";
 import { useTimeRange } from "./loadChart/useTimeRange";
+
+const EMPTY_RECORDS: RecordFormat[] = [];
 
 type LoadChartProps = {
   data: RecordFormat[];
@@ -50,26 +51,46 @@ type LoadChartProps = {
   - useDashboard：图表卡片列表与全局模板；
   - useMetricQueries：历史指标与延迟统计查询。
 */
-const LoadChart = ({ data = [], realtimeLoading = false, onRealtimeActiveChange }: LoadChartProps) => {
-  const { t } = useTranslation();
+const LoadChart = ({ data = EMPTY_RECORDS, realtimeLoading = false, onRealtimeActiveChange }: LoadChartProps) => {
   const { uuid } = useParams<{ uuid: string }>();
   const { nodeList } = useNodeList();
-  const node = nodeList?.find((item) => item.uuid === uuid);
+  const node = useMemo(
+    () => nodeList?.find((item) => item.uuid === uuid),
+    [nodeList, uuid],
+  );
   const { maxMetricRetentionDays, definitionMap, pingTaskMap, metricOptions } =
     useMetricCatalog();
   const timeRange = useTimeRange(maxMetricRetentionDays, onRealtimeActiveChange);
   const { isRealtime } = timeRange;
-  const preferences = useChartPreferences();
-  const dashboard = useDashboard(definitionMap);
-  const { charts } = dashboard;
+  const {
+    aggregation,
+    setAggregation,
+    ewmaEnabled,
+    setEwmaEnabled,
+    isSeriesHidden,
+    toggleSeries,
+    toggleAllSeries,
+  } = useChartPreferences();
+  const {
+    charts,
+    savingGlobalTemplate,
+    saveGlobalTemplate,
+    resetDashboard,
+    addChart,
+    removeChart,
+    addMetric,
+    removeMetric,
+    setChartSize,
+    handleChartDragEnd,
+  } = useDashboard(definitionMap);
   // 改尺寸 / 增删 / 重置：相关卡片从旧位置、旧尺寸平滑过渡到新格子（拖放重排不经过这里）
-  const flip = useChartFlip(charts);
+  const { capture: captureFlip, cancel: cancelFlip, register: registerFlip } = useChartFlip(charts);
   const { metricSeries, metricKeys, metricsLoading, error, pingStatsMap } = useMetricQueries({
     uuid,
     charts,
     isRealtime,
     metricRangeParams: timeRange.metricRangeParams,
-    aggregation: preferences.aggregation,
+    aggregation,
   });
   const chartSensors = useSensors(
     useSensor(MouseSensor, { activationConstraint: { distance: 6 } }),
@@ -77,6 +98,63 @@ const LoadChart = ({ data = [], realtimeLoading = false, onRealtimeActiveChange 
       activationConstraint: { delay: 180, tolerance: 6 },
     }),
     useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const sortableItems = useMemo(() => charts.map((chart) => chart.id), [charts]);
+  const metricKeySet = useMemo(() => new Set(metricKeys), [metricKeys]);
+
+  const handleReset = useCallback(() => {
+    captureFlip();
+    resetDashboard();
+  }, [captureFlip, resetDashboard]);
+
+  const handleAddChart = useCallback(
+    (metricKey: string) => {
+      captureFlip();
+      addChart(metricKey);
+    },
+    [captureFlip, addChart],
+  );
+
+  const handleSizeChange = useCallback(
+    (chartId: string, size: ChartSize) => {
+      captureFlip(chartId);
+      setChartSize(chartId, size);
+    },
+    [captureFlip, setChartSize],
+  );
+
+  const handleRemove = useCallback(
+    (chartId: string) => {
+      captureFlip();
+      removeChart(chartId);
+    },
+    [captureFlip, removeChart],
+  );
+
+  const legendProps = useMemo(
+    () => ({
+      uuid,
+      pingStatsMap,
+      definitionMap,
+      metricOptions,
+      isSeriesHidden,
+      toggleSeries,
+      toggleAllSeries,
+      addMetric,
+      removeMetric,
+    }),
+    [
+      uuid,
+      pingStatsMap,
+      definitionMap,
+      metricOptions,
+      isSeriesHidden,
+      toggleSeries,
+      toggleAllSeries,
+      addMetric,
+      removeMetric,
+    ],
   );
 
   return (
@@ -98,21 +176,15 @@ const LoadChart = ({ data = [], realtimeLoading = false, onRealtimeActiveChange 
       />
 
       <ChartToolbar
-        aggregation={preferences.aggregation}
-        onAggregationChange={preferences.setAggregation}
-        ewmaEnabled={preferences.ewmaEnabled}
-        onEwmaChange={preferences.setEwmaEnabled}
-        savingGlobalTemplate={dashboard.savingGlobalTemplate}
-        onSaveGlobalTemplate={dashboard.saveGlobalTemplate}
-        onReset={() => {
-          flip.capture();
-          dashboard.resetDashboard();
-        }}
+        aggregation={aggregation}
+        onAggregationChange={setAggregation}
+        ewmaEnabled={ewmaEnabled}
+        onEwmaChange={setEwmaEnabled}
+        savingGlobalTemplate={savingGlobalTemplate}
+        onSaveGlobalTemplate={saveGlobalTemplate}
+        onReset={handleReset}
         metricOptions={metricOptions}
-        onAddChart={(metricKey) => {
-          flip.capture();
-          dashboard.addChart(metricKey);
-        }}
+        onAddChart={handleAddChart}
       />
 
       {/*
@@ -131,11 +203,11 @@ const LoadChart = ({ data = [], realtimeLoading = false, onRealtimeActiveChange 
       <DndContext
         sensors={chartSensors}
         collisionDetection={closestCenter}
-        onDragStart={flip.cancel}
-        onDragEnd={dashboard.handleChartDragEnd}
+        onDragStart={cancelFlip}
+        onDragEnd={handleChartDragEnd}
       >
         <SortableContext
-          items={charts.map((chart) => chart.id)}
+          items={sortableItems}
           strategy={rectSortingStrategy}
         >
           {/*
@@ -145,52 +217,32 @@ const LoadChart = ({ data = [], realtimeLoading = false, onRealtimeActiveChange 
             尺寸/位置过渡由 useChartFlip 在每张卡片内层用真实宽高完成。
             relative：退场卡片 absolute 定位的参照。
           */}
-          <ChartFlipProvider value={flip.register}>
+          <ChartFlipProvider value={registerFlip}>
           <div className="km-load-chart-canvas relative grid w-full grid-cols-1 gap-km-block lg:grid-cols-3">
             <AnimatePresence mode="popLayout">
             {charts.map((chart) => {
               // 这张卡片依赖的数据还在路上：历史指标请求中，或实时模式下当前服务器的 recent 还没到
               const chartUsesRealtime = isRealtime && chart.metrics.some(hasRealtimeSource);
               const chartBusy =
-                (metricsLoading && chart.metrics.some((metricKey) => metricKeys.includes(metricKey))) ||
+                (metricsLoading && chart.metrics.some((metricKey) => metricKeySet.has(metricKey))) ||
                 (chartUsesRealtime && realtimeLoading);
 
               return (
                 <ChartCard
                   key={chart.id}
                   chart={chart}
-                  view={buildChartView({
-                    chart,
-                    metricSeries,
-                    records: data,
-                    node,
-                    definitionMap,
-                    pingTaskMap,
-                    isRealtime,
-                    ewmaEnabled: preferences.ewmaEnabled,
-                    t,
-                  })}
+                  metricSeries={metricSeries}
+                  // 不使用实时流的图表固定传入 EMPTY_RECORDS，避免每 2 秒随 recent 更新重绘
+                  records={chartUsesRealtime ? data : EMPTY_RECORDS}
+                  node={node}
+                  pingTaskMap={pingTaskMap}
+                  isRealtime={isRealtime}
+                  ewmaEnabled={ewmaEnabled}
                   busy={chartBusy}
                   displayRangeHours={timeRange.displayRangeHours}
-                  onSizeChange={(chartId, size) => {
-                    flip.capture(chartId);
-                    dashboard.setChartSize(chartId, size);
-                  }}
-                  onRemove={(chartId) => {
-                    flip.capture();
-                    dashboard.removeChart(chartId);
-                  }}
-                  legendProps={{
-                    uuid,
-                    pingStatsMap,
-                    definitionMap,
-                    metricOptions,
-                    isSeriesHidden: preferences.isSeriesHidden,
-                    toggleSeries: preferences.toggleSeries,
-                    toggleAllSeries: preferences.toggleAllSeries,
-                    addMetric: dashboard.addMetric,
-                    removeMetric: dashboard.removeMetric,
-                  }}
+                  onSizeChange={handleSizeChange}
+                  onRemove={handleRemove}
+                  legendProps={legendProps}
                 />
               );
             })}

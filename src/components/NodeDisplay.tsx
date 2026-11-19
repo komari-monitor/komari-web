@@ -47,6 +47,8 @@ const VIEW_MODES = [
 interface NodeDisplayProps {
   nodes: NodeBasicInfo[];
   liveData: LiveData;
+  /** 可选复用上层已构建的在线集合，避免重复分配 */
+  onlineSet?: ReadonlySet<string>;
   /** 节点列表还没到：用占位卡片/行渲染真实组件的骨架 */
   loading?: boolean;
   /** live 数据第一次请求还没回来：卡片里的数值用小骨架 */
@@ -56,6 +58,7 @@ interface NodeDisplayProps {
 const NodeDisplay: React.FC<NodeDisplayProps> = ({
   nodes,
   liveData,
+  onlineSet: onlineSetProp,
   loading = false,
   liveLoading = false,
 }) => {
@@ -70,7 +73,11 @@ const NodeDisplay: React.FC<NodeDisplayProps> = ({
     "all",
   );
   const searchRef = useRef<HTMLInputElement>(null);
-  const onlineSet = useMemo(() => new Set(liveData?.online ?? []), [liveData]);
+  const derivedOnlineSet = useMemo(
+    () => new Set(liveData?.online ?? []),
+    [liveData?.online],
+  );
+  const onlineSet = onlineSetProp ?? derivedOnlineSet;
 
   // 获取所有的分组
   const groups = useMemo(() => {

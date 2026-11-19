@@ -43,11 +43,13 @@ import {
   X,
 } from "lucide-react";
 import {
+  memo,
   useCallback,
   useEffect,
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
 } from "react";
 import type { MouseEvent as ReactMouseEvent } from "react";
 import type { ReactNode } from "react";
@@ -361,6 +363,59 @@ const buildOutlineTree = (items: OutlineItem[]): OutlineNode[] => {
   return roots;
 };
 
+interface CursorPosition {
+  line: number;
+  column: number;
+}
+
+interface CursorStore {
+  getSnapshot: () => CursorPosition;
+  set: (line: number, column: number) => void;
+  subscribe: (listener: () => void) => () => void;
+}
+
+function createCursorStore(): CursorStore {
+  let current: CursorPosition = { line: 1, column: 1 };
+  const listeners = new Set<() => void>();
+  return {
+    getSnapshot: () => current,
+    set: (line: number, column: number) => {
+      if (current.line === line && current.column === column) return;
+      current = { line, column };
+      listeners.forEach((listener) => listener());
+    },
+    subscribe: (listener: () => void) => {
+      listeners.add(listener);
+      return () => {
+        listeners.delete(listener);
+      };
+    },
+  };
+}
+
+// 仅状态栏行/列指示器订阅光标位置，避免每次键入或移动光标重渲染整个 2300 行编辑器弹窗
+const EditorCursorStatus = memo(function EditorCursorStatus({
+  store,
+  onClick,
+  title,
+}: {
+  store: CursorStore;
+  onClick: () => void;
+  title: string;
+}) {
+  const cursor = useSyncExternalStore(store.subscribe, store.getSnapshot);
+  return (
+    <button
+      type="button"
+      className="mr-2 h-6 shrink-0 whitespace-nowrap border-0 bg-transparent px-1 text-[11px] text-white hover:bg-black/25"
+      onClick={onClick}
+      title={title}
+    >
+      Ln {cursor.line}, Col {cursor.column}
+    </button>
+  );
+});
+
 const FileEditorDialog = ({
   open,
   uuid,
@@ -436,7 +491,7 @@ const FileEditorDialog = ({
   }, [uuid]);
   const [explorerWidth, setExplorerWidth] = useState(230);
   const [outlineWidth, setOutlineWidth] = useState(220);
-  const [cursor, setCursor] = useState({ line: 1, column: 1 });
+  const cursorStore = useMemo(() => createCursorStore(), []);
   const editorRef = useRef<Parameters<OnMount>[0] | null>(null);
   const programmaticEditorValueRef = useRef<string | null>(null);
   const documentsRef = useRef<EditorDocument[]>([]);
@@ -1103,7 +1158,7 @@ const FileEditorDialog = ({
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyMod.Shift | monaco.KeyCode.KeyS, () => saveAllRef.current());
     editor.addCommand(monaco.KeyMod.CtrlCmd | monaco.KeyCode.Tab, () => switchDocumentRef.current(1));
     editor.onDidChangeCursorPosition((event) => {
-      setCursor({ line: event.position.lineNumber, column: event.position.column });
+      cursorStore.set(event.position.lineNumber, event.position.column);
     });
     editor.onDidChangeCursorSelection(updateEditorState);
     editor.onDidChangeModelContent(updateEditorState);
@@ -1119,7 +1174,7 @@ const FileEditorDialog = ({
     editor.onDidDispose(() => {
       editorDom?.removeEventListener("contextmenu", handleContextMenu);
     });
-  }, [updateEditorState]);
+  }, [cursorStore, updateEditorState]);
 
   const runEditorCommand = useCallback((commandId: string) => {
     const editor = editorRef.current;
@@ -1141,10 +1196,11 @@ const FileEditorDialog = ({
   }, [fileService, openFile, t]);
 
   const openPositionDialog = useCallback(() => {
-    setPositionLine(String(cursor.line));
-    setPositionColumn(String(cursor.column));
+    const current = cursorStore.getSnapshot();
+    setPositionLine(String(current.line));
+    setPositionColumn(String(current.column));
     setPositionOpen(true);
-  }, [cursor.column, cursor.line]);
+  }, [cursorStore]);
 
   const submitPosition = useCallback(() => {
     const editor = editorRef.current;
@@ -1158,9 +1214,9 @@ const FileEditorDialog = ({
     editor.setPosition({ lineNumber, column });
     editor.revealPositionInCenter({ lineNumber, column });
     editor.focus();
-    setCursor({ line: lineNumber, column });
+    cursorStore.set(lineNumber, column);
     setPositionOpen(false);
-  }, [positionColumn, positionLine]);
+  }, [cursorStore, positionColumn, positionLine]);
 
   const buildTextContextMenuItems = useCallback((): ContextMenuItemConfig[] => {
     const { hasSelection, canUndo, canRedo } = editorStateRef.current;
@@ -2122,14 +2178,11 @@ const FileEditorDialog = ({
                   hasBackground ? "bg-[#007acc]/85 backdrop-blur-sm" : "bg-[#007acc]"
                 }`}
               >
-                <button
-                  type="button"
-                  className="mr-2 h-6 shrink-0 whitespace-nowrap border-0 bg-transparent px-1 text-[11px] text-white hover:bg-black/25"
+                <EditorCursorStatus
+                  store={cursorStore}
                   onClick={openPositionDialog}
                   title={t("file_manager.editor.go_to_position", "Go to Line/Column")}
-                >
-                  Ln {cursor.line}, Col {cursor.column}
-                </button>
+                />
                 <button
                   type="button"
                   className="h-6 shrink-0 whitespace-nowrap border-0 bg-transparent px-2 text-[11px] text-white hover:bg-black/25"
