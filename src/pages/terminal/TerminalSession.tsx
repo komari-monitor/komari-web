@@ -10,6 +10,7 @@ import { WebLinksAddon } from "@xterm/addon-web-links";
 import type { WebglAddon as WebglAddonType } from "@xterm/addon-webgl";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { getRPC2Client } from "@/contexts/RPC2Context";
 import {
   DEFAULT_TERMINAL_OPTIONS,
   DEFAULT_TERMINAL_PADDING,
@@ -214,6 +215,7 @@ const TerminalSession = ({
     let requestID: string | null = initialRequestId ?? null;
     const clientId = createClientId();
     let ws: WebSocket | null = null;
+    let hasConnectedOnce = false;
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null;
     let stableConnectionTimer: ReturnType<typeof setTimeout> | null = null;
     let reconnectDeadline: number | null = null;
@@ -625,6 +627,25 @@ const TerminalSession = ({
       }, WAITING_HINT_DELAY);
     };
 
+    const clearStableConnectionTimer = () => {
+      if (stableConnectionTimer !== null) {
+        clearTimeout(stableConnectionTimer);
+        stableConnectionTimer = null;
+      }
+    };
+
+    const scheduleStableConnectionReset = () => {
+      if (stableConnectionTimer !== null || reconnectDeadline === null) {
+        return;
+      }
+      // 只有两端真正恢复转发（收到 ready 或终端输出）并稳定 10 秒后，
+      // 才重置重连窗口，避免 Agent 离线时浏览器反复断连刷新 5 分钟上限。
+      stableConnectionTimer = setTimeout(() => {
+        reconnectDeadline = null;
+        stableConnectionTimer = null;
+      }, 10000);
+    };
+
     const connect = (otp: string | null) => {
       const params = new URLSearchParams();
       // 2FA is required only for the initial session creation. Reattach is
@@ -646,16 +667,9 @@ const TerminalSession = ({
 
       socket.onopen = () => {
         if (disposed || ws !== socket) return;
+        hasConnectedOnce = true;
         reconnectTimer = null;
-        if (stableConnectionTimer !== null) {
-          clearTimeout(stableConnectionTimer);
-        }
-        // Keep a reconnect window across short-lived flaps. Once the
-        // connection is stable, a future outage gets a fresh window.
-        stableConnectionTimer = setTimeout(() => {
-          reconnectDeadline = null;
-          stableConnectionTimer = null;
-        }, 10000);
+        clearStableConnectionTimer();
         hideReconnectingToast();
         // 后端只在被控端真正附着后才发状态帧，所以这里先显示等待提示；
         // 被控端已在位的会话会在 attach 时立刻收到 ready。
@@ -685,6 +699,7 @@ const TerminalSession = ({
                 case "ready":
                   // 被控端就位，转发开始。
                   hideWaitingToast();
+                  scheduleStableConnectionReset();
                   sendHeartbeat();
                   return;
                 case "heartbeat":
@@ -700,12 +715,14 @@ const TerminalSession = ({
                   return;
                 case "abort":
                   // 对端意外掉线：会话仍保留，稍后重连即可恢复。
+                  clearStableConnectionTimer();
                   clearLatency();
                   showWaitingToast();
                   return;
                 case "terminate":
                   // 终态：不再重连。
                   terminated = true;
+                  clearStableConnectionTimer();
                   clearLatency();
                   hideWaitingToast();
                   hideReconnectingToast();
@@ -723,6 +740,7 @@ const TerminalSession = ({
         if (event.data instanceof ArrayBuffer) {
           // 有任何输出就说明被控端已附着。
           hideWaitingToast();
+          scheduleStableConnectionReset();
           if (!firstBinary) {
             firstBinary = true;
             // Clear screen when first agent binary packet arrives
@@ -739,6 +757,8 @@ const TerminalSession = ({
             term.write(new Uint8Array(event.data));
           }
         } else {
+          hideWaitingToast();
+          scheduleStableConnectionReset();
           term.write(event.data);
         }
       };
@@ -750,10 +770,7 @@ const TerminalSession = ({
         clearLatency();
         // 等待提示只在“已连上但还没等到被控端”时有效，断线后交给重连流程重新给出。
         hideWaitingToast();
-        if (stableConnectionTimer !== null) {
-          clearTimeout(stableConnectionTimer);
-          stableConnectionTimer = null;
-        }
+        clearStableConnectionTimer();
         if (disposed) {
           return;
         }
@@ -881,9 +898,7 @@ const TerminalSession = ({
       if (reconnectTimer !== null) {
         clearTimeout(reconnectTimer);
       }
-      if (stableConnectionTimer !== null) {
-        clearTimeout(stableConnectionTimer);
-      }
+      clearStableConnectionTimer();
       hideReconnectingToast();
       hideWaitingToast();
       if (ws) {
@@ -903,6 +918,16 @@ const TerminalSession = ({
         ) {
           socket.close();
         }
+      }
+      // 若标签页在断线重连中、握手中或底层 TCP 半开假死时被关闭，WS 上的 terminate
+      // 可能无法送达服务端；通过 RPC 携带 client_id 兜底终止（幂等，且不会误杀其他标签页接管的会话）。
+      if (!terminated && requestID && hasConnectedOnce) {
+        void getRPC2Client()
+          .call("admin:terminateTerminalSessions", {
+            request_id: requestID,
+            client_id: clientId,
+          })
+          .catch(() => {});
       }
       term.dispose();
     };

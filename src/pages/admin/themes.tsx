@@ -329,7 +329,7 @@ const ThemePage = () => {
           <AnimatePresence initial={false} mode="popLayout">
           {listThemes.map((theme, index) => (
             <motion.div
-              key={theme.id}
+              key={theme.short}
               // 只补间位置：卡片里有大段文字与预览图，尺寸补间会把它们拉伸
               layout="position"
               initial={CONTENT_MOTION.item.initial}

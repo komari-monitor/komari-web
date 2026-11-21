@@ -2,7 +2,7 @@ import { skeletonText } from "@/components/ui/skeleton";
 import type { I18nText } from "@/utils/i18nText";
 
 export interface Theme {
-  id: string;
+  id?: string;
   name: I18nText;
   short: string;
   description?: I18nText;
