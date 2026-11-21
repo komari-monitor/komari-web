@@ -868,10 +868,13 @@ export function SettingCardSelect({
                 合并到这个子元素上，若中间多包一层 span，键盘焦点在按钮上却打不开菜单。
                 control 性格：按下回弹；选中项文案换成新值时上下错位交接（离散状态，不需要可逆）。
                 保存中的禁用态由 Radix 自身样式表达，不再叠加额外的缩放/压暗。
+                whitespace-nowrap：按钮不收缩，文字却允许换行时，外层按换行后的宽度收窄，
+                窄屏下按钮会溢出卡片右边。
               */}
               <DropdownMenu.Trigger disabled={savingState}>
                 <MotionButton
                   variant="soft"
+                  className="whitespace-nowrap"
                   ref={buttonRef}
                   whileTap={savingState ? undefined : CONTROL_MOTION.tap}
                   transition={CONTROL_MOTION.transition}
