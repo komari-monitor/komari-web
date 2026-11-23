@@ -1,0 +1,15 @@
+export const TRAFFIC_TIMEZONE_SUGGESTIONS = [
+  "UTC",
+  "Asia/Shanghai",
+  "Asia/Hong_Kong",
+  "Asia/Taipei",
+  "Asia/Tokyo",
+  "Asia/Singapore",
+  "Asia/Jakarta",
+  "Asia/Kolkata",
+  "Europe/London",
+  "Europe/Berlin",
+  "America/New_York",
+  "America/Los_Angeles",
+  "Australia/Sydney",
+] as const;

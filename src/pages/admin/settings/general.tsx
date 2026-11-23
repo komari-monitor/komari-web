@@ -6,6 +6,7 @@ import {
   SettingCardCollapse,
   SettingCardLabel,
   SettingCardSelect,
+  SettingCardShortTextInput,
   SettingCardsLoading,
   SettingCardSwitch,
 } from "@/components/admin/SettingCard";
@@ -17,6 +18,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { MOTION_VARIANTS } from "@/lib/motion";
 import { ApiKeyCard } from "./shared/ApiKeyCard";
 import { getJsonBody, saveSettings, serverError } from "./shared/request";
+import { TRAFFIC_TIMEZONE_SUGGESTIONS } from "@/utils/timezones";
 
 export default function GeneralSettings() {
   const { t } = useTranslation();
@@ -59,6 +61,29 @@ export default function GeneralSettings() {
           {t("common.help")}
         </Button>
       </ApiKeyCard>
+      <SettingCardShortTextInput
+        title={t("settings.general.traffic_timezone")}
+        description={t("settings.general.traffic_timezone_description")}
+        defaultValue={settings.traffic_default_timezone ?? ""}
+        placeholder="Asia/Shanghai"
+        list="global-traffic-timezones"
+        OnSave={async (value) => {
+          const timezone = value.trim();
+          if (timezone) {
+            try {
+              new Intl.DateTimeFormat(undefined, { timeZone: timezone });
+            } catch {
+              toast.error(t("settings.general.traffic_timezone_invalid"));
+              throw new Error("Invalid time zone");
+            }
+          }
+          await saveSettings({ traffic_default_timezone: timezone }, t);
+        }}
+      >
+        <datalist id="global-traffic-timezones">
+          {TRAFFIC_TIMEZONE_SUGGESTIONS.map((zone) => <option key={zone} value={zone} />)}
+        </datalist>
+      </SettingCardShortTextInput>
       <SettingCardLabel>{t("settings.geoip.title")}</SettingCardLabel>
       <SettingCardSwitch
         title={t("settings.geoip.enable_title")}

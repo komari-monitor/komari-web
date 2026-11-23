@@ -32,3 +32,64 @@ export const editClient = (uuid: string, data: Record<string, unknown>) =>
 /** 账单：同一个 edit 接口，但原实现不检查 HTTP 状态 */
 export const saveClientBilling = (uuid: string, data: Record<string, unknown>) =>
   post(`/api/admin/client/${uuid}/edit`, data);
+
+export type TrafficCycleMode = "agent" | "monthly" | "fixed_days" | "manual";
+
+export interface ClientTrafficLedger {
+  uuid: string;
+  mode: TrafficCycleMode;
+  reset_day: number;
+  interval_days: number;
+  anchor_at?: string | null;
+  anchor_date?: string;
+  timezone: string;
+  cycle_start_at?: string | null;
+  cycle_end_at?: string | null;
+  accumulated_up: number;
+  accumulated_down: number;
+  offset_up: number;
+  offset_down: number;
+  effective_up: number;
+  effective_down: number;
+  raw_last_up: number;
+  raw_last_down: number;
+  has_baseline: boolean;
+  calibrated_at?: string | null;
+  traffic_limit: number;
+  traffic_limit_type: string;
+  agent_month_rotate?: boolean;
+}
+
+export interface ClientTrafficConfig {
+  mode: TrafficCycleMode;
+  reset_day: number;
+  interval_days: number;
+  anchor_date?: string;
+  timezone: string;
+  traffic_limit: number;
+  traffic_limit_type: string;
+}
+
+export interface ClientTrafficCalibration {
+  target_up?: number;
+  target_down?: number;
+  target_total?: number;
+  delta_up?: number;
+  delta_down?: number;
+  suppress_alert: boolean;
+  note?: string;
+}
+
+export const getClientTrafficLedger = (uuid: string, checkAgentConfig = false) =>
+  api.getData<ClientTrafficLedger>(
+    `/api/admin/client/${encodeURIComponent(uuid)}/traffic${checkAgentConfig ? "?check_agent_config=true" : ""}`,
+  );
+
+export const configureClientTrafficLedger = (uuid: string, data: ClientTrafficConfig) =>
+  api.postData<unknown>(`/api/admin/client/${encodeURIComponent(uuid)}/traffic/config`, data);
+
+export const calibrateClientTrafficLedger = (uuid: string, data: ClientTrafficCalibration) =>
+  api.postData<unknown>(`/api/admin/client/${encodeURIComponent(uuid)}/traffic/calibrate`, data);
+
+export const resetClientTrafficLedger = (uuid: string) =>
+  api.postData<unknown>(`/api/admin/client/${encodeURIComponent(uuid)}/traffic/reset`, {});

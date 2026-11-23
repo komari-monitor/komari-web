@@ -1,5 +1,6 @@
-import { Flex, TextField, Checkbox } from "@radix-ui/themes";
+import { Flex, TextField, Checkbox, IconButton, Tooltip } from "@radix-ui/themes";
 import { useTranslation } from "react-i18next";
+import { Info } from "lucide-react";
 import Tips from "@/components/ui/tips";
 import type { InstallOptionsState } from "./useInstallOptions";
 import OptionField from "./OptionField";
@@ -527,6 +528,16 @@ export default function InstallOptionFields({
           >
             {t("admin.nodeTable.monthRotate", "网络统计月重置")}
           </label>
+          <Tooltip content={t("admin.nodeTable.monthRotateTooltip")}>
+            <IconButton
+              type="button"
+              variant="ghost"
+              size="1"
+              aria-label={t("admin.nodeTable.monthRotateTooltip")}
+            >
+              <Info size={14} />
+            </IconButton>
+          </Tooltip>
         </Flex>
         <OptionField open={enableMonthRotate}>
           <TextField.Root

@@ -4,10 +4,8 @@ import { Flex, TextField, Button, Dialog, IconButton, TextArea } from "@radix-ui
 import { Pencil } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { formatBytes, stringToBytes } from "@/utils/unitHelper";
 import Tips from "@/components/ui/tips";
-import { SettingCardCollapse, SettingCardSelect, SettingCardShortTextInput, SettingCardSwitch } from "@/components/admin/SettingCard";
-import { Collapse } from "@/components/motion";
+import { SettingCardSwitch } from "@/components/admin/SettingCard";
 import { editClient } from "./api";
 
 export default function EditButton({ node }: { node: NodeDetail }) {
@@ -21,29 +19,12 @@ export default function EditButton({ node }: { node: NodeDetail }) {
   const privateRemarkRef = React.useRef<HTMLTextAreaElement>(null);
   const [hidden, setHidden] = useState(false);
   const [saving, setSaving] = useState(false);
-  const [traffic_limit, setTrafficLimit] = useState(0);
-  const [traffic_limit_type, setTrafficLimitType] = useState("sum");
-  const [trafficLimitInput, setTrafficLimitInput] = useState("0 B");
-  const [trafficLimitInvalid, setTrafficLimitInvalid] = useState(false);
 
   React.useEffect(() => {
     setHidden(node.hidden);
-    setTrafficLimit(node.traffic_limit || 0);
-    setTrafficLimitType(node.traffic_limit_type || "sum");
-    setTrafficLimitInput(formatBytes(node.traffic_limit || 0));
-    setTrafficLimitInvalid(false);
-  }, [node.hidden, node.traffic_limit, node.traffic_limit_type]);
+  }, [node.hidden]);
 
   const save = async () => {
-    if (trafficLimitInvalid) {
-      toast.error(
-        t(
-          "admin.nodeEdit.trafficLimitInvalidSave",
-          "流量阈值格式无法解析，请先修正"
-        )
-      );
-      return;
-    }
     try {
       setSaving(true);
       await editClient(node.uuid, {
@@ -53,8 +34,6 @@ export default function EditButton({ node }: { node: NodeDetail }) {
         group: groupRef.current?.value,
         tags: tagsRef.current?.value,
         hidden,
-        traffic_limit,
-        traffic_limit_type,
       });
       refresh();
       setOpen(false);
@@ -155,73 +134,6 @@ export default function EditButton({ node }: { node: NodeDetail }) {
               onChange={setHidden}
             />
           </div>
-          <SettingCardCollapse title={t("admin.nodeEdit.trafficLimit")}>
-            <SettingCardSelect
-              bordless
-              title={t("admin.nodeEdit.trafficLimitType")}
-              defaultValue={node.traffic_limit_type || "max"}
-              options={[
-                {
-                  label: t("admin.nodeEdit.trafficLimitType_sum"),
-                  value: "sum",
-                },
-                {
-                  label: t("admin.nodeEdit.trafficLimitType_max"),
-                  value: "max",
-                },
-                {
-                  label: t("admin.nodeEdit.trafficLimitType_min"),
-                  value: "min",
-                },
-                {
-                  label: t("admin.nodeEdit.trafficLimitType_up"),
-                  value: "up",
-                },
-                {
-                  label: t("admin.nodeEdit.trafficLimitType_down"),
-                  value: "down",
-                },
-              ]}
-              OnSave={(value) => {
-                setTrafficLimitType(value);
-              }}
-            />
-            <SettingCardShortTextInput
-              bordless
-              title={t("admin.nodeEdit.trafficLimit")}
-              description={t("admin.nodeEdit.trafficLimit_description")}
-              value={trafficLimitInput}
-              showSaveButton={false}
-              onChange={(e) => {
-                const raw = e.currentTarget.value;
-                setTrafficLimitInput(raw);
-                const bytes = stringToBytes(raw);
-                if (bytes === null) {
-                  // 解析失败：标记错误，保留原值与用户输入，不静默置 0
-                  setTrafficLimitInvalid(true);
-                } else {
-                  setTrafficLimitInvalid(false);
-                  setTrafficLimit(bytes);
-                }
-              }}
-              onBlur={() => {
-                // 仅在解析成功时规范显示；解析失败时保留原始输入供用户修正
-                if (!trafficLimitInvalid) {
-                  setTrafficLimitInput(formatBytes(traffic_limit));
-                }
-              }}
-            >
-              {/* feedback 层：格式错误提示展开/收起用高度弹簧，不把下方内容顶跳 */}
-              <Collapse open={trafficLimitInvalid} aria-hidden={!trafficLimitInvalid || undefined}>
-                <span className="mt-1 block text-sm text-red-500">
-                  {t(
-                    "admin.nodeEdit.trafficLimitInvalid",
-                    "无法解析该数值，支持如 100 GB / 512 MiB / 2T（最大 PB）"
-                  )}
-                </span>
-              </Collapse>
-            </SettingCardShortTextInput>
-          </SettingCardCollapse>
         </div>
         <Flex gap="2" justify="end" mt="5">
           <Button
