@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import {
   Badge,
   Button,
@@ -12,7 +12,7 @@ import {
   Text,
   TextField,
 } from "@radix-ui/themes";
-import { Activity, AlertTriangle } from "lucide-react";
+import { AlertTriangle, ArrowUpDown } from "lucide-react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useNodeDetails, type NodeDetail } from "@/contexts/NodeDetailsContext";
@@ -49,8 +49,40 @@ const modeLabels: Record<TrafficCycleMode, string> = {
 };
 const limitTypes = ["sum", "max", "min", "up", "down"];
 
-function todayDateString() {
-  return new Date().toISOString().slice(0, 10);
+function datePartsInTimezone(date: Date, timezone?: string) {
+  try {
+    const options: Intl.DateTimeFormatOptions = { year: "numeric", month: "numeric", day: "numeric" };
+    if (timezone && timezone !== "Local") options.timeZone = timezone;
+    const parts = new Intl.DateTimeFormat("en-US", options).formatToParts(date);
+    const year = Number(parts.find((p) => p.type === "year")?.value);
+    const month = Number(parts.find((p) => p.type === "month")?.value);
+    const day = Number(parts.find((p) => p.type === "day")?.value);
+    if (Number.isFinite(year) && Number.isFinite(month) && Number.isFinite(day)) {
+      return { year, month, day };
+    }
+  } catch {
+    // fallback to browser local date
+  }
+  return { year: date.getFullYear(), month: date.getMonth() + 1, day: date.getDate() };
+}
+
+function formatYmd(year: number, month: number, day: number) {
+  return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+function todayDateString(timezone?: string) {
+  const { year, month, day } = datePartsInTimezone(new Date(), timezone);
+  return formatYmd(year, month, day);
+}
+
+function lastResetDateString(resetDay: number, timezone?: string) {
+  const { year, month, day } = datePartsInTimezone(new Date(), timezone);
+  const daysIn = (y: number, m: number) => new Date(Date.UTC(y, m, 0)).getUTCDate();
+  const thisMonthDay = Math.min(resetDay, daysIn(year, month));
+  if (day >= thisMonthDay) return formatYmd(year, month, thisMonthDay);
+  const prevMonth = month === 1 ? 12 : month - 1;
+  const prevYear = month === 1 ? year - 1 : year;
+  return formatYmd(prevYear, prevMonth, Math.min(resetDay, daysIn(prevYear, prevMonth)));
 }
 
 function formatDate(value: string | null | undefined, timezone: string, locale: string) {
@@ -100,15 +132,22 @@ export default function TrafficButton({
   const [loadError, setLoadError] = useState("");
   const [ledger, setLedger] = useState<ClientTrafficLedger | null>(null);
   const [agentMonthRotate, setAgentMonthRotate] = useState(false);
-  const [checkedAgentForMode, setCheckedAgentForMode] = useState(false);
+  const [agentMonthRotateDay, setAgentMonthRotateDay] = useState<number | null>(null);
+  const [preserveCurrentUsage, setPreserveCurrentUsage] = useState(false);
+  const [touchedFields, setTouchedFields] = useState({
+    resetDay: false,
+    anchorDate: false,
+    preserveUsage: false,
+  });
   const [busy, setBusy] = useState<"config" | "calibration" | "reset" | null>(null);
   const [confirmReset, setConfirmReset] = useState(false);
+  const openSeqRef = useRef(0);
 
   const [config, setConfig] = useState<TrafficConfigForm>({
     mode: "agent",
     resetDay: "1",
     intervalDays: "30",
-    anchorDate: todayDateString(),
+    anchorDate: todayDateString(defaultTimezone),
     timezone: "",
     trafficLimit: "0 B",
     trafficLimitType: "sum",
@@ -132,11 +171,15 @@ export default function TrafficButton({
         mode: result.mode,
         resetDay: String(result.reset_day ?? 1),
         intervalDays: String(result.interval_days ?? 30),
-        anchorDate: result.anchor_date || (result.anchor_at ? result.anchor_at.slice(0, 10) : todayDateString()),
+        anchorDate:
+          result.anchor_date ||
+          (result.anchor_at ? result.anchor_at.slice(0, 10) : todayDateString(defaultTimezone)),
         timezone: result.timezone && result.timezone !== "Local" ? result.timezone : "",
         trafficLimit: formatBytes(Number(result.traffic_limit) || 0),
         trafficLimitType: result.traffic_limit_type || "sum",
       });
+      setPreserveCurrentUsage(false);
+      setTouchedFields({ resetDay: false, anchorDate: false, preserveUsage: false });
       const up = Number(result.effective_up) || 0;
       const down = Number(result.effective_down) || 0;
       setTargetUp(formatBytes(up));
@@ -150,25 +193,51 @@ export default function TrafficButton({
     } finally {
       setLoading(false);
     }
-  }, [node.uuid, t]);
+  }, [defaultTimezone, node.uuid, t]);
 
   useEffect(() => {
+    const seq = ++openSeqRef.current;
     if (!open) return;
     setLedger(null);
     setAgentMonthRotate(false);
-    setCheckedAgentForMode(false);
+    setAgentMonthRotateDay(null);
+    setPreserveCurrentUsage(false);
+    setTouchedFields({ resetDay: false, anchorDate: false, preserveUsage: false });
     setConfirmReset(false);
     void loadLedger();
-  }, [open, loadLedger]);
-
-  // 仅在服务端周期模式下按需检查被控端是否同时开启了 --month-rotate
-  useEffect(() => {
-    if (!open || !ledger || ledger.mode === "agent" || checkedAgentForMode) return;
-    setCheckedAgentForMode(true);
+    // 后台异步探测被控端 --month-rotate，既可用于迁移自动填值，也用于冲突提醒，不阻塞弹窗渲染
     void getClientTrafficLedger(node.uuid, true)
-      .then((result) => setAgentMonthRotate(result.agent_month_rotate === true))
-      .catch(() => setAgentMonthRotate(false));
-  }, [checkedAgentForMode, ledger, node.uuid, open]);
+      .then((result) => {
+        if (openSeqRef.current !== seq) return;
+        setAgentMonthRotate(result.agent_month_rotate === true);
+        const day = Number(result.agent_month_rotate_day) || 0;
+        setAgentMonthRotateDay(day >= 1 && day <= 31 ? day : null);
+      })
+      .catch(() => {
+        if (openSeqRef.current !== seq) return;
+        setAgentMonthRotate(false);
+        setAgentMonthRotateDay(null);
+      });
+  }, [open, loadLedger, node.uuid]);
+
+  // 从跟随被控端切到服务端模式时，若检测到被控端配置了 --month-rotate，自动填入日期并默认保留当前用量
+  useEffect(() => {
+    if (!ledger || ledger.mode !== "agent" || !agentMonthRotateDay || config.mode === "agent") return;
+    setConfig((cur) => {
+      if (cur.mode === "monthly" && !touchedFields.resetDay) {
+        const nextDay = String(agentMonthRotateDay);
+        return cur.resetDay === nextDay ? cur : { ...cur, resetDay: nextDay };
+      }
+      if (cur.mode === "fixed_days" && !touchedFields.anchorDate) {
+        const nextAnchor = lastResetDateString(agentMonthRotateDay, cur.timezone || defaultTimezone);
+        return cur.anchorDate === nextAnchor ? cur : { ...cur, anchorDate: nextAnchor };
+      }
+      return cur;
+    });
+    if (!touchedFields.preserveUsage && (Number(ledger.effective_up) > 0 || Number(ledger.effective_down) > 0)) {
+      setPreserveCurrentUsage(true);
+    }
+  }, [agentMonthRotateDay, config.mode, defaultTimezone, ledger, touchedFields]);
 
   useEffect(() => {
     if (!open) return;
@@ -187,7 +256,11 @@ export default function TrafficButton({
       return;
     }
     const rawExpired = node.expired_at ? node.expired_at.slice(0, 10) : "";
-    const anchorDate = rawExpired && !rawExpired.startsWith("0001-") ? rawExpired : todayDateString();
+    const anchorDate =
+      rawExpired && !rawExpired.startsWith("0001-")
+        ? rawExpired
+        : todayDateString(config.timezone || defaultTimezone);
+    setTouchedFields((cur) => ({ ...cur, anchorDate: true }));
     setConfig((current) => ({
       ...current,
       mode: "fixed_days",
@@ -226,6 +299,7 @@ export default function TrafficButton({
       }
     }
 
+    const switchingFromAgent = Boolean(ledger && ledger.mode === "agent" && config.mode !== "agent");
     setBusy("config");
     try {
       await configureClientTrafficLedger(node.uuid, {
@@ -236,8 +310,8 @@ export default function TrafficButton({
         timezone,
         traffic_limit: trafficLimit,
         traffic_limit_type: config.trafficLimitType,
+        ...(switchingFromAgent && preserveCurrentUsage ? { preserve_current_usage: true } : {}),
       });
-      setCheckedAgentForMode(false);
       refresh();
       await loadLedger();
       toast.success(t("admin.trafficLedger.configSaved"));
@@ -339,6 +413,13 @@ export default function TrafficButton({
 
   const isBusy = busy !== null;
   const serverManaged = Boolean(ledger && ledger.mode !== "agent");
+  const switchingFromAgent = Boolean(ledger && ledger.mode === "agent" && config.mode !== "agent");
+  const showAutofillHint = Boolean(
+    switchingFromAgent &&
+      agentMonthRotateDay &&
+      ((config.mode === "monthly" && !touchedFields.resetDay) ||
+        (config.mode === "fixed_days" && !touchedFields.anchorDate)),
+  );
   const displayTimezone = ledger?.timezone && ledger.timezone !== "Local" ? ledger.timezone : defaultTimezone;
   const formatTs = (value?: string | null) => formatDate(value, displayTimezone, i18n.language);
 
@@ -420,7 +501,7 @@ export default function TrafficButton({
           title={t("admin.trafficLedger.title")}
           aria-label={t("admin.trafficLedger.title")}
         >
-          <Activity size={18} />
+          <ArrowUpDown size={18} />
         </IconButton>
       </Dialog.Trigger>
       <Dialog.Content style={{ maxWidth: 680, maxHeight: "85vh", overflowY: "auto" }}>
@@ -534,7 +615,10 @@ export default function TrafficButton({
                       setConfig((cur) => ({
                         ...cur,
                         mode: nextMode,
-                        anchorDate: nextMode === "fixed_days" && !cur.anchorDate ? todayDateString() : cur.anchorDate,
+                        anchorDate:
+                          nextMode === "fixed_days" && !cur.anchorDate
+                            ? todayDateString(cur.timezone || defaultTimezone)
+                            : cur.anchorDate,
                       }));
                     }}
                   >
@@ -555,7 +639,10 @@ export default function TrafficButton({
                       min="1"
                       max="31"
                       value={config.resetDay}
-                      onChange={(e) => updateConfig("resetDay", e.currentTarget.value)}
+                      onChange={(e) => {
+                        setTouchedFields((cur) => ({ ...cur, resetDay: true }));
+                        updateConfig("resetDay", e.currentTarget.value);
+                      }}
                     />
                     <Text as="span" size="1" color="gray">{t("admin.trafficLedger.resetDayHint")}</Text>
                   </label>
@@ -578,7 +665,10 @@ export default function TrafficButton({
                       <TextField.Root
                         type="date"
                         value={config.anchorDate}
-                        onChange={(e) => updateConfig("anchorDate", e.currentTarget.value)}
+                        onChange={(e) => {
+                          setTouchedFields((cur) => ({ ...cur, anchorDate: true }));
+                          updateConfig("anchorDate", e.currentTarget.value);
+                        }}
                       />
                     </label>
                   </>
@@ -625,6 +715,34 @@ export default function TrafficButton({
                   </Select.Root>
                 </label>
               </div>
+
+              {switchingFromAgent && (effectiveTotal > 0 || showAutofillHint) && (
+                <div className="flex flex-col gap-1.5">
+                  {effectiveTotal > 0 && (
+                    <Flex gap="2" align="center">
+                      <Checkbox
+                        id="traffic-preserve-usage"
+                        checked={preserveCurrentUsage}
+                        onCheckedChange={(checked) => {
+                          setTouchedFields((cur) => ({ ...cur, preserveUsage: true }));
+                          setPreserveCurrentUsage(checked === true);
+                        }}
+                      />
+                      <label htmlFor="traffic-preserve-usage" className="text-sm">
+                        {t("admin.trafficLedger.preserveCurrentUsage", {
+                          up: formatBytes(effectiveUp),
+                          down: formatBytes(effectiveDown),
+                        })}
+                      </label>
+                    </Flex>
+                  )}
+                  {showAutofillHint && (
+                    <Text size="1" color="gray">
+                      {t("admin.trafficLedger.agentRotateAutofillHint", { day: agentMonthRotateDay })}
+                    </Text>
+                  )}
+                </div>
+              )}
 
               <Flex justify="between" align="center" gap="2" wrap="wrap">
                 {node.billing_cycle > 0 ? (

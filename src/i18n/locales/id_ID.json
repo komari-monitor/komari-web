@@ -166,7 +166,9 @@
       "resetSuccess": "Periode trafik berhasil direset",
       "resetError": "Gagal mereset periode trafik",
       "agentRotate": "Agent pada node ini masih mengaktifkan --month-rotate. Sebaiknya nonaktifkan agar tidak bentrok dengan periode server.",
-      "agentModeDisabled": "Saat ini mengikuti Agent. Ubah dan simpan ke mode periode server terlebih dahulu untuk kalibrasi atau reset."
+      "agentRotateAutofillHint": "Terdeteksi --month-rotate pada Agent (tanggal {{day}}), tanggal diisi otomatis.",
+      "agentModeDisabled": "Saat ini mengikuti Agent. Ubah dan simpan ke mode periode server terlebih dahulu untuk kalibrasi atau reset.",
+      "preserveCurrentUsage": "Gunakan trafik saat ini sebagai offset awal (Unggah {{up}} / Unduh {{down}})"
     },
     "nodeTable": {
       "addNode": "Tambah Node",

@@ -166,7 +166,9 @@
       "resetSuccess": "今期のトラフィックをリセットしました",
       "resetError": "トラフィックのリセットに失敗しました",
       "agentRotate": "このノードの Agent で --month-rotate が有効です。サーバー側の集計周期との競合を避けるため無効化を推奨します。",
-      "agentModeDisabled": "現在は Agent 従属モードです。サーバー側の集計周期に切り替えて保存すると補正やリセットが利用できます。"
+      "agentRotateAutofillHint": "Agent の --month-rotate（毎月 {{day}} 日）を検出したため、日付を自動入力しました。",
+      "agentModeDisabled": "現在は Agent 従属モードです。サーバー側の集計周期に切り替えて保存すると補正やリセットが利用できます。",
+      "preserveCurrentUsage": "現在の使用量を初期補正値として引き継ぐ（アップロード {{up}} / ダウンロード {{down}}）"
     },
     "nodeTable": {
       "addNode": "ノードを追加",

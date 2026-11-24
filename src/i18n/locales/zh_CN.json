@@ -169,6 +169,7 @@
     "trafficLedger": {
       "agentModeDisabled": "当前为跟随被控端模式，切换并保存为服务端统计周期后即可校准或重置。",
       "agentRotate": "检测到该节点被控端仍开启了 --month-rotate，建议关闭以免与服务端统计周期冲突。",
+      "agentRotateAutofillHint": "已检测到被控端 --month-rotate（每月 {{day}} 日），已自动填入对应日期。",
       "anchorDate": "起始日期",
       "calibrate": "应用校准",
       "calibratedTag": "已校准",
@@ -205,6 +206,7 @@
       "note": "备注",
       "notePlaceholder": "可选，如：对齐商家后台",
       "overview": "当期用量",
+      "preserveCurrentUsage": "保留当前用量作为初始偏移（上传 {{up}} / 下载 {{down}}）",
       "previewLine": "校准后：上传 {{up}}（偏移 {{offsetUp}}）· 下载 {{down}}（偏移 {{offsetDown}}）",
       "quota": "流量上限",
       "quotaType": "计算方式",

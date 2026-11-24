@@ -58,6 +58,7 @@ export interface ClientTrafficLedger {
   traffic_limit: number;
   traffic_limit_type: string;
   agent_month_rotate?: boolean;
+  agent_month_rotate_day?: number;
 }
 
 export interface ClientTrafficConfig {
@@ -68,6 +69,7 @@ export interface ClientTrafficConfig {
   timezone: string;
   traffic_limit: number;
   traffic_limit_type: string;
+  preserve_current_usage?: boolean;
 }
 
 export interface ClientTrafficCalibration {

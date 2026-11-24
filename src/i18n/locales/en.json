@@ -264,7 +264,9 @@
       "resetSuccess": "Current traffic cycle reset",
       "resetError": "Failed to reset traffic cycle",
       "agentRotate": "This node's Agent still has --month-rotate enabled. Disable it to avoid conflicts with the server-managed cycle.",
-      "agentModeDisabled": "Calibration and reset are only available after switching to and saving a server-managed cycle."
+      "agentRotateAutofillHint": "Detected Agent --month-rotate (day {{day}}). Date prefilled automatically.",
+      "agentModeDisabled": "Calibration and reset are only available after switching to and saving a server-managed cycle.",
+      "preserveCurrentUsage": "Keep current usage as initial offset (Upload {{up}} / Download {{down}})"
     },
     "nodeTable": {
       "addNode": "Add",

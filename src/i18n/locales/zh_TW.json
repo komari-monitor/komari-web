@@ -264,7 +264,9 @@
       "resetSuccess": "當期流量已重置",
       "resetError": "重置當期流量失敗",
       "agentRotate": "偵測到此節點被控端仍啟用了 --month-rotate，建議關閉以免與伺服器統計週期衝突。",
-      "agentModeDisabled": "目前為跟隨被控端模式，切換並儲存為伺服器統計週期後即可校準或重置。"
+      "agentRotateAutofillHint": "已偵測到被控端 --month-rotate（每月 {{day}} 日），已自動填入對應日期。",
+      "agentModeDisabled": "目前為跟隨被控端模式，切換並儲存為伺服器統計週期後即可校準或重置。",
+      "preserveCurrentUsage": "保留目前用量作為初始偏移（上傳 {{up}} / 下載 {{down}}）"
     },
     "nodeTable": {
       "addNode": "新增節點",
