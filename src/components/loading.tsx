@@ -15,16 +15,29 @@ const messages = [
   "你愿意和我写一辈子代码吗",
   "蓝白碗赛高！",
   "立春天，风渐暖，伊人一去不复返。",
-  "av170001",
   "對酒....當嗝，人生....百合",
   "Loading...",
   "Mozambique here!",
   "我 能 加 入 天 际 俯 冲",
   "“心脏要逃走了！！！！！”",
-  "32123432",
+  "32123432，为什么要演奏()()()？",
   "sa↓ka→na→~     chinanako~!",
   "Komari☆探针《正在编译着色器》",
-  "Hello, An internal investigation of suspicious signals associated ... "
+  "Hello, An internal investigation of suspicious signals associated ... ",
+  "u↑↓u↑↓u↑↓u↑↓u↑↓3↑3→",
+  "正在进行强制退场",
+  "nixiankaide",
+  "从水下第一个生命的萌芽开始…",
+  "一刀子~一刀子~",
+  "鱼，好大的鱼，虎纹鲨鱼！！！",
+  "憂、安堵、藍。",
+  "\\阿卡林/ \\アッカリ～ン/ \\阿卡林/ ",
+  "喵帕斯~ にゃんぱすー Nyanpasu-",
+  "私のオナニーを見てください!",
+  "有木有wifi有木有wifi有而且耐用五毛的",
+  "喵内~喵内~喵内~みゃー姉みゃー姉",
+  "...地球也包括我吗?地球にも私が含まれていますか",
+  "“时间流逝吧，你是多么残酷。时间停止吧，你是多么美丽。”"
 ] as const;
 
 /*
