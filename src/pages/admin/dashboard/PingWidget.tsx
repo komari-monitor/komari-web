@@ -1,11 +1,14 @@
-import type React from "react";
-import { Flex, Text } from "@radix-ui/themes";
+import { useState, type ReactNode } from "react";
+import { Flex, SegmentedControl, Text } from "@radix-ui/themes";
 import { useTranslation } from "react-i18next";
 import { Gauge } from "lucide-react";
+import { useDashboardWidgetContext } from "@/components/admin/dashboard/widgetContext";
 import { Skeletonize, skeletonText } from "@/components/ui/skeleton";
 import { MiniChartButton, RankEntryRow, RankListPopover } from "./RankList";
 import type { PingRankItem } from "./types";
 import { PING_METRIC_KEYS, latencyColor, volatilityColor } from "./utils";
+
+type PingTab = "stable" | "unstable" | "loss";
 
 /** 延迟排行的一列：标题 + 完整列表弹层 + 前 limit 条 */
 const LatencyColumn = ({
@@ -17,7 +20,7 @@ const LatencyColumn = ({
 }: {
   title: string;
   items: PingRankItem[];
-  renderValue: (item: PingRankItem) => React.ReactNode;
+  renderValue: (item: PingRankItem) => ReactNode;
   limit: number;
   loading?: boolean;
 }) => {
@@ -91,6 +94,9 @@ export const PingWidget = ({
   lossItems: PingRankItem[];
 }) => {
   const { t } = useTranslation();
+  const { width } = useDashboardWidgetContext();
+  const [tab, setTab] = useState<PingTab>("stable");
+  const compactMode = width === "compact";
 
   const renderLatencyValue = (item: PingRankItem) => (
     <Text size="2" className="whitespace-nowrap">
@@ -107,15 +113,67 @@ export const PingWidget = ({
     </Text>
   );
 
+  const renderLossValue = (item: PingRankItem) => (
+    <Text size="2" className="whitespace-nowrap">
+      {item.loss.toFixed(1)}%
+    </Text>
+  );
+
   return (
-    <Flex direction="column" gap="4">
-      <Flex gap="2" align="center" style={{ color: "var(--gray-10)" }}>
-        <Gauge size={18} />
-        <Text size="3" weight="bold">
-          {t("nodeCard.ping", "Ping")}
-        </Text>
+    <Flex direction="column" gap="3">
+      <Flex justify="between" align="center" gap="2" wrap="wrap" style={{ color: "var(--gray-10)" }}>
+        <Flex gap="2" align="center">
+          <Gauge size={18} />
+          <Text size="3" weight="bold">
+            {t("nodeCard.ping", "Ping")}
+          </Text>
+        </Flex>
+        {compactMode && (
+          <SegmentedControl.Root
+            size="1"
+            value={tab}
+            onValueChange={(value) => setTab(value as PingTab)}
+          >
+            <SegmentedControl.Item value="stable">
+              {t("dashboard.pingTabStable", "Stable")}
+            </SegmentedControl.Item>
+            <SegmentedControl.Item value="unstable">
+              {t("dashboard.pingTabUnstable", "Jitter")}
+            </SegmentedControl.Item>
+            <SegmentedControl.Item value="loss">
+              {t("dashboard.pingTabLoss", "Loss")}
+            </SegmentedControl.Item>
+          </SegmentedControl.Root>
+        )}
       </Flex>
       <Skeletonize loading={loading}>
+      {compactMode ? (
+        tab === "stable" ? (
+          <LatencyColumn
+            title={t("dashboard.stableLatency", "Most stable latency")}
+            items={stableItems}
+            renderValue={renderLatencyValue}
+            limit={limit}
+            loading={loading}
+          />
+        ) : tab === "unstable" ? (
+          <LatencyColumn
+            title={t("dashboard.unstableLatency", "Most unstable latency")}
+            items={unstableItems}
+            renderValue={renderLatencyValue}
+            limit={limit}
+            loading={loading}
+          />
+        ) : (
+          <LatencyColumn
+            title={t("dashboard.highestLoss", "Highest packet loss")}
+            items={lossItems}
+            renderValue={renderLossValue}
+            limit={limit}
+            loading={loading}
+          />
+        )
+      ) : (
       <Flex gap="5" wrap="wrap">
         <LatencyColumn
           title={t("dashboard.stableLatency", "Most stable latency")}
@@ -134,15 +192,12 @@ export const PingWidget = ({
         <LatencyColumn
           title={t("dashboard.highestLoss", "Highest packet loss")}
           items={lossItems}
-          renderValue={(item) => (
-            <Text size="2" className="whitespace-nowrap">
-              {item.loss.toFixed(1)}%
-            </Text>
-          )}
+          renderValue={renderLossValue}
           limit={limit}
           loading={loading}
         />
       </Flex>
+      )}
       </Skeletonize>
     </Flex>
   );

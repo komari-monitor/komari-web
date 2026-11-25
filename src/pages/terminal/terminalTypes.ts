@@ -1,3 +1,5 @@
+import { createRandomId } from "@/utils/randomId";
+
 export interface TerminalClient {
   uuid: string;
   name: string;
@@ -69,7 +71,7 @@ export const TAB_ACTION_CLASS_NAME =
 export const TERMINAL_CALLOUT_CLASS_NAME =
   "rounded-lg border border-red-800/60 bg-red-950/80 text-red-300 backdrop-blur-md";
 
-export const createTabId = () => `terminal-tab-${crypto.randomUUID()}`;
+export const createTabId = () => `terminal-tab-${createRandomId()}`;
 
 export const createTab = (
   client: TerminalClient,

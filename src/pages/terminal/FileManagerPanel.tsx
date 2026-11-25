@@ -62,7 +62,9 @@ import {
   formatClipboardPath,
   fileDownloadUrl,
   copyTextToClipboard,
+  getClipboardUploadFiles,
   getDroppedUploadFiles,
+  isEditableEventTarget,
   joinRemotePath,
   normalizeRemotePath,
   remoteBasename,
@@ -201,6 +203,8 @@ const FileManagerPanel = ({
   const [clipboardSource, setClipboardSource] = useState<ClipboardState>(null);
 
   const requestVersionRef = useRef(0);
+  const panelRef = useRef<HTMLDivElement | null>(null);
+  const isHoveredRef = useRef(false);
   const uploadInputRef = useRef<HTMLInputElement>(null);
   const uploadTargetRef = useRef("");
   const listRef = useRef<HTMLDivElement | null>(null);
@@ -498,6 +502,71 @@ const FileManagerPanel = ({
     }
   }, [clipboardSource, currentPath, fileService, refresh, t, uuid]);
 
+  // 在文件管理区域使用 Ctrl/Cmd+V 粘贴系统剪贴板中的文件或图像，直接上传到当前目录
+  useEffect(() => {
+    if (!uuid || editorOpen || action !== null || pendingDeleteFiles.length > 0) return;
+    const handlePaste = (event: ClipboardEvent) => {
+      if (event.defaultPrevented) return;
+      const panel = panelRef.current;
+      if (!panel) return;
+      const rect = panel.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
+
+      const activeEl = document.activeElement;
+      if (isEditableEventTarget(event.target) || isEditableEventTarget(activeEl)) return;
+
+      const focusedInside = Boolean(activeEl && panel.contains(activeEl));
+      const bodyFocused =
+        !activeEl || activeEl === document.body || activeEl === document.documentElement;
+      if (!focusedInside && !(isHoveredRef.current && bodyFocused)) return;
+
+      const existingNames = new Set(files.map((item) => item.name));
+      const pastedFiles = getClipboardUploadFiles(event.clipboardData, existingNames);
+      if (pastedFiles.length > 0) {
+        event.preventDefault();
+        closeContextMenu();
+        const targetDir = normalizeRemotePath(currentPath || "/");
+        if (pastedFiles.length === 1) {
+          toast.info(
+            t("file_manager.paste_uploading", {
+              name: pastedFiles[0].name,
+              defaultValue: `Uploading ${pastedFiles[0].name}`,
+            }),
+          );
+        } else {
+          toast.info(
+            t("file_manager.paste_uploading_multiple", {
+              count: pastedFiles.length,
+              defaultValue: `Uploading ${pastedFiles.length} pasted files`,
+            }),
+          );
+        }
+        void uploadFiles(pastedFiles, targetDir);
+        return;
+      }
+
+      if (clipboardSource) {
+        event.preventDefault();
+        closeContextMenu();
+        void pasteClipboard();
+      }
+    };
+    window.addEventListener("paste", handlePaste);
+    return () => window.removeEventListener("paste", handlePaste);
+  }, [
+    action,
+    clipboardSource,
+    closeContextMenu,
+    currentPath,
+    editorOpen,
+    files,
+    pasteClipboard,
+    pendingDeleteFiles.length,
+    t,
+    uploadFiles,
+    uuid,
+  ]);
+
   const startCreate = useCallback((kind: "file" | "folder") => {
     setAction(null);
     setActionFile(null);
@@ -744,7 +813,15 @@ const FileManagerPanel = ({
 
   return (
     <div
-      className="relative flex h-full min-h-0 flex-col bg-transparent text-[#cccccc]"
+      ref={panelRef}
+      className="relative flex h-full min-h-0 flex-col bg-transparent text-[#cccccc] outline-none"
+      onMouseEnter={() => { isHoveredRef.current = true; }}
+      onMouseLeave={() => { isHoveredRef.current = false; }}
+      onMouseDown={(event) => {
+        if (!isEditableEventTarget(event.target)) {
+          panelRef.current?.focus({ preventScroll: true });
+        }
+      }}
       onClick={closeContextMenu}
       tabIndex={0}
       onKeyDown={(event) => {

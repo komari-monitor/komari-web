@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
+import { createRandomId } from "@/utils/randomId";
 import {
   cacheTransferChunkSize,
   getCachedTransferChunkSize,
@@ -146,12 +147,7 @@ const MAX_RESUME_ATTEMPTS = 3;
 const RETRY_BASE_DELAY_MS = 500;
 const PROGRESS_INTERVAL_MS = 200;
 
-const createUploadTaskID = () => {
-  if (typeof crypto !== "undefined" && "randomUUID" in crypto) {
-    return crypto.randomUUID();
-  }
-  return `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-};
+const createUploadTaskID = () => createRandomId();
 
 const sleep = (ms: number, signal?: AbortSignal) =>
   new Promise<void>((resolve, reject) => {

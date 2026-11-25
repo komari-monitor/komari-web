@@ -133,6 +133,23 @@ export function formatUptime(seconds: number, t: TFunction): string {
   return parts.join(" ");
 }
 
+/** 紧凑时长：最多保留前两个最大时间单位（如「12 天 5 小时」「3 小时 18 分」），适合紧凑卡片行 */
+export function formatUptimeCompact(seconds: number, t: TFunction): string {
+  if (!Number.isFinite(seconds) || seconds <= 0) {
+    return `0 ${t("nodeCard.time_second")}`;
+  }
+  const d = Math.floor(seconds / 86400);
+  const h = Math.floor((seconds % 86400) / 3600);
+  const m = Math.floor((seconds % 3600) / 60);
+  const s = Math.floor(seconds % 60);
+  const parts: string[] = [];
+  if (d) parts.push(`${d} ${t("nodeCard.time_day")}`);
+  if (h) parts.push(`${h} ${t("nodeCard.time_hour")}`);
+  if (parts.length < 2 && m) parts.push(`${m} ${t("nodeCard.time_minute")}`);
+  if (parts.length === 0) parts.push(`${s} ${t("nodeCard.time_second")}`);
+  return parts.slice(0, 2).join(" ");
+}
+
 /** 速率格式化（字节/秒）：B、KB 不带小数，GB 以上 1 位小数，数值 ≥100 时不带小数 */
 export function formatSpeed(bytes: number): string {
   if (bytes === 0) return "0 B/s";

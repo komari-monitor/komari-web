@@ -43,7 +43,9 @@ import {
   fileDownloadUrl,
   copyTextToClipboard,
   formatClipboardPath,
+  getClipboardUploadFiles,
   getDroppedUploadFiles,
+  isEditableEventTarget,
   joinRemotePath,
   normalizeRemotePath,
   remoteAncestors,
@@ -169,6 +171,8 @@ export const RemoteFileTree = ({
   const [ownerValue, setOwnerValue] = useState("");
   const [groupValue, setGroupValue] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const treePanelRef = useRef<HTMLDivElement | null>(null);
+  const isHoveredRef = useRef(false);
   const uploadInputRef = useRef<HTMLInputElement>(null);
   const uploadTargetRef = useRef(rootPath);
   const treeScrollRef = useRef<HTMLDivElement | null>(null);
@@ -708,6 +712,70 @@ export const RemoteFileTree = ({
     setRenameValue("");
   }, []);
 
+  // 在编辑器左侧远程文件树区域使用 Ctrl/Cmd+V 粘贴剪贴板文件或图像，上传到所选目录（或根目录）
+  useEffect(() => {
+    if (!uuid || !rootPath || action !== null) return;
+    const handlePaste = (event: ClipboardEvent) => {
+      if (event.defaultPrevented) return;
+      const panel = treePanelRef.current;
+      if (!panel) return;
+      const rect = panel.getBoundingClientRect();
+      if (rect.width === 0 || rect.height === 0) return;
+
+      const activeEl = document.activeElement;
+      if (isEditableEventTarget(event.target) || isEditableEventTarget(activeEl)) return;
+
+      const focusedInside = Boolean(activeEl && panel.contains(activeEl));
+      const bodyFocused =
+        !activeEl || activeEl === document.body || activeEl === document.documentElement;
+      if (!focusedInside && !(isHoveredRef.current && bodyFocused)) return;
+
+      let targetDir = rootPath;
+      if (selectedPathsRef.current.size === 1) {
+        const onlyPath = String(selectedPathsRef.current.values().next().value);
+        const selectedEntry = findTreeFile(rootPath, onlyPath, childrenRef.current);
+        if (selectedEntry) {
+          targetDir = selectedEntry.is_dir ? selectedEntry.path : remoteDirname(selectedEntry.path);
+        }
+      }
+
+      const existingNames = new Set((childrenRef.current[targetDir] ?? []).map((item) => item.name));
+      const pastedFiles = getClipboardUploadFiles(event.clipboardData, existingNames);
+      if (pastedFiles.length > 0) {
+        event.preventDefault();
+        closeContextMenu();
+        if (targetDir !== rootPath) {
+          setExpanded((current) => new Set(current).add(targetDir));
+        }
+        if (pastedFiles.length === 1) {
+          toast.info(
+            t("file_manager.paste_uploading", {
+              name: pastedFiles[0].name,
+              defaultValue: `Uploading ${pastedFiles[0].name}`,
+            }),
+          );
+        } else {
+          toast.info(
+            t("file_manager.paste_uploading_multiple", {
+              count: pastedFiles.length,
+              defaultValue: `Uploading ${pastedFiles.length} pasted files`,
+            }),
+          );
+        }
+        void uploadFiles(pastedFiles, targetDir);
+        return;
+      }
+
+      if (clipboardSource) {
+        event.preventDefault();
+        closeContextMenu();
+        void pasteInto(targetDir);
+      }
+    };
+    window.addEventListener("paste", handlePaste);
+    return () => window.removeEventListener("paste", handlePaste);
+  }, [action, clipboardSource, closeContextMenu, pasteInto, rootPath, t, uploadFiles, uuid]);
+
   const renderNode = (file: RemoteFileInfo, depth: number, ancestors = new Set<string>()) => {
     const normalizedPath = normalizeRemotePath(file.path);
     const isExpanded = expanded.has(normalizedPath);
@@ -932,7 +1000,15 @@ export const RemoteFileTree = ({
 
   return (
     <div
-      className="relative flex h-full min-h-0 flex-col"
+      ref={treePanelRef}
+      className="relative flex h-full min-h-0 flex-col outline-none"
+      onMouseEnter={() => { isHoveredRef.current = true; }}
+      onMouseLeave={() => { isHoveredRef.current = false; }}
+      onMouseDown={(event) => {
+        if (!isEditableEventTarget(event.target)) {
+          treePanelRef.current?.focus({ preventScroll: true });
+        }
+      }}
       onClick={closeContextMenu}
       tabIndex={0}
       onKeyDown={(event) => {

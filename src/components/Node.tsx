@@ -15,6 +15,7 @@ import { useTranslation } from "react-i18next";
 import Tips from "./ui/tips";
 
 import { formatBytes, formatUptime } from "@/utils/unitHelper";
+import { computeTrafficQuotaPercent } from "@/utils/trafficQuota";
 import { compareNodesByStatus, EMPTY_LIVE_RECORD } from "@/utils/nodeOrder";
 import { settledLayoutTransition, useOrderSettled } from "@/hooks/useOrderSettled";
 import {
@@ -310,7 +311,7 @@ const Node = React.memo(
               <Flex justify="between" hidden={isMobile} direction="column" gap="1">
                 <UsageBar
                   label={t("nodeCard.totalTraffic")}
-                  value={getTrafficPercentage(
+                  value={computeTrafficQuotaPercent(
                     liveData.network.totalUp,
                     liveData.network.totalDown,
                     basic.traffic_limit,
@@ -369,7 +370,7 @@ const Node = React.memo(
               <UsageBar
                 label={`${basic.traffic_limit_type && basic.traffic_limit_type.charAt(0).toUpperCase() + basic.traffic_limit_type.slice(1)}(${formatBytes(basic.traffic_limit)})`}
                 max={Infinity}
-                value={getTrafficPercentage(
+                value={computeTrafficQuotaPercent(
                   liveData.network.totalUp,
                   liveData.network.totalDown,
                   basic.traffic_limit,
@@ -522,26 +523,3 @@ export const NodeGrid = ({ nodes, liveData, onlineSet, liveLoading = false }: No
     </div>
   );
 };
-
-function getTrafficPercentage(
-  totalUp: number,
-  totalDown: number,
-  limit: number,
-  type: "max" | "min" | "sum" | "up" | "down",
-) {
-  if (limit === 0) return 0;
-  switch (type) {
-    case "max":
-      return (Math.max(totalUp, totalDown) / limit) * 100;
-    case "min":
-      return (Math.min(totalUp, totalDown) / limit) * 100;
-    case "sum":
-      return ((totalUp + totalDown) / limit) * 100;
-    case "up":
-      return (totalUp / limit) * 100;
-    case "down":
-      return (totalDown / limit) * 100;
-    default:
-      return 0;
-  }
-}

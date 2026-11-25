@@ -16,9 +16,11 @@ import { formatSpeed } from "@/utils/unitHelper";
 export const TrafficChart = ({
   traffic,
   loading,
+  height = 180,
 }: {
   traffic: TrafficSummary | null;
   loading: boolean;
+  height?: number;
 }) => {
   const { t } = useTranslation();
 
@@ -48,11 +50,11 @@ export const TrafficChart = ({
       loading={loading}
       label
       className="relative"
-      style={{ height: 180 }}
+      style={{ height }}
     >
       <SkeletonChartShape />
       {traffic === null || traffic.points.length === 0 ? (
-        <Flex align="center" justify="center" style={{ height: 180 }}>
+        <Flex align="center" justify="center" style={{ height }}>
           {!loading && (
             <Text size="2" color="gray">
               {t("dashboard.noData", "No data")}
@@ -62,8 +64,8 @@ export const TrafficChart = ({
       ) : (
       <ChartContainer
         config={chartConfig}
-        className="km-dashboard-chart h-[180px] w-full"
-        style={{ aspectRatio: "auto" }}
+        className="km-dashboard-chart w-full"
+        style={{ aspectRatio: "auto", height }}
         aria-label={t(
           "dashboard.trafficChartAria",
           "Last 24h traffic chart, showing upload and download rate and cumulative traffic",

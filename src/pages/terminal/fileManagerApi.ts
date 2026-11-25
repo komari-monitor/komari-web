@@ -273,6 +273,164 @@ export const getDroppedUploadFiles = (transfer: DataTransfer): File[] => {
   });
 };
 
+const MIME_TO_EXTENSION: Record<string, string> = {
+  "image/png": "png",
+  "image/jpeg": "jpg",
+  "image/jpg": "jpg",
+  "image/webp": "webp",
+  "image/gif": "gif",
+  "image/bmp": "bmp",
+  "image/avif": "avif",
+  "image/svg+xml": "svg",
+  "image/tiff": "tiff",
+  "image/x-icon": "ico",
+  "image/vnd.microsoft.icon": "ico",
+  "image/heic": "heic",
+  "image/heif": "heif",
+  "application/pdf": "pdf",
+  "application/zip": "zip",
+  "application/x-zip-compressed": "zip",
+  "application/gzip": "gz",
+  "application/json": "json",
+  "text/plain": "txt",
+  "text/html": "html",
+  "text/csv": "csv",
+  "text/markdown": "md",
+  "audio/mpeg": "mp3",
+  "audio/wav": "wav",
+  "audio/ogg": "ogg",
+  "audio/flac": "flac",
+  "video/mp4": "mp4",
+  "video/webm": "webm",
+  "video/quicktime": "mov",
+};
+
+const SYNTHETIC_IMAGE_NAME_RE =
+  /^(?:image|pasted[-_ ]?image)\.(?:png|jpe?g|webp|gif|bmp|avif|tiff?|svg)$/i;
+const GENERIC_UNNAMED_RE = /^(?:blob|file|clipboard|untitled)$/i;
+
+const pad2 = (value: number) => String(value).padStart(2, "0");
+
+export const formatPasteTimestamp = (date = new Date()) =>
+  `${date.getFullYear()}${pad2(date.getMonth() + 1)}${pad2(date.getDate())}_${pad2(date.getHours())}${pad2(date.getMinutes())}${pad2(date.getSeconds())}`;
+
+const extensionFromMimeType = (mimeType: string, fallbackName = ""): string => {
+  const normalizedMime = mimeType.split(";")[0]?.trim().toLowerCase() ?? "";
+  if (normalizedMime && MIME_TO_EXTENSION[normalizedMime]) {
+    return MIME_TO_EXTENSION[normalizedMime];
+  }
+  const nameExtMatch = fallbackName.trim().match(/\.([A-Za-z0-9]{1,10})$/);
+  if (nameExtMatch) {
+    const ext = nameExtMatch[1].toLowerCase();
+    return ext === "jpeg" ? "jpg" : ext;
+  }
+  const slashIndex = normalizedMime.indexOf("/");
+  if (slashIndex >= 0) {
+    let subtype = normalizedMime.slice(slashIndex + 1);
+    if (subtype.startsWith("x-")) subtype = subtype.slice(2);
+    const plusIndex = subtype.indexOf("+");
+    if (plusIndex >= 0) subtype = subtype.slice(0, plusIndex);
+    if (
+      subtype &&
+      subtype !== "octet-stream" &&
+      /^[a-z0-9]{1,10}$/.test(subtype)
+    ) {
+      return subtype === "jpeg" ? "jpg" : subtype;
+    }
+  }
+  return "bin";
+};
+
+const shouldGeneratePasteFilename = (file: File, nowMs: number) => {
+  const rawName = file.name?.trim() ?? "";
+  if (!rawName || GENERIC_UNNAMED_RE.test(rawName)) return true;
+  // 浏览器从截图/复制图片生成的剪贴板对象常带合成名 "image.png"，且 lastModified 就在粘贴当下
+  if (
+    SYNTHETIC_IMAGE_NAME_RE.test(rawName) &&
+    (!file.lastModified || Math.abs(nowMs - file.lastModified) < 15_000)
+  ) {
+    return true;
+  }
+  return false;
+};
+
+/** 判断事件源或当前焦点是否位于可编辑控件/终端/代码编辑器内，避免误拦截文本粘贴。 */
+export const isEditableEventTarget = (target: EventTarget | null): boolean => {
+  if (!(target instanceof HTMLElement)) return false;
+  if (target.isContentEditable) return true;
+  const tag = target.tagName;
+  if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return true;
+  return Boolean(target.closest("[contenteditable='true'], .xterm, .monaco-editor"));
+};
+
+/**
+ * 从剪贴板提取可上传的文件或图像列表：
+ * - 真实复制的本地文件保留原文件名；
+ * - 无名称文件或浏览器合成的截图/图像自动命名为 `Paste_YYYYMMDD_HHmmss.xxx`，同秒多张自动追加 `_2`/`_3` 防冲突。
+ */
+export const getClipboardUploadFiles = (
+  clipboardData: DataTransfer | null | undefined,
+  existingNames?: ReadonlySet<string>,
+  now = new Date(),
+): File[] => {
+  if (!clipboardData) return [];
+
+  const rawFiles: File[] = [];
+  const items = Array.from(clipboardData.items ?? []);
+  let sawFileItem = false;
+  for (const rawItem of items) {
+    if (rawItem.kind !== "file") continue;
+    sawFileItem = true;
+    const item = rawItem as DroppedDataTransferItem;
+    try {
+      if (item.webkitGetAsEntry?.()?.isDirectory) continue;
+    } catch {
+      // ignore entry probe errors
+    }
+    const file = item.getAsFile();
+    if (file) rawFiles.push(file);
+  }
+
+  if (!sawFileItem && rawFiles.length === 0) {
+    for (const file of Array.from(clipboardData.files ?? [])) {
+      rawFiles.push(file);
+    }
+  }
+
+  if (rawFiles.length === 0) return [];
+
+  const nowMs = now.getTime();
+  const stamp = formatPasteTimestamp(now);
+  const usedLowerNames = new Set<string>(
+    Array.from(existingNames ?? [], (name) => name.toLowerCase()),
+  );
+
+  const reserveUniqueName = (stem: string, ext: string) => {
+    const suffix = ext ? `.${ext}` : "";
+    let candidate = `${stem}${suffix}`;
+    let counter = 2;
+    while (usedLowerNames.has(candidate.toLowerCase())) {
+      candidate = `${stem}_${counter}${suffix}`;
+      counter += 1;
+    }
+    usedLowerNames.add(candidate.toLowerCase());
+    return candidate;
+  };
+
+  return rawFiles.map((file) => {
+    if (!shouldGeneratePasteFilename(file, nowMs)) {
+      usedLowerNames.add(file.name.toLowerCase());
+      return file;
+    }
+    const ext = extensionFromMimeType(file.type, file.name);
+    const nextName = reserveUniqueName(`Paste_${stamp}`, ext);
+    return new File([file], nextName, {
+      type: file.type || "application/octet-stream",
+      lastModified: file.lastModified || nowMs,
+    });
+  });
+};
+
 export const formatClipboardPath = (value: string) => {
   const normalized = normalizeRemotePath(value);
   const windowsPath = normalized.replace(/^\/([A-Za-z])(?:\/|$)/, (_match, drive: string) => `${drive}:\\`);

@@ -11,6 +11,7 @@ import type { WebglAddon as WebglAddonType } from "@xterm/addon-webgl";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { getRPC2Client } from "@/contexts/RPC2Context";
+import { createRandomId } from "@/utils/randomId";
 import {
   DEFAULT_TERMINAL_OPTIONS,
   DEFAULT_TERMINAL_PADDING,
@@ -55,10 +56,7 @@ const sanitizeBracketedPaste = (value: string) =>
   // eslint-disable-next-line no-control-regex
   value.replace(/\x1b\[20[01]~/g, "");
 
-const createClientId = () =>
-  typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
-    ? crypto.randomUUID()
-    : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+const createClientId = () => createRandomId();
 
 // 单个终端标签的 xterm、WebSocket 与快捷键会话
 const TerminalSession = ({

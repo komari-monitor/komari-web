@@ -34,17 +34,23 @@ export function ExtraWidget({ kind, nodes, latest, limit = 5, loading = false }:
     { label: t("dashboardLayout.ram"), value: loading ? skeletonText(7) : <AnimatedNumber value={nodes.reduce((sum, node) => sum + (node.mem_total || 0), 0)} format={formatBytes} />, icon: MemoryStick },
     { label: t("dashboardLayout.storage"), value: loading ? skeletonText(7) : <AnimatedNumber value={nodes.reduce((sum, node) => sum + (node.disk_total || 0), 0)} format={formatBytes} />, icon: HardDrive },
   ];
-  return <Flex direction="column" gap="4">
-    <Flex gap="2" align="center">
-      <Icon size={18} color={`var(--${kind === "disk" ? "amber" : "gray"}-11)`} />
-      <Text size="3" weight="bold">{t(`dashboardLayout.widgets.${kind}`)}</Text>
+  return <Flex direction="column" gap="3">
+    <Flex gap="2" align="center" justify="between">
+      <Flex gap="2" align="center">
+        <Icon size={18} color={`var(--${kind === "disk" ? "amber" : "gray"}-11)`} />
+        <Text size="3" weight="bold">{t(`dashboardLayout.widgets.${kind}`)}</Text>
+      </Flex>
+      {kind === "resources" && (
+        <Text size="1" color="gray" className="truncate">
+          {loading ? skeletonText(8) : t("dashboardLayout.capacityCount", { count: nodes.length })}
+        </Text>
+      )}
     </Flex>
     {kind === "resources" && <Skeletonize loading={loading}>
       {resources.map(({ label, value, icon: ResourceIcon }) => <div key={label} className="km-dashboard-stat-row">
         <Flex align="center" gap="2"><ResourceIcon size={15} color="var(--gray-10)" /><Text size="2" color="gray">{label}</Text></Flex>
-        <Text size="4" weight="bold">{value}</Text>
+        <Text size="3" weight="bold">{value}</Text>
       </div>)}
-      <Text as="p" size="1" color="gray" mt="2">{loading ? skeletonText(12) : t("dashboardLayout.capacityCount", { count: nodes.length })}</Text>
     </Skeletonize>}
     {kind === "disk" && <Skeletonize loading={loading}>{loading ? <Flex direction="column" gap="3">
       {/* 占位行：名称 + 百分比 / 条 / 容量，与真实行同结构 */}

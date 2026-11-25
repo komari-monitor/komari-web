@@ -1,3 +1,5 @@
+import { createRandomId } from "@/utils/randomId";
+
 export type SplitDirection = "row" | "col";
 export type SplitZone = "top" | "bottom" | "left" | "right";
 export type DropZone = SplitZone | "center" | "tabbar";
@@ -23,8 +25,8 @@ export type TerminalPaneNode = TerminalPaneLeaf | TerminalPaneSplit;
 export const MIN_SPLIT_RATIO = 0.12;
 export const MAX_SPLIT_RATIO = 0.88;
 
-export const createPaneId = () => `terminal-pane-${crypto.randomUUID()}`;
-export const createSplitId = () => `terminal-split-${crypto.randomUUID()}`;
+export const createPaneId = () => `terminal-pane-${createRandomId()}`;
+export const createSplitId = () => `terminal-split-${createRandomId()}`;
 
 export const createLeafPane = (
   tabIds: string[] = [],

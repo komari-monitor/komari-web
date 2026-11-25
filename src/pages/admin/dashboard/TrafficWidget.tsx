@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import { AnimatePresence, motion } from "motion/react";
 import { MOTION_DURATION, MOTION_EASE, MOTION_TRANSITION } from "@/lib/motion";
 import { Skeletonize, skeletonText } from "@/components/ui/skeleton";
+import { useDashboardWidgetContext } from "@/components/admin/dashboard/widgetContext";
 import { formatBytes } from "@/utils/unitHelper";
 import {
   MiniChartButton,
@@ -28,58 +29,98 @@ export const TrafficWidget = ({
   nodeNameMap: Map<string, string>;
 }) => {
   const { t } = useTranslation();
+  const { height, editing } = useDashboardWidgetContext();
+  const isShort = height === "short";
+  const topListPopover =
+    traffic && traffic.nodeTotals.length > 0 ? (
+      <RankListPopover
+        title={t("dashboard.topTraffic", "Top traffic servers")}
+        ariaLabel={t("common.details", "Details")}
+      >
+        <Flex direction="column" gap="2">
+          {traffic.nodeTotals.map((node, index) => (
+            <RankEntryRow
+              key={node.uuid}
+              index={index}
+              name={nodeNameMap.get(node.uuid) ?? node.uuid.slice(0, 8)}
+              valueGap="2"
+            >
+              <Text size="2" color="gray" className="whitespace-nowrap">
+                ↑ {formatBytes(node.up)} ↓ {formatBytes(node.down)}
+              </Text>
+              <MiniChartButton
+                uuid={node.uuid}
+                metricKeys={NET_METRIC_KEYS}
+                ariaLabel={t("dashboard.viewChart", "View 24h chart")}
+              />
+            </RankEntryRow>
+          ))}
+        </Flex>
+      </RankListPopover>
+    ) : null;
+
   return (
-    <Flex direction="column" gap="4">
+    <Flex direction="column" gap={isShort ? "2" : "4"}>
       <Flex justify="between" align="center" wrap="wrap" gap="2">
         <Text size="3" weight="bold">
           {t("dashboard.traffic24h", "Last 24h traffic")}
         </Text>
-        <Flex gap="4" align="center" wrap="wrap">
-          <Flex gap="1" align="center">
-            <span
-              className="w-2.5 h-2.5 rounded-full"
-              style={{ backgroundColor: "var(--green-9)" }}
-            />
-            <Text size="2" color="gray">
-              {t("dashboard.uploadRate", "Upload rate")}
-            </Text>
-          </Flex>
-          <Flex gap="1" align="center">
-            <span
-              className="w-2.5 h-2.5 rounded-full"
-              style={{ backgroundColor: "var(--blue-9)" }}
-            />
-            <Text size="2" color="gray">
-              {t("dashboard.downloadRate", "Download rate")}
-            </Text>
-          </Flex>
-          <Flex gap="1" align="center">
-            <span
-              className="w-4 border-t-2 border-dashed"
-              style={{ borderColor: "var(--green-9)" }}
-            />
-            <Text size="2" color="gray">
-              {t("dashboard.uploadTotal", "Upload cumulative")}
-            </Text>
-          </Flex>
-          <Flex gap="1" align="center">
-            <span
-              className="w-4 border-t-2 border-dashed"
-              style={{ borderColor: "var(--blue-9)" }}
-            />
-            <Text size="2" color="gray">
-              {t("dashboard.downloadTotal", "Download cumulative")}
-            </Text>
-          </Flex>
+        <Flex gap="3" align="center" wrap="wrap">
+          {!isShort && (
+            <>
+              <Flex gap="1" align="center">
+                <span
+                  className="w-2.5 h-2.5 rounded-full"
+                  style={{ backgroundColor: "var(--green-9)" }}
+                />
+                <Text size="2" color="gray">
+                  {t("dashboard.uploadRate", "Upload rate")}
+                </Text>
+              </Flex>
+              <Flex gap="1" align="center">
+                <span
+                  className="w-2.5 h-2.5 rounded-full"
+                  style={{ backgroundColor: "var(--blue-9)" }}
+                />
+                <Text size="2" color="gray">
+                  {t("dashboard.downloadRate", "Download rate")}
+                </Text>
+              </Flex>
+              <Flex gap="1" align="center">
+                <span
+                  className="w-4 border-t-2 border-dashed"
+                  style={{ borderColor: "var(--green-9)" }}
+                />
+                <Text size="2" color="gray">
+                  {t("dashboard.uploadTotal", "Upload cumulative")}
+                </Text>
+              </Flex>
+              <Flex gap="1" align="center">
+                <span
+                  className="w-4 border-t-2 border-dashed"
+                  style={{ borderColor: "var(--blue-9)" }}
+                />
+                <Text size="2" color="gray">
+                  {t("dashboard.downloadTotal", "Download cumulative")}
+                </Text>
+              </Flex>
+            </>
+          )}
           <Skeletonize as="span" loading={loading}>
             <Text size="2" color="gray">
               ↑ {loading ? skeletonText(6) : formatBytes(traffic?.totalUp ?? 0)} ↓{" "}
               {loading ? skeletonText(6) : formatBytes(traffic?.totalDown ?? 0)}
             </Text>
           </Skeletonize>
+          {isShort && topListPopover}
         </Flex>
       </Flex>
-      <TrafficChart traffic={traffic} loading={loading} />
+      <TrafficChart
+        traffic={traffic}
+        loading={loading}
+        height={isShort ? (editing ? 112 : 146) : 180}
+      />
+      {!isShort && (
       <Skeletonize loading={loading}>
       {loading && (
         // 排行区的占位：与真实排行同结构，避免数据到达时卡片突然长出一大截
@@ -99,38 +140,7 @@ export const TrafficWidget = ({
               <Text size="3" weight="bold">
                 {t("dashboard.topTraffic", "Top traffic servers")}
               </Text>
-              <RankListPopover
-                title={t("dashboard.topTraffic", "Top traffic servers")}
-                ariaLabel={t("common.details", "Details")}
-              >
-                <Flex direction="column" gap="2">
-                  {traffic.nodeTotals.map((node, index) => (
-                    <RankEntryRow
-                      key={node.uuid}
-                      index={index}
-                      name={nodeNameMap.get(node.uuid) ?? node.uuid.slice(0, 8)}
-                      valueGap="2"
-                    >
-                      <Text
-                        size="2"
-                        color="gray"
-                        className="whitespace-nowrap"
-                      >
-                        ↑ {formatBytes(node.up)} ↓{" "}
-                        {formatBytes(node.down)}
-                      </Text>
-                      <MiniChartButton
-                        uuid={node.uuid}
-                        metricKeys={NET_METRIC_KEYS}
-                        ariaLabel={t(
-                          "dashboard.viewChart",
-                          "View 24h chart",
-                        )}
-                      />
-                    </RankEntryRow>
-                  ))}
-                </Flex>
-              </RankListPopover>
+              {topListPopover}
             </Flex>
             <Flex direction="column" gap="3" className="relative">
               {/* content 层：流量排行随刷新重排，条目用 layout="position" 跟随（规则同上方到期列表） */}
@@ -203,6 +213,7 @@ export const TrafficWidget = ({
         </>
       )}
       </Skeletonize>
+      )}
     </Flex>
   );
 };

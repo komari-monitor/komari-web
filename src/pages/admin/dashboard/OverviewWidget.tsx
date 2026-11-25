@@ -38,7 +38,7 @@ export const OverviewWidget = ({
   };
 
   return (
-    <Skeletonize loading={loading}>
+    <Skeletonize loading={loading} className="flex flex-1 flex-col justify-center">
     <Flex gap="4" align="center">
       <ProgressRing
         percent={stats.onlineRate}

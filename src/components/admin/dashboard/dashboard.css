@@ -1,69 +1,497 @@
-.km-dashboard-board { container-type: inline-size; min-width: 0; }
+.km-dashboard-board { container-type: inline-size; min-width: 0; overflow-x: clip; }
 /* 间距按 global.css「间距系统」：卡片之间与卡片内边距同为 block，工具栏与网格之间 block */
-.km-dashboard-board-toolbar { margin-bottom: var(--space-4); min-height: 36px; }
+.km-dashboard-board-toolbar { margin-bottom: var(--space-3); min-height: 36px; }
+.km-dashboard-board[data-editing="false"] .km-dashboard-board-toolbar { margin-bottom: var(--space-4); }
+.km-dashboard-edit-guide {
+  margin-bottom: var(--space-4);
+  padding: var(--space-2) var(--space-3);
+  border-radius: 8px;
+  background: var(--gray-a2);
+  border: 1px solid var(--gray-a4);
+  display: flex; align-items: center; justify-content: space-between; gap: var(--space-2);
+}
+/* 严格模块化网格：每 1 高度单元 = 240px，gap = 16px -> 2 格 = 496px、3 格 = 752px，任意组合边缘像素级齐平 */
 .km-dashboard-grid {
   display: grid; grid-template-columns: repeat(6, minmax(0, 1fr));
-  grid-auto-flow: row dense; grid-auto-rows: 8px; gap: var(--space-4);
+  grid-auto-flow: row dense; grid-auto-rows: 240px; gap: var(--space-4);
 }
-.km-dashboard-widget { min-width: 0; grid-column: span 2; position: relative; }
-/* 布局读取中的占位色块：与网格同样的列数和间距；读到布局后整层原位淡出（popLayout 需要定位祖先） */
+/* 编辑模式空间画布底纹：轻柔点阵与细边框暗示可自由编排的网格坐标 */
+.km-dashboard-board[data-editing="true"] .km-dashboard-stage {
+  padding: var(--space-3);
+  border-radius: 12px;
+  border: 1px solid var(--gray-a4);
+  background-color: var(--gray-a1);
+  background-image: radial-gradient(var(--gray-a5) 1px, transparent 1px);
+  background-size: 16px 16px;
+}
+.km-dashboard-board[data-resizing="true"] { user-select: none; cursor: nwse-resize; }
+.km-dashboard-widget { min-width: 0; min-height: 0; grid-column: span 2; position: relative; }
+/* 布局读取中的占位色块：与真实网格采用完全一致的列数与 240px 单元高度，淡入不跳动 */
 .km-dashboard-stage { position: relative; }
 .km-dashboard-placeholder-layer { z-index: 1; }
 .km-dashboard-placeholder {
-  display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: var(--space-4);
+  display: grid; grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-auto-flow: row dense; grid-auto-rows: 240px; gap: var(--space-4);
 }
-.km-dashboard-placeholder-block { min-width: 0; grid-column: span 2; }
+.km-dashboard-placeholder-block { min-width: 0; min-height: 0; grid-column: span 2; }
 .km-dashboard-placeholder-block.is-wide { grid-column: span 4; }
 .km-dashboard-widget[data-width="wide"] { grid-column: span 4; }
 .km-dashboard-widget[data-width="full"] { grid-column: span 6; }
-.km-dashboard-widget-card, .km-dashboard-drag-preview {
+.km-dashboard-widget-card {
   height: 100%; min-height: 0; border-radius: 8px; padding: 0;
-  display: flex; flex-direction: column; background: var(--color-panel-solid);
+  display: flex; flex-direction: column; overflow: hidden;
+  background: var(--color-panel-solid); position: relative;
 }
-.km-dashboard-widget-body { padding: var(--space-4); min-width: 0; min-height: 0; }
-/* 卡片可能被拉高去对齐邻居；body 保持内容自然高度（不被 flex 压缩），测得的高度才稳定、不依赖上一次的格子大小 */
-.km-dashboard-widget-card .km-dashboard-widget-body { flex-shrink: 0; }
-.km-dashboard-widget-body > * { min-width: 0; }
+/* 所有卡片 body 严格跟随格子高度且绝不出现内部滚动条；自适应条数保证内容完整落于格内 */
+.km-dashboard-widget-body-wrap {
+  position: relative; flex: 1 1 0%; min-width: 0; min-height: 0;
+  display: flex; flex-direction: column; overflow: hidden;
+}
+.km-dashboard-widget-body {
+  flex: 1 1 0%; min-width: 0; min-height: 0;
+  padding: var(--space-4);
+  overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.km-dashboard-board[data-editing="true"] .km-dashboard-widget-body {
+  padding: var(--space-3) var(--space-4);
+  pointer-events: none; user-select: none;
+}
+.km-dashboard-body-drag-shield {
+  position: absolute; inset: 0; z-index: 2;
+  cursor: grab;
+}
+.km-dashboard-body-drag-shield:active { cursor: grabbing; }
+.km-dashboard-widget-content {
+  flex: 1 0 auto; min-width: 0; min-height: 100%;
+  display: flex; flex-direction: column;
+}
+.km-dashboard-widget-content > * { min-width: 0; }
 .km-dashboard-widget-body .min-w-56 { min-width: min(224px, 100%); }
 .km-dashboard-widget-tools {
-  display: flex; align-items: center; gap: var(--space-2); padding: var(--space-2) var(--space-4);
-  min-height: 44px; border-bottom: 1px solid var(--gray-a5); background: var(--gray-a2);
+  display: flex; align-items: center; gap: var(--space-2); padding: 5px var(--space-3);
+  min-height: 38px; flex-shrink: 0; border-bottom: 1px solid var(--gray-a5); background: var(--gray-a2);
 }
+.km-dashboard-drag-zone {
+  flex: 1 1 0%; min-width: 0;
+  display: flex; align-items: center; gap: var(--space-1);
+  cursor: grab; user-select: none;
+  padding-block: 2px;
+}
+.km-dashboard-drag-zone:active { cursor: grabbing; }
 .km-dashboard-tool-title { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.km-dashboard-grip { touch-action: none; cursor: grab; }
+.km-dashboard-tool-actions { flex-shrink: 0; }
+.km-dashboard-tool-pill {
+  height: 24px; padding-inline: 7px; gap: 4px;
+  font-size: 11px; font-variant-numeric: tabular-nums;
+}
+.km-dashboard-remove-btn:hover { color: var(--red-11); background: var(--red-a3); }
+.km-dashboard-grip { touch-action: none; cursor: grab; flex-shrink: 0; }
 .km-dashboard-grip:active { cursor: grabbing; }
-.km-dashboard-widget.is-dragging { border: 1px dashed var(--accent-8); border-radius: 8px; background: var(--accent-a3); }
-.km-dashboard-widget.is-dragging > * { opacity: .18; }
-.km-dashboard-drag-preview { box-shadow: var(--shadow-6); outline: 2px solid var(--accent-8); cursor: grabbing; pointer-events: none; }
-.km-dashboard-drag-preview .km-dashboard-widget-body { overflow: hidden; }
-.km-dashboard-board[data-editing="true"] .km-dashboard-widget:not(.is-dragging) .km-dashboard-widget-card { box-shadow: 0 0 0 1px var(--accent-a5); }
-.km-dashboard-catalog { margin-top: var(--space-4); max-height: 55vh; overflow-y: auto; }
-.km-dashboard-catalog-row { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-3) var(--space-2); border-bottom: 1px solid var(--gray-a4); cursor: pointer; }
-.km-dashboard-catalog-row { transition: background-color var(--km-dur-fast) var(--km-ease-standard); }
+
+/* 拖拽源卡片：留在原位轻度淡化虚线标示，绝不中途移动 DOM 触发滚动补偿 */
+.km-dashboard-widget.is-dragging {
+  border-radius: 8px;
+  outline: 1.5px dashed var(--accent-8);
+  outline-offset: -1.5px;
+  background: var(--accent-a2);
+}
+.km-dashboard-widget.is-dragging > .km-dashboard-widget-card {
+  opacity: 0.24;
+  box-shadow: none !important;
+}
+
+/* 跟随光标的紧凑拖拽浮片：绝不遮挡底下空位与目标卡片，指哪落哪，GPU 合成层避免掉帧 */
+.km-dashboard-drag-chip {
+  width: 248px; max-width: calc(100vw - 32px);
+  display: flex; align-items: center; gap: var(--space-2);
+  padding: 10px 12px;
+  border-radius: 10px;
+  background: var(--color-panel-solid);
+  border: 1.5px solid var(--accent-9);
+  box-shadow: var(--shadow-6);
+  cursor: grabbing; pointer-events: none;
+  will-change: transform;
+}
+.km-dashboard-drag-chip-icon {
+  width: 26px; height: 26px; border-radius: 6px; flex-shrink: 0;
+  background: var(--accent-a3); color: var(--accent-11);
+  display: inline-flex; align-items: center; justify-content: center;
+}
+
+/* 悬停目标卡片时的交换 / 放置覆层（禁用昂贵 backdrop-filter 保证拖拽满帧） */
+.km-dashboard-widget.is-drop-target { z-index: 5; }
+.km-dashboard-card-drop-overlay {
+  position: absolute; inset: 0; z-index: 6; pointer-events: none;
+  border-radius: 8px;
+  border: 2px solid var(--accent-9);
+  background: var(--accent-a3);
+  display: flex; align-items: center; justify-content: center;
+  padding: var(--space-3);
+}
+.km-dashboard-card-drop-pill {
+  display: inline-flex; align-items: center; gap: 6px;
+  padding: 6px 12px; border-radius: 9999px;
+  background: var(--color-panel-solid);
+  color: var(--accent-11);
+  border: 1px solid var(--accent-8);
+  box-shadow: var(--shadow-4);
+}
+
+/* 悬停空位时的精确落位幽灵框（严格按 fitRectInEmptySlot 的最终尺寸渲染） */
+.km-dashboard-slot-ghost {
+  position: relative; z-index: 6; pointer-events: none;
+  min-width: 0; min-height: 0; height: 100%; width: 100%;
+  border-radius: 8px;
+  border: 2px dashed var(--accent-9);
+  background: var(--accent-a3);
+  color: var(--accent-11);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: var(--space-1); padding: var(--space-3); text-align: center;
+  box-shadow: inset 0 0 0 1px var(--accent-a4);
+}
+
+.km-dashboard-board[data-editing="true"] .km-dashboard-widget:not(.is-dragging) .km-dashboard-widget-card {
+  box-shadow: 0 0 0 1px var(--accent-a5);
+}
+.km-dashboard-board[data-editing="true"][data-dragging="false"] .km-dashboard-widget:not(.is-dragging):hover .km-dashboard-widget-card {
+  box-shadow: 0 0 0 1.5px var(--accent-8);
+}
+.km-dashboard-board[data-dragging="true"] .km-dashboard-resize-handle {
+  pointer-events: none;
+}
+.km-dashboard-widget.is-resizing .km-dashboard-widget-card {
+  box-shadow: 0 0 0 2px var(--accent-9) !important;
+}
+/* 卡片右下角直接拖拽缩放把手 */
+.km-dashboard-resize-handle {
+  position: absolute; right: 2px; bottom: 2px; z-index: 4;
+  width: 24px; height: 24px; border: 0; border-radius: 6px; padding: 0;
+  background: transparent; color: var(--gray-9);
+  display: inline-flex; align-items: center; justify-content: center;
+  cursor: nwse-resize; touch-action: none;
+  opacity: 0.6;
+  transition:
+    opacity var(--km-dur-fast) var(--km-ease-standard),
+    color var(--km-dur-fast) var(--km-ease-standard),
+    background-color var(--km-dur-fast) var(--km-ease-standard);
+}
+.km-dashboard-widget:hover .km-dashboard-resize-handle,
+.km-dashboard-widget.is-resizing .km-dashboard-resize-handle,
+.km-dashboard-resize-handle:focus-visible {
+  opacity: 1; color: var(--accent-11); background: var(--accent-a3);
+}
+.km-dashboard-resize-handle:focus-visible {
+  outline: 2px solid var(--accent-8); outline-offset: 1px;
+}
+.km-dashboard-resize-badge {
+  position: absolute; right: 30px; bottom: 8px; z-index: 5;
+  pointer-events: none;
+}
+/* 可视化 3×3 尺寸矩阵弹窗 */
+.km-size-popover { width: 176px; padding: var(--space-3); }
+.km-size-matrix {
+  display: grid; gap: 6px;
+}
+.km-size-matrix-cell {
+  height: 24px; border-radius: 5px;
+  border: 1px solid var(--gray-a6);
+  background: var(--gray-a2);
+  cursor: pointer; padding: 0; appearance: none;
+  transition:
+    background-color var(--km-dur-fast) var(--km-ease-standard),
+    border-color var(--km-dur-fast) var(--km-ease-standard),
+    transform var(--km-dur-fast) var(--km-ease-standard);
+}
+.km-size-matrix-cell.is-current {
+  border-color: var(--accent-a7);
+  background: var(--accent-a3);
+}
+.km-size-matrix-cell.is-highlighted {
+  border-color: var(--accent-9);
+  background: var(--accent-a5);
+}
+.km-size-matrix-cell.is-exact {
+  box-shadow: inset 0 0 0 1px var(--accent-9);
+}
+.km-size-matrix-cell:focus-visible {
+  outline: 2px solid var(--accent-8); outline-offset: 1px;
+}
+.km-size-readout { text-align: center; }
+
+/* 编辑模式网格空位占位卡：支持直接拖入已有卡片或点击加号在该空位新增卡片 */
+.km-dashboard-empty-slot {
+  min-width: 0; min-height: 0; height: 100%; width: 100%;
+  border-radius: 8px;
+  border: 1px dashed var(--gray-a6);
+  background: var(--gray-a2);
+  color: var(--gray-10);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: var(--space-2); padding: var(--space-3); text-align: center;
+  cursor: pointer; appearance: none; font: inherit;
+  transition:
+    opacity var(--km-dur-fast) var(--km-ease-standard),
+    background-color var(--km-dur-fast) var(--km-ease-standard),
+    border-color var(--km-dur-fast) var(--km-ease-standard),
+    color var(--km-dur-fast) var(--km-ease-standard);
+}
+.km-dashboard-empty-slot.is-drag-target {
+  border-color: var(--accent-a7);
+  background: var(--accent-a1);
+}
+.km-dashboard-empty-slot.is-covered {
+  opacity: 0;
+}
+.km-dashboard-empty-slot[data-clickable="false"] { cursor: default; }
+.km-dashboard-empty-slot[data-clickable="true"]:hover {
+  border-color: var(--accent-8);
+  background: var(--accent-a2);
+  color: var(--accent-11);
+}
+.km-dashboard-empty-slot:focus-visible {
+  outline: 2px solid var(--accent-8);
+  outline-offset: 2px;
+}
+.km-dashboard-empty-slot-icon {
+  width: 34px; height: 34px; border-radius: 9999px;
+  background: var(--gray-a3); color: inherit;
+  display: inline-flex; align-items: center; justify-content: center;
+  transition: background-color var(--km-dur-fast) var(--km-ease-standard);
+}
+.km-dashboard-empty-slot[data-clickable="true"]:hover .km-dashboard-empty-slot-icon {
+  background: var(--accent-a4);
+}
+
+/* 编辑模式底部快捷添加 / 新建行投放区 */
+.km-dashboard-bottom-bar { margin-top: var(--space-4); }
+.km-dashboard-bottom-add {
+  width: 100%; min-height: 52px; border-radius: 8px;
+  border: 1px dashed var(--gray-a6); background: var(--gray-a2);
+  color: var(--gray-11); font: inherit; cursor: pointer;
+  display: flex; align-items: center; justify-content: center; gap: var(--space-2);
+  padding: var(--space-3);
+  transition:
+    background-color var(--km-dur-fast) var(--km-ease-standard),
+    border-color var(--km-dur-fast) var(--km-ease-standard),
+    color var(--km-dur-fast) var(--km-ease-standard);
+}
+.km-dashboard-bottom-add:hover:not(:disabled) {
+  border-color: var(--accent-8);
+  background: var(--accent-a2);
+  color: var(--accent-11);
+}
+.km-dashboard-bottom-add:focus-visible { outline: 2px solid var(--accent-8); outline-offset: 2px; }
+.km-dashboard-bottom-drop-zone {
+  min-height: 56px; border-radius: 8px;
+  border: 1.5px dashed var(--gray-a7); background: var(--gray-a2);
+  color: var(--gray-11);
+  display: flex; align-items: center; justify-content: center; gap: var(--space-2);
+  padding: var(--space-3);
+  transition:
+    background-color var(--km-dur-fast) var(--km-ease-standard),
+    border-color var(--km-dur-fast) var(--km-ease-standard),
+    color var(--km-dur-fast) var(--km-ease-standard);
+}
+.km-dashboard-bottom-drop-zone.is-idle {
+  min-height: 40px;
+  border-color: var(--gray-a4);
+  background: transparent;
+}
+.km-dashboard-bottom-drop-zone.is-over {
+  border: 2px dashed var(--accent-9);
+  background: var(--accent-a3);
+  color: var(--accent-11);
+}
+
+/* 卡片选择器 & 空位添加器（图标 + 名称 + 说明 + 尺寸标签） */
+.km-dashboard-slot-picker-row {
+  width: 100%; border: 0; border-bottom: 1px solid var(--gray-a4);
+  background: transparent; text-align: left; font: inherit;
+  display: flex; align-items: center; gap: var(--space-3);
+  padding: var(--space-3) var(--space-2); cursor: pointer;
+  border-radius: 6px;
+  transition: background-color var(--km-dur-fast) var(--km-ease-standard);
+}
+.km-dashboard-slot-picker-row:hover { background: var(--accent-a2); }
+.km-dashboard-catalog { margin-top: var(--space-4); max-height: 56vh; overflow-y: auto; }
+.km-dashboard-catalog-row {
+  display: flex; align-items: center; gap: var(--space-3);
+  padding: var(--space-3) var(--space-2); border-bottom: 1px solid var(--gray-a4);
+  cursor: pointer; border-radius: 6px;
+  transition: background-color var(--km-dur-fast) var(--km-ease-standard);
+}
 .km-dashboard-catalog-row:hover { background: var(--accent-a2); }
+.km-dashboard-catalog-row.is-selected { background: var(--gray-a2); }
+.km-dashboard-catalog-row.is-selected:hover { background: var(--accent-a2); }
+.km-dashboard-catalog-icon {
+  width: 32px; height: 32px; border-radius: 8px; flex-shrink: 0;
+  background: var(--gray-a3); color: var(--gray-11);
+  display: inline-flex; align-items: center; justify-content: center;
+}
+.km-dashboard-catalog-row.is-selected .km-dashboard-catalog-icon,
+.km-dashboard-slot-picker-row:hover .km-dashboard-catalog-icon {
+  background: var(--accent-a3); color: var(--accent-11);
+}
+.km-dashboard-catalog-meta {
+  flex: 1 1 0%; min-width: 0;
+  display: flex; flex-direction: column; gap: 2px;
+}
+.km-dashboard-catalog-desc {
+  overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
 .km-dashboard-empty { display: flex; align-items: center; justify-content: center; flex-direction: column; gap: var(--space-4); min-height: 260px; border-block: 1px dashed var(--gray-a6); }
-.km-dashboard-stat-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); padding-block: var(--space-3); border-bottom: 1px solid var(--gray-a4); }
+.km-dashboard-stat-row { display: flex; align-items: center; justify-content: space-between; gap: var(--space-2); padding-block: 6px; border-bottom: 1px solid var(--gray-a4); }
 .km-dashboard-stat-row > :first-child { min-width: 0; overflow-wrap: anywhere; }
-.km-dashboard-meter { height: 6px; background: var(--gray-a4); border-radius: 3px; overflow: hidden; }
+.km-dashboard-meter { height: 6px; background: var(--gray-5); border-radius: 9999px; overflow: hidden; }
 .km-dashboard-meter > div { height: 100%; border-radius: inherit; transition: width var(--km-dur-slow) var(--km-ease-standard); }
-.km-dashboard-quick-link { display: flex; align-items: center; gap: var(--space-2); padding: var(--space-3) var(--space-1); border-bottom: 1px solid var(--gray-a4); color: var(--accent-11); font-size: 14px; }
+.km-dashboard-meter-split { display: flex; gap: 1px; }
+.km-dashboard-meter-split > div { border-radius: 0; }
+.km-dashboard-meter-split > div:first-child { border-top-left-radius: 9999px; border-bottom-left-radius: 9999px; }
+.km-dashboard-meter-split > div:last-child { border-top-right-radius: 9999px; border-bottom-right-radius: 9999px; }
+.km-dashboard-quick-link { display: flex; align-items: center; gap: var(--space-2); padding: 7px var(--space-1); border-bottom: 1px solid var(--gray-a4); color: var(--accent-11); font-size: 14px; }
 .km-dashboard-quick-link { transition: background-color var(--km-dur-fast) var(--km-ease-standard), transform var(--km-dur-base) var(--km-ease-emphasized); }
 .km-dashboard-quick-link:hover { background: var(--accent-a2); }
 .km-dashboard-quick-link:active { transform: scaleX(1.01) scaleY(0.985); }
 .km-dashboard-quick-link > :last-child { margin-left: auto; }
+
+/* 预设切换下拉菜单 */
+.km-dashboard-preset-menu { width: 292px; max-width: calc(100vw - 32px); }
+.km-dashboard-preset-item { height: auto; padding-block: 6px; align-items: flex-start; }
+
+/* 实时脉冲小圆点（嵌入原生 Radix Button 中） */
+.km-dashboard-live-dot {
+  width: 6px; height: 6px; border-radius: 9999px; background: currentColor; flex-shrink: 0;
+}
+@keyframes km-live-pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.4; transform: scale(0.82); }
+}
+.km-dashboard-live-dot.is-pulsing { animation: km-live-pulse 1.8s ease-in-out infinite; }
+
+/* 点阵 3D 地球卡片：严格锁死在网格格子内部且绝不出现内部滚动条 */
+.km-dashboard-widget[data-widget="globe"] .km-dashboard-widget-body {
+  overflow: hidden;
+}
+.km-dashboard-widget[data-widget="globe"] .km-dashboard-widget-content {
+  flex: 1 1 0%; height: 100%; min-height: 0; overflow: hidden;
+}
+.km-globe-widget {
+  flex: 1 1 0%; height: 100%; min-height: 0; overflow: hidden;
+}
+.km-globe-skeleton {
+  flex: 1 1 0%; height: 100%; min-height: 0; overflow: hidden;
+  display: flex; flex-direction: column;
+}
+.km-globe-layout {
+  flex: 1 1 0%; min-height: 0; height: 100%; overflow: hidden;
+  display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(176px, 0.9fr);
+  grid-template-rows: minmax(0, 1fr);
+  gap: var(--space-4); align-items: stretch;
+}
+.km-globe-layout[data-compact="true"] {
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: minmax(0, 1.45fr) minmax(0, 0.55fr);
+}
+.km-globe-layout[data-compact="true"][data-has-regions="false"] {
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+.km-globe-stage {
+  position: relative; width: 100%; height: 100%; min-width: 0; min-height: 0; overflow: hidden;
+}
+.km-globe-canvas-wrap {
+  position: absolute; inset: 0; overflow: hidden;
+  user-select: none; -webkit-user-select: none; touch-action: none;
+}
+.km-globe-canvas-wrap[data-interactive="false"] { pointer-events: none; }
+.km-globe-canvas { position: absolute; inset: 0; display: block; width: 100%; height: 100%; }
+.km-globe-tooltip {
+  position: absolute; z-index: 5; pointer-events: none;
+  transform: translate(-50%, -100%);
+  min-width: 160px; max-width: 224px;
+  border-radius: var(--radius-3);
+  background: var(--color-panel-solid);
+  box-shadow: var(--shadow-4);
+  border: 1px solid var(--gray-a5);
+  padding: var(--space-2) var(--space-3);
+}
+.km-globe-regions {
+  display: flex; flex-direction: column;
+  height: 100%; max-height: 100%;
+  overflow: hidden; min-width: 0; min-height: 0;
+}
+.km-globe-layout[data-compact="true"] .km-globe-regions {
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(136px, 1fr));
+  column-gap: var(--space-2);
+  height: 100%; max-height: 100%; align-content: start;
+}
+.km-globe-region-item {
+  display: flex; align-items: center; gap: var(--space-2); width: 100%;
+  padding: 6px var(--space-2); border: 0;
+  border-bottom: 1px solid var(--gray-a4);
+  border-radius: var(--radius-2);
+  background: transparent; cursor: pointer; min-width: 0;
+  transition: background-color var(--km-dur-fast) var(--km-ease-standard);
+}
+.km-globe-region-item:last-of-type { border-bottom-color: transparent; }
+.km-globe-region-item:hover:not(:disabled) { background: var(--accent-a2); }
+.km-globe-region-item[data-active="true"] { background: var(--accent-a3); }
+.km-globe-region-item:disabled { cursor: default; opacity: 0.72; }
+.km-globe-drag-placeholder {
+  flex: 1 1 0%; min-height: 0; height: 100%;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  gap: var(--space-2); border-radius: var(--radius-3);
+  background: var(--gray-a2); border: 1px dashed var(--gray-a5);
+}
+.km-globe-empty-note { padding: var(--space-2) var(--space-1); }
+
 @container (max-width: 960px) {
   .km-dashboard-grid { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .km-dashboard-widget[data-width="full"] { grid-column: span 4; }
+  .km-dashboard-widget[data-width="wide"],
+  .km-dashboard-widget[data-width="full"] { grid-column: 1 / -1; }
   .km-dashboard-placeholder { grid-template-columns: repeat(4, minmax(0, 1fr)); }
   .km-dashboard-placeholder-block:nth-child(n + 3) { grid-column: span 2; }
 }
+@container (max-width: 680px) {
+  .km-globe-layout {
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1.45fr) minmax(0, 0.55fr);
+  }
+  .km-globe-layout[data-has-regions="false"] {
+    grid-template-rows: minmax(0, 1fr) auto;
+  }
+  .km-globe-regions {
+    display: grid; grid-template-columns: repeat(auto-fill, minmax(136px, 1fr));
+    column-gap: var(--space-2);
+    height: 100%; max-height: 100%; align-content: start;
+  }
+}
+/* 单列窄屏：取消固定行高束缚，卡片按自身内容自然纵向排布 */
 @container (max-width: 600px) {
-  .km-dashboard-grid { grid-template-columns: minmax(0, 1fr); }
-  .km-dashboard-widget[data-width] { grid-column: span 1; }
+  .km-dashboard-board[data-editing="true"] .km-dashboard-stage {
+    padding: 0; border: 0; background-color: transparent; background-image: none;
+  }
+  .km-dashboard-grid { grid-template-columns: minmax(0, 1fr); grid-auto-rows: auto; }
+  .km-dashboard-widget[data-width] { grid-column: 1 / -1 !important; grid-row: auto !important; }
+  .km-dashboard-widget-card { height: auto; overflow: visible; }
+  .km-dashboard-widget-body-wrap { flex: 0 0 auto; overflow: visible; }
+  .km-dashboard-widget-body,
+  .km-dashboard-widget[data-widget="globe"] .km-dashboard-widget-body,
+  .km-dashboard-widget[data-widget="globe"] .km-dashboard-widget-content,
+  .km-globe-widget,
+  .km-globe-skeleton { flex: 0 0 auto; height: auto; overflow: visible; }
+  .km-globe-layout {
+    flex: 0 0 auto; height: auto; overflow: visible;
+    grid-template-columns: minmax(0, 1fr);
+    grid-template-rows: 240px auto;
+  }
+  .km-globe-stage { height: 240px; }
+  .km-globe-regions { height: auto; max-height: none; overflow: visible; }
   .km-dashboard-placeholder { grid-template-columns: minmax(0, 1fr); }
   .km-dashboard-placeholder-block.km-dashboard-placeholder-block { grid-column: span 1; }
   .km-dashboard-placeholder-block:nth-child(n + 4) { display: none; }
 }
 @media (prefers-reduced-motion: reduce) {
   .km-dashboard-widget, .km-dashboard-meter > div { transition: none !important; }
+  .km-dashboard-live-dot.is-pulsing { animation: none; }
 }

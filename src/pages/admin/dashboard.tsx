@@ -1,15 +1,25 @@
+import { useCallback, useState } from "react";
 import { Button } from "@radix-ui/themes";
 import { useTranslation } from "react-i18next";
 import { Cpu, MemoryStick, RefreshCw } from "lucide-react";
-import { DashboardBoard, DashboardWidget } from "@/components/admin/dashboard/DashboardBoard";
+import {
+  DashboardBoard,
+  DashboardWidget,
+  type DashboardBoardState,
+} from "@/components/admin/dashboard/DashboardBoard";
 import { ExtraWidget } from "@/components/admin/dashboard/ExtraWidgets";
 import PageHeader from "@/components/PageHeader";
+import { BillingWidget } from "./dashboard/BillingWidget";
 import { DatabaseWidget } from "./dashboard/DatabaseWidget";
 import { ExpiryWidget } from "./dashboard/ExpiryWidget";
+import { GlobeWidget } from "./dashboard/GlobeWidget";
+import { LiveBandwidthWidget } from "./dashboard/LiveBandwidthWidget";
 import { OverviewWidget } from "./dashboard/OverviewWidget";
 import { PingWidget } from "./dashboard/PingWidget";
 import { TopRankCard } from "./dashboard/TopRankCard";
+import { TrafficQuotaWidget } from "./dashboard/TrafficQuotaWidget";
 import { TrafficWidget } from "./dashboard/TrafficWidget";
+import { UptimeWidget } from "./dashboard/UptimeWidget";
 import { useDashboardData } from "./dashboard/useDashboardData";
 import { CPU_METRIC_KEYS, MEM_METRIC_KEYS } from "./dashboard/utils";
 
@@ -19,6 +29,23 @@ const Dashboard = () => {
 
 const DashboardContent = () => {
   const { t } = useTranslation();
+  const [livePollingEnabled, setLivePollingEnabled] = useState(true);
+  const [boardState, setBoardState] = useState<DashboardBoardState>({
+    visibleIds: new Set(),
+    editing: false,
+    dragging: false,
+  });
+
+  const handleBoardStateChange = useCallback((next: DashboardBoardState) => {
+    setBoardState(next);
+  }, []);
+
+  const shouldPollLatest =
+    livePollingEnabled &&
+    !boardState.editing &&
+    !boardState.dragging &&
+    boardState.visibleIds.has("liveBandwidth");
+
   const {
     nodeList,
     isLoading,
@@ -41,7 +68,12 @@ const DashboardContent = () => {
     stableLatencyItems,
     unstableLatencyItems,
     highestLossItems,
-  } = useDashboardData();
+    trafficQuotaItems,
+    billingSummary,
+    liveBandwidth,
+    uptimeSummary,
+    globeSummary,
+  } = useDashboardData({ pollLatest: shouldPollLatest });
 
   if (error) return <div>{error}</div>;
 
@@ -72,7 +104,7 @@ const DashboardContent = () => {
         }
       />
 
-      <DashboardBoard>
+      <DashboardBoard onStateChange={handleBoardStateChange}>
         <DashboardWidget id="overview">
           <OverviewWidget
             loading={overviewLoading}
@@ -82,30 +114,65 @@ const DashboardContent = () => {
           />
         </DashboardWidget>
 
+        <DashboardWidget id="globe">
+          <GlobeWidget loading={overviewLoading} summary={globeSummary} />
+        </DashboardWidget>
+
+        <DashboardWidget id="trafficQuota" supportsLimit>
+          {(limit) => (
+            <TrafficQuotaWidget
+              items={trafficQuotaItems}
+              limit={limit}
+              loading={overviewLoading}
+            />
+          )}
+        </DashboardWidget>
+
+        <DashboardWidget id="billing">
+          <BillingWidget summary={billingSummary} loading={nodesLoading} />
+        </DashboardWidget>
+
         <DashboardWidget id="database">
           <DatabaseWidget dbInfo={dbInfo} loaded={loaded.db} />
         </DashboardWidget>
 
-        <DashboardWidget id="expiry" supportsLimit>{(limit) =>
-          <ExpiryWidget
-            limit={limit}
-            loading={nodesLoading}
-            nodes={expiringNodes}
-            renewingUuid={renewingUuid}
-            onRenew={handleRenew}
-          />
-        }</DashboardWidget>
+        <DashboardWidget id="expiry" supportsLimit>
+          {(limit) => (
+            <ExpiryWidget
+              limit={limit}
+              loading={nodesLoading}
+              nodes={expiringNodes}
+              renewingUuid={renewingUuid}
+              onRenew={handleRenew}
+            />
+          )}
+        </DashboardWidget>
 
-        <DashboardWidget id="traffic" supportsLimit>{(limit) =>
-          <TrafficWidget
-            limit={limit}
-            loading={metricsLoading}
-            traffic={traffic}
-            nodeNameMap={nodeNameMap}
-          />
-        }</DashboardWidget>
+        <DashboardWidget id="liveBandwidth" supportsLimit>
+          {(limit) => (
+            <LiveBandwidthWidget
+              summary={liveBandwidth}
+              limit={limit}
+              loading={overviewLoading}
+              liveEnabled={livePollingEnabled}
+              onToggleLive={() => setLivePollingEnabled((prev) => !prev)}
+            />
+          )}
+        </DashboardWidget>
 
-          <DashboardWidget id="cpu" supportsLimit>{(limit) =>
+        <DashboardWidget id="traffic" supportsLimit>
+          {(limit) => (
+            <TrafficWidget
+              limit={limit}
+              loading={metricsLoading}
+              traffic={traffic}
+              nodeNameMap={nodeNameMap}
+            />
+          )}
+        </DashboardWidget>
+
+        <DashboardWidget id="cpu" supportsLimit>
+          {(limit) => (
             <TopRankCard
               title={t("dashboard.topCpu", "Top CPU usage")}
               icon={<Cpu size={18} />}
@@ -115,8 +182,11 @@ const DashboardContent = () => {
               metricKeys={CPU_METRIC_KEYS}
               t={t}
             />
-          }</DashboardWidget>
-          <DashboardWidget id="memory" supportsLimit>{(limit) =>
+          )}
+        </DashboardWidget>
+
+        <DashboardWidget id="memory" supportsLimit>
+          {(limit) => (
             <TopRankCard
               title={t("dashboard.topMem", "Top memory usage")}
               icon={<MemoryStick size={18} />}
@@ -126,20 +196,55 @@ const DashboardContent = () => {
               metricKeys={MEM_METRIC_KEYS}
               t={t}
             />
-          }</DashboardWidget>
+          )}
+        </DashboardWidget>
 
-      <DashboardWidget id="ping" supportsLimit>{(limit) =>
-        <PingWidget
-          limit={limit}
-          loading={pingLoading}
-          stableItems={stableLatencyItems}
-          unstableItems={unstableLatencyItems}
-          lossItems={highestLossItems}
-        />
-      }</DashboardWidget>
-      <DashboardWidget id="resources"><ExtraWidget kind="resources" nodes={nodeList ?? []} latest={latest} loading={nodesLoading} /></DashboardWidget>
-      <DashboardWidget id="disk" supportsLimit>{(limit) => <ExtraWidget kind="disk" nodes={nodeList ?? []} latest={latest} limit={limit} loading={nodesLoading || !loaded.latest} />}</DashboardWidget>
-      <DashboardWidget id="shortcuts"><ExtraWidget kind="shortcuts" nodes={nodeList ?? []} latest={latest} /></DashboardWidget>
+        <DashboardWidget id="uptime" supportsLimit>
+          {(limit) => (
+            <UptimeWidget
+              summary={uptimeSummary}
+              limit={limit}
+              loading={overviewLoading}
+            />
+          )}
+        </DashboardWidget>
+
+        <DashboardWidget id="ping" supportsLimit>
+          {(limit) => (
+            <PingWidget
+              limit={limit}
+              loading={pingLoading}
+              stableItems={stableLatencyItems}
+              unstableItems={unstableLatencyItems}
+              lossItems={highestLossItems}
+            />
+          )}
+        </DashboardWidget>
+
+        <DashboardWidget id="resources">
+          <ExtraWidget
+            kind="resources"
+            nodes={nodeList ?? []}
+            latest={latest}
+            loading={nodesLoading}
+          />
+        </DashboardWidget>
+
+        <DashboardWidget id="disk" supportsLimit>
+          {(limit) => (
+            <ExtraWidget
+              kind="disk"
+              nodes={nodeList ?? []}
+              latest={latest}
+              limit={limit}
+              loading={overviewLoading}
+            />
+          )}
+        </DashboardWidget>
+
+        <DashboardWidget id="shortcuts">
+          <ExtraWidget kind="shortcuts" nodes={nodeList ?? []} latest={latest} />
+        </DashboardWidget>
       </DashboardBoard>
     </div>
   );

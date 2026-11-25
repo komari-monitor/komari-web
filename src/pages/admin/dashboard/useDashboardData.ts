@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
 import { useNodeList, type NodeBasicInfo } from "@/contexts/NodeListContext";
+import { getRPC2Client } from "@/contexts/RPC2Context";
 import { api } from "@/lib/http";
 import { useRouteQuery, type RouteQueryResult } from "@/lib/routeData";
 import {
@@ -17,9 +18,14 @@ import {
   pingTaskName,
 } from "@/utils/metricSeries";
 import {
+  computeBillingSummary,
+  computeGlobeSummary,
+  computeLiveBandwidthSummary,
   computeRenewalDate,
   computeTopAverageItems,
+  computeTrafficQuotaItems,
   computeTrafficSummary,
+  computeUptimeSummary,
   weightedP95,
 } from "./metrics";
 import type { PingRankItem, TopRankItem } from "./types";
@@ -33,6 +39,7 @@ import {
 
 const EMPTY_PING_STATS: PingMetricStat[] = [];
 const EMPTY_PING_TASKS: PublicPingTask[] = [];
+const LIVE_POLL_INTERVAL_MS = 3_000;
 
 /** 第一次请求已经结束（成功或失败）：刷新期间保留旧结果，不会回到 false */
 const settled = (result: Pick<RouteQueryResult<unknown>, "data" | "error">) =>
@@ -45,8 +52,13 @@ const useLogError = (error: unknown, message: string) => {
   }, [error, message]);
 };
 
-/** 仪表盘的数据层：各数据源的请求、首次加载标记、续费操作，以及由响应派生的统计与排行 */
-export const useDashboardData = () => {
+/** 仪表盘的数据层：各数据源的请求、按需实时轮询、续费操作，以及由响应派生的统计与排行 */
+export const useDashboardData = ({
+  pollLatest = false,
+}: {
+  /** 是否开启 3s 轻量实时轮询（仅当实时带宽卡片可见且页面在前台、非编辑拖拽态时开启） */
+  pollLatest?: boolean;
+} = {}) => {
   const { t } = useTranslation();
   // 节点列表来自全局 NodeListProvider（应用启动时已在加载），进入页面时照旧刷新一次
   const { nodeList, isLoading, error, refresh } = useNodeList();
@@ -64,12 +76,74 @@ export const useDashboardData = () => {
 
   // 失败时保留上一次成功的数据（与原来 catch 里不改 state 一致）
   const latest = latestResult.data ?? null;
+  const setLatestData = latestResult.setData;
   const metricsRes = metricsResult.data ?? null;
   const dbInfo = dbResult.data ?? null;
   const pingStats = pingResult.data?.stats ?? EMPTY_PING_STATS;
   const pingTasks = pingResult.data?.tasks ?? EMPTY_PING_TASKS;
   const [renewingUuid, setRenewingUuid] = useState<string | null>(null);
   const [renewedUuids, setRenewedUuids] = useState<Set<string>>(new Set());
+  const [nowTs, setNowTs] = useState(() => Date.now());
+  const pollInFlightRef = useRef(false);
+
+  // 按需轻量轮询 latest：仅在实时带宽卡片可见且用户开启实时、标签页前台时生效，不触碰 24h 图表数据
+  useEffect(() => {
+    if (!pollLatest) return;
+    let stopped = false;
+    let timer: number | undefined;
+
+    const clearTimer = () => {
+      if (timer !== undefined) {
+        window.clearTimeout(timer);
+        timer = undefined;
+      }
+    };
+
+    const schedule = () => {
+      clearTimer();
+      if (!stopped && !document.hidden) {
+        timer = window.setTimeout(runPoll, LIVE_POLL_INTERVAL_MS);
+      }
+    };
+
+    const runPoll = async () => {
+      if (stopped || document.hidden || pollInFlightRef.current) return;
+      pollInFlightRef.current = true;
+      try {
+        const fresh =
+          (await getRPC2Client().call<unknown, Record<string, any>>(
+            "common:getNodesLatestStatus",
+          )) ?? null;
+        if (!stopped && fresh) {
+          setLatestData(fresh);
+          setNowTs(Date.now());
+        }
+      } catch {
+        // 静默忽略单次轮询失败，保留当前快照
+      } finally {
+        pollInFlightRef.current = false;
+        schedule();
+      }
+    };
+
+    const handleVisibility = () => {
+      if (document.hidden) {
+        clearTimer();
+      } else {
+        void runPoll();
+      }
+    };
+
+    document.addEventListener("visibilitychange", handleVisibility);
+    schedule();
+
+    return () => {
+      stopped = true;
+      clearTimer();
+      document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, [pollLatest, setLatestData]);
+
   // 每个数据源「第一次请求结束」的标记：没结束前对应 widget 用骨架渲染真实结构。
   // 手动刷新不再回到骨架（保留旧数据原地更新），失败也算结束（显示空态而不是永远骨架）。
   const loaded = {
@@ -119,20 +193,44 @@ export const useDashboardData = () => {
   );
 
   const expiringNodes = useMemo(() => {
-    const now = Date.now();
-    const deadline = now + EXPIRING_SOON_DAYS * DAY_MS;
+    const deadline = nowTs + EXPIRING_SOON_DAYS * DAY_MS;
     return (nodeList ?? [])
       .filter((node) => {
         if (!node.expired_at) return false;
         if (renewedUuids.has(node.uuid)) return false;
         const ts = new Date(node.expired_at).getTime();
-        return ts >= now && ts <= deadline;
+        return ts >= nowTs && ts <= deadline;
       })
       .sort(
         (a, b) =>
           new Date(a.expired_at).getTime() - new Date(b.expired_at).getTime(),
       );
-  }, [nodeList, renewedUuids]);
+  }, [nodeList, renewedUuids, nowTs]);
+
+  const trafficQuotaItems = useMemo(
+    () => computeTrafficQuotaItems(nodeList ?? [], latest, nowTs),
+    [nodeList, latest, nowTs],
+  );
+
+  const billingSummary = useMemo(
+    () => computeBillingSummary(nodeList ?? [], nowTs),
+    [nodeList, nowTs],
+  );
+
+  const liveBandwidth = useMemo(
+    () => computeLiveBandwidthSummary(nodeList ?? [], latest),
+    [nodeList, latest],
+  );
+
+  const uptimeSummary = useMemo(
+    () => computeUptimeSummary(nodeList ?? [], latest, nowTs),
+    [nodeList, latest, nowTs],
+  );
+
+  const globeSummary = useMemo(
+    () => computeGlobeSummary(nodeList ?? [], latest),
+    [nodeList, latest],
+  );
 
   const reloadLatest = latestResult.reload;
   const reloadMetrics = metricsResult.reload;
@@ -142,6 +240,7 @@ export const useDashboardData = () => {
   // 刷新按钮：页面内刷新，不挂起；首屏骨架已揭开的 widget 保留旧数据原地更新
   const fetchAll = useCallback(async () => {
     miniChartCache.clear();
+    setNowTs(Date.now());
     refresh();
     await Promise.allSettled([
       reloadLatest(),
@@ -318,5 +417,10 @@ export const useDashboardData = () => {
     stableLatencyItems,
     unstableLatencyItems,
     highestLossItems,
+    trafficQuotaItems,
+    billingSummary,
+    liveBandwidth,
+    uptimeSummary,
+    globeSummary,
   };
 };
