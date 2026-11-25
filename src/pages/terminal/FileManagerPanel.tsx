@@ -76,6 +76,7 @@ import {
   type RemoteSearchResult,
 } from "./fileManagerApi";
 import { useRemoteFileUpload } from "./useRemoteFileUpload";
+import { useMarqueeSelection } from "./useMarqueeSelection";
 import type { TerminalSettings } from "./terminalDefaults";
 
   const FileEditorDialog = lazy(() => import("./FileEditorDialog"));
@@ -194,8 +195,6 @@ const FileManagerPanel = ({
   const pathCacheRef = useRef<Map<string, string>>(new Map());
   const [contextTarget, setContextTarget] = useState<RemoteFileInfo | null>(null);
   const [dragTarget, setDragTarget] = useState<DragTarget | null>(null);
-  const [marqueeRange, setMarqueeRange] = useState<{ start: number; end: number } | null>(null);
-  const marqueeActiveRef = useRef(false);
   const [internalDrag, setInternalDrag] = useState<string[] | null>(null);
   const internalDragPathsRef = useRef<string[] | null>(null);
 
@@ -208,8 +207,6 @@ const FileManagerPanel = ({
   const uploadInputRef = useRef<HTMLInputElement>(null);
   const uploadTargetRef = useRef("");
   const listRef = useRef<HTMLDivElement | null>(null);
-  const marqueeStartRef = useRef<number | null>(null);
-  const justMarqueeSelectedRef = useRef(false);
 
   const selectedFiles = files.filter((file) => selectedPathsRef.current.has(file.path));
   const selectedFile = selectedFiles.length === 1 ? selectedFiles[0] : null;
@@ -244,51 +241,27 @@ const FileManagerPanel = ({
     setSelectedOnly(file.path);
   }, [files, selectedPath, setSelectedOnly]);
 
-  const updateMarqueeSelection = useCallback((clientY: number) => {
-    const container = listRef.current;
-    if (!container || marqueeStartRef.current === null) return;
-    const rect = container.getBoundingClientRect();
-    const currentY = clientY - rect.top + container.scrollTop;
-    const startIndex = marqueeStartRef.current;
-    if (Math.abs(currentY - startIndex) < 3) return;
-    marqueeActiveRef.current = true;
-    const endIndex = currentY;
-    const next = new Set<string>();
-    container.querySelectorAll<HTMLElement>("[data-file-path]").forEach((element) => {
-      const rowRect = element.getBoundingClientRect();
-      const rowTop = rowRect.top - rect.top + container.scrollTop;
-      const rowBottom = rowTop + rowRect.height;
-      if (rowBottom >= Math.min(startIndex, endIndex) && rowTop <= Math.max(startIndex, endIndex)) {
-        const path = element.dataset.filePath;
-        if (path) next.add(path);
-      }
-    });
-    selectedPathsRef.current = next;
-    setSelectedPath(next.size ? String(next.values().next().value) : null);
-    setMarqueeRange({ start: Math.min(startIndex, endIndex), end: Math.max(startIndex, endIndex) });
-  }, []);
-
-  const startMarqueeSelection = useCallback((event: ReactMouseEvent<HTMLDivElement>) => {
-    if (event.button !== 0 || (event.target as HTMLElement).closest("[data-file-path],[data-parent-entry]")) return;
-    const container = listRef.current;
-    if (!container) return;
-    const rect = container.getBoundingClientRect();
-    marqueeStartRef.current = event.clientY - rect.top + container.scrollTop;
-    marqueeActiveRef.current = false;
-    justMarqueeSelectedRef.current = false;
-    setMarqueeRange(null);
-    const handleMove = (moveEvent: MouseEvent) => updateMarqueeSelection(moveEvent.clientY);
-    const handleUp = () => {
-      justMarqueeSelectedRef.current = marqueeActiveRef.current;
-      marqueeStartRef.current = null;
-      marqueeActiveRef.current = false;
-      setMarqueeRange(null);
-      window.removeEventListener("mousemove", handleMove);
-      window.removeEventListener("mouseup", handleUp);
-    };
-    window.addEventListener("mousemove", handleMove);
-    window.addEventListener("mouseup", handleUp);
-  }, [updateMarqueeSelection]);
+  const {
+    marqueeRect,
+    marqueeActiveRef,
+    marqueeTrackingRef,
+    startMarqueeSelection,
+    consumeJustMarqueeSelected,
+  } = useMarqueeSelection({
+    containerRef: listRef,
+    itemSelector: "[data-file-path]",
+    ignoreSelector: "[data-file-path],[data-parent-entry],[data-create-entry],button,input,textarea,select",
+    getItemKey: (element) => element.dataset.filePath ?? null,
+    getSelectedPaths: () => selectedPathsRef.current,
+    onDragStart: closeContextMenu,
+    onSelectionChange: (next) => {
+      selectedPathsRef.current = next;
+      const firstPath = next.size ? String(next.values().next().value) : null;
+      setSelectedPath(firstPath);
+      lastSelectedIndexRef.current = firstPath ? files.findIndex((file) => file.path === firstPath) : -1;
+    },
+    disabled: Boolean(searchResult),
+  });
 
   const downloadFile = useCallback(
     (file: RemoteFileInfo) => {
@@ -960,11 +933,10 @@ const FileManagerPanel = ({
         onDragOver={(event) => handleDragOver(event, { kind: "blank" })}
         onDragLeave={(event) => { if (!event.currentTarget.contains(event.relatedTarget as Node)) setDragTarget(null); }}
         onDrop={(event) => { void handleDrop(event, { kind: "blank" }); }}
-        className={dragTarget?.kind === "blank" ? "relative min-h-0 flex-1 overflow-auto ring-1 ring-inset ring-[#55a7e0]" : "relative min-h-0 flex-1 overflow-auto"}
+        className={`relative min-h-0 flex-1 overflow-auto ${searchResult ? "" : "select-none"} ${dragTarget?.kind === "blank" ? "ring-1 ring-inset ring-[#55a7e0]" : ""}`}
         onMouseDown={startMarqueeSelection}
         onClick={(event) => {
-          if (justMarqueeSelectedRef.current) {
-            justMarqueeSelectedRef.current = false;
+          if (consumeJustMarqueeSelected()) {
             return;
           }
           if (!(event.target as HTMLElement).closest("[data-file-path],[data-parent-entry],[data-create-entry]")) {
@@ -1113,12 +1085,12 @@ const FileManagerPanel = ({
                 >
                 <div
                   data-file-path={file.path}
-                  draggable={!marqueeActiveRef.current && marqueeRange === null && renamingPath !== file.path}
+                  draggable={!marqueeActiveRef.current && marqueeRect === null && renamingPath !== file.path}
                   className={`group my-0.5 w-full flex h-11 min-w-0 items-center gap-2 rounded-[4px] px-2 transition-colors ${
                     selected ? "bg-white/[0.15]" : dragTarget?.kind === "directory" && dragTarget.path === file.path ? "bg-sky-500/20" : "hover:bg-white/[0.08]"
                   }`}
                   onDragStart={(event) => {
-                    if (marqueeStartRef.current !== null) {
+                    if (marqueeTrackingRef.current) {
                       event.preventDefault();
                       return;
                     }
@@ -1252,13 +1224,15 @@ const FileManagerPanel = ({
             )}
           </Skeletonize>
         )}
-        {marqueeRange && (
+        {marqueeRect && (
           <div
-            className="pointer-events-none absolute left-0 z-10 border border-[#55a7e0] bg-[#55a7e0]/15"
+            aria-hidden
+            className="pointer-events-none absolute z-10 border border-[#55a7e0] bg-[#55a7e0]/15"
             style={{
-              top: `${marqueeRange.start}px`,
-              height: `${Math.max(1, marqueeRange.end - marqueeRange.start)}px`,
-              right: 0,
+              left: `${marqueeRect.left}px`,
+              top: `${marqueeRect.top}px`,
+              width: `${marqueeRect.width}px`,
+              height: `${marqueeRect.height}px`,
             }}
           />
         )}
